@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -10,6 +11,7 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
 {
     private readonly CompositeDisposable _lifetime = new();
     private readonly SettingsViewModel _settings;
+    private readonly MapViewModel _map;
     private Func<IObservable<IRoutableViewModel>>? _pendingNavigation;
 
     [Reactive]
@@ -19,11 +21,11 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
     }
     public ReactiveCommand<Unit, Unit> StayOnSettings
     {
-        get;
+        get; private set;
     }
     public ReactiveCommand<Unit, IRoutableViewModel> DiscardAndLeave
     {
-        get;
+        get; private set;
     }
 
     public RoutingState Router
@@ -45,55 +47,74 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
 
     public ReactiveCommand<Unit, IRoutableViewModel> ShowMap
     {
-        get;
+        get; private set;
     }
 
     public ReactiveCommand<Unit, IRoutableViewModel> ShowSettings
     {
-        get;
+        get; private set;
     }
 
     public ReactiveCommand<Unit, IRoutableViewModel> Back
     {
-        get;
+        get; private set;
     }
 
     public ShellViewModel(IScreen screen, MapViewModel map, SettingsViewModel settings)
     {
         Router = screen.Router;
         _settings = settings;
-        StayOnSettings = ReactiveCommand.Create(() =>
-        {
-            _pendingNavigation = null;
-            ShowUnsavedWarning = false;
-        }).DisposeWith(_lifetime);
-        DiscardAndLeave = ReactiveCommand.CreateFromObservable(() =>
-        {
-            var navigate = _pendingNavigation;
-            _pendingNavigation = null;
-            ShowUnsavedWarning = false;
-            _settings.Reload();
-            return navigate?.Invoke() ?? Observable.Return(Router.GetCurrentViewModel()!);
-        }).DisposeWith(_lifetime);
-        Back = ReactiveCommand.CreateFromObservable(() => Guard(() =>
-        {
-            if (Router.NavigationStack.Count > 1 && Router.NavigationStack[^2] is SettingsViewModel)
-            {
-                _settings.Reload();
-            }
-            return Router.NavigateBack.Execute();
-        }), Router.NavigateBack.CanExecute).DisposeWith(_lifetime);
-        ShowMap = Command(map);
-        ShowSettings = Command(settings);
-        Router.CurrentViewModel.Subscribe(vm =>
-        {
-            IsMap = vm is MapViewModel;
-            IsSettings = vm is SettingsViewModel;
-        }).DisposeWith(_lifetime);
-        Router.NavigateAndReset.Execute(map).Subscribe().DisposeWith(_lifetime);
+        _map = map;
+        InitializeCommands();
+        SetupSubscriptions();
+        Router.NavigateAndReset.Execute(_map).Subscribe().DisposeWith(_lifetime);
     }
 
-    private ReactiveCommand<Unit, IRoutableViewModel> Command(IRoutableViewModel vm) => ReactiveCommand.CreateFromObservable(() =>
+    [MemberNotNull(nameof(StayOnSettings), nameof(DiscardAndLeave), nameof(Back), nameof(ShowMap), nameof(ShowSettings))]
+    private void InitializeCommands()
+    {
+        StayOnSettings = ReactiveCommand.Create(Stay).DisposeWith(_lifetime);
+        DiscardAndLeave = ReactiveCommand.CreateFromObservable(Discard).DisposeWith(_lifetime);
+        Back = ReactiveCommand.CreateFromObservable(() => Guard(NavigateBack), Router.NavigateBack.CanExecute).DisposeWith(_lifetime);
+        ShowMap = Command(_map);
+        ShowSettings = Command(_settings);
+    }
+
+    private void SetupSubscriptions() => Router.CurrentViewModel.Subscribe(CurrentScreenChanged).DisposeWith(_lifetime);
+
+    private void CurrentScreenChanged(IRoutableViewModel? vm)
+    {
+        IsMap = vm is MapViewModel;
+        IsSettings = vm is SettingsViewModel;
+    }
+
+    private void Stay()
+    {
+        _pendingNavigation = null;
+        ShowUnsavedWarning = false;
+    }
+
+    private IObservable<IRoutableViewModel> Discard()
+    {
+        var navigate = _pendingNavigation;
+        Stay();
+        _settings.Reload();
+        return navigate?.Invoke() ?? Observable.Return(Router.GetCurrentViewModel()!);
+    }
+
+    private IObservable<IRoutableViewModel> NavigateBack()
+    {
+        if (Router.NavigationStack.Count > 1 && Router.NavigationStack[^2] is SettingsViewModel)
+        {
+            _settings.Reload();
+        }
+        return Router.NavigateBack.Execute();
+    }
+
+    private ReactiveCommand<Unit, IRoutableViewModel> Command(IRoutableViewModel vm) =>
+        ReactiveCommand.CreateFromObservable(() => NavigateTo(vm)).DisposeWith(_lifetime);
+
+    private IObservable<IRoutableViewModel> NavigateTo(IRoutableViewModel vm)
     {
         if (ReferenceEquals(Router.GetCurrentViewModel(), vm))
         {
@@ -112,7 +133,7 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
             }
             return Router.Navigate.Execute(vm);
         });
-    }).DisposeWith(_lifetime);
+    }
 
     public bool RequestClose(Action close)
     {

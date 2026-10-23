@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -41,7 +42,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
 
     public ReactiveCommand<Unit, Unit> Save
     {
-        get;
+        get; private set;
     }
 
     public SettingsViewModel(IScreen screen, ISettingsStore store)
@@ -49,8 +50,17 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         HostScreen = screen;
         _store = store;
         Reload();
+        SetupSubscriptions();
+        InitializeCommands();
+    }
+
+    private void SetupSubscriptions() =>
         this.WhenAnyValue(x => x.CellSize, x => x.ReservePercent)
             .Subscribe(_ => NotifyChanges()).DisposeWith(_lifetime);
+
+    [MemberNotNull(nameof(Save))]
+    private void InitializeCommands()
+    {
         Save = ReactiveCommand.Create(SaveSettings, this.WhenAnyValue(x => x.CanSave))
             .DisposeWith(_lifetime);
     }

@@ -52,6 +52,7 @@ public sealed class RoutingTests
             TestData.Options,
             default);
         var polygon = new WKBReader().Read(obstacle.Wkb);
+        Assert.NotEmpty(routes);
         foreach (var route in routes)
         {
             for (var i = 1; i < route.Geometry.Count; i++)
@@ -83,6 +84,7 @@ public sealed class RoutingTests
             [TestData.P(50, 150), TestData.P(260, 150)],
             TestData.Options,
             default);
+        Assert.NotEmpty(routes);
         Assert.All(routes, r => Assert.Equal(1, r.Metrics.ApprovedWaterCrossings));
     }
 
