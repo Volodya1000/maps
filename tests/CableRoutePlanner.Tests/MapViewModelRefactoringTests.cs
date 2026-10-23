@@ -79,6 +79,59 @@ public sealed class MapViewModelRefactoringTests
     }
 
     [Fact]
+    public async Task EmptySuccessfulMapRequestShowsMissingAreaWithoutError()
+    {
+        var data = new DeferredMapData();
+        using var vm = CreateVm(data);
+        var load = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+
+        data.Complete(0);
+        await load;
+
+        Assert.Empty(vm.Features);
+        Assert.Equal(1, vm.MapVersion);
+        Assert.Equal("Для этой области нет данных в офлайн-пакете.", vm.MapStatus);
+    }
+
+    [Fact]
+    public async Task FailedMapRequestKeepsPreviouslyLoadedFeatures()
+    {
+        var data = new DeferredMapData();
+        using var vm = CreateVm(data);
+        var initialLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        data.Complete(0, new MapFeature(1, TerrainKind.Field, [], "initial"));
+        await initialLoad;
+
+        var failedLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        data.Fail(1, new InvalidOperationException("repository unavailable"));
+        await failedLoad;
+
+        Assert.Equal(1L, Assert.Single(vm.Features).Id);
+        Assert.Equal(1, vm.MapVersion);
+        Assert.Equal("Ошибка загрузки карты: repository unavailable", vm.MapStatus);
+    }
+
+    [Fact]
+    public void CommandsAreInitializedWhenViewModelIsConstructed()
+    {
+        using var vm = CreateVm(new MemoryData());
+        Assert.NotNull(vm.AddPoint);
+        Assert.NotNull(vm.AddManual);
+        Assert.NotNull(vm.DeletePoint);
+        Assert.NotNull(vm.RemovePoint);
+        Assert.NotNull(vm.SelectPoint);
+        Assert.NotNull(vm.ReorderPoints);
+        Assert.NotNull(vm.ChooseRoute);
+        Assert.NotNull(vm.MoveUp);
+        Assert.NotNull(vm.MoveDown);
+        Assert.NotNull(vm.ClearPoints);
+        Assert.NotNull(vm.CopyCoordinates);
+        Assert.NotNull(vm.BuildRoutes);
+        Assert.NotNull(vm.Cancel);
+        Assert.NotNull(vm.Request3D);
+    }
+
+    [Fact]
     public async Task PointProjectionKeepsSelectionAndRenumbersAfterReordering()
     {
         using var vm = CreateVm(new MemoryData());

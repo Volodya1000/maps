@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -110,72 +111,72 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public ReactiveCommand<GeoCoordinate, Unit> AddPoint
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Unit, Unit> AddManual
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Unit, Unit> DeletePoint
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Guid, Unit> RemovePoint
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Guid, Unit> SelectPoint
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<WaypointReorder, Unit> ReorderPoints
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Guid, Unit> ChooseRoute
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Unit, Unit> MoveUp
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Unit, Unit> MoveDown
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Unit, Unit> ClearPoints
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Unit, Unit> CopyCoordinates
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Unit, Unit> BuildRoutes
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Unit, Unit> Cancel
     {
         get; private set;
-    } = null!;
+    };
 
     public ReactiveCommand<Unit, Unit> Request3D
     {
         get; private set;
-    } = null!;
+    };
 
     public MapViewModel(
         IScreen screen,
@@ -198,6 +199,21 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         SetupSubscriptions();
     }
 
+    [MemberNotNull(
+        nameof(AddPoint),
+        nameof(AddManual),
+        nameof(DeletePoint),
+        nameof(RemovePoint),
+        nameof(SelectPoint),
+        nameof(ReorderPoints),
+        nameof(ChooseRoute),
+        nameof(MoveUp),
+        nameof(MoveDown),
+        nameof(ClearPoints),
+        nameof(CopyCoordinates),
+        nameof(BuildRoutes),
+        nameof(Cancel),
+        nameof(Request3D))]
     private void InitializeCommands()
     {
         AddPoint = ReactiveCommand.Create<GeoCoordinate>(AddAt).DisposeWith(_lifetime);
@@ -337,23 +353,28 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             return;
         }
 
-        if (result.ErrorMessage is { } error)
+        switch (result)
         {
-            MapStatus = $"Ошибка загрузки карты: {error}";
-            return;
-        }
+            case MapAreaLoadResult.Failed failed:
+                MapStatus = $"Ошибка загрузки карты: {failed.Message}";
+                break;
 
-        var features = result.Features!;
-        Features.Clear();
-        foreach (var feature in features)
-        {
-            Features.Add(feature);
-        }
+            case MapAreaLoadResult.Loaded loaded:
+                Features.Clear();
+                foreach (var feature in loaded.Features)
+                {
+                    Features.Add(feature);
+                }
 
-        MapVersion++;
-        MapStatus = features.Count > 0
-            ? $"Офлайн: {_mapLoader.Info.RegionId} · OSM · без DEM и WorldCover"
-            : "Для этой области нет данных в офлайн-пакете.";
+                MapVersion++;
+                MapStatus = loaded.Features.Count > 0
+                    ? $"Офлайн: {_mapLoader.Info.RegionId} · OSM · без DEM и WorldCover"
+                    : "Для этой области нет данных в офлайн-пакете.";
+                break;
+
+            default:
+                throw new InvalidOperationException("Неизвестный результат загрузки карты.");
+        }
     }
 
     public void MovePoint(Guid id, GeoCoordinate coordinate) => Change(() =>

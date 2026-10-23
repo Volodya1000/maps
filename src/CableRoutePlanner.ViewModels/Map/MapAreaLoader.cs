@@ -3,10 +3,14 @@ using CableRoutePlanner.Domain;
 
 namespace CableRoutePlanner.ViewModels;
 
-internal sealed record MapAreaLoadResult(
-    long RequestId,
-    IReadOnlyList<MapFeature>? Features,
-    string? ErrorMessage);
+internal abstract record MapAreaLoadResult(long RequestId)
+{
+    internal sealed record Loaded(long RequestId, IReadOnlyList<MapFeature> Features)
+        : MapAreaLoadResult(RequestId);
+
+    internal sealed record Failed(long RequestId, string Message)
+        : MapAreaLoadResult(RequestId);
+}
 
 internal sealed class MapAreaLoader(IGeodataRepository repository)
 {
@@ -30,7 +34,7 @@ internal sealed class MapAreaLoader(IGeodataRepository repository)
             var features = await repository.QueryMapAsync(bounds, metresPerPixel, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             return request == Interlocked.Read(ref _requestId)
-                ? new MapAreaLoadResult(request, features, null)
+                ? new MapAreaLoadResult.Loaded(request, features)
                 : null;
         }
         catch (OperationCanceledException)
@@ -40,7 +44,7 @@ internal sealed class MapAreaLoader(IGeodataRepository repository)
         catch (Exception ex)
         {
             return request == Interlocked.Read(ref _requestId)
-                ? new MapAreaLoadResult(request, null, ex.Message)
+                ? new MapAreaLoadResult.Failed(request, ex.Message)
                 : null;
         }
     }
