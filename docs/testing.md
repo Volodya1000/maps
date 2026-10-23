@@ -37,3 +37,9 @@ python tools/check_network.py artifacts/runtime.strace --output artifacts/networ
 ## 3D
 
 Браузерный сценарий описан отдельно в spikes/MapLibre. Для приёмки требуется подключить WebView C# на каждой ОС и повторить сценарий с настоящим DEM, высотными различиями, камерой, маршрутом поверх рельефа и сетевой блокировкой. Чистый hillshade или запуск браузерного стенда отдельно от приложения не закрывает этот пункт.
+
+## Регрессия Android-темы (0.1.1)
+
+Первый APK 0.1.0 падал в AndroidX AppCompatActivity до появления интерфейса: `You need to use a Theme.AppCompat theme (or descendant) with this activity`. Стартовой Activity не была назначена AppCompat-тема. В 0.1.1 задана `@style/CableRoutePlannerTheme` с родителем `Theme.AppCompat.Light.NoActionBar`; versionCode увеличен до 2 для установки поверх прежней версии тем же ключом.
+
+Помимо сборки, CI теперь устанавливает полученный Release APK в Android 14/API 34 x86_64 эмулятор и трижды запускает Activity. Проверяются живой процесс, resumed Activity, отсутствие падения приложения в crash buffer; сохраняются logcat, screenshots и JSON. Запуск вручную на уже загруженном устройстве: `python tools/android_smoke.py --apk <Signed.apk> --output artifacts/android-smoke`. Это отдельная проверка запуска, не подтверждение всей функциональности и не замена повторной проверки Xiaomi пользователя.

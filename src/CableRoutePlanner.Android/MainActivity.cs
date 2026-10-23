@@ -6,7 +6,7 @@ using Avalonia.ReactiveUI;
 using CableRoutePlanner.Bootstrap;
 using CableRoutePlanner.UI;
 namespace CableRoutePlanner.Android;
-[Activity(Label = "Кабельные маршруты", MainLauncher = true, Exported = true,
+[Activity(Label = "Кабельные маршруты", Theme = "@style/CableRoutePlannerTheme", MainLauncher = true, Exported = true,
     ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
 public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
 {
