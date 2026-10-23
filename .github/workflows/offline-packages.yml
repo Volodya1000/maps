@@ -27,13 +27,20 @@ jobs:
           path: artifacts/belarus
           key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/prepare.py') }}
       - if: steps.data-cache.outputs.cache-hit != 'true'
+        name: Download verified OSM snapshot
         run: |
           uv sync --project tools/GeodataPreparation --locked
-          curl --fail --location --retry 3 https://download.geofabrik.de/europe/belarus-261022.osm.pbf --output source.osm.pbf
+          curl --fail --location --retry 3 --connect-timeout 30 --max-time 900 https://download.geofabrik.de/europe/belarus-261022.osm.pbf --output source.osm.pbf
+      - if: steps.data-cache.outputs.cache-hit != 'true'
+        name: Prepare country database and compressed asset
+        run: |
           uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/prepare_country.py --pbf source.osm.pbf --expected-md5 a2327228173b7fe8e74e2097e3dae0d4 --output artifacts/belarus --compress
           cp -r samples/real-geodata-fixtures/minsk/licenses artifacts/belarus/
-          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
           rm artifacts/belarus/geodata.sqlite
+      - name: Include country attribution
+        run: |
+          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
+          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
       - uses: actions/upload-artifact@v4
         with:
           name: belarus-offline-data
