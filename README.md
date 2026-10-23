@@ -63,9 +63,13 @@ dotnet run --project tools/CableRoutePlanner.Verify -- samples/real-geodata-fixt
 
 Координаты задаются пользователем. Выходной GeoJSON содержит рассчитанную трассу и метрики. Маршруты из этого файла не используются приложением как заготовки.
 
+## Проверки перед коммитом
+
+`uv sync --locked` и `uv run --locked pre-commit install` устанавливают локальные проверки. Hooks и CI используют одни команды форматирования, сборки и тестов; [инструкция разработки](docs/development.md) описывает проверки по платформам. В каждом PR добавляйте отдельный [changelog-фрагмент](changes/README.md), общий CHANGELOG собирается Towncrier при выпуске.
+
 ## Исследование 3D
 
-Отдельный [MapLibre-стенд](spikes/MapLibre/README.md) содержит локальные OSM-векторы и настоящие Terrarium-тайлы Copernicus DEM. В Linux Chromium проверены terrain, маркеры, обмен JS-событиями, LineString и отсутствие внешних запросов. Он **не встроен в Avalonia** и не закрывает FR-007. Кнопка 3D отключена с пояснением о недоступности.
+Отдельный [MapLibre-стенд](spikes/MapLibre/README.md) содержит локальные OSM-векторы и настоящие Terrarium-тайлы Copernicus DEM. В Linux Chromium проверены terrain, маркеры, обмен JS-событиями, LineString и отсутствие внешних запросов. Он **не встроен в Avalonia** и не закрывает FR-007. Кнопка-заглушка 3D удалена из интерфейса.
 
 ## Ограничения приёмки
 
