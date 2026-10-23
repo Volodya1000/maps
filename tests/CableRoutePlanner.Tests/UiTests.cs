@@ -153,6 +153,28 @@ public sealed class UiTests
         window.Close();
     }
 
+    [AvaloniaFact]
+    public void InitialCameraUsesFinalLayoutSizeAndPreservesUserZoom()
+    {
+        var map = new Mapsui.UI.Avalonia.MapControl();
+        var window = new Window { Content = map, Width = 60, Height = 400 };
+        window.Show();
+        using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(
+            map, new(23.17, 51.23, 32.77, 56.18));
+        adapter.InitializeViewport();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var provisional = map.Map.Navigator.Viewport.Resolution;
+        window.Width = 412;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.True(map.Map.Navigator.Viewport.Resolution < provisional / 2);
+        adapter.ZoomIn();
+        var zoom = map.Map.Navigator.Viewport.Resolution;
+        window.Width = 800;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.Equal(zoom, map.Map.Navigator.Viewport.Resolution);
+        window.Close();
+    }
+
     private sealed class ViewportRepository : CableRoutePlanner.Application.IGeodataRepository
     {
         public CableRoutePlanner.Application.DataPackageInfo Info

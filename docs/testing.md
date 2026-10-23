@@ -1,6 +1,6 @@
 # Проверка и воспроизведение
 
-Локально 2026-10-23, Linux x64: **41/41 тестов проходят**, включая реальный OSM-маршрут, запреты препятствий и переходов, late-result invalidation, compiled XAML, мышь, навигацию и Fody PropertyChanged после реальной компиляции. Тесты не подменяют алгоритм production-результатами. Synthetic-fixtures создаются явно в тестах; основной UI использует настоящий включённый пакет.
+Локально 2026-10-23, Linux x64: **42/42 теста проходят**, включая реальный OSM-маршрут, запреты препятствий и переходов, late-result invalidation, compiled XAML, мышь, навигацию и Fody PropertyChanged после реальной компиляции. Тесты не подменяют алгоритм production-результатами. Synthetic-fixtures создаются явно в тестах; основной UI использует настоящий включённый пакет.
 
 ```sh
 dotnet restore CableRoutePlanner.Desktop.slnf --locked-mode

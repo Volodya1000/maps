@@ -1,4 +1,6 @@
+using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using Avalonia.Interactivity;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
@@ -47,7 +49,11 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private bool _addMode;
 
-    private bool _fitted;
+    private bool _fitQueued;
+
+    private bool _cameraWasUsed;
+
+    private bool _disposed;
 
     private bool _initialized;
 
@@ -91,16 +97,47 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             RoutingStrategies.Tunnel,
             true);
         control.PointerCaptureLost += CaptureLost;
+        control.SizeChanged += OnMapSizeChanged;
+        control.AddHandler(InputElement.PointerWheelChangedEvent, WheelChanged, RoutingStrategies.Tunnel, true);
         control.Map.Navigator.ViewportChanged += OnViewportChanged;
     }
 
     public void InitializeViewport()
     {
-        // Subscribe to ViewportChanged before fitting: an already measured MapControl may
-        // otherwise miss the first viewport event and keep only the small startup area.
+        // Fitting is queued after layout: Android can report a temporary narrow viewport
+        // while the responsive panel is being arranged. Fit again until the user moves it.
         _initialized = true;
-        OnViewportChanged(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(InitializeViewport)));
+        QueueInitialFit();
     }
+
+    private void OnMapSizeChanged(object? sender, SizeChangedEventArgs e) => QueueInitialFit();
+
+    private void QueueInitialFit()
+    {
+        if (!_initialized || _cameraWasUsed || _fitQueued || _disposed)
+        {
+            return;
+        }
+
+        _fitQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _fitQueued = false;
+            if (_cameraWasUsed || _disposed)
+            {
+                return;
+            }
+
+            var viewport = _control.Map.Navigator.Viewport;
+            if (viewport.Width > 0 && viewport.Height > 0)
+            {
+                _control.Map.Navigator.ZoomToBox(_extent);
+                OnViewportChanged(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(InitializeViewport)));
+            }
+        }, DispatcherPriority.Loaded);
+    }
+
+    private void WheelChanged(object? sender, PointerWheelEventArgs e) => _cameraWasUsed = true;
 
     private static Coordinate Project(GeoCoordinate p)
     {
@@ -227,6 +264,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             // 15% padding, at least 100 projected metres, keeps short routes away from the edge.
             var padding = Math.Max(100, Math.Max(east - west, north - south) * 0.15);
             _routeExtentShown = true;
+            _cameraWasUsed = true;
             _control.Map.Navigator.ZoomToBox(new MRect(west - padding, south - padding, east + padding, north + padding));
         }
         _control.RefreshGraphics();
@@ -234,9 +272,17 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     public void SetAddMode(bool enabled) => _addMode = enabled;
 
-    public void ZoomIn() => _control.Map.Navigator.ZoomIn();
+    public void ZoomIn()
+    {
+        _cameraWasUsed = true;
+        _control.Map.Navigator.ZoomIn();
+    }
 
-    public void ZoomOut() => _control.Map.Navigator.ZoomOut();
+    public void ZoomOut()
+    {
+        _cameraWasUsed = true;
+        _control.Map.Navigator.ZoomOut();
+    }
 
     private GeoCoordinate ToGeo(Avalonia.Point p)
     {
@@ -252,6 +298,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             return;
         }
 
+        _cameraWasUsed = true;
         _pointers.Add(e.Pointer.Id);
         if (_pointers.Count > 1)
         {
@@ -337,13 +384,6 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             return;
         }
 
-        if (!_fitted)
-        {
-            _fitted = true;
-            _control.Map.Navigator.ZoomToBox(_extent);
-            viewport = _control.Map.Navigator.Viewport;
-        }
-
         var corners = new[]
         {
             ToGeo(new(0, 0)),
@@ -362,6 +402,9 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     public void Dispose()
     {
+        _disposed = true;
+        _control.SizeChanged -= OnMapSizeChanged;
+        _control.RemoveHandler(InputElement.PointerWheelChangedEvent, WheelChanged);
         _control.RemoveHandler(Avalonia.Input.InputElement.PointerPressedEvent, Pressed);
         _control.RemoveHandler(Avalonia.Input.InputElement.PointerMovedEvent, Moved);
         _control.RemoveHandler(Avalonia.Input.InputElement.PointerReleasedEvent, Released);
