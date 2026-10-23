@@ -28,3 +28,7 @@
 .NET SDK 8.0.426, Avalonia 11.3.0, Mapsui 4.1.9. На Linux x64 выполнены 34 теста, self-contained win-x64 publish и Android Release publish (workload 34.0.43, API 34, JDK 17). Компиляция подтверждает совместимость пакетов на уровне сборки, не Windows 7/10, GPU, ввод или установку. APK проверен aapt: INTERNET отсутствует.
 
 MapLibre 4.7.1 и 22 реальных Terrarium DEM-тайла проверены только в отдельном Linux Chromium-стенде. Это частичный эксперимент движка, не реализация FR-007 в приложении. Отчёт docs/evidence/maplibre-check.json.
+
+## Android 0.1.1
+
+После отчёта с физического Xiaomi исправлена конкретная ошибка запуска 0.1.0: `You need to use a Theme.AppCompat theme`. Activity получила явную тему с родителем `Theme.AppCompat.Light.NoActionBar`. В CI проверены установка и три запуска исправленной Activity на Android 14/API 34 x86_64; показ карты подтверждён screenshot. Физический Xiaomi, касания и прочие целевые платформы требуют своих проверок.

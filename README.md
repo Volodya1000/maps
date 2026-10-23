@@ -13,7 +13,7 @@ C# / Avalonia / ReactiveUI. **Рабочая реализация 2D и расч
 
 ## Скачать тестовый APK
 
-[Прямая ссылка на подписанный APK (69 МБ)](https://github.com/Volodya1000/maps/raw/refs/heads/downloads/android-preview/CableRoutePlanner-test.apk). [PR с исходниками](https://github.com/Volodya1000/maps/pull/1). Скачивание и контрольная сумма проверены; запуск на устройстве ещё требует проверки.
+[Прямая ссылка на подписанный APK (69 МБ)](https://github.com/Volodya1000/maps/raw/refs/heads/downloads/android-preview/CableRoutePlanner-0.1.1-test.apk). [PR с исходниками](https://github.com/Volodya1000/maps/pull/1). Версия 0.1.1 исправляет падение Android Activity из-за отсутствующей AppCompat-темы. Проверены скачивание, подпись и три запуска в эмуляторе Android 14; повторная проверка на Xiaomi пользователя ещё требуется.
 
 ## Запуск Desktop
 

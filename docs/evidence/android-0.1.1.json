@@ -1,0 +1,48 @@
+{
+  "local_download_apk": {
+    "sha256": "8f4b02f9b808a7ba5ae4c4eba749a0a8db87ac8416c1be25f4ec4d7cde49f4b0",
+    "bytes": 69298312,
+    "versionCode": 2,
+    "versionName": "0.1.1",
+    "source": "342d7a728b743a0520aa945739d28efc96f559fa"
+  },
+  "ci": {
+    "url": "https://github.com/Volodya1000/maps/actions/runs/39972389857",
+    "source": "342d7a728b743a0520aa945739d28efc96f559fa",
+    "report": {
+      "package": "by.cablerouteplanner.app",
+      "sha256": "a713a0887b5ac9976b9cbff6f941c065952d013a0f0b60851ea4d3a6483f3187",
+      "launches": [
+        {
+          "attempt": 1,
+          "pid": "3560",
+          "resumed": [
+            "topResumedActivity=ActivityRecord{c6cb283 u0 by.cablerouteplanner.app/crc64d67142fd98c2df9d.MainActivity t8}",
+            "ResumedActivity: ActivityRecord{c6cb283 u0 by.cablerouteplanner.app/crc64d67142fd98c2df9d.MainActivity t8}"
+          ]
+        },
+        {
+          "attempt": 2,
+          "pid": "4589",
+          "resumed": [
+            "topResumedActivity=ActivityRecord{a93d60d u0 by.cablerouteplanner.app/crc64d67142fd98c2df9d.MainActivity t9}",
+            "ResumedActivity: ActivityRecord{a93d60d u0 by.cablerouteplanner.app/crc64d67142fd98c2df9d.MainActivity t9}"
+          ]
+        },
+        {
+          "attempt": 3,
+          "pid": "5038",
+          "resumed": [
+            "topResumedActivity=ActivityRecord{264e425 u0 by.cablerouteplanner.app/crc64d67142fd98c2df9d.MainActivity t10}",
+            "ResumedActivity: ActivityRecord{264e425 u0 by.cablerouteplanner.app/crc64d67142fd98c2df9d.MainActivity t10}"
+          ]
+        }
+      ],
+      "success": true,
+      "android_release": "14",
+      "abi": "x86_64",
+      "activity": "by.cablerouteplanner.app/crc64d67142fd98c2df9d.MainActivity"
+    }
+  },
+  "note": "CI and the downloadable local APK are built from the same source. Their hashes differ because CI uses a different test signing key. The local APK retains the 0.1.0 key for in-place updates. Xiaomi retest is pending."
+}

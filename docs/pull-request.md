@@ -2,6 +2,8 @@
 
 Разделены Domain/Application/Infrastructure/ViewModels/UI/Bootstrap; используются ReactiveUI/Fody, ReactiveCommand, RoutingState, типизированные DI-фабрики View и compiled bindings. Включены SQLite/R-tree, воспроизводимый сборщик малого пакета, Desktop и Android startup, GitHub Actions и документация.
 
-Проверено локально на Linux: 34 xUnit/Headless теста, включая реальный маршрут, мышь и PropertyChanged после Fody; self-contained win-x64 publish; Release APK с подписью для тестирования без INTERNET; отсутствие внешних соединений при прямом запуске Verify. Отдельный браузерный MapLibre-стенд использует настоящий Copernicus DEM и прошёл проверку локальных ресурсов, terrain и JS-событий.
+Проверено локально на Linux: 34 xUnit/Headless теста, включая реальный маршрут, мышь и PropertyChanged после Fody; self-contained win-x64 publish; Release APK с подписью для тестирования без INTERNET; исправленная AppCompat-тема стартовой Android Activity и три успешных запуска APK в эмуляторе Android 14; отсутствие внешних соединений при прямом запуске Verify. Отдельный браузерный MapLibre-стенд использует настоящий Copernicus DEM и прошёл проверку локальных ресурсов, terrain и JS-событий.
 
 **Это не полное MVP по ТЗ.** Windows 7 заблокирована неподдерживаемым runtime и не испытана; Windows 10/Android требуют запуска на целевых системах. 3D-стенд не встроен в C# UI, DEM не входит в основной расчёт, ESA WorldCover и полный пакет Беларуси не подготовлены. Подробная матрица незакрытых требований — docs/acceptance.md. До закрытия этих пунктов полная приёмка невозможна.
+
+[Скачать исправленный APK 0.1.1](https://github.com/Volodya1000/maps/raw/refs/heads/downloads/android-preview/CableRoutePlanner-0.1.1-test.apk). Сохраняет прежний тестовый ключ для установки поверх 0.1.0. Проверки запуска и screenshot — в docs/evidence/android-0.1.1.json и docs/evidence/android-startup-0.1.1.png. Повторная проверка на физическом Xiaomi остаётся необходимой.
