@@ -1,13 +1,13 @@
-# Тестовая Android-сборка
+# Тестовая Android-сборка 0.1.1
 
-[Скачать CableRoutePlanner-test.apk](https://github.com/Volodya1000/maps/raw/refs/heads/downloads/android-preview/CableRoutePlanner-test.apk)
+[Скачать CableRoutePlanner-0.1.1-test.apk](https://github.com/Volodya1000/maps/raw/refs/heads/downloads/android-preview/CableRoutePlanner-0.1.1-test.apk)
 
-Размер: около 69 МБ. Источник: PR https://github.com/Volodya1000/maps/pull/1, commit a9d49c48aa595a6f4de8112624d574ead222bd74.
+Исправлено падение при запуске: стартовой Activity назначена тема Theme.AppCompat.Light.NoActionBar. Исходники: https://github.com/Volodya1000/maps/pull/1, commit 342d7a728b743a0520aa945739d28efc96f559fa.
 
-Это подписанный установочный APK для ручного тестирования. Установка и жесты на устройстве пока не подтверждены. Разрешение INTERNET отсутствует. Включён реальный офлайн-пакет OSM района Дрозды — Новинки (Минск).
+APK подписан тем же тестовым ключом, versionCode увеличен до 2: можно устанавливать поверх 0.1.0. Разрешение INTERNET отсутствует. Реальный офлайн-пакет OSM района Дрозды — Новинки (Минск) включён.
 
-Реализованы 2D-карта, точки и расчёт маршрутов. Встроенный 3D, ESA WorldCover и полный пакет Беларуси не подготовлены. Это не полное MVP по ТЗ. 34 автоматических теста проходят локально.
+Автоматическая проверка запуска в Android-эмуляторе выполняется в PR. На Xiaomi пользователя исправленная версия ещё требует повторной проверки.
 
-SHA-256: 47c32cd4741ec5b4bee53e561edbba9ba0c4b96dd43d767ee73b5a70fecdef91
+Реализованы 2D-карта, точки и расчёт маршрутов. Встроенный 3D, ESA WorldCover и полный пакет Беларуси пока отсутствуют. Это не полное MVP по ТЗ.
 
 © OpenStreetMap contributors, ODbL 1.0 / DbCL 1.0. Лицензии и уведомления включены в APK вместе с данными.
