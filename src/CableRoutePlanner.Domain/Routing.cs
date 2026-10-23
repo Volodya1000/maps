@@ -7,6 +7,8 @@ public sealed record CostProfile(
     double RoadCrossingMetres,
     double Clearing)
 {
+    // Engineering heuristic penalties, expressed as equivalent metres rather than tariffs.
+    // The profile assumptions and units are documented in docs/routing-algorithm.md.
     public static IReadOnlyList<CostProfile> Defaults
     {
         get;

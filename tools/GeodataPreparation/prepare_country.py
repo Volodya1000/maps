@@ -16,7 +16,7 @@ import osmium
 from shapely import from_wkb, to_wkb, make_valid
 from shapely.affinity import scale
 from shapely.geometry import Point, Polygon
-from prepare import classify
+from prepare import METRES_PER_DEGREE, classify
 
 
 def main():
@@ -89,8 +89,7 @@ def main():
         road = tags.get("highway", "")
         for lod, tolerance in ((0, 0.003), (1, 0.0005), (2, 0.00005)):
             if lod == 0 and not (
-                kind == "Boundary"
-                or kind == "Settlement"
+                kind == "Settlement"
                 and tags.get("place") in ("city", "town")
                 or kind == "Road"
                 and road in ("motorway", "trunk", "primary")
@@ -99,7 +98,7 @@ def main():
             ):
                 continue
             if lod == 1 and not (
-                kind in ("Settlement",)
+                kind == "Settlement"
                 or kind == "Road"
                 and road in ("motorway", "trunk", "primary", "secondary", "tertiary")
                 or kind in ("River", "Lake", "Marsh", "Forest", "Field")
@@ -155,13 +154,18 @@ def main():
                 geometry = from_wkb(bytes.fromhex(factory.create_linestring(way)))
                 if kind in ("River", "Clearing"):
                     latitude = geometry.centroid.y
-                    longitude_scale = 111195.0802335 * math.cos(math.radians(latitude))
+                    longitude_scale = METRES_PER_DEGREE * math.cos(
+                        math.radians(latitude)
+                    )
                     metres = scale(
                         geometry,
                         xfact=longitude_scale,
-                        yfact=111195.0802335,
+                        yfact=METRES_PER_DEGREE,
                         origin=(0, 0),
                     )
+                    # OSM often lacks width. Conservative preparation assumptions:
+                    # 12 m default / 6 m minimum for water, 4 m buffer for a clearing.
+                    # These values are not surveyed widths or construction permissions.
                     try:
                         width = max(6, float(tags.get("width", "12")))
                     except ValueError:
@@ -170,7 +174,7 @@ def main():
                     geometry = scale(
                         metres.buffer(radius),
                         xfact=1 / longitude_scale,
-                        yfact=1 / 111195.0802335,
+                        yfact=1 / METRES_PER_DEGREE,
                         origin=(0, 0),
                     )
                 add(kind, geometry, tags, f"way/{way.id}")

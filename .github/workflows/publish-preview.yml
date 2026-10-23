@@ -40,31 +40,21 @@ jobs:
           run_id = str(int(run_id))
           run = api('actions/runs/' + run_id)
           jobs = api('actions/runs/' + run_id + '/jobs?filter=all&per_page=100')['jobs']
-          latest = {job['name']: job for job in sorted(jobs, key=lambda job: job['started_at'])}
+          latest = {job['name']: job for job in sorted(jobs, key=lambda job: job['id'])}
           for name in ('geodata', 'android', 'windows', 'android-smoke'):
               if name not in latest or latest[name]['conclusion'] != 'success':
                   raise RuntimeError('Required build or installation check did not pass: ' + name)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write('run_id=' + run_id + '\nsha=' + run['head_sha'] + '\n')
           PY
-      - uses: actions/download-artifact@v4
-        with:
-          name: full-belarus-apk
-          run-id: ${{ steps.source.outputs.run_id }}
-          github-token: ${{ github.token }}
-          path: artifacts/release
-      - uses: actions/download-artifact@v4
-        with:
-          name: full-belarus-windows-installer
-          run-id: ${{ steps.source.outputs.run_id }}
-          github-token: ${{ github.token }}
-          path: artifacts/release
-      - uses: actions/download-artifact@v4
-        with:
-          name: full-belarus-startup-evidence
-          run-id: ${{ steps.source.outputs.run_id }}
-          github-token: ${{ github.token }}
-          path: artifacts/evidence
+      - name: Download tested installer artifacts
+        timeout-minutes: 15
+        env:
+          SOURCE_RUN: ${{ steps.source.outputs.run_id }}
+        run: |
+          gh run download "$SOURCE_RUN" --name full-belarus-apk --dir artifacts/release
+          gh run download "$SOURCE_RUN" --name full-belarus-windows-installer --dir artifacts/release
+          gh run download "$SOURCE_RUN" --name full-belarus-startup-evidence --dir artifacts/evidence
       - name: Verify and flatten release assets
         run: |
           python3 - <<'PY'
