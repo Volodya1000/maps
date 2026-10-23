@@ -129,6 +129,62 @@ public sealed class UiTests
     }
 
     [AvaloniaFact]
+    public async Task FirstOpeningRequestsCountryViewportRatherThanAStartupPatch()
+    {
+        var repository = new ViewportRepository();
+        using var vm = new MapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner()),
+            repository, new MemorySettings(), new MemoryClipboard());
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        {
+            ViewModel = vm
+        };
+        var window = new Window { Content = view, Width = 412, Height = 860 };
+        window.Show();
+        for (var attempt = 0; attempt < 100 && repository.LastBounds is null; attempt++)
+        {
+            await Task.Delay(20);
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        }
+        Assert.NotNull(repository.LastBounds);
+        var bounds = repository.LastBounds!.Value;
+        Assert.True(bounds.East - bounds.West >= 9.5);
+        Assert.True(repository.Resolution > 250);
+        window.Close();
+    }
+
+    private sealed class ViewportRepository : CableRoutePlanner.Application.IGeodataRepository
+    {
+        public CableRoutePlanner.Application.DataPackageInfo Info
+        {
+            get;
+        } = new(
+            "synthetic-viewport-test", new(23.17, 51.23, 32.77, 56.18), "test", false, "test");
+
+        public CableRoutePlanner.Domain.GeoBounds? LastBounds
+        {
+            get; private set;
+        }
+
+        public double Resolution
+        {
+            get; private set;
+        }
+
+        public Task<IReadOnlyList<CableRoutePlanner.Application.MapFeature>> QueryAsync(
+            CableRoutePlanner.Domain.GeoBounds bounds, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<CableRoutePlanner.Application.MapFeature>>([]);
+
+        public Task<IReadOnlyList<CableRoutePlanner.Application.MapFeature>> QueryMapAsync(
+            CableRoutePlanner.Domain.GeoBounds bounds, double resolution, CancellationToken ct)
+        {
+            LastBounds = bounds;
+            Resolution = resolution;
+            return QueryAsync(bounds, ct);
+        }
+    }
+
+    [AvaloniaFact]
     public void UnknownViewModelCannotFallBackToReflection()
     {
         using var provider = AppBootstrap.CreateServices(

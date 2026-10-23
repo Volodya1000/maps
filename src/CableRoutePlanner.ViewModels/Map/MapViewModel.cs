@@ -314,20 +314,6 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         }).DisposeWith(_lifetime);
     }
 
-    public Task LoadMapAsync(CancellationToken ct)
-    {
-        var b = _data.Info.Bounds;
-        var lon = (b.West + b.East) / 2;
-        var lat = (b.South + b.North) / 2;
-        return LoadMapAreaAsync(
-            new(
-                Math.Max(b.West, lon - 0.04),
-                Math.Max(b.South, lat - 0.03),
-                Math.Min(b.East, lon + 0.04),
-                Math.Min(b.North, lat + 0.03)),
-            ct);
-    }
-
     public async Task LoadMapAreaAsync(GeoBounds bounds, CancellationToken ct, double metresPerPixel = 0)
     {
         var request = Interlocked.Increment(ref _mapRequest);

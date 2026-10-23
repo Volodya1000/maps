@@ -49,6 +49,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private bool _fitted;
 
+    private bool _initialized;
+
+    private bool _routeExtentShown;
+
     private readonly MRect _extent;
 
     public event Action<GeoBounds, double>? ViewportChanged;
@@ -88,6 +92,14 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             true);
         control.PointerCaptureLost += CaptureLost;
         control.Map.Navigator.ViewportChanged += OnViewportChanged;
+    }
+
+    public void InitializeViewport()
+    {
+        // Subscribe to ViewportChanged before fitting: an already measured MapControl may
+        // otherwise miss the first viewport event and keep only the small startup area.
+        _initialized = true;
+        OnViewportChanged(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(InitializeViewport)));
     }
 
     private static Coordinate Project(GeoCoordinate p)
@@ -190,6 +202,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         if (selected is null)
         {
             _routes.Features = Array.Empty<IFeature>();
+            _routeExtentShown = false;
         }
         else
         {
@@ -203,6 +216,19 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         }
 
         _routes.DataHasChanged();
+        if (selected is not null && !_routeExtentShown)
+        {
+            // Fit all alternatives once per calculation; keep a stable camera while comparing them.
+            var coordinates = routes.SelectMany(route => route.Geometry).Select(Project).ToArray();
+            var west = coordinates.Min(point => point.X);
+            var east = coordinates.Max(point => point.X);
+            var south = coordinates.Min(point => point.Y);
+            var north = coordinates.Max(point => point.Y);
+            // 15% padding, at least 100 projected metres, keeps short routes away from the edge.
+            var padding = Math.Max(100, Math.Max(east - west, north - south) * 0.15);
+            _routeExtentShown = true;
+            _control.Map.Navigator.ZoomToBox(new MRect(west - padding, south - padding, east + padding, north + padding));
+        }
         _control.RefreshGraphics();
     }
 
@@ -306,7 +332,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     private void OnViewportChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         var viewport = _control.Map.Navigator.Viewport;
-        if (viewport.Width <= 0 || viewport.Height <= 0)
+        if (!_initialized || viewport.Width <= 0 || viewport.Height <= 0)
         {
             return;
         }
@@ -315,7 +341,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         {
             _fitted = true;
             _control.Map.Navigator.ZoomToBox(_extent);
-            return;
+            viewport = _control.Map.Navigator.Viewport;
         }
 
         var corners = new[]

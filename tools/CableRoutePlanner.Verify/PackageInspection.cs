@@ -27,7 +27,12 @@ internal static class PackageInspection
             throw new PlanningException("Country overview has no roads.");
         }
 
-        probes.Add(new { area = "country-overview", count = overview.Count, elapsed_ms = timer.ElapsedMilliseconds });
+        probes.Add(new
+        {
+            area = "country-overview",
+            count = overview.Count,
+            elapsed_ms = timer.ElapsedMilliseconds
+        });
         foreach (var (name, coordinate) in cities)
         {
             timer.Restart();

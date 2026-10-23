@@ -49,12 +49,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             {
                 _ = vm.LoadMapAreaAsync(bounds.Bounds, cancel.Token, bounds.Resolution);
             }).DisposeWith(disposables);
-            _ = Load();
-            async Task Load()
-            {
-                await vm.LoadMapAsync(cancel.Token);
-            }
-
+            adapter.InitializeViewport();
             adapter.SetPoints(vm.Points.ToArray());
             adapter.SetRoutes(vm.Alternatives.ToArray(), vm.SelectedRoute?.Id);
             void ZoomIn(object? s, Avalonia.Interactivity.RoutedEventArgs e) => adapter.ZoomIn();

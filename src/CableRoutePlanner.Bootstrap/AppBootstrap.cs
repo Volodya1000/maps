@@ -99,7 +99,10 @@ public static class AppBootstrap
                             },
                             new TextBlock
                             {
-                                Text = $"Каталог данных: {dataDirectory}\nПроверьте наличие manifest.json и geodata.sqlite. Для Desktop путь задаётся CABLEROUTE_DATA. После исправления перезапустите приложение.",
+                                Text = $"Каталог данных: {dataDirectory}\n"
+                                    + "Проверьте наличие manifest.json и geodata.sqlite. "
+                                    + "Для Desktop путь задаётся CABLEROUTE_DATA. "
+                                    + "После исправления перезапустите приложение.",
                                 TextWrapping = Avalonia.Media.TextWrapping.Wrap
                             }
                         }

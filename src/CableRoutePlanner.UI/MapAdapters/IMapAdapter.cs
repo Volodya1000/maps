@@ -12,6 +12,8 @@ public interface IMapAdapter : IDisposable
 
     event Action<Guid, GeoCoordinate>? PointMoved;
 
+    void InitializeViewport();
+
     void SetFeatures(IReadOnlyList<MapFeature> features);
 
     void SetPoints(IReadOnlyList<WaypointRow> points);

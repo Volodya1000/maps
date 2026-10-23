@@ -21,7 +21,7 @@ Python, osmium и Shapely используются только для подг�
 ```sh
 uv sync --project tools/GeodataPreparation --locked
 uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/prepare_country.py \
-  --pbf /data/belarus.osm.pbf --expected-md5 <MD5-из-Geofabrik> --output /data/belarus-package
+  --pbf /data/belarus.osm.pbf --expected-md5 <MD5-из-Geofabrik> --output /data/belarus-package --compress
 ```
 
 Полный пакет передаётся сборке через `-p:GeodataDirectory=/absolute/path/belarus-package`. Он включается в Android assets или в каталог Data Windows-поставки. APK устанавливается локально без сети; первая распаковка карты выполняется с индикатором прогресса. Приложение не имеет разрешения INTERNET. Сборка из исходников требует первоначальной загрузки SDK/NuGet; готовое приложение — нет.
