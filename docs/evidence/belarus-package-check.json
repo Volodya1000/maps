@@ -1,0 +1,89 @@
+{
+  "RegionId": "belarus",
+  "Bounds": {
+    "West": 23.174801,
+    "South": 51.234408,
+    "East": 32.76947,
+    "North": 56.173846
+  },
+  "probes": [
+    {
+      "area": "country-overview",
+      "count": 31618,
+      "elapsed_ms": 1266
+    },
+    {
+      "area": "\u041C\u0438\u043D\u0441\u043A",
+      "count": 365,
+      "elapsed_ms": 5,
+      "kinds": {
+        "Settlement": 1,
+        "Road": 219,
+        "Building": 139,
+        "Forest": 3,
+        "Lake": 1,
+        "River": 2
+      }
+    },
+    {
+      "area": "\u0411\u0440\u0435\u0441\u0442",
+      "count": 194,
+      "elapsed_ms": 1,
+      "kinds": {
+        "Road": 102,
+        "Building": 87,
+        "Forest": 5
+      }
+    },
+    {
+      "area": "\u0413\u0440\u043E\u0434\u043D\u043E",
+      "count": 510,
+      "elapsed_ms": 1,
+      "kinds": {
+        "Building": 378,
+        "Road": 120,
+        "Forest": 10,
+        "River": 1,
+        "Field": 1
+      }
+    },
+    {
+      "area": "\u0412\u0438\u0442\u0435\u0431\u0441\u043A",
+      "count": 474,
+      "elapsed_ms": 2,
+      "kinds": {
+        "Settlement": 1,
+        "Building": 164,
+        "BridgeCandidate": 5,
+        "Road": 225,
+        "Forest": 25,
+        "River": 4,
+        "Field": 50
+      }
+    },
+    {
+      "area": "\u0413\u043E\u043C\u0435\u043B\u044C",
+      "count": 461,
+      "elapsed_ms": 1,
+      "kinds": {
+        "Road": 26,
+        "Building": 433,
+        "Forest": 2
+      }
+    },
+    {
+      "area": "\u041C\u043E\u0433\u0438\u043B\u0451\u0432",
+      "count": 485,
+      "elapsed_ms": 1,
+      "kinds": {
+        "Road": 173,
+        "Building": 287,
+        "River": 3,
+        "BridgeCandidate": 11,
+        "Lake": 4,
+        "Field": 4,
+        "Forest": 3
+      }
+    }
+  ]
+}

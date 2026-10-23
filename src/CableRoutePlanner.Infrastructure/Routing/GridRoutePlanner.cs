@@ -148,8 +148,7 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
             var crossings = new HashSet<long>();
             for (var i = 1; i < route.Count; i++)
             {
-                var edge = evaluator.Evaluate(route[i
-                    - 1], route[i]) ?? throw new PlanningException("Маршрут не прошёл проверку препятствий.");
+                var edge = evaluator.Evaluate(route[i - 1], route[i]) ?? throw new PlanningException("Маршрут не прошёл проверку препятствий.");
                 length += edge.Length;
                 forest += edge.Forest;
                 field += edge.Field;

@@ -301,10 +301,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             }
 
             var m = route.Metrics;
-            MetricsText = string.Join(Environment.NewLine,
+            MetricsText = string.Join(
+                Environment.NewLine,
                 $"Длина: {m.LengthMetres:N0} м",
-                $"Кабель с запасом {_resultOptions.ReserveFraction:P0}: " +
-                    $"{m.CableLengthMetres(_resultOptions.ReserveFraction):N0} м",
+                $"Кабель с запасом {_resultOptions.ReserveFraction:P0}: " + $"{m.CableLengthMetres(_resultOptions.ReserveFraction):N0} м",
                 $"Лес: {m.ForestMetres:N0} м · поле: {m.FieldMetres:N0} м",
                 $"Пересечённых объектов дорог: {m.RoadCrossings}",
                 $"Разрешённых водных переходов: {m.ApprovedWaterCrossings}",
@@ -347,8 +347,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             }
 
             MapVersion++;
-            MapStatus = features.Count
-                > 0 ? $"Офлайн: {_data.Info.RegionId} · OSM · без DEM и WorldCover" : "Для этой области нет данных в офлайн-пакете.";
+            MapStatus = features.Count > 0 ? $"Офлайн: {_data.Info.RegionId} · OSM · без DEM и WorldCover" : "Для этой области нет данных в офлайн-пакете.";
         }
         catch (OperationCanceledException)
         {
@@ -430,8 +429,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             }
 
             SelectedRoute = Alternatives.FirstOrDefault();
-            Status = routes.Count
-                > 0 ? $"Найдено различных маршрутов: {routes.Count}. Разрешённость строительства не подтверждена." : "Допустимые маршруты не найдены.";
+            Status = routes.Count > 0 ? $"Найдено различных маршрутов: {routes.Count}. Разрешённость строительства не подтверждена." : "Допустимые маршруты не найдены.";
         }
         catch (OperationCanceledException)
         {

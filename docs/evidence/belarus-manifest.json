@@ -1,0 +1,49 @@
+{
+  "schema_version": 2,
+  "region_id": "belarus",
+  "coordinate_system": "EPSG:4326",
+  "bounds": [
+    23.174801,
+    51.234408,
+    32.76947,
+    56.173846
+  ],
+  "database_sha256": "9968e0d6090bb1b1737d607ba44115b49d4d8dd15bcb77a956bae5d1c63d2d0d",
+  "attribution": "© OpenStreetMap contributors · ODbL 1.0 · Geofabrik",
+  "status": "Belarus OSM offline package; construction approvals, DEM and ESA WorldCover absent.",
+  "sources": [
+    {
+      "name": "OpenStreetMap/Geofabrik",
+      "url": "https://download.geofabrik.de/europe/belarus.html",
+      "source_file": "source.osm.pbf",
+      "md5": "a2327228173b7fe8e74e2097e3dae0d4",
+      "sha256": "f3e13c679d63a8de8deb74c1fdaac84a1aa82c21f36dad99f426d196ba141e68",
+      "license": "ODbL-1.0",
+      "timestamp": "2026-10-22T20:21:33Z"
+    }
+  ],
+  "feature_counts": {
+    "BridgeCandidate": 15102,
+    "Building": 3006762,
+    "Clearing": 31624,
+    "Field": 114529,
+    "Forest": 192024,
+    "Lake": 79894,
+    "Marsh": 29969,
+    "River": 386138,
+    "Road": 725405,
+    "Settlement": 22044
+  },
+  "conversion_errors": {
+    "Forest:RuntimeError": 1
+  },
+  "terrain": false,
+  "worldcover": false,
+  "artifacts": [
+    "base-map-vectors",
+    "map-levels-of-detail",
+    "obstacles",
+    "routing-data",
+    "spatial-index"
+  ]
+}

@@ -63,6 +63,8 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
         }
 
         EndGesture();
+        // The handle owns this gesture; otherwise ScrollViewer captures it for panning.
+        e.PreventGestureRecognition();
         _pointer = e.Pointer;
         _pointId = row.Id;
         _targetIndex = row.Number - 1;
@@ -132,9 +134,7 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
         }
 
         _targetCard?.Classes.Remove("drop-target");
-        _targetCard = (Rows.ContainerFromIndex(_targetIndex)
-            as Control)?.GetVisualDescendants().OfType<Border>().FirstOrDefault(b => b.Name
-            == "CoordinateCard");
+        _targetCard = (Rows.ContainerFromIndex(_targetIndex) as Control)?.GetVisualDescendants().OfType<Border>().FirstOrDefault(b => b.Name == "CoordinateCard");
         _targetCard?.Classes.Add("drop-target");
     }
 
@@ -145,10 +145,7 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
             return;
         }
 
-        var direction = _lastInScroll.Y
-            < AutoScrollEdge ? -1 : _lastInScroll.Y
-            > _scroll.Bounds.Height
-            - AutoScrollEdge ? 1 : 0;
+        var direction = _lastInScroll.Y < AutoScrollEdge ? -1 : _lastInScroll.Y > _scroll.Bounds.Height - AutoScrollEdge ? 1 : 0;
         if (direction == 0)
         {
             return;

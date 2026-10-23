@@ -15,16 +15,7 @@ internal sealed record EdgeEvaluation(
     IReadOnlyList<long> Roads,
     IReadOnlyList<long> Crossings)
 {
-    public double Cost(CostProfile p) => Length
-        - Clearing
-        * (1
-        - p.Clearing)
-        + Forest
-        * p.Forest
-        + Field
-        * p.Field
-        + Roads.Count
-        * p.RoadCrossingMetres;
+    public double Cost(CostProfile p) => Length - Clearing * (1 - p.Clearing) + Forest * p.Forest + Field * p.Field + Roads.Count * p.RoadCrossingMetres;
 }
 
 internal sealed class TerrainEvaluator
@@ -44,8 +35,7 @@ internal sealed class TerrainEvaluator
         var projected = features.Select(
             f => (Feature: f, Geometry: projection.Forward(reader.Read(f.Wkb)))).ToArray();
         var approvals = projected.Where(
-            f => f.Feature.Kind
-                == TerrainKind.ApprovedCrossing
+            f => f.Feature.Kind == TerrainKind.ApprovedCrossing
                 && !string.IsNullOrWhiteSpace(f.Feature.ApprovalId)).Select(f => f.Geometry).ToArray();
         foreach (var (feature, original) in projected)
         {

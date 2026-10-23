@@ -16,6 +16,11 @@
     <PackageReference Include="Avalonia.Android" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="$(GeodataDirectory)/**" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" />
+    <AndroidAsset Include="$(GeodataDirectory)/**"
+                  Exclude="$(GeodataDirectory)/source*;$(GeodataDirectory)/geodata.sqlite"
+                  Link="Data/%(RecursiveDir)%(Filename)%(Extension)" />
+    <AndroidAsset Include="$(GeodataDirectory)/geodata.sqlite"
+                  Condition="!Exists('$(GeodataDirectory)/geodata.sqlite.gz')"
+                  Link="Data/geodata.sqlite" />
   </ItemGroup>
 </Project>

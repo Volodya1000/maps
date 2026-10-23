@@ -74,12 +74,8 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
     {
         // Country overview, regional view and local map have separately prepared geometries.
         // Routing always uses original geometry, so display simplification cannot open an obstacle.
-        int? lod = _schemaVersion
-            < 2
-            || metresPerPixel
-            <= 10 ? null : metresPerPixel
-            > 250 ? 0 : metresPerPixel
-            > 40 ? 1 : 2;
+        int? lod = _schemaVersion < 2
+            || metresPerPixel <= 10 ? null : metresPerPixel > 250 ? 0 : metresPerPixel > 40 ? 1 : 2;
         return QueryInternalAsync(bounds, lod, cancellationToken);
     }
 

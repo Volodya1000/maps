@@ -107,7 +107,13 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             if (f.Kind == TerrainKind.Settlement)
             {
                 feature.Styles.Add(
-                    new LabelStyle { Text = f.Name, ForeColor = new Color(57, 70, 61), BackColor = new Brush(new Color(255, 255, 255, 180)), CollisionDetection = true });
+                    new LabelStyle
+                    {
+                        Text = f.Name,
+                        ForeColor = new Color(57, 70, 61),
+                        BackColor = new Brush(new Color(255, 255, 255, 180)),
+                        CollisionDetection = true
+                    });
             }
             else
             {
@@ -155,9 +161,21 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         {
             var feature = new GeometryFeature(new Point(Project(p.Coordinate)));
             feature.Styles.Add(
-                new SymbolStyle { Fill = new Brush(new Color(21, 109, 85)), Outline = new Pen(Color.White, 2), SymbolScale = 0.8 });
+                new SymbolStyle
+                {
+                    Fill = new Brush(new Color(21, 109, 85)),
+                    Outline = new Pen(Color.White, 2),
+                    SymbolScale = 0.8
+                });
             feature.Styles.Add(
-                new LabelStyle { Text = p.Number.ToString(), ForeColor = Color.White, BackColor = null, HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center, VerticalAlignment = LabelStyle.VerticalAlignmentEnum.Center });
+                new LabelStyle
+                {
+                    Text = p.Number.ToString(),
+                    ForeColor = Color.White,
+                    BackColor = null,
+                    HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center,
+                    VerticalAlignment = LabelStyle.VerticalAlignmentEnum.Center
+                });
             return (IFeature)feature;
         }).ToArray();
         _points.DataHasChanged();

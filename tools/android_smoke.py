@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--adb', default='adb')
     parser.add_argument('--launches', type=int, default=3)
+    parser.add_argument('--settle-seconds', type=int, default=10)
     args = parser.parse_args()
     apk = args.apk
     if apk is None:
@@ -40,7 +41,7 @@ def main():
         adb('wait-for-device')
         report['android_release'] = adb('shell', 'getprop', 'ro.build.version.release').strip()
         report['abi'] = adb('shell', 'getprop', 'ro.product.cpu.abi').strip()
-        adb('install', '-r', str(apk), timeout=180)
+        adb('install', '-r', str(apk), timeout=600)
         resolved = adb('shell', 'cmd', 'package', 'resolve-activity', '--brief',
                        '-a', 'android.intent.action.MAIN', '-c', 'android.intent.category.LAUNCHER', PACKAGE)
         component = next((line.strip() for line in resolved.splitlines() if line.strip().startswith(PACKAGE + '/')), None)
@@ -54,7 +55,7 @@ def main():
             if 'Error:' in start or 'Exception' in start:
                 raise RuntimeError('Activity start failed: ' + start)
             # Keep observing after am start: AppCompat failures can occur just after it returns.
-            for _ in range(10):
+            for _ in range(args.settle_seconds if index == 0 else 15):
                 time.sleep(1)
                 pid = adb('shell', 'pidof', PACKAGE, check=False).strip()
                 if not pid:

@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
+using System.Reactive.Linq;
 using Avalonia.ReactiveUI;
 using CableRoutePlanner.Bootstrap;
 using CableRoutePlanner.UI;
@@ -67,6 +69,62 @@ public sealed class UiTests
         window.MouseUp(new Avalonia.Point(390, 380), Avalonia.Input.MouseButton.Left);
         Assert.Single(vm.Points);
         Assert.True(before.DistanceTo(vm.Points[0].Coordinate) > 1);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task AlternativeButtonChangesRenderedPolyline()
+    {
+        var forest = TestData.Polygon(1, CableRoutePlanner.Domain.TerrainKind.Forest, 100, 60, 220, 240);
+        using var vm = new MapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(forest)),
+            new MemoryData(forest), new MemorySettings(), new MemoryClipboard());
+        await vm.AddPoint.Execute(TestData.P(30, 150));
+        await vm.AddPoint.Execute(TestData.P(300, 150));
+        await vm.BuildRoutes.Execute();
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        {
+            ViewModel = vm
+        };
+        var window = new Window { Content = view, Width = 1100, Height = 1100 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var target = vm.RouteChoices.Last();
+        var button = view.GetVisualDescendants().OfType<Button>()
+            .Single(candidate => candidate.DataContext is RouteChoice choice && choice.Id == target.Id);
+        button.BringIntoView();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var position = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
+        var map = view.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
+        var layer = (Mapsui.Layers.MemoryLayer)map.Map.Layers.Single(candidate => candidate.Name == "Маршруты");
+        var before = ((Mapsui.Nts.GeometryFeature)Assert.Single(layer.Features)).Geometry!.Copy();
+        window.MouseDown(position, Avalonia.Input.MouseButton.Left);
+        window.MouseUp(position, Avalonia.Input.MouseButton.Left);
+        Assert.Equal(target.Id, vm.SelectedRoute?.Id);
+        var rendered = (Mapsui.Nts.GeometryFeature)Assert.Single(layer.Features);
+        Assert.Equal(target.Id.ToString(), rendered["route_id"]);
+        Assert.False(before.EqualsExact(rendered.Geometry));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task StartupOpensShellAfterBackgroundDataPreparation()
+    {
+        var prepared = false;
+        using var provider = AppBootstrap.CreateServices(TestData.RealData,
+            Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), new MemoryClipboard(),
+            async (_, ct) => { await Task.Delay(10, ct); prepared = true; });
+        var view = provider.GetRequiredService<StartupView>();
+        var window = new Window { Content = view, Width = 900, Height = 700 };
+        window.Show();
+        for (var attempt = 0; attempt < 100 && view.ViewModel!.Shell is null; attempt++)
+        {
+            await Task.Delay(10);
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        }
+        Assert.True(prepared);
+        Assert.NotNull(view.ViewModel!.Shell);
+        Assert.NotEmpty(view.GetVisualDescendants().OfType<ShellView>());
         window.Close();
     }
 

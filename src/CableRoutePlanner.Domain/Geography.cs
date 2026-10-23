@@ -35,14 +35,9 @@ public readonly record struct GeoCoordinate
         const double radians = Math.PI / 180;
         var dLat = (other.Latitude - Latitude) * radians;
         var dLon = (other.Longitude - Longitude) * radians;
-        var a = Math.Pow(Math.Sin(dLat
-            / 2), 2)
-            + Math.Cos(Latitude
-            * radians)
-            * Math.Cos(other.Latitude
-            * radians)
-            * Math.Pow(Math.Sin(dLon
-            / 2), 2);
+        var a = Math.Pow(Math.Sin(dLat / 2), 2)
+            + Math.Cos(Latitude * radians) * Math.Cos(other.Latitude * radians)
+            * Math.Pow(Math.Sin(dLon / 2), 2);
         return MeanEarthRadiusMetres * 2 * Math.Asin(Math.Sqrt(Math.Clamp(a, 0, 1)));
     }
 
@@ -51,14 +46,10 @@ public readonly record struct GeoCoordinate
 
 public readonly record struct GeoBounds(double West, double South, double East, double North)
 {
-    public bool Contains(GeoCoordinate p) => p.Longitude
-        >= West
-        && p.Longitude
-        <= East
-        && p.Latitude
-        >= South
-        && p.Latitude
-        <= North;
+    public bool Contains(GeoCoordinate p) => p.Longitude >= West
+        && p.Longitude <= East
+        && p.Latitude >= South
+        && p.Latitude <= North;
 
     public bool Contains(GeoBounds b) => b.West >= West && b.East <= East && b.South >= South && b.North <= North;
 
@@ -85,6 +76,5 @@ public enum TerrainKind
     Building,
     BridgeCandidate,
     ApprovedCrossing,
-    Settlement,
-    Boundary
+    Settlement
 }

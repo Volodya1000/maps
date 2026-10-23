@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Android.App;
 using Android.Content.PM;
 using Avalonia;
@@ -8,9 +9,7 @@ using CableRoutePlanner.UI;
 
 namespace CableRoutePlanner.Android;
 
-[Activity(Label = "Кабельные маршруты", Theme = "@style/CableRoutePlannerTheme", MainLauncher = true, Exported = true, ConfigurationChanges = ConfigChanges.Orientation
-    | ConfigChanges.ScreenSize
-    | ConfigChanges.UiMode)]
+[Activity(Label = "Кабельные маршруты", Theme = "@style/CableRoutePlannerTheme", MainLauncher = true, Exported = true, ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
 public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
 {
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
@@ -36,8 +35,7 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
         var database = Path.Combine(directory, "geodata.sqlite");
         if (File.Exists(database)
             && File.Exists(localManifest)
-            && await File.ReadAllTextAsync(localManifest, ct)
-            == manifest)
+            && await File.ReadAllTextAsync(localManifest, ct) == manifest)
         {
             return;
         }
@@ -45,7 +43,9 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
         await Task.Run(async () =>
         {
             progress.Report("Распаковка карты. Первый запуск может занять некоторое время…");
-            using var input = Assets.Open("Data/geodata.sqlite");
+            var compressed = Assets.List("Data")!.Contains("geodata.sqlite.gz");
+            using var asset = Assets.Open(compressed ? "Data/geodata.sqlite.gz" : "Data/geodata.sqlite");
+            using Stream input = compressed ? new GZipStream(asset, CompressionMode.Decompress) : asset;
             await using var output = File.Create(database + ".tmp");
             var buffer = new byte[1024 * 1024];
             long copied = 0;

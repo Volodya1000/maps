@@ -5,6 +5,14 @@ using CableRoutePlanner.Bootstrap;
 using CableRoutePlanner.Domain;
 using Microsoft.Extensions.DependencyInjection;
 
+if (args.Length == 3 && args[0] == "--inspect")
+{
+    using var provider = AppBootstrap.CreateServices(args[1], Path.GetTempFileName());
+    await CableRoutePlanner.Verify.PackageInspection.RunAsync(
+        provider.GetRequiredService<IGeodataRepository>(), args[2]);
+    return 0;
+}
+
 if (args.Length < 3)
 {
     Console.Error.WriteLine(
