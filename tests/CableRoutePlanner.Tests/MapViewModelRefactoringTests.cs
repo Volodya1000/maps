@@ -6,7 +6,7 @@ using Xunit;
 
 namespace CableRoutePlanner.Tests;
 
-public sealed class MapViewModelRefactoringTests
+public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 {
     [Fact]
     public async Task LatestMapRequestWinsWhenOlderRequestFinishesLast()

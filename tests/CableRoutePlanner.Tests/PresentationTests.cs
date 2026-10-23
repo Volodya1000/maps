@@ -9,7 +9,7 @@ using Xunit;
 
 namespace CableRoutePlanner.Tests;
 
-public sealed class PresentationTests
+public sealed class PresentationTests : ReactiveTestScope
 {
     [Fact]
     public void FodyWeavingRaisesPropertyChangedAfterRealCompilation()
@@ -153,9 +153,9 @@ public sealed class PresentationTests
         await vm.AddPoint.Execute(TestData.P(300, 150));
         var first = vm.Points[0].Id;
         var build = vm.BuildRoutes.Execute().ToTask();
-        await planner.Started.Task;
-        await vm.ReorderPoints.Execute(new WaypointReorder(first, 2));
-        await build;
+        await planner.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await vm.ReorderPoints.Execute(new WaypointReorder(first, 2)).ToTask().WaitAsync(TimeSpan.FromSeconds(5));
+        await build.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Equal(first, vm.Points[2].Id);
         Assert.True(vm.HasRoute);
         Assert.Equal(2, planner.Calls);

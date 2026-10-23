@@ -7,7 +7,7 @@ using Xunit;
 
 namespace CableRoutePlanner.Tests;
 
-public sealed class SettingsTests
+public sealed class SettingsTests : ReactiveTestScope
 {
     [Fact]
     public async Task SaveTracksPersistedValuesAndReturningToOriginalClearsChanges()
