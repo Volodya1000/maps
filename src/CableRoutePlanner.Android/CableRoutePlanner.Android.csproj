@@ -4,8 +4,8 @@
     <OutputType>Exe</OutputType>
     <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
     <ApplicationId>by.cablerouteplanner.app</ApplicationId>
-    <ApplicationVersion>2</ApplicationVersion>
-    <ApplicationDisplayVersion>0.1.1</ApplicationDisplayVersion>
+    <ApplicationVersion>3</ApplicationVersion>
+    <ApplicationDisplayVersion>0.2.0</ApplicationDisplayVersion>
     <AndroidPackageFormats>apk</AndroidPackageFormats>
     <AndroidNeedsInternetPermission>false</AndroidNeedsInternetPermission>
     <RunAOTCompilation>false</RunAOTCompilation>
@@ -16,6 +16,6 @@
     <PackageReference Include="Avalonia.Android" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="../../samples/real-geodata-fixtures/minsk/**" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" />
+    <AndroidAsset Include="$(GeodataDirectory)/**" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

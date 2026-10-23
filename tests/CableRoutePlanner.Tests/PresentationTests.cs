@@ -6,52 +6,155 @@ using CableRoutePlanner.Domain;
 using CableRoutePlanner.ViewModels;
 using ReactiveUI;
 using Xunit;
+
 namespace CableRoutePlanner.Tests;
+
 public sealed class PresentationTests
 {
-    [Fact] public void FodyWeavingRaisesPropertyChangedAfterRealCompilation()
+    [Fact]
+    public void FodyWeavingRaisesPropertyChangedAfterRealCompilation()
     {
-        using var vm=new SettingsViewModel(new NavigationHost(),new MemorySettings());
-        var names=new List<string?>();vm.PropertyChanged+=(_,e)=>names.Add(e.PropertyName);
-        vm.CellSize=37;vm.ReservePercent=8;
-        Assert.Contains(nameof(vm.CellSize),names);Assert.Contains(nameof(vm.ReservePercent),names);
+        using var vm = new SettingsViewModel(new NavigationHost(), new MemorySettings());
+        var names = new List<string?>();
+        vm.PropertyChanged += (_, e) => names.Add(e.PropertyName);
+        vm.CellSize = 37;
+        vm.ReservePercent = 8;
+        Assert.Contains(nameof(vm.CellSize), names);
+        Assert.Contains(nameof(vm.ReservePercent), names);
     }
-    [Fact] public async Task PointChangesInvalidateRoutesAndRenumberList()
+
+    [Fact]
+    public async Task PointChangesInvalidateRoutesAndRenumberList()
     {
-        var data=new MemoryData();using var vm=CreateVm(TestData.Planner(),data);
-        await vm.AddPoint.Execute(TestData.P(50,150));await vm.AddPoint.Execute(TestData.P(260,150));
-        await vm.BuildRoutes.Execute();Assert.NotEmpty(vm.Alternatives);
-        vm.MovePoint(vm.Points[0].Id,TestData.P(55,155));Assert.Empty(vm.Alternatives);Assert.Null(vm.SelectedRoute);
-        vm.SelectedPoint=vm.Points[0];await vm.DeletePoint.Execute();Assert.Equal(1,vm.Points[0].Number);Assert.False(vm.CanBuild);
+        var data = new MemoryData();
+        using var vm = CreateVm(TestData.Planner(), data);
+        await vm.AddPoint.Execute(TestData.P(50, 150));
+        await vm.AddPoint.Execute(TestData.P(260, 150));
+        await vm.BuildRoutes.Execute();
+        Assert.NotEmpty(vm.Alternatives);
+        vm.MovePoint(vm.Points[0].Id, TestData.P(55, 155));
+        Assert.Empty(vm.Alternatives);
+        Assert.Null(vm.SelectedRoute);
+        vm.SelectedPoint = vm.Points[0];
+        await vm.DeletePoint.Execute();
+        Assert.Equal(1, vm.Points[0].Number);
+        Assert.False(vm.CanBuild);
     }
-    [Fact] public async Task ClipboardUsesSelectedPointAndOrderIsControlledByList()
+
+    [Fact]
+    public async Task ClipboardUsesSelectedPointAndOrderIsControlledByList()
     {
-        var clipboard=new MemoryClipboard();var session=new PlanningSession(TestData.Planner());
-        using var vm=new MapViewModel(new NavigationHost(),session,new MemoryData(),new MemorySettings(),clipboard);
-        await vm.AddPoint.Execute(TestData.P(50,150));await vm.AddPoint.Execute(TestData.P(260,150));
-        var last=vm.Points[1];vm.SelectedPoint=last;await vm.MoveUp.Execute();Assert.Equal(last.Id,vm.Points[0].Id);
-        await vm.CopyCoordinates.Execute();Assert.Equal(last.Coordinate.ToString(),clipboard.Text);
+        var clipboard = new MemoryClipboard();
+        var session = new PlanningSession(TestData.Planner());
+        using var vm = new MapViewModel(
+            new NavigationHost(),
+            session,
+            new MemoryData(),
+            new MemorySettings(),
+            clipboard);
+        await vm.AddPoint.Execute(TestData.P(50, 150));
+        await vm.AddPoint.Execute(TestData.P(260, 150));
+        var last = vm.Points[1];
+        vm.SelectedPoint = last;
+        await vm.MoveUp.Execute();
+        Assert.Equal(last.Id, vm.Points[0].Id);
+        await vm.CopyCoordinates.Execute();
+        Assert.Equal(last.Coordinate.ToString(), clipboard.Text);
     }
-    [Fact] public async Task ChangedInputCannotPublishLateCalculation()
+
+    [Fact]
+    public async Task ChangedInputCannotPublishLateCalculation()
     {
-        var pending=new TaskCompletionSource<IReadOnlyList<RouteAlternative>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var session=new PlanningSession(new DeferredPlanner(pending.Task));session.Add(TestData.P(50,150));session.Add(TestData.P(260,150));
-        var build=session.BuildAsync(TestData.Options,default);session.Move(session.Points[0].Id,TestData.P(55,155));pending.SetResult([]);
-        await Assert.ThrowsAsync<PlanningException>(()=>build);
+        var pending = new TaskCompletionSource<IReadOnlyList<RouteAlternative>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var session = new PlanningSession(new DeferredPlanner(pending.Task));
+        session.Add(TestData.P(50, 150));
+        session.Add(TestData.P(260, 150));
+        var build = session.BuildAsync(TestData.Options, default);
+        session.Move(session.Points[0].Id, TestData.P(55, 155));
+        pending.SetResult([]);
+        await Assert.ThrowsAsync<PlanningException>(() => build);
     }
-    [Fact] public async Task NavigationReusesScreenInstancesAndBoundsHistory()
+
+    [Fact]
+    public async Task NavigationReusesScreenInstancesAndBoundsHistory()
     {
-        var screen=new NavigationHost();var data=new MemoryData();using var map=CreateVm(TestData.Planner(),data,screen);
-        using var settings=new SettingsViewModel(screen,new MemorySettings());var about=new AboutViewModel(screen,data);
-        using var shell=new ShellViewModel(screen,map,settings,about);
-        for(var i=0;i<100;i++){await shell.ShowSettings.Execute();await shell.ShowAbout.Execute();await shell.ShowMap.Execute();}
-        Assert.InRange(screen.Router.NavigationStack.Count,1,3);Assert.Same(map,screen.Router.GetCurrentViewModel());Assert.True(shell.IsMap);
-        await shell.Back.Execute();Assert.Same(about,screen.Router.GetCurrentViewModel());
+        var screen = new NavigationHost();
+        var data = new MemoryData();
+        using var map = CreateVm(TestData.Planner(), data, screen);
+        using var settings = new SettingsViewModel(screen, new MemorySettings());
+        using var shell = new ShellViewModel(screen, map, settings);
+        for (var i = 0; i < 100; i++)
+        {
+            await shell.ShowSettings.Execute();
+            await shell.ShowMap.Execute();
+        }
+
+        Assert.InRange(screen.Router.NavigationStack.Count, 1, 3);
+        Assert.Same(map, screen.Router.GetCurrentViewModel());
+        Assert.True(shell.IsMap);
+        await shell.Back.Execute();
+        Assert.Same(settings, screen.Router.GetCurrentViewModel());
     }
-    private static MapViewModel CreateVm(IRoutePlanner planner,IGeodataRepository data,IScreen? screen=null) =>
-        new(screen??new NavigationHost(),new PlanningSession(planner),data,new MemorySettings(),new MemoryClipboard());
+
+    [Fact]
+    public async Task ReorderingAndDeletingByIdPreserveSlotsAndInvalidateRoutes()
+    {
+        using var vm = CreateVm(TestData.Planner(), new MemoryData());
+        await vm.AddPoint.Execute(TestData.P(40, 150));
+        await vm.AddPoint.Execute(TestData.P(200, 150));
+        await vm.AddPoint.Execute(TestData.P(300, 150));
+        var original = vm.Points.Select(point => point.Id).ToArray();
+        await vm.BuildRoutes.Execute();
+        Assert.NotEmpty(vm.RouteChoices);
+
+        await vm.ReorderPoints.Execute(new WaypointReorder(original[0], 2));
+        Assert.Equal(new[] { original[1], original[2], original[0] }, vm.Points.Select(point => point.Id));
+        Assert.Equal(new[] { 1, 2, 3 }, vm.Points.Select(point => point.Number));
+        Assert.Empty(vm.Alternatives);
+        Assert.Empty(vm.RouteChoices);
+        Assert.Null(vm.SelectedRoute);
+
+        vm.SelectedPoint = vm.Points[0];
+        await vm.RemovePoint.Execute(original[2]);
+        Assert.Equal(new[] { original[1], original[0] }, vm.Points.Select(point => point.Id));
+        Assert.Equal(new[] { 1, 2 }, vm.Points.Select(point => point.Number));
+        Assert.Equal(original[1], vm.SelectedPoint?.Id);
+    }
+
+    [Fact]
+    public async Task ChoosingAlternativeChangesGeometryMetricsAndSelectedChoice()
+    {
+        var forest = TestData.Polygon(1, TerrainKind.Forest, 100, 60, 220, 240);
+        using var vm = CreateVm(TestData.Planner(forest), new MemoryData(forest));
+        await vm.AddPoint.Execute(TestData.P(30, 150));
+        await vm.AddPoint.Execute(TestData.P(300, 150));
+        await vm.BuildRoutes.Execute();
+        Assert.True(vm.Alternatives.Count > 1);
+        var first = vm.SelectedRoute!;
+        var other = vm.Alternatives.First(route => route.Id != first.Id);
+        await vm.ChooseRoute.Execute(other.Id);
+        Assert.Same(other, vm.SelectedRoute);
+        Assert.NotEqual(first.Geometry, vm.SelectedRoute!.Geometry);
+        Assert.Equal(other.Id, Assert.Single(vm.RouteChoices, choice => choice.IsSelected).Id);
+        Assert.Contains("10", vm.MetricsText);
+        Assert.Equal(0.10, new RoutingOptions().ReserveFraction);
+    }
+
+    private static MapViewModel CreateVm(
+        IRoutePlanner planner,
+        IGeodataRepository data,
+        IScreen? screen = null) => new(
+        screen ?? new NavigationHost(),
+        new PlanningSession(planner),
+        data,
+        new MemorySettings(),
+        new MemoryClipboard());
+
     private sealed class DeferredPlanner(Task<IReadOnlyList<RouteAlternative>> result) : IRoutePlanner
     {
-        public Task<IReadOnlyList<RouteAlternative>> PlanAsync(IReadOnlyList<GeoCoordinate> p,RoutingOptions o,CancellationToken ct)=>result;
+        public Task<IReadOnlyList<RouteAlternative>> PlanAsync(
+            IReadOnlyList<GeoCoordinate> p,
+            RoutingOptions o,
+            CancellationToken ct) => result;
     }
 }

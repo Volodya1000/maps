@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework Condition="'$(TargetFramework)' == ''">net8.0</TargetFramework>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <GeodataDirectory Condition="'$(GeodataDirectory)' == ''">$(MSBuildThisFileDirectory)samples/real-geodata-fixtures/minsk</GeodataDirectory>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12</LangVersion>

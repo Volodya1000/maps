@@ -7,14 +7,14 @@
 OSM: https://www.openstreetmap.org/copyright, ODbL 1.0 / DbCL 1.0. Полные тексты и NOTICE включены в пакет. Исходник сжат без случайного gzip timestamp; SHA-256 исходника и базы — в manifest.json, дополнительные relation/full URL — в source.osm.sources.json. API не публикует отдельную контрольную сумму bbox-ответа: мы фиксируем SHA-256 после HTTPS-загрузки и проверяем её при повторной сборке; это не независимая подпись поставщика.
 
 ```sh
-python -m pip install -r tools/GeodataPreparation/requirements.txt
-python tools/GeodataPreparation/download_snapshot.py --bounds 27.48 53.93 27.53 53.96 --output /tmp/minsk.osm.gz
+uv sync --project tools/GeodataPreparation --locked
+uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/download_snapshot.py --bounds 27.48 53.93 27.53 53.96 --output /tmp/minsk.osm.gz
 ```
 
 Повторная сборка включённого снимка без сети:
 
 ```sh
-python tools/GeodataPreparation/rebuild_sample.py --output artifacts/rebuilt-minsk
+uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/rebuild_sample.py --output artifacts/rebuilt-minsk
 ```
 
 Сборщик объединяет multipolygon outer/inner, нормализует/обрезает геометрию через GEOS, создаёт WKB и SQLite R-tree. Неполные relation или незамкнутые площадные препятствия приводят к ошибке; они не отбрасываются тихо. Водотокам-линейным объектам присваивается tagged width или консервативная ширина 12 м, минимум 6 м. Это явно указанное допущение для неизвестной ширины, не результат измерения. Класс воды определяется OSM-тегами. Наличие мостов не означает наличие разрешённых переходов.
