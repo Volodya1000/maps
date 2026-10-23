@@ -111,72 +111,72 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public ReactiveCommand<GeoCoordinate, Unit> AddPoint
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Unit, Unit> AddManual
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Unit, Unit> DeletePoint
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Guid, Unit> RemovePoint
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Guid, Unit> SelectPoint
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<WaypointReorder, Unit> ReorderPoints
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Guid, Unit> ChooseRoute
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Unit, Unit> MoveUp
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Unit, Unit> MoveDown
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Unit, Unit> ClearPoints
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Unit, Unit> CopyCoordinates
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Unit, Unit> BuildRoutes
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Unit, Unit> Cancel
     {
         get; private set;
-    };
+    }
 
     public ReactiveCommand<Unit, Unit> Request3D
     {
         get; private set;
-    };
+    }
 
     public MapViewModel(
         IScreen screen,
