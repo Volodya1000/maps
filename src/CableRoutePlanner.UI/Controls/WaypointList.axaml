@@ -1,0 +1,86 @@
+﻿<rx:ReactiveUserControl
+    x:Class="CableRoutePlanner.UI.Controls.WaypointList"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CableRoutePlanner.UI.Controls"
+    xmlns:rx="using:Avalonia.ReactiveUI"
+    xmlns:vm="using:CableRoutePlanner.ViewModels"
+    x:DataType="vm:MapViewModel"
+    x:TypeArguments="vm:MapViewModel">
+    <rx:ReactiveUserControl.Styles>
+        <Style Selector="Border.coordinate.drop-target">
+            <Setter Property="BorderBrush" Value="#176B55" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+    </rx:ReactiveUserControl.Styles>
+    <ItemsControl
+        x:Name="Rows"
+        ItemsSource="{Binding Points}">
+        <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:WaypointRow">
+                <Grid
+                    Height="60"
+                    Margin="0,0,0,4"
+                    ColumnDefinitions="28,*,44">
+                    <!--  Slot numbers are outside the dragged coordinate card.  -->
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="#6E7C73"
+                        Text="{Binding Number}" />
+                    <Border
+                        x:Name="CoordinateCard"
+                        Grid.Column="1"
+                        Background="#F1F5F2"
+                        BorderBrush="#DCE5DF"
+                        BorderThickness="1"
+                        Classes="coordinate"
+                        CornerRadius="8">
+                        <Grid ColumnDefinitions="36,*">
+                            <Border
+                                x:Name="DragHandle"
+                                Background="Transparent"
+                                CornerRadius="8"
+                                PointerCaptureLost="DragCaptureLost"
+                                PointerMoved="DragMoved"
+                                PointerPressed="DragPressed"
+                                PointerReleased="DragReleased"
+                                ToolTip.Tip="Перетащите, чтобы изменить порядок">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="25"
+                                    Foreground="#738779"
+                                    Text="≡" />
+                            </Border>
+                            <Button
+                                Grid.Column="1"
+                                Padding="2,8"
+                                HorizontalContentAlignment="Left"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{Binding $parent[local:WaypointList].ViewModel.SelectPoint}"
+                                CommandParameter="{Binding Id}">
+                                <TextBlock
+                                    FontSize="13"
+                                    Text="{Binding Display}" />
+                            </Button>
+                        </Grid>
+                    </Border>
+                    <Button
+                        Grid.Column="2"
+                        MinWidth="44"
+                        MinHeight="48"
+                        Padding="0"
+                        Background="Transparent"
+                        Command="{Binding $parent[local:WaypointList].ViewModel.RemovePoint}"
+                        CommandParameter="{Binding Id}"
+                        Content="×"
+                        FontSize="25"
+                        Foreground="#C83D3D"
+                        ToolTip.Tip="Удалить точку" />
+                </Grid>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
+</rx:ReactiveUserControl>

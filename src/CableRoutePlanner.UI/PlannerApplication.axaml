@@ -1,8 +1,27 @@
-<Application xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CableRoutePlanner.UI.PlannerApplication" RequestedThemeVariant="Light">
-<Application.Styles><FluentTheme />
-<Style Selector="TextBlock"><Setter Property="FontSize" Value="14" /></Style>
-<Style Selector="Button"><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="14,9"/></Style>
-<Style Selector="Button.primary"><Setter Property="Background" Value="#176B55"/><Setter Property="Foreground" Value="White"/></Style>
-<Style Selector="ToggleButton:checked"><Setter Property="Background" Value="#DCEEE7"/><Setter Property="Foreground" Value="#155742"/></Style>
-<Style Selector="TextBox"><Setter Property="CornerRadius" Value="6"/></Style>
-</Application.Styles></Application>
+﻿<Application
+    x:Class="CableRoutePlanner.UI.PlannerApplication"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    RequestedThemeVariant="Light">
+    <Application.Styles>
+        <FluentTheme />
+        <Style Selector="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14,9" />
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#176B55" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="ToggleButton:checked">
+            <Setter Property="Background" Value="#DCEEE7" />
+            <Setter Property="Foreground" Value="#155742" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+    </Application.Styles>
+</Application>

@@ -1,15 +1,15 @@
 # Проверка и воспроизведение
 
-Локально 2026-10-23, Linux x64: **34/34 теста проходят**, включая реальный OSM-маршрут, запреты препятствий и переходов, late-result invalidation, compiled XAML, мышь, навигацию и Fody PropertyChanged после реальной компиляции. Тесты не подменяют алгоритм production-результатами. Synthetic-fixtures создаются явно в тестах; основной UI использует настоящий включённый пакет.
+Локально 2026-10-23, Linux x64: **42/42 теста проходят**, включая реальный OSM-маршрут, запреты препятствий и переходов, late-result invalidation, compiled XAML, мышь, навигацию и Fody PropertyChanged после реальной компиляции. Тесты не подменяют алгоритм production-результатами. Synthetic-fixtures создаются явно в тестах; основной UI использует настоящий включённый пакет.
 
 ```sh
 dotnet restore CableRoutePlanner.Desktop.slnf --locked-mode
 dotnet test CableRoutePlanner.Desktop.slnf --no-restore --logger trx --results-directory artifacts/test-results
-python -m pip install -r tools/GeodataPreparation/requirements.txt
-python tools/GeodataPreparation/rebuild_sample.py --output artifacts/rebuilt-minsk
+uv sync --project tools/GeodataPreparation --locked
+uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/rebuild_sample.py --output artifacts/rebuilt-minsk
 ```
 
-GitHub Actions: Linux/Windows headless-тесты, Windows publish, Android APK и отдельная браузерная DEM-проверка. Это не доказательство работы на Windows 7/10 или Android-устройстве: windows-2022 — Windows Server, а hosted Linux — не телефон. Удалённый workflow запущен в PR #1 после предоставления доступа. Его статус нужно проверять на GitHub; локальное прохождение тестов не означает автоматически успешный удалённый CI.
+GitHub Actions: Linux/Windows headless-тесты, Windows publish, Android APK и отдельная браузерная DEM-проверка. Это не доказательство работы на Windows 7/10 или Android-устройстве: windows-2022 — Windows Server, а hosted Linux — не телефон. Удалённый workflow запускается в PR, включая новый PR #2. Его статус нужно проверять на GitHub; локальное прохождение тестов не означает автоматически успешный удалённый CI.
 
 ## Аудит автономности Linux
 
@@ -45,3 +45,13 @@ python tools/check_network.py artifacts/runtime.strace --output artifacts/networ
 Помимо сборки, CI теперь устанавливает полученный Release APK в Android 14/API 34 x86_64 эмулятор и трижды запускает Activity. Проверяются живой процесс, resumed Activity, отсутствие падения приложения в crash buffer; сохраняются logcat, screenshots и JSON. Запуск вручную на уже загруженном устройстве: `python tools/android_smoke.py --apk <Signed.apk> --output artifacts/android-smoke`. Это отдельная проверка запуска, не подтверждение всей функциональности и не замена повторной проверки Xiaomi пользователя.
 
 Результат проверки 0.1.1: [GitHub Actions](https://github.com/Volodya1000/maps/actions/runs/39972389857) прошёл полностью, включая android-smoke. Три запуска Activity в Android 14/API 34 x86_64 успешны; screenshot показывает главный экран с настоящей картой. Отчёт: `docs/evidence/android-0.1.1.json`, screenshot: `docs/evidence/android-startup-0.1.1.png`. CI собирает APK своим тестовым ключом; скачиваемый локально собранный APK того же исходного коммита сохраняет предыдущий ключ для обновления. Его хеш проверен отдельным полным скачиванием. Это подтверждение запуска в эмуляторе, не утверждение о проверке исправления на физическом Xiaomi.
+
+## Регрессии 0.2.0 и полный пакет
+
+Headless-тесты воспроизводят raw touch drag внутри ScrollViewer, удаление конкретной строки кнопкой × и нажатие альтернативы с проверкой геометрии фактического слоя Mapsui. Проверяются порядок идентификаторов, нумерация, сброс результатов и 10% запаса. Отдельный тест подтверждает: отсутствие препятствия в упрощённом слое отображения не удаляет его из исходных данных маршрутизации. StartupView проверяется после асинхронной подготовки.
+
+`dotnet run --project tools/CableRoutePlanner.Verify -- --inspect <country-package> <report.json>` проверяет обзор всей страны и исходные геоданные возле Минска, Бреста, Гродно, Витебска, Гомеля и Могилёва. Локальный отчёт и манифест сохранены в docs/evidence/belarus-*.json. Проверка не выдаёт эти координаты за готовые маршруты.
+
+`Full Belarus offline installers` заново получает фиксированный PBF, проверяет MD5, готовит gzip-ресурс, собирает полный APK и Windows Inno Setup. Полный APK устанавливается в Android 14, включая первую распаковку и повторные старты; Windows-пакет устанавливается без SDK и запускается на windows-2022. Последнее не заменяет проверку на чистой Windows 10 и не доказывает Windows 7.
+
+В 0.2.0 Android-проверка дополнительно ждёт `CRP_OFFLINE_MAP_READY` от View после чтения настоящих геоданных и передачи их адаптеру. Для полного APK допускаются 180 секунд первой распаковки. Выживание Activity на экране загрузки больше не считается успешным запуском карты. Публикация сверяет SHA APK с отчётом трёх запусков, наличие пакета Belarus и результаты проверки Windows-установщика.

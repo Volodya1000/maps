@@ -43,8 +43,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install -r tools/GeodataPreparation/requirements.txt
-      - run: python tools/GeodataPreparation/rebuild_sample.py --output artifacts/rebuilt-minsk
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.12.23'
+      - run: uv sync --project tools/GeodataPreparation --locked
+      - run: uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/rebuild_sample.py --output artifacts/rebuilt-minsk
   android:
     runs-on: ubuntu-22.04
     steps:
@@ -97,7 +100,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: python3 tools/android_smoke.py --apk-dir artifacts/android-apk --output artifacts/android-smoke
+          script: python3 tools/android_smoke.py --apk-dir artifacts/android-apk --output artifacts/android-smoke --settle-seconds 90 --wait-map-ready
       - uses: actions/upload-artifact@v4
         if: always()
         with:

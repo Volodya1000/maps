@@ -345,9 +345,15 @@
         "type": "Project",
         "dependencies": {
           "CableRoutePlanner.Application": "[1.0.0, )",
-          "Microsoft.Data.Sqlite": "[8.0.21, )",
           "Microsoft.Extensions.Logging": "[8.0.1, )",
           "NetTopologySuite": "[2.6.0, )"
+        }
+      },
+      "cablerouteplanner.persistence": {
+        "type": "Project",
+        "dependencies": {
+          "CableRoutePlanner.Application": "[1.0.0, )",
+          "Microsoft.Data.Sqlite": "[8.0.21, )"
         }
       },
       "cablerouteplanner.ui": {

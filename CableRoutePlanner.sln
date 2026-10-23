@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -27,6 +27,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{E2D13975-0341-4EAA-8363-E53E0E400012}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Verify", "tools\CableRoutePlanner.Verify\CableRoutePlanner.Verify.csproj", "{32E564A4-CB7E-43FF-ABDF-5E97787AD351}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Persistence", "src\CableRoutePlanner.Persistence\CableRoutePlanner.Persistence.csproj", "{59EDCC8A-CED6-4299-8B1B-D818EE4AD1FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -77,6 +79,10 @@ Global
 		{32E564A4-CB7E-43FF-ABDF-5E97787AD351}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32E564A4-CB7E-43FF-ABDF-5E97787AD351}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32E564A4-CB7E-43FF-ABDF-5E97787AD351}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59EDCC8A-CED6-4299-8B1B-D818EE4AD1FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59EDCC8A-CED6-4299-8B1B-D818EE4AD1FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59EDCC8A-CED6-4299-8B1B-D818EE4AD1FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59EDCC8A-CED6-4299-8B1B-D818EE4AD1FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{96F52B7F-D79E-4F31-8C7D-4E1AEDD73CD5} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
@@ -89,5 +95,6 @@ Global
 		{70E6D883-29A5-4140-AA5A-B516334FA8D4} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
 		{2DF4C38F-7ACA-4F5F-9FDA-035C95CF5703} = {AA642880-A547-4C78-B405-FEDCBBA21029}
 		{32E564A4-CB7E-43FF-ABDF-5E97787AD351} = {E2D13975-0341-4EAA-8363-E53E0E400012}
+		{59EDCC8A-CED6-4299-8B1B-D818EE4AD1FC} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
 	EndGlobalSection
 EndGlobal

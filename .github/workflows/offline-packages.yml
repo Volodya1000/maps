@@ -1,0 +1,190 @@
+name: Full Belarus offline installers
+on:
+  push:
+    branches: [release/belarus-preview]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: full-belarus-installers
+  cancel-in-progress: false
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
+jobs:
+  geodata:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.12.23'
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        id: data-cache
+        with:
+          path: artifacts/belarus
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/prepare.py') }}
+      - if: steps.data-cache.outputs.cache-hit != 'true'
+        name: Download verified OSM snapshot
+        run: |
+          uv sync --project tools/GeodataPreparation --locked
+          curl --fail --location --retry 3 --connect-timeout 30 --max-time 900 https://download.geofabrik.de/europe/belarus-261022.osm.pbf --output source.osm.pbf
+      - if: steps.data-cache.outputs.cache-hit != 'true'
+        name: Prepare country database and compressed asset
+        run: |
+          uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/prepare_country.py --pbf source.osm.pbf --expected-md5 a2327228173b7fe8e74e2097e3dae0d4 --output artifacts/belarus --compress
+          cp -r samples/real-geodata-fixtures/minsk/licenses artifacts/belarus/
+          rm artifacts/belarus/geodata.sqlite
+      - name: Include country attribution
+        run: |
+          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
+          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: belarus-offline-data
+          path: artifacts/belarus/
+          compression-level: 0
+  android:
+    needs: geodata
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        id: country-cache
+        with:
+          path: artifacts/belarus
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/prepare.py') }}
+      - uses: actions/download-artifact@v4
+        if: steps.country-cache.outputs.cache-hit != 'true'
+        with:
+          name: belarus-offline-data
+          path: artifacts/belarus
+      - name: Include country attribution
+        run: |
+          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
+          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - run: dotnet workload install android --skip-manifest-update
+      - run: dotnet restore src/CableRoutePlanner.Android --locked-mode
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/preview.keystore
+          key: cableroute-android-preview-signing-v1
+      - name: Prepare preview signing key
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_TEST_KEYSTORE }}
+        run: |
+          if [ -n "$KEYSTORE" ]; then
+            printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/preview.keystore"
+          elif [ ! -f "$RUNNER_TEMP/preview.keystore" ]; then
+            keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/preview.keystore" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=CableRoutePlanner Preview,O=Test,C=BY'
+          fi
+      - run: dotnet publish src/CableRoutePlanner.Android -c Release -p:GeodataDirectory="$GITHUB_WORKSPACE/artifacts/belarus" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
+      - run: |
+          mkdir -p artifacts/apk
+          cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk artifacts/apk/CableRoutePlanner-0.2.0-Belarus.apk
+          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump permissions artifacts/apk/*.apk > artifacts/apk/permissions.txt
+          if rg 'android.permission.INTERNET' artifacts/apk/permissions.txt; then exit 1; fi
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --print-certs artifacts/apk/*.apk > artifacts/apk/signature.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: full-belarus-apk
+          path: artifacts/apk/
+          compression-level: 0
+  windows:
+    needs: geodata
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: belarus-offline-data
+          path: artifacts/belarus
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Unpack map and verify application
+        shell: pwsh
+        run: |
+          $inputStream = [IO.File]::OpenRead("$pwd/artifacts/belarus/geodata.sqlite.gz")
+          $gzip = [IO.Compression.GZipStream]::new($inputStream, [IO.Compression.CompressionMode]::Decompress)
+          $outputStream = [IO.File]::Create("$pwd/artifacts/belarus/geodata.sqlite")
+          $gzip.CopyTo($outputStream)
+          $outputStream.Dispose()
+          $gzip.Dispose()
+          $inputStream.Dispose()
+          dotnet restore CableRoutePlanner.Desktop.slnf --locked-mode
+          dotnet test CableRoutePlanner.Desktop.slnf -c Release --no-restore
+          dotnet run --project tools/CableRoutePlanner.Verify -c Release --no-restore -- --inspect artifacts/belarus artifacts/belarus-package-check.json
+          dotnet publish src/CableRoutePlanner.Desktop -c Release -r win-x64 --self-contained true -p:GeodataDirectory="$pwd/artifacts/belarus" -o artifacts/win-x64
+          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" tools/Packaging/windows.iss
+          if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed" }
+      - name: Verify offline installer and desktop startup
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem artifacts/installer/*.exe | Select-Object -First 1
+          $installed = "$env:RUNNER_TEMP/CableRoutePlanner-installed"
+          Start-Process -FilePath $setup.FullName -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$installed") -Wait
+          if (!(Test-Path "$installed/Data/manifest.json")) { throw "Bundled map not installed" }
+          $process = Start-Process "$installed/CableRoutePlanner.Desktop.exe" -PassThru
+          Start-Sleep -Seconds 30
+          if ($process.HasExited) { throw "Installed desktop app exited at startup" }
+          Stop-Process -Id $process.Id
+      - uses: actions/upload-artifact@v4
+        with:
+          name: full-belarus-windows-installer
+          path: |
+            artifacts/installer/*.exe
+            artifacts/belarus-package-check.json
+          compression-level: 0
+  android-smoke:
+    needs: android
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: full-belarus-apk
+          path: artifacts/apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: python3 tools/android_smoke.py --apk artifacts/apk/CableRoutePlanner-0.2.0-Belarus.apk --output artifacts/full-android-smoke --settle-seconds 180 --wait-map-ready
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-belarus-startup-evidence
+          path: artifacts/full-android-smoke/
+  release:
+    needs: [android-smoke, windows]
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/publish-preview.yml
+    with:
+      source_run_id: ${{ github.run_id }}

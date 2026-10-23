@@ -7,6 +7,6 @@
     <PackageReference Include="Avalonia.Desktop" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="../../samples/real-geodata-fixtures/minsk/**" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(GeodataDirectory)/**" Exclude="$(GeodataDirectory)/geodata.sqlite.gz;$(GeodataDirectory)/source*" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

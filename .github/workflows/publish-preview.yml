@@ -1,0 +1,94 @@
+name: Publish verified offline preview
+on:
+  push:
+    branches: [release/publish-preview]
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Full Belarus offline installers run ID
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      source_run_id:
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REQUESTED_RUN: ${{ inputs.source_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate source build and installation checks
+        id: source
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          repo = os.environ['GITHUB_REPOSITORY']
+          def api(path):
+              return json.loads(subprocess.check_output(['gh', 'api', 'repos/' + repo + '/' + path]))
+          run_id = os.environ.get('REQUESTED_RUN')
+          if not run_id:
+              runs = api('actions/runs?branch=release%2Fbelarus-preview&per_page=20')['workflow_runs']
+              run_id = next(str(run['id']) for run in runs if run['name'] == 'Full Belarus offline installers')
+          run_id = str(int(run_id))
+          run = api('actions/runs/' + run_id)
+          jobs = api('actions/runs/' + run_id + '/jobs?filter=all&per_page=100')['jobs']
+          latest = {job['name']: job for job in sorted(jobs, key=lambda job: job['id'])}
+          for name in ('geodata', 'android', 'windows', 'android-smoke'):
+              if name not in latest or latest[name]['conclusion'] != 'success':
+                  raise RuntimeError('Required build or installation check did not pass: ' + name)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('run_id=' + run_id + '\nsha=' + run['head_sha'] + '\n')
+          PY
+      - name: Download tested installer artifacts
+        timeout-minutes: 15
+        env:
+          SOURCE_RUN: ${{ steps.source.outputs.run_id }}
+        run: |
+          gh run download "$SOURCE_RUN" --name full-belarus-apk --dir artifacts/release
+          gh run download "$SOURCE_RUN" --name full-belarus-windows-installer --dir artifacts/release
+          gh run download "$SOURCE_RUN" --name full-belarus-startup-evidence --dir artifacts/evidence
+      - name: Verify and flatten release assets
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, shutil, zipfile
+          from pathlib import Path
+          root = Path('artifacts/release')
+          for source in list(root.rglob('*.exe')):
+              if source.parent != root:
+                  shutil.move(source, root / source.name)
+          apk, = root.glob('*.apk')
+          with zipfile.ZipFile(apk) as archive:
+              manifest = json.loads(archive.read('assets/Data/manifest.json'))
+          if manifest['region_id'] != 'belarus':
+              raise RuntimeError('The APK does not contain the country package')
+          (root / 'belarus-manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
+          report = json.loads(Path('artifacts/evidence/report.json').read_text())
+          def digest(path):
+              with path.open('rb') as stream:
+                  checksum = hashlib.sha256()
+                  for block in iter(lambda: stream.read(1024 * 1024), b''):
+                      checksum.update(block)
+                  return checksum.hexdigest()
+          if not report['success'] or report['sha256'] != digest(apk):
+              raise RuntimeError('Android startup report does not match the APK')
+          if not all('region=belarus' in attempt.get('map_ready', '') for attempt in report['launches']):
+              raise RuntimeError('The country map was not ready in every launch')
+          shutil.copyfile('artifacts/evidence/report.json', root / 'android-startup-report.json')
+          with (root / 'SHA256SUMS.txt').open('w') as output:
+              for asset in sorted([*root.glob('*.apk'), *root.glob('*.exe')]):
+                  output.write(digest(asset) + '  ' + asset.name + '\n')
+          PY
+      - name: Publish tested installers
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          cd artifacts/release
+          gh release create v0.2.0-preview --target "$SOURCE_SHA" --prerelease --title '0.2.0 — офлайн-карта Беларуси' --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" *.apk *.exe *.json *.txt

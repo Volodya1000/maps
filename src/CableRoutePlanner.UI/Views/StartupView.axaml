@@ -1,0 +1,33 @@
+﻿<rx:ReactiveUserControl
+    x:Class="CableRoutePlanner.UI.Views.StartupView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:rx="using:Avalonia.ReactiveUI"
+    xmlns:vm="using:CableRoutePlanner.ViewModels"
+    x:DataType="vm:StartupViewModel"
+    x:TypeArguments="vm:StartupViewModel">
+    <ContentControl
+        x:Name="RootHost"
+        HorizontalContentAlignment="Stretch"
+        VerticalContentAlignment="Stretch">
+        <StackPanel
+            Margin="24"
+            VerticalAlignment="Center"
+            Spacing="16">
+            <TextBlock
+                FontSize="24"
+                FontWeight="SemiBold"
+                Text="Кабельные маршруты" />
+            <TextBlock
+                Text="{Binding Message}"
+                TextWrapping="Wrap" />
+            <ProgressBar
+                IsIndeterminate="True"
+                IsVisible="{Binding IsLoading}" />
+            <Button
+                Command="{Binding Load}"
+                Content="Повторить"
+                IsVisible="{Binding !IsLoading}" />
+        </StackPanel>
+    </ContentControl>
+</rx:ReactiveUserControl>
