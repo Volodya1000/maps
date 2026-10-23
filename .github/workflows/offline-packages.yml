@@ -52,10 +52,20 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        id: country-cache
+        with:
+          path: artifacts/belarus
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/prepare.py') }}
       - uses: actions/download-artifact@v4
+        if: steps.country-cache.outputs.cache-hit != 'true'
         with:
           name: belarus-offline-data
           path: artifacts/belarus
+      - name: Include country attribution
+        run: |
+          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
+          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
@@ -172,33 +182,9 @@ jobs:
           path: artifacts/full-android-smoke/
   release:
     needs: [android-smoke, windows]
-    runs-on: ubuntu-22.04
     permissions:
       contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: full-belarus-apk
-          path: artifacts/release
-      - uses: actions/download-artifact@v4
-        with:
-          name: full-belarus-windows-installer
-          path: artifacts/release
-      - uses: actions/download-artifact@v4
-        with:
-          name: full-belarus-startup-evidence
-          path: artifacts/evidence
-      - uses: actions/download-artifact@v4
-        with:
-          name: belarus-offline-data
-          path: artifacts/geodata
-      - name: Publish verified offline preview
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          cp artifacts/geodata/manifest.json artifacts/release/belarus-manifest.json
-          cp artifacts/evidence/report.json artifacts/release/android-startup-report.json
-          cd artifacts/release
-          sha256sum *.apk *.exe > SHA256SUMS.txt
-          gh release create v0.2.0-preview --target "$GITHUB_SHA" --prerelease --title '0.2.0 — офлайн-карта Беларуси' --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" *.apk *.exe *.json *.txt
+      actions: read
+    uses: ./.github/workflows/publish-preview.yml
+    with:
+      source_run_id: ${{ github.run_id }}
