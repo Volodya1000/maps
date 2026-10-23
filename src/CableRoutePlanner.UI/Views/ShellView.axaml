@@ -1,0 +1,9 @@
+<rx:ReactiveUserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:rx="using:Avalonia.ReactiveUI" xmlns:vm="using:CableRoutePlanner.ViewModels" x:Class="CableRoutePlanner.UI.Views.ShellView" x:TypeArguments="vm:ShellViewModel" x:DataType="vm:ShellViewModel">
+<Grid RowDefinitions="Auto,*" Background="#F5F7F5">
+<Border Background="White" BorderBrush="#DFE5E0" BorderThickness="0,0,0,1" Padding="16,12">
+<WrapPanel VerticalAlignment="Center">
+<StackPanel Margin="0,0,28,6"><TextBlock Text="Кабельные маршруты" FontSize="21" FontWeight="SemiBold"/><TextBlock Text="Предварительное планирование · Беларусь" Foreground="#607366" FontSize="12"/></StackPanel>
+<StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"><ToggleButton Content="Карта" IsChecked="{Binding IsMap, Mode=OneWay}" Command="{Binding ShowMap}"/><ToggleButton Content="Настройки" IsChecked="{Binding IsSettings, Mode=OneWay}" Command="{Binding ShowSettings}"/><ToggleButton Content="О данных" IsChecked="{Binding IsAbout, Mode=OneWay}" Command="{Binding ShowAbout}"/><Button Content="Назад" Command="{Binding Back}"/></StackPanel>
+</WrapPanel></Border>
+<rx:RoutedViewHost x:Name="RouteHost" Grid.Row="1" Router="{Binding Router}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+</Grid></rx:ReactiveUserControl>

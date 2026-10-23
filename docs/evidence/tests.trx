@@ -1,0 +1,232 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="dcd228a7-f864-4b92-a380-48ba6111cf85" name="@04bcf490459e 2026-10-23 14:03:50" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-23T14:03:50.9181724+00:00" queuing="2026-10-23T14:03:50.9181725+00:00" start="2026-10-23T14:03:49.8258922+00:00" finish="2026-10-23T14:03:55.0765398+00:00" />
+  <TestSettings name="default" id="75bdbcc0-1468-456b-8636-6c4166f4fca6">
+    <Deployment runDeploymentRoot="_04bcf490459e_2026-10-23_14_03_50" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="2f978e4b-2265-433c-a30f-9df0e73afe32" testId="e1eb7c11-47d0-c80b-a448-65143071d337" testName="CableRoutePlanner.Tests.RoutingTests.CostProfilesProduceDifferentActualGeometry" computerName="04bcf490459e" duration="00:00:00.0155778" startTime="2026-10-23T14:03:52.4773179+00:00" endTime="2026-10-23T14:03:52.4773180+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2f978e4b-2265-433c-a30f-9df0e73afe32" />
+    <UnitTestResult executionId="801476d7-5d85-4999-96e3-ad4d34367377" testId="4af5bafb-d766-bac7-a329-9ec4ebd85a8d" testName="CableRoutePlanner.Tests.RoutingTests.ThinFullHeightBarrierCannotBeSkippedByGrid(kind: River)" computerName="04bcf490459e" duration="00:00:00.0111629" startTime="2026-10-23T14:03:52.3692047+00:00" endTime="2026-10-23T14:03:52.3692048+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="801476d7-5d85-4999-96e3-ad4d34367377" />
+    <UnitTestResult executionId="8d6a879e-b225-4ac0-a513-aa636396f02d" testId="b96d3390-7a2e-ec70-761f-5ea3b1ed9275" testName="CableRoutePlanner.Tests.UiTests.MapMouseInputAddsAndMovesViewModelPoints" computerName="04bcf490459e" duration="00:00:00.2609185" startTime="2026-10-23T14:03:55.0187024+00:00" endTime="2026-10-23T14:03:55.0187027+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8d6a879e-b225-4ac0-a513-aa636396f02d" />
+    <UnitTestResult executionId="b18e6565-cffd-4a09-83db-8858f3cdae78" testId="d79e7cfc-1439-52e2-0725-ba849ed2703c" testName="CableRoutePlanner.Tests.RoutingTests.MarshIsAvoidedAndEveryOutputSegmentIsValidated" computerName="04bcf490459e" duration="00:00:00.0045878" startTime="2026-10-23T14:03:52.4431621+00:00" endTime="2026-10-23T14:03:52.4431622+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b18e6565-cffd-4a09-83db-8858f3cdae78" />
+    <UnitTestResult executionId="9725b5f0-9d41-4f7d-8dc7-012bdb3a728b" testId="ea8305a9-b065-1c3a-bb71-892ba9aa4124" testName="CableRoutePlanner.Tests.DomainTests.InvalidCoordinatesAreRejected(latitude: 0, longitude: 181)" computerName="04bcf490459e" duration="00:00:00.0032529" startTime="2026-10-23T14:03:50.7610140+00:00" endTime="2026-10-23T14:03:50.7610283+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9725b5f0-9d41-4f7d-8dc7-012bdb3a728b" />
+    <UnitTestResult executionId="ac0b87ec-ef81-4581-aa77-4ab9d72f6569" testId="e33d0ac6-1dfc-4890-022b-74dcc7b85e00" testName="CableRoutePlanner.Tests.DomainTests.InvalidCoordinatesAreRejected(latitude: 91, longitude: 0)" computerName="04bcf490459e" duration="00:00:00.0000351" startTime="2026-10-23T14:03:50.7682414+00:00" endTime="2026-10-23T14:03:50.7682414+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ac0b87ec-ef81-4581-aa77-4ab9d72f6569" />
+    <UnitTestResult executionId="64171f3f-3cf2-4dd9-9692-4db0ebe7aa79" testId="046851c0-28c8-dfea-f131-bcec60845e3e" testName="CableRoutePlanner.Tests.PresentationTests.NavigationReusesScreenInstancesAndBoundsHistory" computerName="04bcf490459e" duration="00:00:00.0337248" startTime="2026-10-23T14:03:52.7365903+00:00" endTime="2026-10-23T14:03:52.7365904+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="64171f3f-3cf2-4dd9-9692-4db0ebe7aa79" />
+    <UnitTestResult executionId="27e70e87-046c-453c-aa5f-47ef53301da3" testId="7259bfe5-91f2-b017-554e-47fce28b6122" testName="CableRoutePlanner.Tests.PresentationTests.PointChangesInvalidateRoutesAndRenumberList" computerName="04bcf490459e" duration="00:00:00.1902512" startTime="2026-10-23T14:03:52.6692697+00:00" endTime="2026-10-23T14:03:52.6692699+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="27e70e87-046c-453c-aa5f-47ef53301da3" />
+    <UnitTestResult executionId="d4e7fa6e-b0f7-4195-beff-0adabe18730f" testId="6d1cb2f0-3a4f-4a9d-f118-bce5ff749a64" testName="CableRoutePlanner.Tests.DomainTests.InvalidCoordinatesAreRejected(latitude: 0, longitude: Infinity)" computerName="04bcf490459e" duration="00:00:00.0000216" startTime="2026-10-23T14:03:50.7681541+00:00" endTime="2026-10-23T14:03:50.7681542+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d4e7fa6e-b0f7-4195-beff-0adabe18730f" />
+    <UnitTestResult executionId="d8f0d630-af57-496e-b6ba-60879e7ad1ac" testId="2683e9ca-52cd-4c8a-514d-aa358963f941" testName="CableRoutePlanner.Tests.PresentationTests.ChangedInputCannotPublishLateCalculation" computerName="04bcf490459e" duration="00:00:00.0329633" startTime="2026-10-23T14:03:52.7066074+00:00" endTime="2026-10-23T14:03:52.7066085+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d8f0d630-af57-496e-b6ba-60879e7ad1ac" />
+    <UnitTestResult executionId="fb5466e7-dff7-4605-89a7-401ac49bb0b5" testId="86d116f5-378b-390b-1f63-b464cc3e0c8b" testName="CableRoutePlanner.Tests.PresentationTests.FodyWeavingRaisesPropertyChangedAfterRealCompilation" computerName="04bcf490459e" duration="00:00:00.0040618" startTime="2026-10-23T14:03:52.7408790+00:00" endTime="2026-10-23T14:03:52.7408790+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fb5466e7-dff7-4605-89a7-401ac49bb0b5" />
+    <UnitTestResult executionId="629d73fb-12b4-4594-8095-b9fd0d71f416" testId="54b2190c-936f-f2ae-24ad-76f231021dc7" testName="CableRoutePlanner.Tests.RoutingTests.OutsideCoverageAndCoincidentPointsReturnActionableErrors" computerName="04bcf490459e" duration="00:00:00.0029363" startTime="2026-10-23T14:03:52.4098981+00:00" endTime="2026-10-23T14:03:52.4098982+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="629d73fb-12b4-4594-8095-b9fd0d71f416" />
+    <UnitTestResult executionId="e8c4c1bd-fc14-41b6-96c9-ebf3b4934062" testId="d5120379-6b40-902d-810f-3d22c982ebb1" testName="CableRoutePlanner.Tests.DomainTests.CoordinatesAreFormattedInvariantly" computerName="04bcf490459e" duration="00:00:00.0027542" startTime="2026-10-23T14:03:50.7683390+00:00" endTime="2026-10-23T14:03:50.7683390+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e8c4c1bd-fc14-41b6-96c9-ebf3b4934062" />
+    <UnitTestResult executionId="63c54197-d837-4bc3-b7cb-f0c8ad659b13" testId="72d9f5cc-70b5-b0f8-4a1f-5fe697a770cb" testName="CableRoutePlanner.Tests.DomainTests.GeodesicDistanceUsesRealUnits" computerName="04bcf490459e" duration="00:00:00.0020779" startTime="2026-10-23T14:03:50.7685550+00:00" endTime="2026-10-23T14:03:50.7685551+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="63c54197-d837-4bc3-b7cb-f0c8ad659b13" />
+    <UnitTestResult executionId="fcb45520-cf86-4c57-9191-f685d2cbcfbf" testId="1f9c940d-4532-6b2b-7c10-ab1a0b8d549f" testName="CableRoutePlanner.Tests.RoutingTests.CancellationAndMemoryLimitsAreEnforced" computerName="04bcf490459e" duration="00:00:00.0038100" startTime="2026-10-23T14:03:52.4611709+00:00" endTime="2026-10-23T14:03:52.4611710+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fcb45520-cf86-4c57-9191-f685d2cbcfbf" />
+    <UnitTestResult executionId="f05251df-668e-4d91-9eea-1e4bb9be7151" testId="755c36fb-a2f1-e09f-e610-97043baef1ac" testName="CableRoutePlanner.Tests.RoutingTests.ReviewedCrossingAllowsRiverAndIsReported" computerName="04bcf490459e" duration="00:00:00.0141403" startTime="2026-10-23T14:03:52.4319117+00:00" endTime="2026-10-23T14:03:52.4319119+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f05251df-668e-4d91-9eea-1e4bb9be7151" />
+    <UnitTestResult executionId="70754bf1-d384-45ef-b307-12a84f2d4266" testId="7699de99-4e5c-9404-0d8c-18ba20b76cbe" testName="CableRoutePlanner.Tests.InfrastructureTests.RealPackageContainsIndexedRoadsWaterForestAndMarsh" computerName="04bcf490459e" duration="00:00:00.0821143" startTime="2026-10-23T14:03:50.9437157+00:00" endTime="2026-10-23T14:03:50.9437159+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="70754bf1-d384-45ef-b307-12a84f2d4266" />
+    <UnitTestResult executionId="77bef75e-631c-48d4-bc3b-d82530a1e589" testId="fba18437-f883-7417-b365-202ff98cdfc7" testName="CableRoutePlanner.Tests.DomainTests.InvalidCoordinatesAreRejected(latitude: NaN, longitude: 0)" computerName="04bcf490459e" duration="00:00:00.0001861" startTime="2026-10-23T14:03:50.7665035+00:00" endTime="2026-10-23T14:03:50.7665036+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="77bef75e-631c-48d4-bc3b-d82530a1e589" />
+    <UnitTestResult executionId="5265ded2-e794-430a-9079-3862305cbecc" testId="01de576f-7e8f-1f0f-d24c-a424cf4c7bcc" testName="CableRoutePlanner.Tests.RoutingTests.ThinFullHeightBarrierCannotBeSkippedByGrid(kind: Lake)" computerName="04bcf490459e" duration="00:00:00.0029022" startTime="2026-10-23T14:03:52.4077417+00:00" endTime="2026-10-23T14:03:52.4077418+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5265ded2-e794-430a-9079-3862305cbecc" />
+    <UnitTestResult executionId="c3d32e23-d551-44f0-a88b-5c2ce8ba881f" testId="52eff326-032d-8c2a-95ec-9f4f0a78ad9a" testName="CableRoutePlanner.Tests.RoutingTests.ThinFullHeightBarrierCannotBeSkippedByGrid(kind: Marsh)" computerName="04bcf490459e" duration="00:00:00.0339258" startTime="2026-10-23T14:03:52.4033175+00:00" endTime="2026-10-23T14:03:52.4033176+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c3d32e23-d551-44f0-a88b-5c2ce8ba881f" />
+    <UnitTestResult executionId="118376cb-b6eb-4082-98ff-1f0aba363529" testId="897851dd-90fa-7be6-e5d5-fc7a1ad4b961" testName="CableRoutePlanner.Tests.RoutingTests.ArbitraryEndpointsAndOrderedWaypointsArePreserved" computerName="04bcf490459e" duration="00:00:00.0110070" startTime="2026-10-23T14:03:52.4527417+00:00" endTime="2026-10-23T14:03:52.4527418+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="118376cb-b6eb-4082-98ff-1f0aba363529" />
+    <UnitTestResult executionId="8cced280-09e9-4e31-933a-301613591e44" testId="8ffefd0f-5621-e179-a878-370ad223aa10" testName="CableRoutePlanner.Tests.DomainTests.InvalidCostsAreRejected(cost: -1)" computerName="04bcf490459e" duration="00:00:00.0000169" startTime="2026-10-23T14:03:50.7685023+00:00" endTime="2026-10-23T14:03:50.7685024+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8cced280-09e9-4e31-933a-301613591e44" />
+    <UnitTestResult executionId="c9c196d9-0069-4350-89eb-d5e18478c4a3" testId="ea037b5d-48ab-4153-c329-0d57513f0f15" testName="CableRoutePlanner.Tests.PresentationTests.ClipboardUsesSelectedPointAndOrderIsControlledByList" computerName="04bcf490459e" duration="00:00:00.0045864" startTime="2026-10-23T14:03:52.7456388+00:00" endTime="2026-10-23T14:03:52.7456389+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c9c196d9-0069-4350-89eb-d5e18478c4a3" />
+    <UnitTestResult executionId="b042e509-a4ac-455f-8488-36446443add6" testId="427c8263-69de-e5bf-9c58-cb2b0db4e0fe" testName="CableRoutePlanner.Tests.InfrastructureTests.MissingAndCorruptedPackageAreRejected" computerName="04bcf490459e" duration="00:00:00.0008937" startTime="2026-10-23T14:03:50.9455413+00:00" endTime="2026-10-23T14:03:50.9455414+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b042e509-a4ac-455f-8488-36446443add6" />
+    <UnitTestResult executionId="07b6f3e2-4c41-41c2-9a73-0d83bc7078d0" testId="ef9c64cd-f5a5-1daf-f19c-ecd37e037d0f" testName="CableRoutePlanner.Tests.DomainTests.CableReserveIsAppliedToMeasuredLength" computerName="04bcf490459e" duration="00:00:00.0008197" startTime="2026-10-23T14:03:50.8560736+00:00" endTime="2026-10-23T14:03:50.8560738+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="07b6f3e2-4c41-41c2-9a73-0d83bc7078d0" />
+    <UnitTestResult executionId="9ce8b96e-9046-4d37-9e80-fc9805cd98dc" testId="8e31b415-76f3-5459-57b4-bd31e771bd9f" testName="CableRoutePlanner.Tests.InfrastructureTests.SettingsSurviveRestartAndInvalidValuesDoNotOverwriteFile" computerName="04bcf490459e" duration="00:00:00.0905547" startTime="2026-10-23T14:03:50.8592211+00:00" endTime="2026-10-23T14:03:50.8592213+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9ce8b96e-9046-4d37-9e80-fc9805cd98dc" />
+    <UnitTestResult executionId="cb7e801b-d97d-4606-8070-8eac9d605a84" testId="c0c5d3d0-2d94-e097-04e1-bef3b396baaa" testName="CableRoutePlanner.Tests.UiTests.CompiledXamlAndTypedViewLocatorResolveAllRegisteredScreens" computerName="04bcf490459e" duration="00:00:00.4245902" startTime="2026-10-23T14:03:54.0174964+00:00" endTime="2026-10-23T14:03:54.0174966+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cb7e801b-d97d-4606-8070-8eac9d605a84" />
+    <UnitTestResult executionId="33ecd539-bf27-4760-bc1f-32c4a7197033" testId="988187b9-e988-347e-de37-6379d25307ca" testName="CableRoutePlanner.Tests.InfrastructureTests.RealOsmRouteIsComputedFromPackage" computerName="04bcf490459e" duration="00:00:01.4101170" startTime="2026-10-23T14:03:52.3587313+00:00" endTime="2026-10-23T14:03:52.3587315+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="33ecd539-bf27-4760-bc1f-32c4a7197033" />
+    <UnitTestResult executionId="ef739b0a-8a6f-4f25-9c1b-d82eb33b7314" testId="ec6a296a-230a-29f2-5a8b-eb0745b28679" testName="CableRoutePlanner.Tests.RoutingTests.MissingApprovalNeverOpensRiver" computerName="04bcf490459e" duration="00:00:00.0068742" startTime="2026-10-23T14:03:52.4172471+00:00" endTime="2026-10-23T14:03:52.4172472+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ef739b0a-8a6f-4f25-9c1b-d82eb33b7314" />
+    <UnitTestResult executionId="eadb856e-b8da-49df-9c85-6b00b5d9ae1d" testId="fbd0910a-dbd4-162c-794e-ee03d059641c" testName="CableRoutePlanner.Tests.RoutingTests.BridgeCandidateDoesNotAuthorizeRiverCrossing" computerName="04bcf490459e" duration="00:00:00.0042258" startTime="2026-10-23T14:03:52.4383291+00:00" endTime="2026-10-23T14:03:52.4383291+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="eadb856e-b8da-49df-9c85-6b00b5d9ae1d" />
+    <UnitTestResult executionId="0f7122af-8a80-4c41-8c9d-39239eb160c9" testId="b6abdc22-d837-7f34-dbae-9fc3d73b27ef" testName="CableRoutePlanner.Tests.DomainTests.InvalidCostsAreRejected(cost: Infinity)" computerName="04bcf490459e" duration="00:00:00.0001490" startTime="2026-10-23T14:03:50.7684386+00:00" endTime="2026-10-23T14:03:50.7684386+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0f7122af-8a80-4c41-8c9d-39239eb160c9" />
+    <UnitTestResult executionId="2f3d3a7c-ae29-4fbe-8860-3a22bffd9773" testId="e477cb53-15cf-5859-fbad-a6741912be9f" testName="CableRoutePlanner.Tests.UiTests.UnknownViewModelCannotFallBackToReflection" computerName="04bcf490459e" duration="00:00:00.0010136" startTime="2026-10-23T14:03:54.0264571+00:00" endTime="2026-10-23T14:03:54.0264572+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2f3d3a7c-ae29-4fbe-8860-3a22bffd9773" />
+    <UnitTestResult executionId="3a9452e2-28a0-4edb-8ec7-bb097d89e0cf" testId="aca09bed-b0e2-c17a-b65c-c9934d06c1c3" testName="CableRoutePlanner.Tests.DomainTests.InvalidCostsAreRejected(cost: NaN)" computerName="04bcf490459e" duration="00:00:00.0005793" startTime="2026-10-23T14:03:50.7684170+00:00" endTime="2026-10-23T14:03:50.7684170+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3a9452e2-28a0-4edb-8ec7-bb097d89e0cf" />
+    <UnitTestResult executionId="666cedcc-61a0-4483-8c6f-69e4024db922" testId="3a94f60d-b45f-85bf-b520-5196da33d073" testName="CableRoutePlanner.Tests.RoutingTests.IdenticalGeometryIsNotPresentedAsThreeAlternatives" computerName="04bcf490459e" duration="00:00:00.0037133" startTime="2026-10-23T14:03:52.4586200+00:00" endTime="2026-10-23T14:03:52.4586201+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="666cedcc-61a0-4483-8c6f-69e4024db922" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.InvalidCostsAreRejected(cost: NaN)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="aca09bed-b0e2-c17a-b65c-c9934d06c1c3">
+      <Execution id="3a9452e2-28a0-4edb-8ec7-bb097d89e0cf" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="InvalidCostsAreRejected" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.CostProfilesProduceDifferentActualGeometry" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="e1eb7c11-47d0-c80b-a448-65143071d337">
+      <Execution id="2f978e4b-2265-433c-a30f-9df0e73afe32" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="CostProfilesProduceDifferentActualGeometry" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.GeodesicDistanceUsesRealUnits" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="72d9f5cc-70b5-b0f8-4a1f-5fe697a770cb">
+      <Execution id="63c54197-d837-4bc3-b7cb-f0c8ad659b13" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="GeodesicDistanceUsesRealUnits" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.CancellationAndMemoryLimitsAreEnforced" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="1f9c940d-4532-6b2b-7c10-ab1a0b8d549f">
+      <Execution id="fcb45520-cf86-4c57-9191-f685d2cbcfbf" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="CancellationAndMemoryLimitsAreEnforced" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.OutsideCoverageAndCoincidentPointsReturnActionableErrors" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="54b2190c-936f-f2ae-24ad-76f231021dc7">
+      <Execution id="629d73fb-12b4-4594-8095-b9fd0d71f416" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="OutsideCoverageAndCoincidentPointsReturnActionableErrors" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.BridgeCandidateDoesNotAuthorizeRiverCrossing" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="fbd0910a-dbd4-162c-794e-ee03d059641c">
+      <Execution id="eadb856e-b8da-49df-9c85-6b00b5d9ae1d" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="BridgeCandidateDoesNotAuthorizeRiverCrossing" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.UiTests.CompiledXamlAndTypedViewLocatorResolveAllRegisteredScreens" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="c0c5d3d0-2d94-e097-04e1-bef3b396baaa">
+      <Execution id="cb7e801b-d97d-4606-8070-8eac9d605a84" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.UiTests" name="CompiledXamlAndTypedViewLocatorResolveAllRegisteredScreens" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.InfrastructureTests.MissingAndCorruptedPackageAreRejected" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="427c8263-69de-e5bf-9c58-cb2b0db4e0fe">
+      <Execution id="b042e509-a4ac-455f-8488-36446443add6" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.InfrastructureTests" name="MissingAndCorruptedPackageAreRejected" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.CableReserveIsAppliedToMeasuredLength" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="ef9c64cd-f5a5-1daf-f19c-ecd37e037d0f">
+      <Execution id="07b6f3e2-4c41-41c2-9a73-0d83bc7078d0" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="CableReserveIsAppliedToMeasuredLength" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.UiTests.MapMouseInputAddsAndMovesViewModelPoints" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="b96d3390-7a2e-ec70-761f-5ea3b1ed9275">
+      <Execution id="8d6a879e-b225-4ac0-a513-aa636396f02d" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.UiTests" name="MapMouseInputAddsAndMovesViewModelPoints" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.ReviewedCrossingAllowsRiverAndIsReported" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="755c36fb-a2f1-e09f-e610-97043baef1ac">
+      <Execution id="f05251df-668e-4d91-9eea-1e4bb9be7151" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="ReviewedCrossingAllowsRiverAndIsReported" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.InvalidCoordinatesAreRejected(latitude: 0, longitude: Infinity)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="6d1cb2f0-3a4f-4a9d-f118-bce5ff749a64">
+      <Execution id="d4e7fa6e-b0f7-4195-beff-0adabe18730f" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="InvalidCoordinatesAreRejected" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.InvalidCoordinatesAreRejected(latitude: NaN, longitude: 0)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="fba18437-f883-7417-b365-202ff98cdfc7">
+      <Execution id="77bef75e-631c-48d4-bc3b-d82530a1e589" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="InvalidCoordinatesAreRejected" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.CoordinatesAreFormattedInvariantly" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="d5120379-6b40-902d-810f-3d22c982ebb1">
+      <Execution id="e8c4c1bd-fc14-41b6-96c9-ebf3b4934062" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="CoordinatesAreFormattedInvariantly" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.PresentationTests.PointChangesInvalidateRoutesAndRenumberList" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="7259bfe5-91f2-b017-554e-47fce28b6122">
+      <Execution id="27e70e87-046c-453c-aa5f-47ef53301da3" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.PresentationTests" name="PointChangesInvalidateRoutesAndRenumberList" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.PresentationTests.NavigationReusesScreenInstancesAndBoundsHistory" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="046851c0-28c8-dfea-f131-bcec60845e3e">
+      <Execution id="64171f3f-3cf2-4dd9-9692-4db0ebe7aa79" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.PresentationTests" name="NavigationReusesScreenInstancesAndBoundsHistory" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.InvalidCoordinatesAreRejected(latitude: 91, longitude: 0)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="e33d0ac6-1dfc-4890-022b-74dcc7b85e00">
+      <Execution id="ac0b87ec-ef81-4581-aa77-4ab9d72f6569" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="InvalidCoordinatesAreRejected" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.PresentationTests.FodyWeavingRaisesPropertyChangedAfterRealCompilation" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="86d116f5-378b-390b-1f63-b464cc3e0c8b">
+      <Execution id="fb5466e7-dff7-4605-89a7-401ac49bb0b5" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.PresentationTests" name="FodyWeavingRaisesPropertyChangedAfterRealCompilation" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.PresentationTests.ClipboardUsesSelectedPointAndOrderIsControlledByList" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="ea037b5d-48ab-4153-c329-0d57513f0f15">
+      <Execution id="c9c196d9-0069-4350-89eb-d5e18478c4a3" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.PresentationTests" name="ClipboardUsesSelectedPointAndOrderIsControlledByList" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.MarshIsAvoidedAndEveryOutputSegmentIsValidated" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="d79e7cfc-1439-52e2-0725-ba849ed2703c">
+      <Execution id="b18e6565-cffd-4a09-83db-8858f3cdae78" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="MarshIsAvoidedAndEveryOutputSegmentIsValidated" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.InfrastructureTests.RealOsmRouteIsComputedFromPackage" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="988187b9-e988-347e-de37-6379d25307ca">
+      <Execution id="33ecd539-bf27-4760-bc1f-32c4a7197033" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.InfrastructureTests" name="RealOsmRouteIsComputedFromPackage" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.InfrastructureTests.RealPackageContainsIndexedRoadsWaterForestAndMarsh" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="7699de99-4e5c-9404-0d8c-18ba20b76cbe">
+      <Execution id="70754bf1-d384-45ef-b307-12a84f2d4266" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.InfrastructureTests" name="RealPackageContainsIndexedRoadsWaterForestAndMarsh" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.ThinFullHeightBarrierCannotBeSkippedByGrid(kind: Marsh)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="52eff326-032d-8c2a-95ec-9f4f0a78ad9a">
+      <Execution id="c3d32e23-d551-44f0-a88b-5c2ce8ba881f" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="ThinFullHeightBarrierCannotBeSkippedByGrid" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.MissingApprovalNeverOpensRiver" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="ec6a296a-230a-29f2-5a8b-eb0745b28679">
+      <Execution id="ef739b0a-8a6f-4f25-9c1b-d82eb33b7314" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="MissingApprovalNeverOpensRiver" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.InvalidCostsAreRejected(cost: Infinity)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="b6abdc22-d837-7f34-dbae-9fc3d73b27ef">
+      <Execution id="0f7122af-8a80-4c41-8c9d-39239eb160c9" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="InvalidCostsAreRejected" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.InfrastructureTests.SettingsSurviveRestartAndInvalidValuesDoNotOverwriteFile" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="8e31b415-76f3-5459-57b4-bd31e771bd9f">
+      <Execution id="9ce8b96e-9046-4d37-9e80-fc9805cd98dc" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.InfrastructureTests" name="SettingsSurviveRestartAndInvalidValuesDoNotOverwriteFile" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.InvalidCoordinatesAreRejected(latitude: 0, longitude: 181)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="ea8305a9-b065-1c3a-bb71-892ba9aa4124">
+      <Execution id="9725b5f0-9d41-4f7d-8dc7-012bdb3a728b" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="InvalidCoordinatesAreRejected" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.UiTests.UnknownViewModelCannotFallBackToReflection" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="e477cb53-15cf-5859-fbad-a6741912be9f">
+      <Execution id="2f3d3a7c-ae29-4fbe-8860-3a22bffd9773" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.UiTests" name="UnknownViewModelCannotFallBackToReflection" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.PresentationTests.ChangedInputCannotPublishLateCalculation" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="2683e9ca-52cd-4c8a-514d-aa358963f941">
+      <Execution id="d8f0d630-af57-496e-b6ba-60879e7ad1ac" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.PresentationTests" name="ChangedInputCannotPublishLateCalculation" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.IdenticalGeometryIsNotPresentedAsThreeAlternatives" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="3a94f60d-b45f-85bf-b520-5196da33d073">
+      <Execution id="666cedcc-61a0-4483-8c6f-69e4024db922" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="IdenticalGeometryIsNotPresentedAsThreeAlternatives" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.DomainTests.InvalidCostsAreRejected(cost: -1)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="8ffefd0f-5621-e179-a878-370ad223aa10">
+      <Execution id="8cced280-09e9-4e31-933a-301613591e44" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.DomainTests" name="InvalidCostsAreRejected" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.ThinFullHeightBarrierCannotBeSkippedByGrid(kind: Lake)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="01de576f-7e8f-1f0f-d24c-a424cf4c7bcc">
+      <Execution id="5265ded2-e794-430a-9079-3862305cbecc" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="ThinFullHeightBarrierCannotBeSkippedByGrid" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.ThinFullHeightBarrierCannotBeSkippedByGrid(kind: River)" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="4af5bafb-d766-bac7-a329-9ec4ebd85a8d">
+      <Execution id="801476d7-5d85-4999-96e3-ad4d34367377" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="ThinFullHeightBarrierCannotBeSkippedByGrid" />
+    </UnitTest>
+    <UnitTest name="CableRoutePlanner.Tests.RoutingTests.ArbitraryEndpointsAndOrderedWaypointsArePreserved" storage="/workspace/maps/tests/cablerouteplanner.tests/bin/release/net8.0/cablerouteplanner.tests.dll" id="897851dd-90fa-7be6-e5d5-fc7a1ad4b961">
+      <Execution id="118376cb-b6eb-4082-98ff-1f0aba363529" />
+      <TestMethod codeBase="/workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="CableRoutePlanner.Tests.RoutingTests" name="ArbitraryEndpointsAndOrderedWaypointsArePreserved" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="e1eb7c11-47d0-c80b-a448-65143071d337" executionId="2f978e4b-2265-433c-a30f-9df0e73afe32" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4af5bafb-d766-bac7-a329-9ec4ebd85a8d" executionId="801476d7-5d85-4999-96e3-ad4d34367377" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b96d3390-7a2e-ec70-761f-5ea3b1ed9275" executionId="8d6a879e-b225-4ac0-a513-aa636396f02d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d79e7cfc-1439-52e2-0725-ba849ed2703c" executionId="b18e6565-cffd-4a09-83db-8858f3cdae78" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ea8305a9-b065-1c3a-bb71-892ba9aa4124" executionId="9725b5f0-9d41-4f7d-8dc7-012bdb3a728b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e33d0ac6-1dfc-4890-022b-74dcc7b85e00" executionId="ac0b87ec-ef81-4581-aa77-4ab9d72f6569" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="046851c0-28c8-dfea-f131-bcec60845e3e" executionId="64171f3f-3cf2-4dd9-9692-4db0ebe7aa79" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7259bfe5-91f2-b017-554e-47fce28b6122" executionId="27e70e87-046c-453c-aa5f-47ef53301da3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6d1cb2f0-3a4f-4a9d-f118-bce5ff749a64" executionId="d4e7fa6e-b0f7-4195-beff-0adabe18730f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2683e9ca-52cd-4c8a-514d-aa358963f941" executionId="d8f0d630-af57-496e-b6ba-60879e7ad1ac" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="86d116f5-378b-390b-1f63-b464cc3e0c8b" executionId="fb5466e7-dff7-4605-89a7-401ac49bb0b5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="54b2190c-936f-f2ae-24ad-76f231021dc7" executionId="629d73fb-12b4-4594-8095-b9fd0d71f416" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d5120379-6b40-902d-810f-3d22c982ebb1" executionId="e8c4c1bd-fc14-41b6-96c9-ebf3b4934062" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="72d9f5cc-70b5-b0f8-4a1f-5fe697a770cb" executionId="63c54197-d837-4bc3-b7cb-f0c8ad659b13" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1f9c940d-4532-6b2b-7c10-ab1a0b8d549f" executionId="fcb45520-cf86-4c57-9191-f685d2cbcfbf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="755c36fb-a2f1-e09f-e610-97043baef1ac" executionId="f05251df-668e-4d91-9eea-1e4bb9be7151" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7699de99-4e5c-9404-0d8c-18ba20b76cbe" executionId="70754bf1-d384-45ef-b307-12a84f2d4266" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="fba18437-f883-7417-b365-202ff98cdfc7" executionId="77bef75e-631c-48d4-bc3b-d82530a1e589" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="01de576f-7e8f-1f0f-d24c-a424cf4c7bcc" executionId="5265ded2-e794-430a-9079-3862305cbecc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="52eff326-032d-8c2a-95ec-9f4f0a78ad9a" executionId="c3d32e23-d551-44f0-a88b-5c2ce8ba881f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="897851dd-90fa-7be6-e5d5-fc7a1ad4b961" executionId="118376cb-b6eb-4082-98ff-1f0aba363529" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8ffefd0f-5621-e179-a878-370ad223aa10" executionId="8cced280-09e9-4e31-933a-301613591e44" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ea037b5d-48ab-4153-c329-0d57513f0f15" executionId="c9c196d9-0069-4350-89eb-d5e18478c4a3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="427c8263-69de-e5bf-9c58-cb2b0db4e0fe" executionId="b042e509-a4ac-455f-8488-36446443add6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ef9c64cd-f5a5-1daf-f19c-ecd37e037d0f" executionId="07b6f3e2-4c41-41c2-9a73-0d83bc7078d0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8e31b415-76f3-5459-57b4-bd31e771bd9f" executionId="9ce8b96e-9046-4d37-9e80-fc9805cd98dc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c0c5d3d0-2d94-e097-04e1-bef3b396baaa" executionId="cb7e801b-d97d-4606-8070-8eac9d605a84" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="988187b9-e988-347e-de37-6379d25307ca" executionId="33ecd539-bf27-4760-bc1f-32c4a7197033" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ec6a296a-230a-29f2-5a8b-eb0745b28679" executionId="ef739b0a-8a6f-4f25-9c1b-d82eb33b7314" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="fbd0910a-dbd4-162c-794e-ee03d059641c" executionId="eadb856e-b8da-49df-9c85-6b00b5d9ae1d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b6abdc22-d837-7f34-dbae-9fc3d73b27ef" executionId="0f7122af-8a80-4c41-8c9d-39239eb160c9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e477cb53-15cf-5859-fbad-a6741912be9f" executionId="2f3d3a7c-ae29-4fbe-8860-3a22bffd9773" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="aca09bed-b0e2-c17a-b65c-c9934d06c1c3" executionId="3a9452e2-28a0-4edb-8ec7-bb097d89e0cf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3a94f60d-b45f-85bf-b520-5196da33d073" executionId="666cedcc-61a0-4483-8c6f-69e4024db922" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="34" executed="34" passed="34" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 8.0.32)
+[xUnit.net 00:00:00.14]   Discovering: CableRoutePlanner.Tests
+[xUnit.net 00:00:00.29]   Discovered:  CableRoutePlanner.Tests
+[xUnit.net 00:00:00.30]   Starting:    CableRoutePlanner.Tests
+[xUnit.net 00:00:04.60]   Finished:    CableRoutePlanner.Tests
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

@@ -1,0 +1,15 @@
+  CableRoutePlanner.Domain -> /workspace/maps/src/CableRoutePlanner.Domain/bin/Release/net8.0/CableRoutePlanner.Domain.dll
+  CableRoutePlanner.Application -> /workspace/maps/src/CableRoutePlanner.Application/bin/Release/net8.0/CableRoutePlanner.Application.dll
+  CableRoutePlanner.ViewModels -> /workspace/maps/src/CableRoutePlanner.ViewModels/bin/Release/net8.0/CableRoutePlanner.ViewModels.dll
+  CableRoutePlanner.Infrastructure -> /workspace/maps/src/CableRoutePlanner.Infrastructure/bin/Release/net8.0/CableRoutePlanner.Infrastructure.dll
+  CableRoutePlanner.UI -> /workspace/maps/src/CableRoutePlanner.UI/bin/Release/net8.0/CableRoutePlanner.UI.dll
+  CableRoutePlanner.Bootstrap -> /workspace/maps/src/CableRoutePlanner.Bootstrap/bin/Release/net8.0/CableRoutePlanner.Bootstrap.dll
+  CableRoutePlanner.Desktop -> /workspace/maps/src/CableRoutePlanner.Desktop/bin/Release/net8.0/CableRoutePlanner.Desktop.dll
+  CableRoutePlanner.Verify -> /workspace/maps/tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll
+  CableRoutePlanner.Tests -> /workspace/maps/tests/CableRoutePlanner.Tests/bin/Release/net8.0/CableRoutePlanner.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:06.28

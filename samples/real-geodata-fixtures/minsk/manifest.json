@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "region_id": "minsk-drozdy-novinki",
+  "coordinate_system": "EPSG:4326",
+  "bounds": [
+    27.48,
+    53.93,
+    27.53,
+    53.96
+  ],
+  "database_sha256": "a9063695af548db6fd11a5e5115124be6ac78e3d82698abf5f339774adaa8d1b",
+  "attribution": "© OpenStreetMap contributors · ODbL 1.0",
+  "status": "OSM-only preliminary package. DEM and ESA WorldCover absent. Survey required.",
+  "sources": [
+    {
+      "name": "OpenStreetMap",
+      "url": "https://api.openstreetmap.org/api/0.6/map?bbox=27.48,53.93,27.53,53.96",
+      "sha256": "a6c023fe71f4516695e221679a45ecd6d1bec1f84c13d8e9adc68d09613e82d1",
+      "license": "ODbL-1.0",
+      "license_url": "https://www.openstreetmap.org/copyright",
+      "snapshot_timestamp": null
+    }
+  ],
+  "artifacts": [
+    "base-map-vectors",
+    "obstacles",
+    "spatial-index"
+  ],
+  "feature_counts": {
+    "BridgeCandidate": 35,
+    "Building": 1003,
+    "Field": 35,
+    "Forest": 98,
+    "Lake": 14,
+    "Marsh": 1,
+    "River": 33,
+    "Road": 903
+  },
+  "terrain": false,
+  "worldcover": false,
+  "approved_crossings": 0,
+  "limitations": [
+    "No construction authorization inferred from OSM bridge tags",
+    "Unmapped obstacles remain unknown",
+    "Line waterways use tagged width or conservative 12 m default",
+    "No elevation or landcover completeness claim"
+  ]
+}

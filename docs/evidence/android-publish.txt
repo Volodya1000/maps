@@ -1,0 +1,21 @@
+  Determining projects to restore...
+  Restored /workspace/maps/src/CableRoutePlanner.Infrastructure/CableRoutePlanner.Infrastructure.csproj (in 311 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.UI/CableRoutePlanner.UI.csproj (in 310 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.Domain/CableRoutePlanner.Domain.csproj (in 2 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.ViewModels/CableRoutePlanner.ViewModels.csproj (in 34 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.Application/CableRoutePlanner.Application.csproj (in 1 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.Bootstrap/CableRoutePlanner.Bootstrap.csproj (in 36 ms).
+  1 of 7 projects are up-to-date for restore.
+  CableRoutePlanner.Domain -> /workspace/maps/src/CableRoutePlanner.Domain/bin/Release/net8.0/CableRoutePlanner.Domain.dll
+  CableRoutePlanner.Application -> /workspace/maps/src/CableRoutePlanner.Application/bin/Release/net8.0/CableRoutePlanner.Application.dll
+  CableRoutePlanner.Infrastructure -> /workspace/maps/src/CableRoutePlanner.Infrastructure/bin/Release/net8.0/CableRoutePlanner.Infrastructure.dll
+  CableRoutePlanner.ViewModels -> /workspace/maps/src/CableRoutePlanner.ViewModels/bin/Release/net8.0/CableRoutePlanner.ViewModels.dll
+  CableRoutePlanner.UI -> /workspace/maps/src/CableRoutePlanner.UI/bin/Release/net8.0/CableRoutePlanner.UI.dll
+  CableRoutePlanner.Bootstrap -> /workspace/maps/src/CableRoutePlanner.Bootstrap/bin/Release/net8.0/CableRoutePlanner.Bootstrap.dll
+  CableRoutePlanner.Android -> /workspace/maps/src/CableRoutePlanner.Android/bin/Release/net8.0-android/CableRoutePlanner.Android.dll
+  CableRoutePlanner.Domain -> /workspace/maps/src/CableRoutePlanner.Domain/bin/Release/net8.0/CableRoutePlanner.Domain.dll
+  CableRoutePlanner.Application -> /workspace/maps/src/CableRoutePlanner.Application/bin/Release/net8.0/CableRoutePlanner.Application.dll
+  CableRoutePlanner.ViewModels -> /workspace/maps/src/CableRoutePlanner.ViewModels/bin/Release/net8.0/CableRoutePlanner.ViewModels.dll
+  CableRoutePlanner.UI -> /workspace/maps/src/CableRoutePlanner.UI/bin/Release/net8.0/CableRoutePlanner.UI.dll
+  CableRoutePlanner.Infrastructure -> /workspace/maps/src/CableRoutePlanner.Infrastructure/bin/Release/net8.0/CableRoutePlanner.Infrastructure.dll
+  CableRoutePlanner.Bootstrap -> /workspace/maps/src/CableRoutePlanner.Bootstrap/bin/Release/net8.0/CableRoutePlanner.Bootstrap.dll

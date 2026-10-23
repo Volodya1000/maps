@@ -1,0 +1,18 @@
+MapLibre GL JS 4.7.1: BSD-3-Clause, full licence in vendor/LICENSE.txt.
+OpenStreetMap derived vector extract: © OpenStreetMap contributors, ODbL 1.0.
+https://www.openstreetmap.org/copyright
+OSM source and rebuild tool: ../../samples/real-geodata-fixtures/minsk and ../../tools/GeodataPreparation.
+
+Terrain tiles are adapted from Copernicus DEM GLO-30 (2021 release), accessed 2026-10-23 via AWS Open Data:
+https://registry.opendata.aws/copernicus-dem/
+https://copernicus-dem-30m.s3.amazonaws.com/readme.html
+
+produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved
+
+The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30.
+
+Licence and citation guidelines:
+https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM
+Transformations: bilinear reprojection to EPSG:3857 and 1/256 metre Terrarium RGB encoding.
+No terrain tiles are generated for missing source coverage.
+Copernicus is a DSM including vegetation and structures; this is not a surveyed bare-earth model.

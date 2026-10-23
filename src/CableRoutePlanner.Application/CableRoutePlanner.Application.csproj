@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup />
+  <ItemGroup>
+    <ProjectReference Include="../CableRoutePlanner.Domain/CableRoutePlanner.Domain.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup />
+  <ItemGroup>
+    <ProjectReference Include="../CableRoutePlanner.Application/CableRoutePlanner.Application.csproj" />
+    <PackageReference Include="ReactiveUI" />
+    <PackageReference Include="ReactiveUI.Fody" PrivateAssets="all" />
+    <PackageReference Include="Fody" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

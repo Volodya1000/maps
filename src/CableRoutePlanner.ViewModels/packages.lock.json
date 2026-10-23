@@ -1,0 +1,66 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net8.0": {
+      "Fody": {
+        "type": "Direct",
+        "requested": "[6.9.2, )",
+        "resolved": "6.9.2",
+        "contentHash": "YBHobPGogb0vYhGYIxn/ndWqTjNWZveDi5jdjrcshL2vjwU3gQGyDeI7vGgye+2rAM5fGRvlLgNWLW3DpviS/w=="
+      },
+      "ReactiveUI": {
+        "type": "Direct",
+        "requested": "[20.4.1, )",
+        "resolved": "20.4.1",
+        "contentHash": "HMgCWEya3zMfFfrvmYz4Ec87acq+9mo92pLfNZ3GLbUFZeI6TBc2aTPg3UT+1AjPtwfacJJeh7wCwz0y9wabpg==",
+        "dependencies": {
+          "DynamicData": "9.4.1",
+          "Splat": "15.3.1",
+          "System.ComponentModel.Annotations": "5.0.0"
+        }
+      },
+      "ReactiveUI.Fody": {
+        "type": "Direct",
+        "requested": "[19.5.41, )",
+        "resolved": "19.5.41",
+        "contentHash": "bh6OH1WsSHf/ryUVaPnI6LWl1+lrCvq4L/AoHpzPXCKxtR4p0ogPVONnkq0jYgSQ55x7YNCVkthBKeb6uUSbpg==",
+        "dependencies": {
+          "Fody": "6.8.0",
+          "ReactiveUI": "19.5.41"
+        }
+      },
+      "DynamicData": {
+        "type": "Transitive",
+        "resolved": "9.4.1",
+        "contentHash": "+SoDTbuzY9j0K+sZfRbbVpGjjylkVMhUQnw6qiPhxzYLBJlwxFpmunXSaNBtTxwC2C9d/XIp0kO7VhMAVuUt7w==",
+        "dependencies": {
+          "System.Reactive": "6.0.1"
+        }
+      },
+      "Splat": {
+        "type": "Transitive",
+        "resolved": "15.3.1",
+        "contentHash": "zyu98Mwp8gTi3MlS6EGtvcacmw5W/qA4/h/DVeZ28A1dR6mcM628ujHck6LK5SM6LwroR5LzBonWgeFtwo2Afg=="
+      },
+      "System.ComponentModel.Annotations": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "dMkqfy2el8A8/I76n2Hi1oBFEbG1SfxD2l5nhwXV3XjlnOmwxJlQbYpJH4W51odnU9sARCSAgv7S3CyAFMkpYg=="
+      },
+      "System.Reactive": {
+        "type": "Transitive",
+        "resolved": "6.0.1",
+        "contentHash": "rHaWtKDwCi9qJ3ObKo8LHPMuuwv33YbmQi7TcUK1C264V3MFnOr5Im7QgCTdLniztP3GJyeiSg5x8NqYJFqRmg=="
+      },
+      "cablerouteplanner.application": {
+        "type": "Project",
+        "dependencies": {
+          "CableRoutePlanner.Domain": "[1.0.0, )"
+        }
+      },
+      "cablerouteplanner.domain": {
+        "type": "Project"
+      }
+    }
+  }
+}

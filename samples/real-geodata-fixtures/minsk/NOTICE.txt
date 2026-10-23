@@ -1,0 +1,8 @@
+© OpenStreetMap contributors. https://www.openstreetmap.org/copyright
+This regional extract and the derived geodata.sqlite database are provided under ODbL 1.0.
+Contents: DbCL 1.0. Full licences in licenses/.
+Source snapshot downloaded 2026-10-23 using the official OSM API.
+Complete retrieval URLs in source.osm.sources.json; hashes in manifest.json.
+The source is included as source.osm.gz to allow offline rebuilding.
+This is an OSM-only preliminary dataset. Copernicus DEM, ESA WorldCover,
+construction approvals and complete coverage of Belarus are not included.
