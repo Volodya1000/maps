@@ -40,7 +40,18 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             vm.WhenAnyValue(x => x.SelectedRoute).Subscribe(
                 _ => adapter.SetRoutes(vm.Alternatives.ToArray(), vm.SelectedRoute?.Id)).DisposeWith(disposables);
             vm.WhenAnyValue(x => x.AddMode).Subscribe(adapter.SetAddMode).DisposeWith(disposables);
-            vm.WhenAnyValue(x => x.MapVersion).Subscribe(_ => adapter.SetFeatures(vm.Features.ToArray())).DisposeWith(disposables);
+            var readyAnnounced = false;
+            vm.WhenAnyValue(x => x.MapVersion).Subscribe(_ =>
+            {
+                adapter.SetFeatures(vm.Features.ToArray());
+                if (!readyAnnounced && vm.MapVersion > 0 && vm.Features.Count > 0)
+                {
+                    // Android routes stdout to logcat. The installer smoke test waits for real
+                    // map data, rather than accepting an Activity stuck on the loading screen.
+                    Console.WriteLine($"CRP_OFFLINE_MAP_READY region={vm.DataInfo.RegionId} features={vm.Features.Count}");
+                    readyAnnounced = true;
+                }
+            }).DisposeWith(disposables);
             var viewportChanges = new System.Reactive.Subjects.Subject<(GeoBounds Bounds, double Resolution)>().DisposeWith(disposables);
             void Viewport(GeoBounds bounds, double resolution) => viewportChanges.OnNext((bounds, resolution));
             adapter.ViewportChanged += Viewport;

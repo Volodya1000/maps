@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--adb', default='adb')
     parser.add_argument('--launches', type=int, default=3)
     parser.add_argument('--settle-seconds', type=int, default=10)
+    parser.add_argument('--wait-map-ready', action='store_true')
     args = parser.parse_args()
     apk = args.apk
     if apk is None:
@@ -55,11 +56,22 @@ def main():
             if 'Error:' in start or 'Exception' in start:
                 raise RuntimeError('Activity start failed: ' + start)
             # Keep observing after am start: AppCompat failures can occur just after it returns.
-            for _ in range(args.settle_seconds if index == 0 else 15):
+            map_ready = None
+            observation_seconds = args.settle_seconds if args.wait_map_ready or index == 0 else 15
+            for _ in range(observation_seconds):
                 time.sleep(1)
                 pid = adb('shell', 'pidof', PACKAGE, check=False).strip()
                 if not pid:
                     raise RuntimeError('Application died after launching Activity')
+                if args.wait_map_ready:
+                    current_logs = adb('logcat', '-d', '-v', 'brief')
+                    map_ready = next((line for line in current_logs.splitlines()
+                                      if 'CRP_OFFLINE_MAP_READY' in line), None)
+                    if map_ready:
+                        time.sleep(2)  # Allow the next map frame to be presented before capture.
+                        break
+            if args.wait_map_ready and not map_ready:
+                raise RuntimeError('Activity survived but offline map did not become ready')
             activities = adb('shell', 'dumpsys', 'activity', 'activities')
             resumed = [line.strip() for line in activities.splitlines()
                        if re.search(r'(mResumedActivity|topResumedActivity|ResumedActivity:)', line)]
@@ -72,7 +84,7 @@ def main():
             if PACKAGE in crashes:
                 raise RuntimeError('Application crash buffer is not empty: ' + crashes)
             (args.output / f'launch-{index+1}.png').write_bytes(adb('exec-out', 'screencap', '-p', binary=True))
-            report['launches'].append(dict(attempt=index+1, pid=pid, resumed=resumed))
+            report['launches'].append(dict(attempt=index+1, pid=pid, resumed=resumed, map_ready=map_ready))
         report['success'] = True
     except Exception as error:
         report['error'] = str(error)

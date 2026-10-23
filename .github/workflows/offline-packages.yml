@@ -164,7 +164,7 @@ jobs:
           disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: python3 tools/android_smoke.py --apk artifacts/apk/CableRoutePlanner-0.2.0-Belarus.apk --output artifacts/full-android-smoke --settle-seconds 90
+          script: python3 tools/android_smoke.py --apk artifacts/apk/CableRoutePlanner-0.2.0-Belarus.apk --output artifacts/full-android-smoke --settle-seconds 180 --wait-map-ready
       - uses: actions/upload-artifact@v4
         if: always()
         with:

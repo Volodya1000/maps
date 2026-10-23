@@ -63,9 +63,20 @@ public sealed class WaypointGestureTests
 
         var cross = list.GetVisualDescendants().OfType<Button>()
             .First(button => Equals(button.Content, "×") && ((WaypointRow)button.DataContext!).Id == ids[2]);
+        cross.BringIntoView();
+        window.UpdateLayout();
+        // Reordering replaces row visuals; present a frame before hit-testing the new buttons.
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(ids[2], cross.CommandParameter);
+        Assert.True(cross.Command!.CanExecute(cross.CommandParameter));
         var click = cross.TranslatePoint(new Point(cross.Bounds.Width / 2, cross.Bounds.Height / 2), window)!.Value;
-        window.MouseDown(click, MouseButton.Left);
-        window.MouseUp(click, MouseButton.Left);
+        var hit = window.InputHitTest(click);
+        Assert.True(ReferenceEquals(hit, cross) || (hit as Visual)?.GetVisualAncestors().Contains(cross) == true,
+            $"Hit {hit?.GetType().Name} at {click}; cross={cross.Bounds}; offset={scroll.Offset}");
+        Touch(RawPointerEventType.TouchBegin, click, 10);
+        Assert.True(cross.IsPressed, "Cross did not receive touch press");
+        Touch(RawPointerEventType.TouchEnd, click, 11);
         Assert.Equal(new[] { ids[1], ids[0], ids[3] }, vm.Points.Select(point => point.Id));
         window.Close();
     }
