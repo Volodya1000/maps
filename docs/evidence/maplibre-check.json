@@ -1,0 +1,39 @@
+{
+  "scope": "Linux headless Chromium only; native C# WebView and target platforms unverified",
+  "terrain": {
+    "terrain": {
+      "source": "terrain",
+      "exaggeration": 1
+    },
+    "pitch": 60,
+    "heightsRelativeToCenterMetres": [
+      0,
+      -13.258261307131733,
+      -6.701117987974214
+    ],
+    "points": 2,
+    "routeFeatures": 1
+  },
+  "interactions": {
+    "events": [
+      {
+        "type": "ready"
+      },
+      {
+        "type": "pointMoved",
+        "id": "A",
+        "latitude": 53.945,
+        "longitude": 27.506
+      },
+      {
+        "type": "pointAdded",
+        "latitude": 53.946,
+        "longitude": 27.507
+      }
+    ],
+    "remainingPoints": 0,
+    "terrainAfter2D": null
+  },
+  "externalRequests": [],
+  "errors": []
+}

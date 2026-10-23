@@ -1,0 +1,16 @@
+  Determining projects to restore...
+  Restored /workspace/maps/src/CableRoutePlanner.ViewModels/CableRoutePlanner.ViewModels.csproj (in 946 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.Bootstrap/CableRoutePlanner.Bootstrap.csproj (in 41 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.Application/CableRoutePlanner.Application.csproj (in 3 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.Desktop/CableRoutePlanner.Desktop.csproj (in 1.01 sec).
+  Restored /workspace/maps/src/CableRoutePlanner.Infrastructure/CableRoutePlanner.Infrastructure.csproj (in 9 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.Domain/CableRoutePlanner.Domain.csproj (in 2 ms).
+  Restored /workspace/maps/src/CableRoutePlanner.UI/CableRoutePlanner.UI.csproj (in 22 ms).
+  CableRoutePlanner.Domain -> /workspace/maps/src/CableRoutePlanner.Domain/bin/Release/net8.0/CableRoutePlanner.Domain.dll
+  CableRoutePlanner.Application -> /workspace/maps/src/CableRoutePlanner.Application/bin/Release/net8.0/CableRoutePlanner.Application.dll
+  CableRoutePlanner.ViewModels -> /workspace/maps/src/CableRoutePlanner.ViewModels/bin/Release/net8.0/CableRoutePlanner.ViewModels.dll
+  CableRoutePlanner.Infrastructure -> /workspace/maps/src/CableRoutePlanner.Infrastructure/bin/Release/net8.0/CableRoutePlanner.Infrastructure.dll
+  CableRoutePlanner.UI -> /workspace/maps/src/CableRoutePlanner.UI/bin/Release/net8.0/CableRoutePlanner.UI.dll
+  CableRoutePlanner.Bootstrap -> /workspace/maps/src/CableRoutePlanner.Bootstrap/bin/Release/net8.0/CableRoutePlanner.Bootstrap.dll
+  CableRoutePlanner.Desktop -> /workspace/maps/src/CableRoutePlanner.Desktop/bin/Release/net8.0/win-x64/CableRoutePlanner.Desktop.dll
+  CableRoutePlanner.Desktop -> /workspace/maps/artifacts/win-x64/

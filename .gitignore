@@ -8,3 +8,5 @@ artifacts/
 *.aab
 __pycache__/
 .venv/
+node_modules/
+*.keystore

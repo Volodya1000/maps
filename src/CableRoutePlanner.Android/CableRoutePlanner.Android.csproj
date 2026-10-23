@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
+    <ApplicationId>by.cablerouteplanner.app</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <AndroidPackageFormats>apk</AndroidPackageFormats>
+    <AndroidNeedsInternetPermission>false</AndroidNeedsInternetPermission>
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CableRoutePlanner.Bootstrap/CableRoutePlanner.Bootstrap.csproj" />
+    <PackageReference Include="Avalonia.Android" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="../../samples/real-geodata-fixtures/minsk/**" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

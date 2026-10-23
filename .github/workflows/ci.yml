@@ -1,0 +1,95 @@
+name: Build and verify
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet restore CableRoutePlanner.Desktop.slnf --locked-mode
+      - run: dotnet build CableRoutePlanner.Desktop.slnf --no-restore -c Release
+      - run: dotnet test CableRoutePlanner.Desktop.slnf --no-restore --no-build -c Release --logger trx --results-directory artifacts/tests
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y strace
+          strace -f -e trace=connect,sendto -o artifacts/runtime.strace dotnet tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll samples/real-geodata-fixtures/minsk artifacts/route.geojson 53.9490,27.5180 53.9500,27.5190
+          python3 tools/check_network.py artifacts/runtime.strace --output artifacts/network-report.json
+      - if: runner.os == 'Windows'
+        run: dotnet publish src/CableRoutePlanner.Desktop -c Release -r win-x64 --self-contained true -o artifacts/win-x64
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-${{ runner.os }}
+          path: artifacts/
+  data:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r tools/GeodataPreparation/requirements.txt
+      - run: python tools/GeodataPreparation/rebuild_sample.py --output artifacts/rebuilt-minsk
+  android:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - run: dotnet workload install android --skip-manifest-update
+      - run: dotnet restore src/CableRoutePlanner.Android --locked-mode
+      - run: dotnet publish src/CableRoutePlanner.Android -c Release -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME"
+      - run: |
+          APK=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk
+          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump permissions "$APK" > permissions.txt
+          if rg 'android.permission.INTERNET' permissions.txt; then exit 1; fi
+          sha256sum "$APK" > apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-test-apk
+          path: |
+            src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/*-Signed.apk
+            permissions.txt
+            apk.sha256
+  terrain-spike:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+        working-directory: spikes/MapLibre
+      - run: npx playwright install --with-deps chromium
+        working-directory: spikes/MapLibre
+      - run: |
+          python3 serve.py > server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          npm test
+        working-directory: spikes/MapLibre
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terrain-spike-evidence
+          path: docs/evidence/maplibre-*

@@ -1,0 +1,53 @@
+{
+  "source": "Copernicus DEM GLO-30",
+  "encoding": "terrarium",
+  "bounds": [
+    27.48,
+    53.93,
+    27.53,
+    53.96
+  ],
+  "crs": "EPSG:3857",
+  "minzoom": 12,
+  "maxzoom": 14,
+  "inputs": [
+    {
+      "file": "copernicus-N53E027.tif",
+      "sha256": "2e115431901b692ae14fc0ff78a7bfc92fcce46c4dfcdb7467fffa62f31e2aa5"
+    },
+    {
+      "file": "copernicus-N54E027.tif",
+      "sha256": "d55b4bd13ff84f5ec09130ea91b27061ddc53865cf474fecaeb16baa56eddf22"
+    }
+  ],
+  "tiles": {
+    "12/2360/1315.png": "aaf0f3b4e8a09fb2389ef15741726d296d92ae093ebee67eb3f007241a4913b7",
+    "12/2360/1316.png": "8377a68d0553f772ae83148d6c2f86a9392630cb25b7bf6680a183c7d4b31950",
+    "12/2361/1315.png": "911512a7ab48bc79738fa100734ef7dfcbf550aa5e08756392ee7ddcf94c74ba",
+    "12/2361/1316.png": "f5986bc552e6c79531c5fa531e53ba21a8bc84519940dad673e46992cabd5aa9",
+    "13/4721/2631.png": "d7afefcc1c49f398927e5b1fedcd2a05899482003a31da3c630d4887c6191780",
+    "13/4721/2632.png": "36696e3adc95caff5bd01b7b031c30772eeba91da964c880e16dc1c79acfadcb",
+    "13/4721/2633.png": "cb7caffbcca207bef9b7dc50a2f20dd4bc0c15c827a677b6f0af4d77bf349faa",
+    "13/4722/2631.png": "d768f90365957a3d5220723126d2920a3a966578b9b572bcf300e0d17d93215b",
+    "13/4722/2632.png": "81ab1fb67bc21e7dde420e170aebc485994cc8efa22c27486f90f54dadf151d6",
+    "13/4722/2633.png": "3d8897c4f1acd86a6bd9e243bbc813b0bee9a51ceadae72a0e3b6464ff44c563",
+    "14/9442/5263.png": "c484e45cd2268640f3b9247b783ce78ef7b664327737b789dcd1af1471f6e421",
+    "14/9442/5264.png": "e6c0f0fc0993fbd02a16c742b8c500a9088c3b78293258a9e57b4a94bef277d6",
+    "14/9442/5265.png": "28611f125009be468a10b72602417a4f300e5dd5b0b7f972651265e4bb2c4bc8",
+    "14/9442/5266.png": "31323e91d985070364c43c6532d28feb93f7dee9b61e0a043615ba2d39173161",
+    "14/9443/5263.png": "84a0ef9f85032c0cfe61ad8038218887e267959a15a3a1670e146bc32d729ecc",
+    "14/9443/5264.png": "128649f6430fdc929fbfa6bc57e7a16f6ab08c4c73aaed09c549d40fe49a651d",
+    "14/9443/5265.png": "72da65e652140ed7cbdc0c2e1f2de5d5c368f731618f47151856a0d79a4fa8a3",
+    "14/9443/5266.png": "95c867b87389b1ee1f1caeb4e6a064bac32c7c1f1c45d4da9ef0d0e22674945a",
+    "14/9444/5263.png": "a4adbe517246c8eafdce8832e8654b10f637f2b01c4786838dad5ef7dc556eb1",
+    "14/9444/5264.png": "485f901e63ba9080316c5b1031d226372108e726707857c7b82fc06654a09cc2",
+    "14/9444/5265.png": "a2aef7e41ed41d0df5290ced48b850a4e277f6260990c01777ccb1c8c4737ec9",
+    "14/9444/5266.png": "6f90741fc312041fc1f67f6ef223a2c171ead9b08e58d7710d56a89b238a7c8e"
+  },
+  "attribution": "produced using Copernicus WorldDEM-30 \u00a9 DLR e.V. 2010-2014 and \u00a9 Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+  "license_url": "https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model",
+  "source_urls": [
+    "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N53_00_E027_00_DEM/Copernicus_DSM_COG_10_N53_00_E027_00_DEM.tif",
+    "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N54_00_E027_00_DEM/Copernicus_DSM_COG_10_N54_00_E027_00_DEM.tif"
+  ]
+}

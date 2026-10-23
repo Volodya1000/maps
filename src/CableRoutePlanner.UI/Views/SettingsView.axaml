@@ -1,0 +1,9 @@
+<rx:ReactiveUserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:rx="using:Avalonia.ReactiveUI" xmlns:vm="using:CableRoutePlanner.ViewModels" x:Class="CableRoutePlanner.UI.Views.SettingsView" x:TypeArguments="vm:SettingsViewModel" x:DataType="vm:SettingsViewModel">
+<ScrollViewer><StackPanel MaxWidth="620" HorizontalAlignment="Stretch" Margin="28" Spacing="16">
+<TextBlock Text="Настройки расчёта" FontSize="28" FontWeight="SemiBold"/>
+<TextBlock Text="Размер ячейки сетки, м (5–200)"/><NumericUpDown Minimum="5" Maximum="200" Value="{Binding CellSize}" FormatString="0"/>
+<TextBlock Text="Запас кабеля, % (0–100)"/><NumericUpDown Minimum="0" Maximum="100" Value="{Binding ReservePercent}" FormatString="0.0"/>
+<TextBlock Text="Мелкая сетка увеличивает время и расход памяти. Текущая версия ограничивает расчётную область 20 км и 100 000 узлов. Высоты и уклоны не учитываются без DEM." TextWrapping="Wrap"/>
+<Button Classes="primary" Content="Сохранить" Command="{Binding Save}"/>
+<TextBlock Text="{Binding Status}" TextWrapping="Wrap"/>
+</StackPanel></ScrollViewer></rx:ReactiveUserControl>

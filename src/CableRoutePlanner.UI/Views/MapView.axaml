@@ -1,0 +1,24 @@
+<rx:ReactiveUserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:rx="using:Avalonia.ReactiveUI" xmlns:vm="using:CableRoutePlanner.ViewModels" xmlns:d="clr-namespace:CableRoutePlanner.Domain;assembly=CableRoutePlanner.Domain" xmlns:maps="clr-namespace:Mapsui.UI.Avalonia;assembly=Mapsui.UI.Avalonia" x:Class="CableRoutePlanner.UI.Views.MapView" x:TypeArguments="vm:MapViewModel" x:DataType="vm:MapViewModel">
+<Grid x:Name="Layout" ColumnDefinitions="*,350" RowDefinitions="*,Auto">
+<Grid x:Name="MapArea" Grid.Column="0" RowDefinitions="*,Auto">
+<maps:MapControl x:Name="MapControl" Grid.RowSpan="2" />
+<Border Background="#EEFFFFFF" CornerRadius="8" Margin="14" Padding="10" HorizontalAlignment="Left" VerticalAlignment="Top"><StackPanel Orientation="Horizontal" Spacing="8"><ToggleButton Content="Добавлять точки" IsChecked="{Binding AddMode}"/><Button x:Name="ZoomInButton" Content="+"/><Button x:Name="ZoomOutButton" Content="−"/><Button Content="3D" Command="{Binding Request3D}"/></StackPanel></Border>
+<Border Grid.Row="1" Background="#ECFFFFFF" Padding="10,5"><StackPanel><TextBlock Text="{Binding MapStatus}" FontSize="11"/><TextBlock Text="{Binding DataInfo.Attribution}" FontSize="11"/></StackPanel></Border>
+</Grid>
+<Border x:Name="SidePanel" Grid.Column="1" Grid.Row="0" Background="White" Padding="18" BorderBrush="#DFE5E0" BorderThickness="1,0,0,0">
+<ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Spacing="12">
+<TextBlock Text="Точки маршрута" FontSize="21" FontWeight="SemiBold"/>
+<TextBlock Text="Нажмите на карту. Маркеры можно перетаскивать. При выключенном добавлении карта свободно перемещается." TextWrapping="Wrap" Foreground="#64726A" FontSize="12"/>
+<ListBox ItemsSource="{Binding Points}" SelectedItem="{Binding SelectedPoint}" MinHeight="70" MaxHeight="180"><ListBox.ItemTemplate><DataTemplate x:DataType="vm:WaypointRow"><TextBlock Text="{Binding Display}" FontSize="13"/></DataTemplate></ListBox.ItemTemplate></ListBox>
+<WrapPanel><Button Content="↑" Command="{Binding MoveUp}"/><Button Content="↓" Command="{Binding MoveDown}"/><Button Content="Удалить" Command="{Binding DeletePoint}"/><Button Content="Копировать" Command="{Binding CopyCoordinates}"/><Button Content="Очистить" Command="{Binding ClearPoints}"/></WrapPanel>
+<Expander Header="Ввести координаты"><StackPanel Spacing="6"><TextBox Watermark="Широта, например 53.944" Text="{Binding LatitudeText}"/><TextBox Watermark="Долгота, например 27.502" Text="{Binding LongitudeText}"/><Button Content="Добавить точку" Command="{Binding AddManual}"/></StackPanel></Expander>
+<Button Classes="primary" Content="Построить маршруты" Command="{Binding BuildRoutes}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+<ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Height="4"/>
+<Button Content="Отменить расчёт" IsVisible="{Binding IsBusy}" Command="{Binding Cancel}"/>
+<Border Height="1" Background="#E5EAE5" Margin="0,4"/>
+<TextBlock Text="Альтернативы" FontSize="18" FontWeight="SemiBold"/>
+<ListBox ItemsSource="{Binding Alternatives}" SelectedItem="{Binding SelectedRoute}"><ListBox.ItemTemplate><DataTemplate x:DataType="d:RouteAlternative"><StackPanel Margin="0,4"><TextBlock Text="{Binding Name}" FontWeight="SemiBold"/><TextBlock Text="{Binding Metrics.LengthMetres, StringFormat='Длина: {0:N0} м'}" FontSize="12" Foreground="#64726A"/></StackPanel></DataTemplate></ListBox.ItemTemplate></ListBox>
+<TextBlock Text="{Binding MetricsText}" TextWrapping="Wrap" FontSize="13" LineHeight="21"/>
+</StackPanel></ScrollViewer></Border>
+<Border x:Name="StatusPanel" Grid.Row="1" Grid.ColumnSpan="2" Background="#EAF2ED" Padding="14,10"><TextBlock Text="{Binding Status}" TextWrapping="Wrap" Foreground="#244D3B" FontSize="13"/></Border>
+</Grid></rx:ReactiveUserControl>

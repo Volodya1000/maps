@@ -1,0 +1,93 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3167E98B-D4CB-4626-8EFB-F0B3220280A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Android", "src\CableRoutePlanner.Android\CableRoutePlanner.Android.csproj", "{96F52B7F-D79E-4F31-8C7D-4E1AEDD73CD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Application", "src\CableRoutePlanner.Application\CableRoutePlanner.Application.csproj", "{DEED29AD-3141-4EED-BABB-68040D4559FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Bootstrap", "src\CableRoutePlanner.Bootstrap\CableRoutePlanner.Bootstrap.csproj", "{01C95C96-295A-4624-BC27-6EC5320ABF33}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Desktop", "src\CableRoutePlanner.Desktop\CableRoutePlanner.Desktop.csproj", "{EAEEFB84-CAB5-45D9-904B-0CA78E47FEAC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Domain", "src\CableRoutePlanner.Domain\CableRoutePlanner.Domain.csproj", "{A37745D7-5C55-4725-B213-D1B65F242611}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Infrastructure", "src\CableRoutePlanner.Infrastructure\CableRoutePlanner.Infrastructure.csproj", "{D2ACB95C-8147-496B-BA68-F00B75625D88}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.UI", "src\CableRoutePlanner.UI\CableRoutePlanner.UI.csproj", "{216E6446-A546-4E6C-B20F-0DC4D6DF51B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.ViewModels", "src\CableRoutePlanner.ViewModels\CableRoutePlanner.ViewModels.csproj", "{70E6D883-29A5-4140-AA5A-B516334FA8D4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AA642880-A547-4C78-B405-FEDCBBA21029}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Tests", "tests\CableRoutePlanner.Tests\CableRoutePlanner.Tests.csproj", "{2DF4C38F-7ACA-4F5F-9FDA-035C95CF5703}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{E2D13975-0341-4EAA-8363-E53E0E400012}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Verify", "tools\CableRoutePlanner.Verify\CableRoutePlanner.Verify.csproj", "{32E564A4-CB7E-43FF-ABDF-5E97787AD351}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{96F52B7F-D79E-4F31-8C7D-4E1AEDD73CD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96F52B7F-D79E-4F31-8C7D-4E1AEDD73CD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96F52B7F-D79E-4F31-8C7D-4E1AEDD73CD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96F52B7F-D79E-4F31-8C7D-4E1AEDD73CD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DEED29AD-3141-4EED-BABB-68040D4559FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DEED29AD-3141-4EED-BABB-68040D4559FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DEED29AD-3141-4EED-BABB-68040D4559FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DEED29AD-3141-4EED-BABB-68040D4559FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01C95C96-295A-4624-BC27-6EC5320ABF33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01C95C96-295A-4624-BC27-6EC5320ABF33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01C95C96-295A-4624-BC27-6EC5320ABF33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01C95C96-295A-4624-BC27-6EC5320ABF33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAEEFB84-CAB5-45D9-904B-0CA78E47FEAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAEEFB84-CAB5-45D9-904B-0CA78E47FEAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAEEFB84-CAB5-45D9-904B-0CA78E47FEAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAEEFB84-CAB5-45D9-904B-0CA78E47FEAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A37745D7-5C55-4725-B213-D1B65F242611}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A37745D7-5C55-4725-B213-D1B65F242611}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A37745D7-5C55-4725-B213-D1B65F242611}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A37745D7-5C55-4725-B213-D1B65F242611}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2ACB95C-8147-496B-BA68-F00B75625D88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2ACB95C-8147-496B-BA68-F00B75625D88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2ACB95C-8147-496B-BA68-F00B75625D88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2ACB95C-8147-496B-BA68-F00B75625D88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{216E6446-A546-4E6C-B20F-0DC4D6DF51B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{216E6446-A546-4E6C-B20F-0DC4D6DF51B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{216E6446-A546-4E6C-B20F-0DC4D6DF51B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{216E6446-A546-4E6C-B20F-0DC4D6DF51B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70E6D883-29A5-4140-AA5A-B516334FA8D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70E6D883-29A5-4140-AA5A-B516334FA8D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70E6D883-29A5-4140-AA5A-B516334FA8D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70E6D883-29A5-4140-AA5A-B516334FA8D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DF4C38F-7ACA-4F5F-9FDA-035C95CF5703}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DF4C38F-7ACA-4F5F-9FDA-035C95CF5703}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DF4C38F-7ACA-4F5F-9FDA-035C95CF5703}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DF4C38F-7ACA-4F5F-9FDA-035C95CF5703}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32E564A4-CB7E-43FF-ABDF-5E97787AD351}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32E564A4-CB7E-43FF-ABDF-5E97787AD351}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32E564A4-CB7E-43FF-ABDF-5E97787AD351}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32E564A4-CB7E-43FF-ABDF-5E97787AD351}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{96F52B7F-D79E-4F31-8C7D-4E1AEDD73CD5} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
+		{DEED29AD-3141-4EED-BABB-68040D4559FE} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
+		{01C95C96-295A-4624-BC27-6EC5320ABF33} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
+		{EAEEFB84-CAB5-45D9-904B-0CA78E47FEAC} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
+		{A37745D7-5C55-4725-B213-D1B65F242611} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
+		{D2ACB95C-8147-496B-BA68-F00B75625D88} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
+		{216E6446-A546-4E6C-B20F-0DC4D6DF51B5} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
+		{70E6D883-29A5-4140-AA5A-B516334FA8D4} = {3167E98B-D4CB-4626-8EFB-F0B3220280A5}
+		{2DF4C38F-7ACA-4F5F-9FDA-035C95CF5703} = {AA642880-A547-4C78-B405-FEDCBBA21029}
+		{32E564A4-CB7E-43FF-ABDF-5E97787AD351} = {E2D13975-0341-4EAA-8363-E53E0E400012}
+	EndGlobalSection
+EndGlobal
