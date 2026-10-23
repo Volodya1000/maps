@@ -24,6 +24,90 @@ public static class TestApplication
 public sealed class UiTests
 {
     [AvaloniaFact]
+    public async Task SystemBackAndWindowCloseWarnAboutUnsavedSettings()
+    {
+        using var provider = AppBootstrap.CreateServices(TestData.RealData,
+            Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), new MemoryClipboard());
+        var shell = provider.GetRequiredService<ShellView>();
+        var vm = shell.ViewModel!;
+        var settings = provider.GetRequiredService<SettingsViewModel>();
+        var window = new Window { Content = shell, Width = 900, Height = 700 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        await vm.ShowSettings.Execute();
+        settings.CellSize = 40;
+        var back = new Avalonia.Interactivity.RoutedEventArgs(TopLevel.BackRequestedEvent);
+        window.RaiseEvent(back);
+        Assert.True(back.Handled);
+        Assert.True(vm.IsSettings);
+        Assert.True(vm.ShowUnsavedWarning);
+        await vm.StayOnSettings.Execute();
+        window.Close();
+        Assert.True(window.IsVisible);
+        Assert.True(vm.ShowUnsavedWarning);
+        await vm.StayOnSettings.Execute();
+        Assert.Equal(40m, settings.CellSize);
+        window.Close();
+        await vm.DiscardAndLeave.Execute();
+        Assert.False(window.IsVisible);
+        Assert.False(settings.HasChanges);
+    }
+
+    [AvaloniaFact]
+    public async Task SettingsInputsShowSavedValuesAndSaveButtonTracksEdits()
+    {
+        using var vm = new SettingsViewModel(new NavigationHost(), new MemorySettings());
+        var view = new SettingsView { ViewModel = vm };
+        var window = new Window { Content = view, Width = 600, Height = 700 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var inputs = view.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
+        Assert.Equal(20m, inputs[0].Value);
+        Assert.Equal(10m, inputs[1].Value);
+        Assert.NotEmpty(inputs[0].GetVisualDescendants().OfType<TextBox>().Single().Text!);
+        Assert.NotEmpty(inputs[1].GetVisualDescendants().OfType<TextBox>().Single().Text!);
+        var save = view.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, "Сохранить"));
+        Assert.False(save.IsEffectivelyEnabled);
+        inputs[0].Value = 40;
+        Assert.Equal(40m, vm.CellSize);
+        Assert.True(save.IsEffectivelyEnabled);
+        inputs[0].Value = 20;
+        Assert.False(save.IsEffectivelyEnabled);
+        inputs[1].Value = 15;
+        await vm.Save.Execute();
+        Assert.False(save.IsEffectivelyEnabled);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task AlternativesAreHiddenUntilRouteIsBuiltAndAfterClear()
+    {
+        using var vm = new MapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner()),
+            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        {
+            ViewModel = vm
+        };
+        var window = new Window { Content = view, Width = 1100, Height = 900 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var choices = view.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "RouteChoices");
+        var section = choices.GetVisualAncestors().OfType<StackPanel>().First();
+        Assert.False(section.IsVisible);
+        Assert.DoesNotContain(view.GetVisualDescendants().OfType<Button>(), b => Equals(b.Content, "3D"));
+        Assert.Contains(view.GetVisualDescendants().OfType<Button>(), b => Equals(b.Content, "© OpenStreetMap contributors"));
+        await vm.AddPoint.Execute(TestData.P(30, 150));
+        await vm.AddPoint.Execute(TestData.P(300, 150));
+        Assert.False(section.IsVisible);
+        await vm.BuildRoutes.Execute();
+        Assert.True(section.IsVisible);
+        await vm.ClearPoints.Execute();
+        Assert.False(section.IsVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void CompiledXamlAndTypedViewLocatorResolveAllRegisteredScreens()
     {
         using var provider = AppBootstrap.CreateServices(

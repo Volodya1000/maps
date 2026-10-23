@@ -23,7 +23,8 @@ public sealed class MapViewModelRefactoringTests
 
         Assert.Equal(2L, Assert.Single(vm.Features).Id);
         Assert.Equal(1, vm.MapVersion);
-        Assert.Contains("Офлайн:", vm.MapStatus);
+        Assert.Empty(vm.MapStatus);
+        Assert.False(vm.HasMapNotice);
     }
 
     [Fact]
@@ -128,7 +129,6 @@ public sealed class MapViewModelRefactoringTests
         Assert.NotNull(vm.CopyCoordinates);
         Assert.NotNull(vm.BuildRoutes);
         Assert.NotNull(vm.Cancel);
-        Assert.NotNull(vm.Request3D);
     }
 
     [Fact]
@@ -214,7 +214,10 @@ public sealed class MapViewModelRefactoringTests
     {
         private readonly List<TaskCompletionSource<IReadOnlyList<MapFeature>>> _requests = [];
 
-        public DataPackageInfo Info { get; } = new(
+        public DataPackageInfo Info
+        {
+            get;
+        } = new(
             "test", new GeoBounds(27, 54, 28, 55), "test", false, "test");
 
         public Task<IReadOnlyList<MapFeature>> QueryAsync(

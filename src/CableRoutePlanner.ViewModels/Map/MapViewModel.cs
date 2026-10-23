@@ -108,6 +108,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public bool CanBuild => _canBuild.Value;
 
+    public bool HasRoute => SelectedRoute is not null;
+
+    public bool HasMapNotice => !string.IsNullOrEmpty(MapStatus);
+
     public ReactiveCommand<GeoCoordinate, Unit> AddPoint
     {
         get; private set;
@@ -173,11 +177,6 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         get; private set;
     }
 
-    public ReactiveCommand<Unit, Unit> Request3D
-    {
-        get; private set;
-    }
-
     public MapViewModel(
         IScreen screen,
         IPlanningSession session,
@@ -212,8 +211,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         nameof(ClearPoints),
         nameof(CopyCoordinates),
         nameof(BuildRoutes),
-        nameof(Cancel),
-        nameof(Request3D))]
+        nameof(Cancel))]
     private void InitializeCommands()
     {
         AddPoint = ReactiveCommand.Create<GeoCoordinate>(AddAt).DisposeWith(_lifetime);
@@ -222,7 +220,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         SelectPoint = ReactiveCommand.Create<Guid>(id =>
             SelectedPoint = Points.FirstOrDefault(point => point.Id == id)).DisposeWith(_lifetime);
         DeletePoint = ReactiveCommand.Create(DeleteSelectedPoint).DisposeWith(_lifetime);
-        ReorderPoints = ReactiveCommand.Create<WaypointReorder>(ReorderById).DisposeWith(_lifetime);
+        ReorderPoints = ReactiveCommand.CreateFromTask<WaypointReorder>(ReorderByIdAsync).DisposeWith(_lifetime);
         ChooseRoute = ReactiveCommand.Create<Guid>(ChooseRouteById).DisposeWith(_lifetime);
         ClearPoints = ReactiveCommand.Create(() => Change(_session.Clear)).DisposeWith(_lifetime);
         MoveUp = ReactiveCommand.Create(() => Reorder(-1)).DisposeWith(_lifetime);
@@ -230,16 +228,19 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         CopyCoordinates = ReactiveCommand.CreateFromTask(CopySelectedCoordinatesAsync).DisposeWith(_lifetime);
         BuildRoutes = ReactiveCommand.CreateFromTask(BuildAsync, this.WhenAnyValue(x => x.CanBuild)).DisposeWith(_lifetime);
         Cancel = ReactiveCommand.Create(() => _calculation?.Cancel()).DisposeWith(_lifetime);
-        Request3D = ReactiveCommand.Create(() =>
-        {
-            Status = "3D недоступен: интеграция MapLibre и DEM ещё не прошла проверку. Открыта 2D-карта.";
-        }).DisposeWith(_lifetime);
     }
 
     private void SetupSubscriptions()
     {
+        this.WhenAnyValue(x => x.MapStatus)
+            .Subscribe(_ => this.RaisePropertyChanged(nameof(HasMapNotice)))
+            .DisposeWith(_lifetime);
         this.WhenAnyValue(x => x.SelectedRoute)
-            .Subscribe(UpdateRoutePresentation)
+            .Subscribe(route =>
+            {
+                this.RaisePropertyChanged(nameof(HasRoute));
+                UpdateRoutePresentation(route);
+            })
             .DisposeWith(_lifetime);
     }
 
@@ -284,12 +285,24 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         }
     }
 
-    private void ReorderById(WaypointReorder request)
+    private async Task ReorderByIdAsync(WaypointReorder request)
     {
         var source = _pointRows.IndexOf(request.PointId);
-        if (source >= 0 && source != request.TargetIndex)
+        if (source >= 0 && source != request.TargetIndex
+            && request.TargetIndex >= 0 && request.TargetIndex < Points.Count)
         {
+            var rebuild = SelectedRoute is not null || IsBusy;
             Change(() => _session.Reorder(source, request.TargetIndex));
+            if (rebuild)
+            {
+                // An in-flight calculation must finish cancelling before its replacement
+                // starts; otherwise a second drop could leave the route empty.
+                await this.WhenAnyValue(x => x.IsBusy).FirstAsync(busy => !busy);
+                if (!_disposed && CanBuild)
+                {
+                    await BuildAsync();
+                }
+            }
         }
     }
 
@@ -368,7 +381,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
                 MapVersion++;
                 MapStatus = loaded.Features.Count > 0
-                    ? $"Офлайн: {_mapLoader.Info.RegionId} · OSM · без DEM и WorldCover"
+                    ? ""
                     : "Для этой области нет данных в офлайн-пакете.";
                 break;
 

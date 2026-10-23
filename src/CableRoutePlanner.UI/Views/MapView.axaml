@@ -1,4 +1,4 @@
-﻿<rx:ReactiveUserControl
+<rx:ReactiveUserControl
     x:Class="CableRoutePlanner.UI.Views.MapView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -40,10 +40,6 @@
                     <Button
                         x:Name="ZoomOutButton"
                         Content="−" />
-                    <Button
-                        Content="3D"
-                        IsEnabled="False"
-                        ToolTip.Tip="Трёхмерная карта пока недоступна" />
                 </StackPanel>
             </Border>
             <Border
@@ -51,12 +47,10 @@
                 Padding="10,5"
                 Background="#ECFFFFFF">
                 <StackPanel>
-                    <TextBlock
-                        FontSize="11"
-                        Text="{Binding MapStatus}" />
-                    <TextBlock
-                        FontSize="11"
-                        Text="{Binding DataInfo.Attribution}" />
+                    <TextBlock FontSize="11" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
+                    <Button x:Name="AttributionButton" Content="© OpenStreetMap contributors"
+                            Padding="2" FontSize="11" Background="Transparent"
+                            ToolTip.Tip="Источник карты, авторские права и лицензия ODbL" />
                 </StackPanel>
             </Border>
         </Grid>
@@ -117,49 +111,51 @@
                         Command="{Binding Cancel}"
                         Content="Отменить расчёт"
                         IsVisible="{Binding IsBusy}" />
-                    <Border
-                        Height="1"
-                        Margin="0,4"
-                        Background="#E5EAE5" />
-                    <TextBlock
-                        FontSize="18"
-                        FontWeight="SemiBold"
-                        Text="Альтернативы" />
-                    <ItemsControl
-                        x:Name="RouteChoices"
-                        ItemsSource="{Binding RouteChoices}">
-                        <ItemsControl.Styles>
-                            <Style Selector="Button.route-choice">
-                                <Setter Property="HorizontalAlignment" Value="Stretch" />
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Setter Property="Margin" Value="0,0,0,6" />
-                            </Style>
-                            <Style Selector="Button.route-choice.selected">
-                                <Setter Property="Background" Value="#DBEAFB" />
-                                <Setter Property="BorderBrush" Value="#1A6FD2" />
-                                <Setter Property="BorderThickness" Value="2" />
-                            </Style>
-                        </ItemsControl.Styles>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:RouteChoice">
-                                <Button
-                                    Classes="route-choice"
-                                    Classes.selected="{Binding IsSelected}"
-                                    Command="{Binding $parent[local:MapView].ViewModel.ChooseRoute}"
-                                    CommandParameter="{Binding Id}">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <TextBlock
-                                            FontWeight="SemiBold"
-                                            Text="{Binding Name}" />
-                                        <TextBlock
-                                            Grid.Column="1"
-                                            Margin="12,0,0,0"
-                                            Text="{Binding LengthText}" />
-                                    </Grid>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <StackPanel IsVisible="{Binding HasRoute}" Spacing="12">
+                        <Border
+                            Height="1"
+                            Margin="0,4"
+                            Background="#E5EAE5" />
+                        <TextBlock
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Text="Альтернативы" />
+                        <ItemsControl
+                            x:Name="RouteChoices"
+                            ItemsSource="{Binding RouteChoices}">
+                            <ItemsControl.Styles>
+                                <Style Selector="Button.route-choice">
+                                    <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Margin" Value="0,0,0,6" />
+                                </Style>
+                                <Style Selector="Button.route-choice.selected">
+                                    <Setter Property="Background" Value="#DBEAFB" />
+                                    <Setter Property="BorderBrush" Value="#1A6FD2" />
+                                    <Setter Property="BorderThickness" Value="2" />
+                                </Style>
+                            </ItemsControl.Styles>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:RouteChoice">
+                                    <Button
+                                        Classes="route-choice"
+                                        Classes.selected="{Binding IsSelected}"
+                                        Command="{Binding $parent[local:MapView].ViewModel.ChooseRoute}"
+                                        CommandParameter="{Binding Id}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock
+                                                FontWeight="SemiBold"
+                                                Text="{Binding Name}" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                Margin="12,0,0,0"
+                                                Text="{Binding LengthText}" />
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
                     <TextBlock
                         FontSize="13"
                         LineHeight="21"

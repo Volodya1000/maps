@@ -97,7 +97,7 @@ public sealed class PresentationTests
     }
 
     [Fact]
-    public async Task ReorderingAndDeletingByIdPreserveSlotsAndInvalidateRoutes()
+    public async Task ReorderingRebuildsRouteAndDeletingByIdPreservesSlots()
     {
         using var vm = CreateVm(TestData.Planner(), new MemoryData());
         await vm.AddPoint.Execute(TestData.P(40, 150));
@@ -106,13 +106,16 @@ public sealed class PresentationTests
         var original = vm.Points.Select(point => point.Id).ToArray();
         await vm.BuildRoutes.Execute();
         Assert.NotEmpty(vm.RouteChoices);
+        var originalRouteId = vm.SelectedRoute!.Id;
 
         await vm.ReorderPoints.Execute(new WaypointReorder(original[0], 2));
         Assert.Equal(new[] { original[1], original[2], original[0] }, vm.Points.Select(point => point.Id));
         Assert.Equal(new[] { 1, 2, 3 }, vm.Points.Select(point => point.Number));
-        Assert.Empty(vm.Alternatives);
-        Assert.Empty(vm.RouteChoices);
-        Assert.Null(vm.SelectedRoute);
+        Assert.NotEmpty(vm.Alternatives);
+        Assert.NotEmpty(vm.RouteChoices);
+        Assert.NotNull(vm.SelectedRoute);
+        Assert.True(vm.HasRoute);
+        Assert.NotEqual(originalRouteId, vm.SelectedRoute!.Id);
 
         vm.SelectedPoint = vm.Points[0];
         await vm.RemovePoint.Execute(original[2]);
@@ -138,6 +141,50 @@ public sealed class PresentationTests
         Assert.Equal(other.Id, Assert.Single(vm.RouteChoices, choice => choice.IsSelected).Id);
         Assert.Contains("10", vm.MetricsText);
         Assert.Equal(0.10, new RoutingOptions().ReserveFraction);
+    }
+
+    [Fact]
+    public async Task ReorderingDuringCalculationCancelsAndBuildsLatestOrder()
+    {
+        var planner = new CancelFirstPlanner();
+        using var vm = CreateVm(planner, new MemoryData());
+        await vm.AddPoint.Execute(TestData.P(30, 150));
+        await vm.AddPoint.Execute(TestData.P(200, 150));
+        await vm.AddPoint.Execute(TestData.P(300, 150));
+        var first = vm.Points[0].Id;
+        var build = vm.BuildRoutes.Execute().ToTask();
+        await planner.Started.Task;
+        await vm.ReorderPoints.Execute(new WaypointReorder(first, 2));
+        await build;
+        Assert.Equal(first, vm.Points[2].Id);
+        Assert.True(vm.HasRoute);
+        Assert.Equal(2, planner.Calls);
+        Assert.Equal(vm.Points.Select(p => p.Coordinate), planner.LastPoints);
+    }
+
+    private sealed class CancelFirstPlanner : IRoutePlanner
+    {
+        public TaskCompletionSource Started { get; } = new();
+        public int Calls
+        {
+            get; private set;
+        }
+        public IReadOnlyList<GeoCoordinate>? LastPoints
+        {
+            get; private set;
+        }
+        public async Task<IReadOnlyList<RouteAlternative>> PlanAsync(
+            IReadOnlyList<GeoCoordinate> points, RoutingOptions options, CancellationToken ct)
+        {
+            Calls++;
+            if (Calls == 1)
+            {
+                Started.SetResult();
+                await Task.Delay(Timeout.Infinite, ct);
+            }
+            LastPoints = points.ToArray();
+            return await TestData.Planner().PlanAsync(points, options, ct);
+        }
     }
 
     private static MapViewModel CreateVm(

@@ -1,4 +1,4 @@
-﻿<rx:ReactiveUserControl
+<rx:ReactiveUserControl
     x:Class="CableRoutePlanner.UI.Views.SettingsView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -18,16 +18,16 @@
                 Text="Настройки расчёта" />
             <TextBlock Text="Размер ячейки сетки, м (5–200)" />
             <NumericUpDown
+                x:Name="CellSizeInput"
                 FormatString="0"
                 Maximum="200"
-                Minimum="5"
-                Value="{Binding CellSize}" />
+                Minimum="5" />
             <TextBlock Text="Запас кабеля, % (0–100)" />
             <NumericUpDown
+                x:Name="ReserveInput"
                 FormatString="0.0"
                 Maximum="100"
-                Minimum="0"
-                Value="{Binding ReservePercent}" />
+                Minimum="0" />
             <TextBlock
                 Text="Мелкая сетка увеличивает время и расход памяти. Текущая версия ограничивает расчётную область 20 км и 100 000 узлов. Высоты и уклоны не учитываются без DEM."
                 TextWrapping="Wrap" />

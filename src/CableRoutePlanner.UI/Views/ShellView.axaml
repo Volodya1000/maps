@@ -1,4 +1,4 @@
-﻿<rx:ReactiveUserControl
+<rx:ReactiveUserControl
     x:Class="CableRoutePlanner.UI.Views.ShellView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -8,7 +8,7 @@
     x:TypeArguments="vm:ShellViewModel">
     <Grid
         Background="#F5F7F5"
-        RowDefinitions="Auto,*">
+        RowDefinitions="Auto,Auto,*">
         <Border
             Padding="16,12"
             Background="White"
@@ -35,9 +35,20 @@
                 </StackPanel>
             </WrapPanel>
         </Border>
+        <Border Grid.Row="1" Padding="16" Background="#FFF1D6"
+                IsVisible="{Binding ShowUnsavedWarning}">
+            <StackPanel Spacing="8">
+                <TextBlock Text="Есть несохранённые изменения настроек. Остаться и сохранить их или уйти без сохранения?"
+                           TextWrapping="Wrap" />
+                <WrapPanel>
+                    <Button Content="Остаться" Command="{Binding StayOnSettings}" />
+                    <Button Content="Уйти без сохранения" Command="{Binding DiscardAndLeave}" />
+                </WrapPanel>
+            </StackPanel>
+        </Border>
         <rx:RoutedViewHost
             x:Name="RouteHost"
-            Grid.Row="1"
+            Grid.Row="2"
             HorizontalContentAlignment="Stretch"
             VerticalContentAlignment="Stretch"
             Router="{Binding Router}" />

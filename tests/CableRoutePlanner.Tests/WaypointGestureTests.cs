@@ -80,4 +80,62 @@ public sealed class WaypointGestureTests
         Assert.Equal(new[] { ids[1], ids[0], ids[3] }, vm.Points.Select(point => point.Id));
         window.Close();
     }
+    [AvaloniaFact]
+    public async Task HoldingRowHighlightsAndReordersButScrollingDoesNot()
+    {
+        using var vm = new MapViewModel(new NavigationHost(), new PlanningSession(TestData.Planner()),
+            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+        for (var i = 0; i < 6; i++)
+        {
+            await vm.AddPoint.Execute(TestData.P(40 + i * 40, 150));
+        }
+        var ids = vm.Points.Select(point => point.Id).ToArray();
+        var list = new WaypointList { ViewModel = vm };
+        var scroll = new ScrollViewer { Content = list };
+        var window = new Window { Content = scroll, Width = 380, Height = 220 };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        using var device = (TouchDevice)Activator.CreateInstance(typeof(TouchDevice))!;
+        var process = typeof(TopLevel).GetMethod("HandleInput", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        void Touch(RawPointerEventType type, Point position, ulong timestamp)
+        {
+            var constructor = typeof(RawTouchEventArgs).GetConstructors().Single(candidate =>
+                candidate.GetParameters().Length == 7 && candidate.GetParameters()[4].ParameterType == typeof(Point));
+            process.Invoke(window, new[] { constructor.Invoke(new object[]
+                { device, timestamp, window, type, position, RawInputModifiers.None, 1L }) });
+            Dispatcher.UIThread.RunJobs();
+        }
+        Border[] Cards() => list.GetVisualDescendants().OfType<Border>()
+            .Where(border => border.Name == "CoordinateCard").ToArray();
+        var cards = Cards();
+        var start = cards[0].TranslatePoint(new Point(40, 30), window)!.Value;
+        var end = cards[2].TranslatePoint(new Point(40, 30), window)!.Value;
+        var handle = cards[0].GetVisualDescendants().OfType<Border>().Single(b => b.Name == "DragHandle");
+        Assert.True(handle.TranslatePoint(default, cards[0])!.Value.X > cards[0].Bounds.Width / 2);
+        Touch(RawPointerEventType.TouchBegin, start, 1);
+        await Task.Delay(650);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("dragging", cards[0].Classes);
+        Touch(RawPointerEventType.TouchUpdate, end, 700);
+        Assert.Contains("drop-target", cards[2].Classes);
+        Touch(RawPointerEventType.TouchEnd, end, 710);
+        Assert.Equal(new[] { ids[1], ids[2], ids[0], ids[3], ids[4], ids[5] }, vm.Points.Select(p => p.Id));
+        Assert.DoesNotContain(Cards(), card => card.Classes.Contains("dragging"));
+
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Dispatcher.UIThread.RunJobs();
+        var before = vm.Points.Select(p => p.Id).ToArray();
+        var swipe = Cards()[2].TranslatePoint(new Point(40, 30), window)!.Value;
+        Touch(RawPointerEventType.TouchBegin, swipe, 1000);
+        Touch(RawPointerEventType.TouchUpdate, swipe - new Point(0, 50), 1020);
+        await Task.Delay(650);
+        Dispatcher.UIThread.RunJobs();
+        Assert.DoesNotContain(Cards(), card => card.Classes.Contains("dragging"));
+        Touch(RawPointerEventType.TouchUpdate, swipe - new Point(0, 90), 1700);
+        Touch(RawPointerEventType.TouchEnd, swipe - new Point(0, 90), 1710);
+        Assert.Equal(before, vm.Points.Select(p => p.Id));
+        Assert.True(scroll.Offset.Y > 0, "A normal swipe should still scroll the list");
+        window.Close();
+    }
+
 }
