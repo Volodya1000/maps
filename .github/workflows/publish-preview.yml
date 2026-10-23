@@ -83,7 +83,10 @@ jobs:
           report = json.loads(Path('artifacts/evidence/report.json').read_text())
           def digest(path):
               with path.open('rb') as stream:
-                  return hashlib.file_digest(stream, 'sha256').hexdigest()
+                  checksum = hashlib.sha256()
+                  for block in iter(lambda: stream.read(1024 * 1024), b''):
+                      checksum.update(block)
+                  return checksum.hexdigest()
           if not report['success'] or report['sha256'] != digest(apk):
               raise RuntimeError('Android startup report does not match the APK')
           if not all('region=belarus' in attempt.get('map_ready', '') for attempt in report['launches']):
