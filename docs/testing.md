@@ -9,7 +9,7 @@ python -m pip install -r tools/GeodataPreparation/requirements.txt
 python tools/GeodataPreparation/rebuild_sample.py --output artifacts/rebuilt-minsk
 ```
 
-GitHub Actions: Linux/Windows headless-тесты, Windows publish, Android APK и отдельная браузерная DEM-проверка. Это не доказательство работы на Windows 7/10 или Android-устройстве: windows-2022 — Windows Server, а hosted Linux — не телефон. Удалённый workflow пока не запущен: запись в репозиторий отклонена GitHub HTTP 403.
+GitHub Actions: Linux/Windows headless-тесты, Windows publish, Android APK и отдельная браузерная DEM-проверка. Это не доказательство работы на Windows 7/10 или Android-устройстве: windows-2022 — Windows Server, а hosted Linux — не телефон. Удалённый workflow запущен в PR #1 после предоставления доступа. Его статус нужно проверять на GitHub; локальное прохождение тестов не означает автоматически успешный удалённый CI.
 
 ## Аудит автономности Linux
 

@@ -1,6 +1,7 @@
 name: Build and verify
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -11,6 +12,7 @@ env:
 jobs:
   tests:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-22.04, windows-2022]
     runs-on: ${{ matrix.os }}
@@ -55,6 +57,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - run: dotnet workload install android --skip-manifest-update
       - run: dotnet restore src/CableRoutePlanner.Android --locked-mode

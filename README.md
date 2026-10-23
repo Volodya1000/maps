@@ -11,6 +11,10 @@ C# / Avalonia / ReactiveUI. **Рабочая реализация 2D и расч
 - Отдельные Domain, Application, Infrastructure, ViewModels, UI, Bootstrap, Desktop и Android. DI, ReactiveCommand, RoutingState, типизированный ViewLocator, compiled bindings, ReactiveUI.Fody.
 - xUnit, Avalonia.Headless, GitHub Actions, самостоятельный инструмент проверки реального маршрута.
 
+## Скачать тестовый APK
+
+[Прямая ссылка на подписанный APK (69 МБ)](https://github.com/Volodya1000/maps/raw/refs/heads/downloads/android-preview/CableRoutePlanner-test.apk). [PR с исходниками](https://github.com/Volodya1000/maps/pull/1). Скачивание и контрольная сумма проверены; запуск на устройстве ещё требует проверки.
+
 ## Запуск Desktop
 
 Нужен .NET SDK из `global.json`. Данные небольшого реального района уже включены в репозиторий; интернет нужен для первоначального восстановления NuGet, не для работы приложения.

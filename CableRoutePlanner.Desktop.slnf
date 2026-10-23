@@ -2,15 +2,15 @@
   "solution": {
     "path": "CableRoutePlanner.sln",
     "projects": [
-      "src/CableRoutePlanner.Infrastructure/CableRoutePlanner.Infrastructure.csproj",
-      "src/CableRoutePlanner.UI/CableRoutePlanner.UI.csproj",
-      "src/CableRoutePlanner.Application/CableRoutePlanner.Application.csproj",
-      "src/CableRoutePlanner.Desktop/CableRoutePlanner.Desktop.csproj",
-      "src/CableRoutePlanner.ViewModels/CableRoutePlanner.ViewModels.csproj",
-      "src/CableRoutePlanner.Domain/CableRoutePlanner.Domain.csproj",
-      "src/CableRoutePlanner.Bootstrap/CableRoutePlanner.Bootstrap.csproj",
-      "tests/CableRoutePlanner.Tests/CableRoutePlanner.Tests.csproj",
-      "tools/CableRoutePlanner.Verify/CableRoutePlanner.Verify.csproj"
+      "src\\CableRoutePlanner.Infrastructure\\CableRoutePlanner.Infrastructure.csproj",
+      "src\\CableRoutePlanner.UI\\CableRoutePlanner.UI.csproj",
+      "src\\CableRoutePlanner.Application\\CableRoutePlanner.Application.csproj",
+      "src\\CableRoutePlanner.Desktop\\CableRoutePlanner.Desktop.csproj",
+      "src\\CableRoutePlanner.ViewModels\\CableRoutePlanner.ViewModels.csproj",
+      "src\\CableRoutePlanner.Domain\\CableRoutePlanner.Domain.csproj",
+      "src\\CableRoutePlanner.Bootstrap\\CableRoutePlanner.Bootstrap.csproj",
+      "tests\\CableRoutePlanner.Tests\\CableRoutePlanner.Tests.csproj",
+      "tools\\CableRoutePlanner.Verify\\CableRoutePlanner.Verify.csproj"
     ]
   }
 }
