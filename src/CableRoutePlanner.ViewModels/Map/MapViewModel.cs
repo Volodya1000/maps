@@ -22,7 +22,9 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 {
     private readonly IPlanningSession _session;
 
-    private readonly IGeodataRepository _data;
+    private readonly MapAreaLoader _mapLoader;
+
+    private readonly WaypointListProjection _pointRows = new();
 
     private readonly ISettingsStore _settings;
 
@@ -45,7 +47,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         get;
     }
 
-    public ObservableCollection<WaypointRow> Points { get; } = [];
+    public ObservableCollection<WaypointRow> Points => _pointRows.Points;
 
     public ObservableCollection<RouteAlternative> Alternatives { get; } = [];
 
@@ -53,7 +55,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public ObservableCollection<MapFeature> Features { get; } = [];
 
-    public DataPackageInfo DataInfo => _data.Info;
+    public DataPackageInfo DataInfo => _mapLoader.Info;
 
     [Reactive]
     public WaypointRow? SelectedPoint
@@ -78,8 +80,6 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     {
         get; private set;
     }
-
-    private long _mapRequest;
 
     [Reactive]
     public int PointCount
@@ -109,73 +109,73 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public ReactiveCommand<GeoCoordinate, Unit> AddPoint
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Unit, Unit> AddManual
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Unit, Unit> DeletePoint
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Guid, Unit> RemovePoint
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Guid, Unit> SelectPoint
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<WaypointReorder, Unit> ReorderPoints
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Guid, Unit> ChooseRoute
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Unit, Unit> MoveUp
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Unit, Unit> MoveDown
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Unit, Unit> ClearPoints
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Unit, Unit> CopyCoordinates
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Unit, Unit> BuildRoutes
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Unit, Unit> Cancel
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public ReactiveCommand<Unit, Unit> Request3D
     {
-        get;
-    }
+        get; private set;
+    } = null!;
 
     public MapViewModel(
         IScreen screen,
@@ -186,173 +186,179 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     {
         HostScreen = screen;
         _session = session;
-        _data = data;
+        _mapLoader = new MapAreaLoader(data);
         _settings = settings;
         _clipboard = clipboard;
+
         _canBuild = this.WhenAnyValue(
             x => x.PointCount,
             x => x.IsBusy,
             (count, busy) => count >= 2 && !busy).ToProperty(this, x => x.CanBuild).DisposeWith(_lifetime);
-        AddPoint = ReactiveCommand.Create<GeoCoordinate>(coordinate => Change(() =>
-        {
-            if (!_data.Info.Bounds.Contains(coordinate))
-            {
-                throw new PlanningException("Для этой точки нет данных в офлайн-пакете.");
-            }
+        InitializeCommands();
+        SetupSubscriptions();
+    }
 
-            _session.Add(coordinate);
-        })).DisposeWith(_lifetime);
-        AddManual = ReactiveCommand.Create(() =>
-        {
-            if (!double.TryParse(
-                LatitudeText,
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out var lat) || !double.TryParse(
-                LongitudeText,
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out var lon))
-            {
-                Status = "Введите широту и долготу с десятичной точкой.";
-                return;
-            }
-
-            try
-            {
-                AddPoint.Execute(new(lat, lon)).Subscribe().Dispose();
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                Status = "Некорректные координаты.";
-            }
-        }).DisposeWith(_lifetime);
+    private void InitializeCommands()
+    {
+        AddPoint = ReactiveCommand.Create<GeoCoordinate>(AddAt).DisposeWith(_lifetime);
+        AddManual = ReactiveCommand.Create(AddManually).DisposeWith(_lifetime);
         RemovePoint = ReactiveCommand.Create<Guid>(id => Change(() => _session.Remove(id))).DisposeWith(_lifetime);
         SelectPoint = ReactiveCommand.Create<Guid>(id =>
-        {
-            SelectedPoint = Points.FirstOrDefault(p => p.Id == id);
-        }).DisposeWith(_lifetime);
-        DeletePoint = ReactiveCommand.Create(() =>
-        {
-            if (SelectedPoint is { } p)
-            {
-                Change(() => _session.Remove(p.Id));
-            }
-        }).DisposeWith(_lifetime);
-        ReorderPoints = ReactiveCommand.Create<WaypointReorder>(request =>
-        {
-            var source = _session.Points.ToList().FindIndex(p => p.Id == request.PointId);
-            if (source >= 0 && source != request.TargetIndex)
-            {
-                Change(() => _session.Reorder(source, request.TargetIndex));
-            }
-        }).DisposeWith(_lifetime);
-        ChooseRoute = ReactiveCommand.Create<Guid>(id =>
-        {
-            SelectedRoute = Alternatives.FirstOrDefault(route => route.Id == id);
-            if (SelectedRoute is not null)
-            {
-                Status = $"На карте: {SelectedRoute.Name}, {SelectedRoute.Metrics.LengthMetres:N0} м.";
-            }
-        }).DisposeWith(_lifetime);
+            SelectedPoint = Points.FirstOrDefault(point => point.Id == id)).DisposeWith(_lifetime);
+        DeletePoint = ReactiveCommand.Create(DeleteSelectedPoint).DisposeWith(_lifetime);
+        ReorderPoints = ReactiveCommand.Create<WaypointReorder>(ReorderById).DisposeWith(_lifetime);
+        ChooseRoute = ReactiveCommand.Create<Guid>(ChooseRouteById).DisposeWith(_lifetime);
         ClearPoints = ReactiveCommand.Create(() => Change(_session.Clear)).DisposeWith(_lifetime);
         MoveUp = ReactiveCommand.Create(() => Reorder(-1)).DisposeWith(_lifetime);
         MoveDown = ReactiveCommand.Create(() => Reorder(1)).DisposeWith(_lifetime);
-        CopyCoordinates = ReactiveCommand.CreateFromTask(async () =>
-        {
-            if (SelectedPoint is not { } p)
-            {
-                return;
-            }
-
-            try
-            {
-                await _clipboard.SetTextAsync(p.Coordinate.ToString());
-                Status = "Координаты скопированы.";
-            }
-            catch (Exception ex)
-            {
-                Status = $"Не удалось скопировать координаты: {ex.Message}";
-            }
-        }).DisposeWith(_lifetime);
+        CopyCoordinates = ReactiveCommand.CreateFromTask(CopySelectedCoordinatesAsync).DisposeWith(_lifetime);
         BuildRoutes = ReactiveCommand.CreateFromTask(BuildAsync, this.WhenAnyValue(x => x.CanBuild)).DisposeWith(_lifetime);
         Cancel = ReactiveCommand.Create(() => _calculation?.Cancel()).DisposeWith(_lifetime);
         Request3D = ReactiveCommand.Create(() =>
         {
             Status = "3D недоступен: интеграция MapLibre и DEM ещё не прошла проверку. Открыта 2D-карта.";
         }).DisposeWith(_lifetime);
-        this.WhenAnyValue(x => x.SelectedRoute).Subscribe(route =>
+    }
+
+    private void SetupSubscriptions()
+    {
+        this.WhenAnyValue(x => x.SelectedRoute)
+            .Subscribe(UpdateRoutePresentation)
+            .DisposeWith(_lifetime);
+    }
+
+    private void AddAt(GeoCoordinate coordinate) => Change(() =>
+    {
+        EnsureInBounds(coordinate, "Для этой точки нет данных в офлайн-пакете.");
+        _session.Add(coordinate);
+    });
+
+    private void AddManually()
+    {
+        if (!double.TryParse(
+                LatitudeText,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var latitude)
+            || !double.TryParse(
+                LongitudeText,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var longitude))
         {
-            RouteChoices.Clear();
-            foreach (var alternative in Alternatives)
-            {
-                RouteChoices.Add(
-                    new RouteChoice(
-                        alternative.Id,
-                        alternative.Name,
-                        $"{alternative.Metrics.LengthMetres:N0} м",
-                        alternative.Id == route?.Id));
-            }
+            Status = "Введите широту и долготу с десятичной точкой.";
+            return;
+        }
 
-            if (route is null)
-            {
-                MetricsText = "Актуальный маршрут не выбран.";
-                return;
-            }
+        try
+        {
+            AddAt(new GeoCoordinate(latitude, longitude));
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            Status = "Некорректные координаты.";
+        }
+    }
 
-            var m = route.Metrics;
-            MetricsText = string.Join(
-                Environment.NewLine,
-                $"Длина: {m.LengthMetres:N0} м",
-                $"Кабель с запасом {_resultOptions.ReserveFraction:P0}: " + $"{m.CableLengthMetres(_resultOptions.ReserveFraction):N0} м",
-                $"Лес: {m.ForestMetres:N0} м · поле: {m.FieldMetres:N0} м",
-                $"Пересечённых объектов дорог: {m.RoadCrossings}",
-                $"Разрешённых водных переходов: {m.ApprovedWaterCrossings}",
-                $"Взвешенная стоимость: {m.WeightedCost:N0} усл. м",
-                "Высотные характеристики: нет данных DEM",
-                "Требуются обследование и согласование.");
-        }).DisposeWith(_lifetime);
+    private void DeleteSelectedPoint()
+    {
+        if (SelectedPoint is { } point)
+        {
+            Change(() => _session.Remove(point.Id));
+        }
+    }
+
+    private void ReorderById(WaypointReorder request)
+    {
+        var source = _pointRows.IndexOf(request.PointId);
+        if (source >= 0 && source != request.TargetIndex)
+        {
+            Change(() => _session.Reorder(source, request.TargetIndex));
+        }
+    }
+
+    private void ChooseRouteById(Guid id)
+    {
+        SelectedRoute = Alternatives.FirstOrDefault(route => route.Id == id);
+        if (SelectedRoute is { } route)
+        {
+            Status = $"На карте: {route.Name}, {route.Metrics.LengthMetres:N0} м.";
+        }
+    }
+
+    private async Task CopySelectedCoordinatesAsync()
+    {
+        if (SelectedPoint is not { } point)
+        {
+            return;
+        }
+
+        try
+        {
+            await _clipboard.SetTextAsync(point.Coordinate.ToString());
+            Status = "Координаты скопированы.";
+        }
+        catch (Exception ex)
+        {
+            Status = $"Не удалось скопировать координаты: {ex.Message}";
+        }
+    }
+
+    private void UpdateRoutePresentation(RouteAlternative? route)
+    {
+        RouteChoices.Clear();
+        foreach (var alternative in Alternatives)
+        {
+            RouteChoices.Add(new RouteChoice(
+                alternative.Id,
+                alternative.Name,
+                $"{alternative.Metrics.LengthMetres:N0} м",
+                alternative.Id == route?.Id));
+        }
+
+        MetricsText = route is null
+            ? "Актуальный маршрут не выбран."
+            : RouteMetricsFormatter.Format(route, _resultOptions);
+    }
+
+    private void EnsureInBounds(GeoCoordinate coordinate, string errorMessage)
+    {
+        if (!_mapLoader.Info.Bounds.Contains(coordinate))
+        {
+            throw new PlanningException(errorMessage);
+        }
     }
 
     public async Task LoadMapAreaAsync(GeoBounds bounds, CancellationToken ct, double metresPerPixel = 0)
     {
-        var request = Interlocked.Increment(ref _mapRequest);
-        try
+        var result = await _mapLoader.LoadLatestAsync(bounds, metresPerPixel, ct);
+        if (_disposed || result is null || !_mapLoader.IsCurrent(result))
         {
-            var features = await _data.QueryMapAsync(bounds, metresPerPixel, ct);
-            ct.ThrowIfCancellationRequested();
-            if (request != _mapRequest || _disposed)
-            {
-                return;
-            }
+            return;
+        }
 
-            Features.Clear();
-            foreach (var feature in features)
-            {
-                Features.Add(feature);
-            }
+        if (result.ErrorMessage is { } error)
+        {
+            MapStatus = $"Ошибка загрузки карты: {error}";
+            return;
+        }
 
-            MapVersion++;
-            MapStatus = features.Count > 0 ? $"Офлайн: {_data.Info.RegionId} · OSM · без DEM и WorldCover" : "Для этой области нет данных в офлайн-пакете.";
-        }
-        catch (OperationCanceledException)
+        var features = result.Features!;
+        Features.Clear();
+        foreach (var feature in features)
         {
+            Features.Add(feature);
         }
-        catch (Exception ex)
-        {
-            if (request == _mapRequest)
-            {
-                MapStatus = $"Ошибка загрузки карты: {ex.Message}";
-            }
-        }
+
+        MapVersion++;
+        MapStatus = features.Count > 0
+            ? $"Офлайн: {_mapLoader.Info.RegionId} · OSM · без DEM и WorldCover"
+            : "Для этой области нет данных в офлайн-пакете.";
     }
 
     public void MovePoint(Guid id, GeoCoordinate coordinate) => Change(() =>
     {
-        if (!_data.Info.Bounds.Contains(coordinate))
-        {
-            throw new PlanningException("Точка за пределами офлайн-пакета.");
-        }
+        EnsureInBounds(coordinate, "Точка за пределами офлайн-пакета.");
 
         _session.Move(id, coordinate);
     });
@@ -364,7 +370,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             return;
         }
 
-        var oldIndex = Points.IndexOf(p);
+        var oldIndex = _pointRows.IndexOf(p.Id);
         var newIndex = oldIndex + direction;
         if (newIndex >= 0 && newIndex < Points.Count)
         {
@@ -382,11 +388,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             Alternatives.Clear();
             RouteChoices.Clear();
             SelectedRoute = null;
-            Points.Clear();
-            foreach (var (p, index) in _session.Points.Select((p, i) => (p, i)))
-                Points.Add(new(p.Id, index + 1, p.Coordinate));
+            SelectedPoint = _pointRows.Refresh(_session.Points, selected);
             PointCount = Points.Count;
-            SelectedPoint = Points.FirstOrDefault(p => p.Id == selected) ?? Points.LastOrDefault();
             Status = "Точки изменены. Для актуальных результатов постройте маршруты.";
         }
         catch (PlanningException ex)
@@ -445,6 +448,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
         _disposed = true;
         _calculation?.Cancel();
+        _mapLoader.Invalidate();
         _lifetime.Dispose();
     }
 }
