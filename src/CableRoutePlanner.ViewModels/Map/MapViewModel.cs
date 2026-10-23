@@ -35,6 +35,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private CancellationTokenSource? _calculation;
 
+    private Task _calculationFinished = Task.CompletedTask;
+
     private readonly ObservableAsPropertyHelper<bool> _canBuild;
 
     private bool _disposed;
@@ -292,12 +294,13 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             && request.TargetIndex >= 0 && request.TargetIndex < Points.Count)
         {
             var rebuild = SelectedRoute is not null || IsBusy;
+            var previousCalculation = _calculationFinished;
             Change(() => _session.Reorder(source, request.TargetIndex));
             if (rebuild)
             {
                 // An in-flight calculation must finish cancelling before its replacement
                 // starts; otherwise a second drop could leave the route empty.
-                await this.WhenAnyValue(x => x.IsBusy).FirstAsync(busy => !busy);
+                await previousCalculation;
                 if (!_disposed && CanBuild)
                 {
                     await BuildAsync();
@@ -434,6 +437,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private async Task BuildAsync()
     {
+        var finished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _calculationFinished = finished.Task;
         IsBusy = true;
         Alternatives.Clear();
         RouteChoices.Clear();
@@ -470,6 +475,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             }
 
             IsBusy = false;
+            finished.TrySetResult();
         }
     }
 
