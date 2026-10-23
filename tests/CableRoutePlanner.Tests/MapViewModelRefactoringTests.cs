@@ -65,26 +65,30 @@ public sealed class MapViewModelRefactoringTests
         var data = new DeferredMapData();
         using var vm = CreateVm(data);
         using var cancellation = new CancellationTokenSource();
+        var initialLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        data.Complete(0, new MapFeature(1, TerrainKind.Field, [], "initial"));
+        await initialLoad;
+
         var load = vm.LoadMapAreaAsync(data.Info.Bounds, cancellation.Token);
         cancellation.Cancel();
-        data.Complete(0, new MapFeature(1, TerrainKind.Field, [], "canceled"));
+        data.Complete(1, new MapFeature(2, TerrainKind.Field, [], "canceled"));
         await load;
 
-        Assert.Empty(vm.Features);
-        Assert.Equal(0, vm.MapVersion);
+        Assert.Equal(1L, Assert.Single(vm.Features).Id);
+        Assert.Equal(1, vm.MapVersion);
     }
 
     [Fact]
     public async Task PointProjectionKeepsSelectionAndRenumbersAfterReordering()
     {
         using var vm = CreateVm(new MemoryData());
-        await vm.AddPoint.Execute(TestData.P(50, 150));
-        await vm.AddPoint.Execute(TestData.P(100, 150));
-        await vm.AddPoint.Execute(TestData.P(150, 150));
+        await vm.AddPoint.Execute(TestData.P(50, 150)).ToTask();
+        await vm.AddPoint.Execute(TestData.P(100, 150)).ToTask();
+        await vm.AddPoint.Execute(TestData.P(150, 150)).ToTask();
         var selectedId = vm.Points[0].Id;
         vm.SelectedPoint = vm.Points[0];
 
-        await vm.ReorderPoints.Execute(new WaypointReorder(selectedId, 2));
+        await vm.ReorderPoints.Execute(new WaypointReorder(selectedId, 2)).ToTask();
 
         Assert.Equal(selectedId, vm.SelectedPoint?.Id);
         Assert.Equal(selectedId, vm.Points[2].Id);
@@ -99,10 +103,37 @@ public sealed class MapViewModelRefactoringTests
         vm.LatitudeText = "95";
         vm.LongitudeText = "27.5";
 
-        await vm.AddManual.Execute();
+        await vm.AddManual.Execute().ToTask();
 
         Assert.Empty(vm.Points);
         Assert.Equal("Некорректные координаты.", vm.Status);
+    }
+
+    [Fact]
+    public async Task ManualInputAddsValidWaypointInsideOfflinePackage()
+    {
+        using var vm = CreateVm(new MemoryData());
+        vm.LatitudeText = "54.001";
+        vm.LongitudeText = "27.001";
+
+        await vm.AddManual.Execute().ToTask();
+
+        var point = Assert.Single(vm.Points);
+        Assert.Equal(new GeoCoordinate(54.001, 27.001), point.Coordinate);
+        Assert.Equal(1, vm.PointCount);
+    }
+
+    [Fact]
+    public async Task ManualInputRejectsCoordinateOutsideOfflinePackage()
+    {
+        using var vm = CreateVm(new MemoryData());
+        vm.LatitudeText = "53.5";
+        vm.LongitudeText = "27.001";
+
+        await vm.AddManual.Execute().ToTask();
+
+        Assert.Empty(vm.Points);
+        Assert.Equal("Для этой точки нет данных в офлайн-пакете.", vm.Status);
     }
 
     [Fact]
