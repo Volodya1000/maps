@@ -14,7 +14,6 @@ namespace CableRoutePlanner.UI.Views;
 
 public partial class MapView : ReactiveUserControl<MapViewModel>
 {
-    private const double MobileBreakpoint = 760;
     private const double PanelSwipeThreshold = 36;
 
     private readonly Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter> _adapterFactory;
@@ -60,11 +59,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         void PointAdded(GeoCoordinate point) =>
             viewModel.AddPoint.Execute(point).Subscribe().Dispose();
 
-        void PointMoved(Guid id, GeoCoordinate point)
-        {
-            viewModel.MovePoint(id, point);
-            adapter.SetPoints(viewModel.Points.ToArray());
-        }
+        void PointMoved(Guid id, GeoCoordinate point) => viewModel.MovePoint(id, point);
 
         adapter.PointAdded += PointAdded;
         adapter.PointMoved += PointMoved;
@@ -248,7 +243,8 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
     private void AdaptLayout()
     {
-        var narrow = Bounds.Width < MobileBreakpoint;
+        var layout = BottomSheetLayout.Create(Bounds.Width, Bounds.Height, _panelExpanded);
+        var narrow = layout.IsNarrow;
         Layout.ColumnDefinitions = new(narrow ? "*" : "*,350");
         Layout.RowDefinitions = new("*");
         Grid.SetColumn(MapArea, 0);
@@ -261,17 +257,13 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             : Avalonia.Layout.VerticalAlignment.Stretch;
         SheetHandleButton.IsVisible = narrow;
         SidePanelContent.IsVisible = !narrow || _panelExpanded;
-        SheetHandleText.Text = _panelExpanded
-            ? "Точки и маршруты · потяните вниз, чтобы свернуть"
-            : "↑ Показать точки и маршруты";
+        SheetHandleText.Text = layout.HandleText;
 
         if (narrow)
         {
-            SidePanel.Height = _panelExpanded
-                ? Math.Min(Bounds.Height * 0.68, 560)
-                : 52;
+            SidePanel.Height = layout.Height!.Value;
             SidePanel.BorderThickness = new(1, 1, 1, 0);
-            SidePanel.Padding = _panelExpanded ? new(10) : new(0);
+            SidePanel.Padding = new(layout.Padding);
         }
         else
         {
