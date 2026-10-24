@@ -11,6 +11,7 @@ indent_size = 2
 [*.cs]
 csharp_preserve_single_line_statements = false
 csharp_preserve_single_line_blocks = false
+dotnet_diagnostic.IDE0044.severity = warning
 
 [*.axaml]
 indent_size = 4

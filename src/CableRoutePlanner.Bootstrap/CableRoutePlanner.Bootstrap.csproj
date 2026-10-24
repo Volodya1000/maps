@@ -5,5 +5,6 @@
     <ProjectReference Include="../CableRoutePlanner.Infrastructure/CableRoutePlanner.Infrastructure.csproj" />
     <ProjectReference Include="../CableRoutePlanner.UI/CableRoutePlanner.UI.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
   </ItemGroup>
 </Project>

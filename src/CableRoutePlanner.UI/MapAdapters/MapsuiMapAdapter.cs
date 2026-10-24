@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.ViewModels;
+using System.Globalization;
 using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Layers;
@@ -219,7 +220,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             feature.Styles.Add(
                 new LabelStyle
                 {
-                    Text = p.Number.ToString(),
+                    Text = p.Number.ToString(CultureInfo.InvariantCulture),
                     ForeColor = Color.White,
                     BackColor = null,
                     HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center,

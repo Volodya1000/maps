@@ -9,6 +9,7 @@ namespace CableRoutePlanner.Tests;
 
 internal sealed class SqliteGeodataFixture : IDisposable
 {
+    private static readonly double[] SyntheticBounds = [27.0, 54.0, 27.006, 54.006];
     private readonly TemporaryDirectory _directory = new();
     public string DirectoryPath => _directory.DirectoryPath;
     public SqliteGeodataRepository Repository
@@ -29,7 +30,7 @@ internal sealed class SqliteGeodataFixture : IDisposable
                 schema_version = 2,
                 coordinate_system = "EPSG:4326",
                 database_sha256 = checksum,
-                bounds = new[] { 27.0, 54.0, 27.006, 54.006 },
+                bounds = SyntheticBounds,
                 region_id = "synthetic-test-only",
                 attribution = "test",
                 status = "synthetic fixture"

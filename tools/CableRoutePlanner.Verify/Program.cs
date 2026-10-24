@@ -60,7 +60,7 @@ try
                 type = "FeatureCollection",
                 features
             },
-            new JsonSerializerOptions { WriteIndented = true }));
+            VerifyJson.Options));
     foreach (var route in routes)
     {
         Console.WriteLine(
@@ -74,4 +74,9 @@ catch (Exception ex)
 {
     Console.Error.WriteLine(ex.Message);
     return 1;
+}
+
+internal static class VerifyJson
+{
+    public static JsonSerializerOptions Options { get; } = new() { WriteIndented = true };
 }

@@ -34,7 +34,7 @@ public sealed class DomainTests
     [Fact]
     public void CableReserveIsAppliedToMeasuredLength()
     {
-        var m = new RouteMetrics(123, 0, 0, 0, 0, 123, null);
+        var m = new RouteMetrics(123, 0, 0, 0, 0, 0, 123, null);
         Assert.Equal(129.15, m.CableLengthMetres(0.05), 6);
         Assert.Null(m.AscentMetres);
         Assert.Throws<ArgumentOutOfRangeException>(() => m.CableLengthMetres(-0.1));

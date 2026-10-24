@@ -25,7 +25,7 @@
 
 ## Полученные локальные результаты
 
-.NET SDK 8.0.426, Avalonia 11.3.0, Mapsui 4.1.9. На Linux x64 выполнены 34 теста, self-contained win-x64 publish и Android Release publish (workload 34.0.43, API 34, JDK 17). Компиляция подтверждает совместимость пакетов на уровне сборки, не Windows 7/10, GPU, ввод или установку. APK проверен aapt: INTERNET отсутствует.
+.NET SDK 8.0.426, Avalonia 11.3.0, Mapsui 4.1.9. Локальные сборки и поведенческие тесты выполняются общими командами `tools/check.py`; CI отдельно проверяет Ubuntu, Windows Server, Android API 34 и эмулятор. Компиляция подтверждает совместимость пакетов на уровне сборки, не Windows 7/10, GPU, ввод или физическую установку. APK проверяется `aapt`: INTERNET отсутствует.
 
 MapLibre 4.7.1 и 22 реальных Terrarium DEM-тайла проверены только в отдельном Linux Chromium-стенде. Это частичный эксперимент движка, не реализация FR-007 в приложении. Отчёт docs/evidence/maplibre-check.json.
 

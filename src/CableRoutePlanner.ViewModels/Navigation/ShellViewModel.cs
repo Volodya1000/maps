@@ -13,6 +13,7 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
     private readonly SettingsViewModel _settings;
     private readonly MapViewModel _map;
     private Func<IObservable<IRoutableViewModel>>? _pendingNavigation;
+    private bool _allowCloseWithUnsavedChanges;
 
     [Reactive]
     public bool ShowUnsavedWarning
@@ -98,7 +99,6 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
     {
         var navigate = _pendingNavigation;
         Stay();
-        _settings.Reload();
         return navigate?.Invoke() ?? Observable.Return(Router.GetCurrentViewModel()!);
     }
 
@@ -137,15 +137,32 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
 
     public bool RequestClose(Action close)
     {
+        if (_allowCloseWithUnsavedChanges)
+        {
+            _allowCloseWithUnsavedChanges = false;
+            return true;
+        }
+
         if (Router.GetCurrentViewModel() is not SettingsViewModel || !_settings.HasChanges)
         {
             return true;
         }
-        Guard(() =>
+
+        _pendingNavigation = () =>
         {
-            close();
+            _allowCloseWithUnsavedChanges = true;
+            try
+            {
+                close();
+            }
+            finally
+            {
+                _allowCloseWithUnsavedChanges = false;
+            }
+
             return Observable.Return(Router.GetCurrentViewModel()!);
-        });
+        };
+        ShowUnsavedWarning = true;
         return false;
     }
 

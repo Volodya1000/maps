@@ -75,9 +75,13 @@ public sealed class SettingsTests : ReactiveTestScope
         Assert.True(shell.ShowUnsavedWarning);
         await shell.DiscardAndLeave.Execute();
         Assert.Same(map, screen.Router.GetCurrentViewModel());
+        Assert.Equal(40m, settings.CellSize);
+        Assert.True(settings.HasChanges);
+        await shell.ShowSettings.Execute();
         Assert.Equal(30m, settings.CellSize);
         Assert.False(settings.HasChanges);
-        await shell.ShowSettings.Execute();
+        Assert.Equal(30m, settings.CellSize);
+        Assert.False(settings.HasChanges);
         settings.ReservePercent = 20;
         await settings.Save.Execute();
         Assert.Equal(12345, store.Options.MaxNodes);

@@ -120,9 +120,14 @@ def android() -> None:
     (ARTIFACTS / "permissions.txt").write_text(permissions, encoding="utf-8")
     if "android.permission.INTERNET" in permissions:
         raise ValueError("Release APK unexpectedly requests INTERNET.")
-    with apk.open("rb") as source:
+    downloadable_apk = ARTIFACTS / "CableRoutePlanner.apk"
+    shutil.copy2(apk, downloadable_apk)
+    with downloadable_apk.open("rb") as source:
         digest = hashlib.file_digest(source, "sha256").hexdigest()
-    (ARTIFACTS / "apk.sha256").write_text(f"{digest}  {apk.name}\n", encoding="utf-8")
+    (ARTIFACTS / "apk.sha256").write_text(
+        f"{digest}  {downloadable_apk.name}\n",
+        encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":

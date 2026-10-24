@@ -95,11 +95,8 @@ jobs:
       - run: uv run --locked python tools/check.py android
       - uses: actions/upload-artifact@v4
         with:
-          name: android-test-apk
-          path: |
-            src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/*-Signed.apk
-            artifacts/permissions.txt
-            artifacts/apk.sha256
+          name: android-apk
+          path: artifacts/CableRoutePlanner.apk
   android-smoke:
     needs: android
     runs-on: ubuntu-22.04
@@ -108,7 +105,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: android-test-apk
+          name: android-apk
           path: artifacts/android-apk
       - name: Enable KVM
         run: |
@@ -122,7 +119,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: python3 tools/android_smoke.py --apk-dir artifacts/android-apk --output artifacts/android-smoke --settle-seconds 90 --wait-map-ready
+          script: python3 tools/android_smoke.py --apk artifacts/android-apk/CableRoutePlanner.apk --output artifacts/android-smoke --settle-seconds 90 --wait-map-ready
       - uses: actions/upload-artifact@v4
         if: always()
         with:

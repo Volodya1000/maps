@@ -55,18 +55,21 @@ public sealed class WaypointGestureTests
         using var fixture = await WaypointListFixture.CreateAsync();
         var ids = fixture.ViewModel.Points.Select(point => point.Id).ToArray();
         var card = fixture.Card(0);
+        var draggedRow = fixture.Row(0);
         var normalAppearance = (card.Background, card.BoxShadow, card.Opacity, card.RenderTransform, card.BorderBrush, card.BorderThickness);
         var start = card.TranslatePoint(new Point(40, 30), fixture.Window)!.Value;
         var end = fixture.Card(2).TranslatePoint(new Point(40, 30), fixture.Window)!.Value;
 
         fixture.Touch.Send(RawPointerEventType.TouchBegin, start);
         await HeadlessTouch.UntilAsync(() => !Equals(normalAppearance,
-            (card.Background, card.BoxShadow, card.Opacity, card.RenderTransform, card.BorderBrush, card.BorderThickness)),
+            (card.Background, card.BoxShadow, card.Opacity, card.RenderTransform, card.BorderBrush, card.BorderThickness))
+            && draggedRow.ZIndex > 0,
             "Holding did not show grab feedback.");
         fixture.Touch.Send(RawPointerEventType.TouchUpdate, end);
         fixture.Touch.Send(RawPointerEventType.TouchEnd, end);
 
         Assert.Equal(new[] { ids[1], ids[2], ids[0], ids[3], ids[4], ids[5] }, fixture.ViewModel.Points.Select(point => point.Id));
+        Assert.Equal(0, draggedRow.ZIndex);
     }
 
     [AvaloniaFact]
@@ -134,6 +137,11 @@ public sealed class WaypointGestureTests
 
         public Border Card(int index) => List.GetVisualDescendants().OfType<Border>()
             .Where(border => border.Name == "CoordinateCard").ElementAt(index);
+
+        public Control Row(int index) => List.GetVisualDescendants()
+            .OfType<ItemsControl>()
+            .Single(control => control.Name == "Rows")
+            .ContainerFromIndex(index)!;
         public Border Handle(int index) => Card(index).GetVisualDescendants().OfType<Border>()
             .Single(border => border.Name == "DragHandle");
 

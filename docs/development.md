@@ -7,7 +7,7 @@ uv sync --locked
 uv run --locked pre-commit install
 ```
 
-Pre-commit проверяет changelog-фрагмент, синтаксис Python/JSON/TOML/YAML, форматирование C#, Release-сборку с предупреждениями как ошибками, весь набор .NET-тестов и аудит автономности на Linux. Изменения подготовки данных и браузерного стенда дополнительно запускают соответствующие проверки. Pre-push собирает Android при изменениях общего C#-кода или платформенного проекта. Нужны JDK 17, Android workload, SDK API/build-tools 34.0.0 и `ANDROID_HOME`.
+Pre-commit проверяет changelog-фрагмент, синтаксис Python/JSON/TOML/YAML, форматирование C#, Release-сборку с предупреждениями как ошибками, весь набор .NET-тестов и аудит автономности на Linux. C# анализируется встроенными [.NET SDK analyzers](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/overview) уровня 8.0 Recommended; избранные code-style диагностики повышены до warning и потому тоже блокируют Release-сборку. Изменения подготовки данных и браузерного стенда дополнительно запускают соответствующие проверки. Pre-push собирает Android при изменениях общего C#-кода или платформенного проекта. Нужны JDK 17, Android workload, SDK API/build-tools 34.0.0 и `ANDROID_HOME`.
 
 CI вызывает тот же `tools/check.py`, а не копию его команд. Отсутствие инструмента завершает проверку ошибкой. Для первичной подготовки Playwright в Linux можно установить системные зависимости командой `npx --package playwright@1.55.1 playwright install-deps chromium`.
 

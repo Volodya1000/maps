@@ -8,6 +8,7 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 {
+    private static readonly IReadOnlyList<int> ThreePointNumbers = Array.AsReadOnly(new[] { 1, 2, 3 });
     [Fact]
     public async Task LatestMapRequestWinsWhenOlderRequestFinishesLast()
     {
@@ -121,7 +122,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 
         Assert.Equal(selectedId, vm.SelectedPoint?.Id);
         Assert.Equal(selectedId, vm.Points[2].Id);
-        Assert.Equal(new[] { 1, 2, 3 }, vm.Points.Select(point => point.Number));
+        Assert.Equal(ThreePointNumbers, vm.Points.Select(point => point.Number));
         Assert.Equal(3, vm.PointCount);
     }
 
@@ -172,7 +173,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
             Guid.NewGuid(),
             "test",
             [],
-            new RouteMetrics(100, 40, 60, 1, 2, 130, null));
+            new RouteMetrics(100, 40, 60, 1, 2, 0, 130, null));
         var result = RouteMetricsFormatter.Format(route, new RoutingOptions(ReserveFraction: 0.25));
 
         Assert.Contains($"Кабель с запасом {0.25:P0}: {125:N0} м", result);

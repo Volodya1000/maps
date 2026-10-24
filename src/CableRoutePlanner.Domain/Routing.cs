@@ -43,6 +43,7 @@ public sealed record RouteMetrics(
     double FieldMetres,
     int RoadCrossings,
     int ApprovedWaterCrossings,
+    int PotentialBridgeCrossings,
     double WeightedCost,
     double? AscentMetres)
 {

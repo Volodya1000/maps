@@ -11,6 +11,8 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class PresentationTests : ReactiveTestScope
 {
+    private static readonly IReadOnlyList<int> ThreePointNumbers = Array.AsReadOnly(new[] { 1, 2, 3 });
+    private static readonly IReadOnlyList<int> TwoPointNumbers = Array.AsReadOnly(new[] { 1, 2 });
     [Fact]
     public void FodyWeavingRaisesPropertyChangedAfterRealCompilation()
     {
@@ -109,7 +111,7 @@ public sealed class PresentationTests : ReactiveTestScope
 
         await vm.ReorderPoints.Execute(new WaypointReorder(original[0], 2));
         Assert.Equal(new[] { original[1], original[2], original[0] }, vm.Points.Select(point => point.Id));
-        Assert.Equal(new[] { 1, 2, 3 }, vm.Points.Select(point => point.Number));
+        Assert.Equal(ThreePointNumbers, vm.Points.Select(point => point.Number));
         Assert.NotEmpty(vm.Alternatives);
         Assert.NotEmpty(vm.RouteChoices);
         Assert.NotNull(vm.SelectedRoute);
@@ -120,7 +122,7 @@ public sealed class PresentationTests : ReactiveTestScope
         vm.SelectedPoint = vm.Points[0];
         await vm.RemovePoint.Execute(original[2]);
         Assert.Equal(new[] { original[1], original[0] }, vm.Points.Select(point => point.Id));
-        Assert.Equal(new[] { 1, 2 }, vm.Points.Select(point => point.Number));
+        Assert.Equal(TwoPointNumbers, vm.Points.Select(point => point.Number));
         Assert.Equal(original[1], vm.SelectedPoint?.Id);
     }
 

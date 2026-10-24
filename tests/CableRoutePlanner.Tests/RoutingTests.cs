@@ -64,12 +64,31 @@ public sealed class RoutingTests
     }
 
     [Fact]
-    public async Task BridgeCandidateDoesNotAuthorizeRiverCrossing()
+    public async Task NearbyBridgeCandidateAllowsRouteAndRemainsUnapproved()
     {
         var river = TestData.Polygon(1, TerrainKind.River, 151, -20, 153, 700);
         var bridge = TestData.Polygon(2, TerrainKind.BridgeCandidate, 140, 140, 165, 180);
+        var routes = await TestData.Planner(river, bridge).PlanAsync(
+                [TestData.P(50, 150), TestData.P(260, 150)],
+                TestData.Options,
+                default);
+
+        Assert.NotEmpty(routes);
+        Assert.All(routes, route =>
+        {
+            Assert.Equal(0, route.Metrics.ApprovedWaterCrossings);
+            Assert.Equal(1, route.Metrics.PotentialBridgeCrossings);
+        });
+    }
+
+    [Fact]
+    public async Task RoadNearRiverWithoutCrossingItDoesNotOpenTheWaterObstacle()
+    {
+        var river = TestData.Polygon(1, TerrainKind.River, 151, -20, 153, 700);
+        var parallelRoad = TestData.Polygon(2, TerrainKind.BridgeCandidate, 160, 100, 170, 200);
+
         await Assert.ThrowsAsync<PlanningException>(
-            () => TestData.Planner(river, bridge).PlanAsync(
+            () => TestData.Planner(river, parallelRoad).PlanAsync(
                 [TestData.P(50, 150), TestData.P(260, 150)],
                 TestData.Options,
                 default));
