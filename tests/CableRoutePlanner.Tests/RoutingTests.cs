@@ -1,5 +1,7 @@
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
+using CableRoutePlanner.Infrastructure.Geography;
+using CableRoutePlanner.Infrastructure.Routing;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using Xunit;
@@ -8,6 +10,25 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class RoutingTests
 {
+    [Fact]
+    public void GridGeneratorBuildsExpectedMeshAndHonoursNodeLimit()
+    {
+        // Arrange
+        var bounds = new GeoBounds(27, 54, 27.006, 54.006);
+        var projection = new LocalProjection(new GeoCoordinate(54.003, 27.003));
+        var generator = new GridGenerator();
+
+        // Act
+        var mesh = generator.Generate(bounds, new RoutingOptions(100, 100), projection);
+
+        // Assert
+        Assert.Equal(mesh.Columns * mesh.Rows, mesh.Nodes.Length);
+        Assert.True(mesh.Columns > 1);
+        Assert.True(mesh.Rows > 1);
+        Assert.Throws<PlanningException>(
+            () => generator.Generate(bounds, new RoutingOptions(5, 100), projection));
+    }
+
     [Fact]
     public async Task RepeatedPlanningPreservesObstacleAvoidanceAndMetrics()
     {

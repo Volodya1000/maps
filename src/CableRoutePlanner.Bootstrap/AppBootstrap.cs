@@ -25,6 +25,8 @@ public static class AppBootstrap
         services.AddLogging(logging => logging.AddConsole());
         services.AddSingleton<IGeodataRepository>(_ => new SqliteGeodataRepository(dataDirectory));
         services.AddSingleton<ISettingsStore>(_ => new JsonSettingsStore(settingsPath));
+        services.AddSingleton<IGridGenerator, GridGenerator>();
+        services.AddSingleton<IGridPathfinder, AStarGridPathfinder>();
         services.AddSingleton<IRoutePlanner, GridRoutePlanner>();
         services.AddSingleton<IPlanningSession, PlanningSession>();
         services.AddSingleton<IClipboardService>(clipboard ?? new AvaloniaClipboardService());

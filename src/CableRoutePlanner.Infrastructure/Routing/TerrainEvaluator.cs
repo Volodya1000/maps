@@ -41,12 +41,16 @@ internal sealed class TerrainEvaluator
 
     private readonly GeometryFactory _factory = new();
 
+    private readonly TerrainRules _rules;
+
     public TerrainEvaluator(
         IReadOnlyList<MapFeature> features,
         LocalProjection projection,
-        double cellSizeMetres)
+        double cellSizeMetres,
+        TerrainRules? rules = null)
     {
         _projection = projection;
+        _rules = rules ?? new TerrainRules();
         var reader = new WKBReader();
         var projected = features.Select(
             f => (Feature: f, Geometry: projection.Forward(reader.Read(f.Wkb)))).ToArray();
@@ -221,12 +225,7 @@ internal sealed class TerrainEvaluator
     public EdgeEvaluation? Evaluate(Coordinate a, Coordinate b)
     {
         var line = _factory.CreateLineString([a, b]);
-        var forest = 0d;
-        var field = 0d;
-        var clearing = 0d;
-        var roads = new List<long>();
-        var crossings = new List<long>();
-        var bridgeCandidates = new List<long>();
+        var contribution = new TerrainContribution();
         foreach (var obstacle in _index.Query(line.EnvelopeInternal))
         {
             var geometry = obstacle.Geometry;
@@ -235,37 +234,18 @@ internal sealed class TerrainEvaluator
                 continue;
             }
 
-            if (obstacle.Kind is TerrainKind.Marsh or TerrainKind.Lake or TerrainKind.River or TerrainKind.Building)
+            if (!_rules.TryGet(obstacle.Kind, out var rule))
+            {
+                continue;
+            }
+
+            if (rule.Blocks)
             {
                 return null;
             }
 
             var intersection = geometry.Intersection(line);
-            switch (obstacle.Kind)
-            {
-                case TerrainKind.Forest:
-                    forest += intersection.Length;
-                    break;
-                case TerrainKind.Field:
-                    field += intersection.Length;
-                    break;
-                case TerrainKind.Clearing:
-                    clearing += intersection.Length;
-                    break;
-                case TerrainKind.Road:
-                    if (intersection.Dimension == Dimension.Point)
-                    {
-                        roads.Add(obstacle.Id);
-                    }
-
-                    break;
-                case TerrainKind.ApprovedCrossing:
-                    crossings.Add(obstacle.Id);
-                    break;
-                case TerrainKind.BridgeCandidate:
-                    bridgeCandidates.Add(obstacle.Id);
-                    break;
-            }
+            rule.Apply(intersection, obstacle.Id, contribution);
         }
 
         var projectedLength = line.Length;
@@ -273,11 +253,11 @@ internal sealed class TerrainEvaluator
         var scale = projectedLength > 0 ? length / projectedLength : 1;
         return new(
             length,
-            Math.Min(forest, projectedLength) * scale,
-            Math.Min(field, projectedLength) * scale,
-            Math.Min(clearing, projectedLength) * scale,
-            roads,
-            crossings,
-            bridgeCandidates);
+            Math.Min(contribution.Forest, projectedLength) * scale,
+            Math.Min(contribution.Field, projectedLength) * scale,
+            Math.Min(contribution.Clearing, projectedLength) * scale,
+            contribution.Roads,
+            contribution.Crossings,
+            contribution.BridgeCandidates);
     }
 }
