@@ -20,9 +20,9 @@ ARTIFACTS = ROOT / "artifacts"
 SOLUTION = "CableRoutePlanner.Desktop.slnf"
 
 
-def run(*command: str, cwd: Path = ROOT, timeout: int = 600) -> None:
+def run(*command: str, cwd: Path = ROOT, timeout: int = 600, env: dict[str, str] | None = None) -> None:
     print("+ " + " ".join(command), flush=True)
-    subprocess.run(command, cwd=cwd, check=True, timeout=timeout)
+    subprocess.run(command, cwd=cwd, check=True, timeout=timeout, env=env)
 
 
 def executable(name: str) -> str:
@@ -97,7 +97,9 @@ def terrain() -> None:
                     time.sleep(0.05)
             else:
                 raise TimeoutError("Terrain server did not become ready.")
-            run(npm, "test", cwd=directory)
+            terrain_env = os.environ.copy()
+            terrain_env["TERRAIN_EVIDENCE_DIR"] = str(ARTIFACTS / "terrain-evidence")
+            run(npm, "test", cwd=directory, env=terrain_env)
         finally:
             server.terminate()
             try:
@@ -113,14 +115,24 @@ def android() -> None:
     if not sdk:
         raise ValueError("Set ANDROID_HOME to Android SDK with API/build-tools 34.0.0; install JDK 17 and the .NET Android workload.")
     run(dotnet, "restore", "src/CableRoutePlanner.Android", "--locked-mode")
-    run(dotnet, "publish", "src/CableRoutePlanner.Android", "-c", "Release", f"-p:AndroidSdkDirectory={sdk}")
+    publish = [dotnet, "publish", "src/CableRoutePlanner.Android", "-c", "Release", f"-p:AndroidSdkDirectory={sdk}"]
+    keystore = os.environ.get("ANDROID_SIGNING_KEYSTORE")
+    if keystore:
+        publish.extend((
+            "-p:AndroidKeyStore=true",
+            f"-p:AndroidSigningKeyStore={keystore}",
+            f"-p:AndroidSigningKeyAlias={os.environ.get('ANDROID_SIGNING_KEY_ALIAS', 'androiddebugkey')}",
+            f"-p:AndroidSigningKeyPass={os.environ.get('ANDROID_SIGNING_KEY_PASSWORD', 'android')}",
+            f"-p:AndroidSigningStorePass={os.environ.get('ANDROID_SIGNING_STORE_PASSWORD', 'android')}",
+        ))
+    run(*publish)
     apk = ROOT / "src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk"
     aapt = Path(sdk) / "build-tools/34.0.0" / ("aapt.exe" if os.name == "nt" else "aapt")
     permissions = subprocess.check_output([str(aapt), "dump", "permissions", str(apk)], text=True)
     (ARTIFACTS / "permissions.txt").write_text(permissions, encoding="utf-8")
     if "android.permission.INTERNET" in permissions:
         raise ValueError("Release APK unexpectedly requests INTERNET.")
-    downloadable_apk = ARTIFACTS / "CableRoutePlanner.apk"
+    downloadable_apk = ARTIFACTS / "CableRoutePlanner-CI-Minsk.apk"
     shutil.copy2(apk, downloadable_apk)
     with downloadable_apk.open("rb") as source:
         digest = hashlib.file_digest(source, "sha256").hexdigest()

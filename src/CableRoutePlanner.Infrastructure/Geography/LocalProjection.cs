@@ -5,7 +5,7 @@ using NetTopologySuite.Geometries.Utilities;
 namespace CableRoutePlanner.Infrastructure.Geography;
 
 // Local equidistant approximation, deliberately limited to a 20 km AOI by GridRoutePlanner.
-internal sealed class LocalProjection(GeoCoordinate origin)
+public sealed class LocalProjection(GeoCoordinate origin)
 {
     private const double MetresPerDegree = GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180;
 

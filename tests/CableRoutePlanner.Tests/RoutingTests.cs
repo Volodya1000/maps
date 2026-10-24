@@ -1,5 +1,7 @@
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
+using CableRoutePlanner.Infrastructure.Geography;
+using CableRoutePlanner.Infrastructure.Routing;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using Xunit;
@@ -8,6 +10,46 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class RoutingTests
 {
+    [Fact]
+    public void GridGeneratorBuildsExpectedMeshAndHonoursNodeLimit()
+    {
+        // Arrange
+        var bounds = new GeoBounds(27, 54, 27.006, 54.006);
+        var projection = new LocalProjection(new GeoCoordinate(54.003, 27.003));
+        var generator = new GridGenerator();
+
+        // Act
+        var mesh = generator.Generate(bounds, new RoutingOptions(100, 100), projection);
+
+        // Assert
+        Assert.Equal(mesh.Columns * mesh.Rows, mesh.Nodes.Length);
+        Assert.True(mesh.Columns > 1);
+        Assert.True(mesh.Rows > 1);
+        Assert.Throws<PlanningException>(
+            () => generator.Generate(bounds, new RoutingOptions(5, 100), projection));
+    }
+
+    [Fact]
+    public async Task RepeatedPlanningPreservesObstacleAvoidanceAndMetrics()
+    {
+        // Arrange
+        var obstacle = TestData.Polygon(1, TerrainKind.Marsh, 120, 80, 180, 240);
+        var planner = TestData.Planner(obstacle);
+        var points = new[] { TestData.P(50, 150), TestData.P(280, 150) };
+
+        // Act
+        var first = await planner.PlanAsync(points, TestData.Options, default);
+        var repeated = await planner.PlanAsync(points, TestData.Options, default);
+
+        // Assert
+        Assert.Equal(first.Count, repeated.Count);
+        for (var index = 0; index < first.Count; index++)
+        {
+            Assert.Equal(first[index].Geometry, repeated[index].Geometry);
+            Assert.Equal(first[index].Metrics, repeated[index].Metrics);
+        }
+    }
+
     [Fact]
     public async Task ArbitraryEndpointsAndOrderedWaypointsArePreserved()
     {
@@ -79,6 +121,38 @@ public sealed class RoutingTests
             Assert.Equal(0, route.Metrics.ApprovedWaterCrossings);
             Assert.Equal(1, route.Metrics.PotentialBridgeCrossings);
         });
+    }
+
+    [Fact]
+    public async Task RouteFollowsBothEndsOfMappedBridgeAcrossRiver()
+    {
+        var river = TestData.Polygon(1, TerrainKind.River, 151, -20, 153, 700);
+        var bridge = TestData.Line(
+            2,
+            TerrainKind.BridgeCandidate,
+            (140, 150),
+            (150, 150),
+            (165, 150));
+        var routes = await TestData.Planner(river, bridge).PlanAsync(
+            [TestData.P(50, 150), TestData.P(260, 150)],
+            TestData.Options,
+            default);
+        var bridgeStart = TestData.P(140, 150);
+        var bridgeMiddle = TestData.P(150, 150);
+        var bridgeEnd = TestData.P(165, 150);
+        var shortest = Assert.Single(routes, route => route.Name == "Короче");
+
+        Assert.NotEmpty(routes);
+        Assert.Equal("Короче", shortest.Name);
+        Assert.Equal(shortest.Metrics.LengthMetres, shortest.Metrics.WeightedCost, 5);
+        Assert.True(shortest.Geometry[0].DistanceTo(TestData.P(50, 150)) < 0.0001);
+        Assert.True(shortest.Geometry[^1].DistanceTo(TestData.P(260, 150)) < 0.0001);
+        Assert.Contains(shortest.Geometry, point => point.DistanceTo(bridgeStart) < 0.5);
+        Assert.Contains(shortest.Geometry, point => point.DistanceTo(bridgeMiddle) < 0.5);
+        Assert.Contains(shortest.Geometry, point => point.DistanceTo(bridgeEnd) < 0.5);
+        Assert.Equal(1, shortest.Metrics.PotentialBridgeCrossings);
+        Assert.Equal(0, shortest.Metrics.ApprovedWaterCrossings);
+        Assert.InRange(shortest.Metrics.LengthMetres, 209.5, 211);
     }
 
     [Fact]

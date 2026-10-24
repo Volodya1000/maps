@@ -1,7 +1,5 @@
 name: Publish verified offline preview
 on:
-  push:
-    branches: [release/publish-preview]
   workflow_dispatch:
     inputs:
       source_run_id:
@@ -24,7 +22,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REQUESTED_RUN: ${{ inputs.source_run_id }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate source build and installation checks
         id: source
         run: |
@@ -64,7 +62,11 @@ jobs:
           for source in list(root.rglob('*.exe')):
               if source.parent != root:
                   shutil.move(source, root / source.name)
-          apk, = root.glob('*.apk')
+          apk, = root.glob('*-Belarus.apk')
+          light, = root.glob('*-Minsk.apk')
+          with zipfile.ZipFile(light) as archive:
+              if json.loads(archive.read('assets/Data/manifest.json'))['region_id'] == 'belarus':
+                  raise RuntimeError('Lightweight APK unexpectedly contains the country map')
           with zipfile.ZipFile(apk) as archive:
               manifest = json.loads(archive.read('assets/Data/manifest.json'))
           if manifest['region_id'] != 'belarus':
@@ -91,4 +93,4 @@ jobs:
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: |
           cd artifacts/release
-          gh release create v0.2.0-preview --target "$SOURCE_SHA" --prerelease --title '0.2.0 — офлайн-карта Беларуси' --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" *.apk *.exe *.json *.txt
+          gh release create v0.2.1-preview --target "$SOURCE_SHA" --prerelease --title '0.2.1 — офлайн-карта Беларуси' --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" *.apk *.exe *.json *.txt
