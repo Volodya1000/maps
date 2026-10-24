@@ -112,6 +112,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public bool HasRoute => SelectedRoute is not null;
 
+    public bool HasAlternatives => Alternatives.Count > 1;
+
     public bool HasMapNotice => !string.IsNullOrEmpty(MapStatus);
 
     public ReactiveCommand<GeoCoordinate, Unit> AddPoint
@@ -339,14 +341,17 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private void UpdateRoutePresentation(RouteAlternative? route)
     {
         RouteChoices.Clear();
+        var hasAlternatives = Alternatives.Count > 1;
         foreach (var alternative in Alternatives)
         {
             RouteChoices.Add(new RouteChoice(
                 alternative.Id,
-                alternative.Name,
+                hasAlternatives ? alternative.Name : "Маршрут",
                 $"{alternative.Metrics.LengthMetres:N0} м",
                 alternative.Id == route?.Id));
         }
+
+        this.RaisePropertyChanged(nameof(HasAlternatives));
 
         MetricsText = route is null
             ? "Актуальный маршрут не выбран."

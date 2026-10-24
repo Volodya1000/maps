@@ -27,11 +27,17 @@ internal sealed class TerrainEvaluator
 {
     private sealed record Obstacle(long Id, TerrainKind Kind, Geometry Geometry);
 
+    private sealed record BridgeGuide(Geometry Bridge, Geometry River, Geometry WaterSection);
+
     private readonly STRtree<Obstacle> _index = new();
 
     private readonly STRtree<Geometry> _waterOpenings = new();
 
     private readonly LocalProjection _projection;
+
+    private readonly BridgeGuide[] _bridgeGuides;
+
+    private readonly double _bridgeCorridorMetres;
 
     private readonly GeometryFactory _factory = new();
 
@@ -50,19 +56,37 @@ internal sealed class TerrainEvaluator
             .Select(f => f.Geometry)
             .ToArray();
         var riverIndex = new STRtree<Geometry>();
-        foreach (var river in projected.Where(f => f.Feature.Kind == TerrainKind.River))
+        var rivers = projected.Where(f => f.Feature.Kind == TerrainKind.River).ToArray();
+        foreach (var river in rivers)
         {
             riverIndex.Insert(river.Geometry.EnvelopeInternal, river.Geometry);
         }
 
         riverIndex.Build();
-        var bridgeOpenings = projected
+        _bridgeCorridorMetres = Math.Max(cellSizeMetres * 0.3, 2);
+        var bridgeFeatures = projected
             .Where(f => f.Feature.Kind == TerrainKind.BridgeCandidate)
-            .Where(f => riverIndex.Query(f.Geometry.EnvelopeInternal)
-                .Any(river => river.Intersects(f.Geometry)))
             .Select(f => (
-                Id: f.Feature.Id,
-                Corridor: f.Geometry.Buffer(Math.Max(cellSizeMetres * 0.75, 4))))
+                Feature: f,
+                Rivers: riverIndex.Query(f.Geometry.EnvelopeInternal)
+                    .Where(river => river.Intersects(f.Geometry))
+                    .ToArray()))
+            .Where(x => x.Rivers.Length > 0)
+            .ToArray();
+        _bridgeGuides = bridgeFeatures
+            .SelectMany(x => x.Rivers.Select(river =>
+            {
+                var section = x.Feature.Geometry.Intersection(river);
+                return new BridgeGuide(x.Feature.Geometry, river, section);
+            }))
+            .Where(x => !x.WaterSection.IsEmpty && x.WaterSection.Length > 0)
+            .ToArray();
+        var bridgeOpenings = bridgeFeatures
+            .Select(f => (
+                Id: f.Feature.Feature.Id,
+                // Keep the water opening on the mapped bridge line. A cell-sized buffer let
+                // A* cut across the river beside a bridge while still counting that bridge.
+                Corridor: f.Feature.Geometry.Buffer(_bridgeCorridorMetres)))
             .ToDictionary(bridge => bridge.Id, bridge => bridge.Corridor);
         foreach (var opening in approvals.Concat(bridgeOpenings.Values))
         {
@@ -102,6 +126,69 @@ internal sealed class TerrainEvaluator
         }
 
         _index.Build();
+    }
+
+    public List<Coordinate> AlignBridgeCrossings(IReadOnlyList<Coordinate> route)
+    {
+        var aligned = new List<Coordinate>(route.Count);
+        if (route.Count == 0)
+        {
+            return aligned;
+        }
+
+        aligned.Add(route[0]);
+        for (var i = 1; i < route.Count; i++)
+        {
+            var previous = route[i - 1];
+            var current = route[i];
+            var segment = _factory.CreateLineString([previous, current]);
+            var guide = _bridgeGuides
+                .Where(candidate => candidate.River.Intersects(segment)
+                    && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres)
+                .OrderBy(candidate => candidate.Bridge.Distance(segment))
+                .FirstOrDefault();
+            if (guide is not null)
+            {
+                // Preserve the complete OSM bridge geometry, including both mapped ends. The
+                // water intersection alone only snaps the crossing point and leaves the route
+                // free to cut diagonally across the bridge approaches.
+                var points = guide.Bridge.Coordinates;
+                if (points.Length >= 2)
+                {
+                    if (previous.Distance(points[^1]) < previous.Distance(points[0]))
+                    {
+                        Array.Reverse(points);
+                    }
+
+                    var candidate = new List<Coordinate>(aligned);
+                    candidate.AddRange(points);
+                    candidate.Add(current);
+                    if (IsValidPath(candidate))
+                    {
+                        aligned.AddRange(points);
+                        aligned.Add(current);
+                        continue;
+                    }
+                }
+            }
+
+            aligned.Add(current);
+        }
+
+        return aligned;
+    }
+
+    private bool IsValidPath(IReadOnlyList<Coordinate> path)
+    {
+        for (var i = 1; i < path.Count; i++)
+        {
+            if (Evaluate(path[i - 1], path[i]) is null)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public EdgeEvaluation? Evaluate(Coordinate a, Coordinate b)

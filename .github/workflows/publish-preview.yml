@@ -1,7 +1,5 @@
 name: Publish verified offline preview
 on:
-  push:
-    branches: [release/publish-preview]
   workflow_dispatch:
     inputs:
       source_run_id:
@@ -91,4 +89,4 @@ jobs:
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: |
           cd artifacts/release
-          gh release create v0.2.0-preview --target "$SOURCE_SHA" --prerelease --title '0.2.0 — офлайн-карта Беларуси' --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" *.apk *.exe *.json *.txt
+          gh release create v0.2.1-preview --target "$SOURCE_SHA" --prerelease --title '0.2.1 — офлайн-карта Беларуси' --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" *.apk *.exe *.json *.txt

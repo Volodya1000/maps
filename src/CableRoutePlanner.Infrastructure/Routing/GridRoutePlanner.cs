@@ -153,6 +153,7 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
                     GridEdge,
                     projection,
                     ct);
+                part = evaluator.AlignBridgeCrossings(part);
                 if (route.Count > 0)
                 {
                     part.RemoveAt(0);

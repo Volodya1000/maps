@@ -82,6 +82,35 @@ public sealed class RoutingTests
     }
 
     [Fact]
+    public async Task RouteFollowsBothEndsOfMappedBridgeAcrossRiver()
+    {
+        var river = TestData.Polygon(1, TerrainKind.River, 151, -20, 153, 700);
+        var bridge = TestData.Line(
+            2,
+            TerrainKind.BridgeCandidate,
+            (140, 150),
+            (150, 150),
+            (165, 150));
+        var routes = await TestData.Planner(river, bridge).PlanAsync(
+            [TestData.P(50, 150), TestData.P(260, 150)],
+            TestData.Options,
+            default);
+        var bridgeStart = TestData.P(140, 150);
+        var bridgeMiddle = TestData.P(150, 150);
+        var bridgeEnd = TestData.P(165, 150);
+
+        Assert.NotEmpty(routes);
+        Assert.All(routes, route =>
+        {
+            Assert.Contains(route.Geometry, point => point.DistanceTo(bridgeStart) < 0.5);
+            Assert.Contains(route.Geometry, point => point.DistanceTo(bridgeMiddle) < 0.5);
+            Assert.Contains(route.Geometry, point => point.DistanceTo(bridgeEnd) < 0.5);
+            Assert.Equal(1, route.Metrics.PotentialBridgeCrossings);
+            Assert.Equal(0, route.Metrics.ApprovedWaterCrossings);
+        });
+    }
+
+    [Fact]
     public async Task RoadNearRiverWithoutCrossingItDoesNotOpenTheWaterObstacle()
     {
         var river = TestData.Polygon(1, TerrainKind.River, 151, -20, 153, 700);
