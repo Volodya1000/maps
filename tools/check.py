@@ -138,7 +138,15 @@ def android() -> None:
             f"-p:AndroidSigningStorePass={os.environ.get('ANDROID_SIGNING_STORE_PASSWORD', 'android')}",
         ))
     run(*publish)
-    apk = ROOT / "src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk"
+    publish_directory = ROOT / "src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish"
+    apk_candidates = sorted(publish_directory.glob("*-Signed.apk"))
+    if len(apk_candidates) != 1:
+        available = sorted(path.name for path in publish_directory.glob("*.apk"))
+        raise ValueError(
+            f"Expected one signed APK in {publish_directory}, found {len(apk_candidates)}; "
+            f"APK files present: {available}"
+        )
+    apk = apk_candidates[0]
     aapt = Path(sdk) / "build-tools/34.0.0" / ("aapt.exe" if os.name == "nt" else "aapt")
     permissions = subprocess.check_output([str(aapt), "dump", "permissions", str(apk)], text=True)
     (ARTIFACTS / "permissions.txt").write_text(permissions, encoding="utf-8")

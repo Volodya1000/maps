@@ -32,6 +32,7 @@ def main():
     parser.add_argument("--settle-seconds", type=int, default=10)
     parser.add_argument("--wait-map-ready", action="store_true")
     args = parser.parse_args()
+    args.output.mkdir(parents=True, exist_ok=True)
     apk = args.apk
     if apk is None:
         candidates = list(args.apk_dir.rglob("*-Signed.apk")) if args.apk_dir else []
@@ -42,8 +43,6 @@ def main():
         apk = candidates[0]
     if not apk.is_file():
         parser.error("APK does not exist")
-    args.output.mkdir(parents=True, exist_ok=True)
-
     def adb(*command, check=True, binary=False, timeout=90):
         result = subprocess.run(
             [args.adb, *command],
