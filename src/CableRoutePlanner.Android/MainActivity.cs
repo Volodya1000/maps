@@ -54,7 +54,9 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
                     && name != "geodata.sqlite.gz")
                 .Order(StringComparer.Ordinal).ToArray();
             var files = chunks.Length > 0 ? chunks
-                : new[] { names.Contains("geodata.sqlite.gz") ? "geodata.sqlite.gz" : "geodata.sqlite" };
+                : new[] { names.Contains("geodata.sqlite.gz", StringComparer.Ordinal)
+                    ? "geodata.sqlite.gz"
+                    : "geodata.sqlite" };
             await using var output = File.Create(database + ".tmp");
             var buffer = new byte[1024 * 1024];
             long copied = 0;

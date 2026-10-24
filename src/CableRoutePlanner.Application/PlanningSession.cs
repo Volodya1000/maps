@@ -72,6 +72,7 @@ public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
         RoutingOptions options,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(options);
         if (_points.Count < 2)
         {
             throw new PlanningException("Установите минимум две точки.");
@@ -80,7 +81,7 @@ public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
         options.Validate();
         var revision = Revision;
         var coordinates = _points.Select(p => p.Coordinate).ToArray();
-        var result = await planner.PlanAsync(coordinates, options, cancellationToken);
+        var result = await planner.PlanAsync(coordinates, options, cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         if (Revision != revision)
         {

@@ -7,7 +7,9 @@ uv sync --locked
 uv run --locked pre-commit install
 ```
 
-Pre-commit проверяет changelog-фрагмент, синтаксис Python/JSON/TOML/YAML, форматирование C#, Release-сборку с предупреждениями как ошибками, весь набор .NET-тестов и аудит автономности на Linux. C# анализируется встроенными [.NET SDK analyzers](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/overview) уровня 8.0 Recommended; избранные code-style диагностики повышены до warning и потому тоже блокируют Release-сборку. Изменения подготовки данных и браузерного стенда дополнительно запускают соответствующие проверки. Pre-push собирает Android при изменениях общего C#-кода или платформенного проекта. Нужны JDK 17, Android workload, SDK API/build-tools 34.0.0 и `ANDROID_HOME`.
+Pre-commit проверяет changelog-фрагмент, синтаксис Python/JSON/TOML/YAML, форматирование C#, Release-сборку с предупреждениями как ошибками, весь набор .NET-тестов, coverage gate и аудит автономности на Linux. C# анализируется встроенными [.NET SDK analyzers](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/overview) уровня 8.0 `All`, а также `SonarAnalyzer.CSharp` и `Meziantou.Analyzer`. Избранные code-style диагностики повышены до warning и потому тоже блокируют Release-сборку. XML-документация для каждого публичного API не требуется.
+
+Правила находятся в `Directory.Build.props` и `.editorconfig`. Исправляйте причину предупреждения в коде; не используйте `#pragma warning disable`, `#nullable disable`, `WarningsNotAsErrors`, `SuppressMessage` или массовое отключение правил. Единственное текущее исключение — точечный `AVLN3001` для DI-only Avalonia views: публичный конструктор для runtime loader нарушил бы фабричную архитектуру; причина зафиксирована рядом с настройкой проекта. Новые исключения допустимы только после такого же исследования и документирования.
 
 CI вызывает тот же `tools/check.py`, а не копию его команд. Отсутствие инструмента завершает проверку ошибкой. Для первичной подготовки Playwright в Linux можно установить системные зависимости командой `npx --package playwright@1.55.1 playwright install-deps chromium`.
 
@@ -21,6 +23,10 @@ uv run --locked python tools/check.py all
 uv run --locked pre-commit run --all-files
 uv run --locked pre-commit run --all-files --hook-stage pre-push
 ```
+
+`desktop` выполняет restore, `dotnet format` для whitespace/style/analyzers, Release build и единственный запуск xUnit-тестов с Coverlet. Покрытие собирается в Cobertura, проверяется `tools/check_coverage.py`, а HTML создаётся ReportGenerator в `artifacts/coverage-report`. Минимумы — 85% строк и 80% ветвей; проценты считаются по суммарному числу покрытых и всех строк/ветвей, а не как среднее проектов. В статистику входят Domain, Application, ViewModels, Infrastructure, Persistence, Bootstrap и UI. Desktop/Android entry points и тестовая сборка не входят; Android анализируется отдельной Android-проверкой.
+
+Для просмотра отчёта локально откройте `artifacts/coverage-report/index.html`. Непокрытые строки и покрытие классов/методов видны в HTML. `line coverage` показывает выполненные исходные строки, `branch coverage` — выполненные варианты условных переходов. Сгенерированный компилятором/Avalonia/Fody код и сторонние библиотеки исключаются в `coverage.runsettings`; самостоятельно написанный прикладной код не исключается.
 
 На Windows desktop-проверка также публикует самодостаточную win-x64 сборку, на Linux проверяет отсутствие внешних сетевых обращений Verify. Тесты получают 30 секунд до диагностики зависания, весь запуск — 180 секунд; CI дополнительно ограничивает длительность job. Вторая matrix-ОС, установка Windows-пакета и Android-эмулятор остаются платформенными проверками: Linux-hook не может доказать их прохождение. Эмулятор требует Android SDK/adb и аппаратной виртуализации, которой в некоторых средах разработки нет. В CI дорогая сборка APK начинается только после успешных quality/desktop jobs; новый коммит отменяет устаревший запуск.
 

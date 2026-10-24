@@ -49,7 +49,7 @@ internal static class PackageInspection
                 area = name,
                 count = features.Count,
                 elapsed_ms = timer.ElapsedMilliseconds,
-                kinds = features.GroupBy(feature => feature.Kind).ToDictionary(group => group.Key.ToString(), group => group.Count())
+                kinds = features.GroupBy(feature => feature.Kind).ToDictionary(group => group.Key.ToString(), group => group.Count(), StringComparer.Ordinal)
             });
         }
 

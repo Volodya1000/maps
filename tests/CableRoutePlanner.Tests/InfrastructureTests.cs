@@ -36,6 +36,28 @@ public sealed class InfrastructureTests
     }
 
     [Fact]
+    public async Task DisplayQueriesSelectAppropriateDetailAndPreserveOriginalRoutingFeatures()
+    {
+        // Arrange
+        var repository = new SqliteGeodataRepository(TestData.RealData);
+        var bounds = repository.Info.Bounds;
+
+        // Act
+        var country = await repository.QueryMapAsync(bounds, 500, default);
+        var local = await repository.QueryMapAsync(bounds, 5, default);
+        var legacyDetail = await repository.QueryMapAsync(bounds, 0, default);
+
+        // Assert
+        Assert.NotEmpty(country);
+        Assert.NotEmpty(local);
+        Assert.NotEmpty(legacyDetail);
+        Assert.All(country, feature => Assert.Null(feature.ApprovalId));
+        Assert.Equal(
+            (await repository.QueryAsync(bounds, default)).Select(feature => feature.Id),
+            country.Select(feature => feature.Id));
+    }
+
+    [Fact]
     public void MissingAndCorruptedPackageAreRejected()
     {
         using var fixture = new TemporaryDirectory();
@@ -56,6 +78,29 @@ public sealed class InfrastructureTests
         Assert.Equal(35, new JsonSettingsStore(path).Load().CellSizeMetres);
         Assert.Throws<ArgumentException>(() => store.Save(new(-1)));
         Assert.Equal(35, store.Load().CellSizeMetres);
+    }
+
+    [Fact]
+    public void MissingAndMalformedSettingsLoadDefaultsAndMalformedValuesDoNotReplaceFile()
+    {
+        // Arrange
+        using var fixture = new TemporaryDirectory();
+        var path = Path.Combine(fixture.DirectoryPath, "settings.json");
+        var store = new JsonSettingsStore(path);
+
+        // Act
+        var missing = store.Load();
+        File.WriteAllText(path, "not-json");
+        var malformed = store.Load();
+        File.WriteAllText(path, "{\"CellSizeMetres\":-1}");
+        var invalid = store.Load();
+        var persisted = File.ReadAllText(path);
+
+        // Assert
+        Assert.Equal(new RoutingOptions().CellSizeMetres, missing.CellSizeMetres);
+        Assert.Equal(new RoutingOptions().CellSizeMetres, malformed.CellSizeMetres);
+        Assert.Equal(new RoutingOptions().CellSizeMetres, invalid.CellSizeMetres);
+        Assert.Equal("{\"CellSizeMetres\":-1}", persisted);
     }
 
     [Fact]

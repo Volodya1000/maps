@@ -141,7 +141,8 @@ internal sealed class TerrainEvaluator
         }
 
         var usedGuides = new HashSet<BridgeGuide>();
-        for (var i = 1; i < aligned.Count; i++)
+        var i = 1;
+        while (i < aligned.Count)
         {
             var previous = aligned[i - 1];
             var current = aligned[i];
@@ -156,6 +157,7 @@ internal sealed class TerrainEvaluator
                 if (guide.Bridge.Distance(_factory.CreatePoint(previous)) < 1
                     && guide.Bridge.Distance(_factory.CreatePoint(current)) < 1)
                 {
+                    i++;
                     continue;
                 }
 
@@ -200,6 +202,8 @@ internal sealed class TerrainEvaluator
                     }
                 }
             }
+
+            i++;
         }
 
         return aligned;

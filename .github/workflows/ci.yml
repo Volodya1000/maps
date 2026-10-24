@@ -86,8 +86,10 @@ jobs:
       - uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
-      - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
-      - run: dotnet workload install android --skip-manifest-update
+      - name: Install Android platform and build tools
+        run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - name: Install .NET Android workload
+        run: dotnet workload install android --skip-manifest-update
       - uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/preview.keystore
@@ -112,13 +114,22 @@ jobs:
           version: '0.12.23'
           python-version: '3.12'
       - run: uv sync --locked
-      - run: uv run --locked python tools/check.py android
-      - name: Enable KVM
+      - name: Build and verify signed Android APK
+        run: uv run --locked python tools/check.py android
+      - name: Record APK build diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts/android-smoke
+          find src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish -maxdepth 1 -type f -printf '%f %s bytes\n' > artifacts/android-smoke/publish-files.txt || true
+          cp artifacts/permissions.txt artifacts/android-smoke/permissions.txt 2>/dev/null || true
+          cp artifacts/apk.sha256 artifacts/android-smoke/apk.sha256 2>/dev/null || true
+      - name: Enable KVM for emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - uses: reactivecircus/android-emulator-runner@v2
+      - name: Install APK and verify startup in Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           target: google_apis

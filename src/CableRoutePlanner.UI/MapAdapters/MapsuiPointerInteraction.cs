@@ -51,7 +51,9 @@ internal sealed class MapsuiPointerInteraction
     public void Pressed(object? sender, PointerPressedEventArgs e)
     {
         if (e.Pointer.Type == PointerType.Mouse && !e.GetCurrentPoint(_control).Properties.IsLeftButtonPressed)
+        {
             return;
+        }
 
         _cameraUsed();
         _pointers.Add(e.Pointer.Id);
@@ -77,7 +79,9 @@ internal sealed class MapsuiPointerInteraction
     public void Moved(object? sender, PointerEventArgs e)
     {
         if (_dragged is not { } dragged || _multiTouch)
+        {
             return;
+        }
 
         var coordinate = _toGeo(e.GetPosition(_control));
         _previewChanged(_waypoints().Select(p => p.Id == dragged ? p with { Coordinate = coordinate } : p).ToArray());
@@ -87,7 +91,9 @@ internal sealed class MapsuiPointerInteraction
     public void Released(object? sender, PointerReleasedEventArgs e)
     {
         if (!_pointers.Remove(e.Pointer.Id))
+        {
             return;
+        }
 
         var position = e.GetPosition(_control);
         if (_dragged is { } dragged)
@@ -104,7 +110,9 @@ internal sealed class MapsuiPointerInteraction
         }
 
         if (_pointers.Count == 0)
+        {
             _multiTouch = false;
+        }
     }
 
     public void CaptureLost(object? sender, PointerCaptureLostEventArgs e)

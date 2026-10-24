@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <SkipAutoProps>false</SkipAutoProps>
+          <Include>
+            <Module>CableRoutePlanner.Domain</Module>
+            <Module>CableRoutePlanner.Application</Module>
+            <Module>CableRoutePlanner.ViewModels</Module>
+            <Module>CableRoutePlanner.Infrastructure</Module>
+            <Module>CableRoutePlanner.Persistence</Module>
+            <Module>CableRoutePlanner.Bootstrap</Module>
+            <Module>CableRoutePlanner.UI</Module>
+          </Include>
+          <Exclude>
+            <Module>CableRoutePlanner.Tests</Module>
+            <Module>CableRoutePlanner.Android</Module>
+            <Module>CableRoutePlanner.Desktop</Module>
+            <Module>CableRoutePlanner.Verify</Module>
+            <File>.*[.]g[.]cs$</File>
+            <File>.*[.]g[.]i[.]cs$</File>
+            <File>.*FodyWeavers[.]cs$</File>
+          </Exclude>
+          <ExcludeByAttribute>CompilerGeneratedAttribute,GeneratedCodeAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

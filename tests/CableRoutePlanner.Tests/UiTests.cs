@@ -25,6 +25,33 @@ public static class TestApplication
 public sealed class UiTests
 {
     [AvaloniaFact]
+    public void MapAdapterRendersEveryTerrainCategory()
+    {
+        // Arrange
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(
+            control,
+            new CableRoutePlanner.Domain.GeoBounds(27, 53, 28, 54));
+        var kinds = Enum.GetValues<CableRoutePlanner.Domain.TerrainKind>();
+        var features = kinds.Select((kind, index) => TestData.Polygon(
+            index + 1,
+            kind,
+            10 + index * 3,
+            10,
+            12 + index * 3,
+            12)).ToArray();
+
+        // Act
+        adapter.SetFeatures(features);
+
+        // Assert
+        var rendered = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            layer => layer.Name == "Офлайн OSM");
+        Assert.Equal(kinds.Length, rendered.Features!.Count());
+        Assert.All(rendered.Features, feature => Assert.NotEmpty(feature.Styles));
+    }
+
+    [AvaloniaFact]
     public async Task SystemBackAndWindowCloseWarnAboutUnsavedSettings()
     {
         using var provider = AppBootstrap.CreateServices(TestData.RealData,

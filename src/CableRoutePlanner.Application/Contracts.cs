@@ -47,7 +47,22 @@ public interface ISettingsStore
     void Save(RoutingOptions options);
 }
 
-public sealed class PlanningException(string message) : Exception(message);
+public sealed class PlanningException : Exception
+{
+    public PlanningException()
+    {
+    }
+
+    public PlanningException(string message)
+        : base(message)
+    {
+    }
+
+    public PlanningException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}
 
 public interface IPlanningSession
 {
