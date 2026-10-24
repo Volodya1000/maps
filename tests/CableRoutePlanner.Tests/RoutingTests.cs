@@ -9,6 +9,27 @@ namespace CableRoutePlanner.Tests;
 public sealed class RoutingTests
 {
     [Fact]
+    public async Task RepeatedPlanningPreservesObstacleAvoidanceAndMetrics()
+    {
+        // Arrange
+        var obstacle = TestData.Polygon(1, TerrainKind.Marsh, 120, 80, 180, 240);
+        var planner = TestData.Planner(obstacle);
+        var points = new[] { TestData.P(50, 150), TestData.P(280, 150) };
+
+        // Act
+        var first = await planner.PlanAsync(points, TestData.Options, default);
+        var repeated = await planner.PlanAsync(points, TestData.Options, default);
+
+        // Assert
+        Assert.Equal(first.Count, repeated.Count);
+        for (var index = 0; index < first.Count; index++)
+        {
+            Assert.Equal(first[index].Geometry, repeated[index].Geometry);
+            Assert.Equal(first[index].Metrics, repeated[index].Metrics);
+        }
+    }
+
+    [Fact]
     public async Task ArbitraryEndpointsAndOrderedWaypointsArePreserved()
     {
         var points = new[]

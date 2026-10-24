@@ -62,7 +62,11 @@ jobs:
           for source in list(root.rglob('*.exe')):
               if source.parent != root:
                   shutil.move(source, root / source.name)
-          apk, = root.glob('*.apk')
+          apk, = root.glob('*-Belarus.apk')
+          light, = root.glob('*-Minsk.apk')
+          with zipfile.ZipFile(light) as archive:
+              if json.loads(archive.read('assets/Data/manifest.json'))['region_id'] == 'belarus':
+                  raise RuntimeError('Lightweight APK unexpectedly contains the country map')
           with zipfile.ZipFile(apk) as archive:
               manifest = json.loads(archive.read('assets/Data/manifest.json'))
           if manifest['region_id'] != 'belarus':

@@ -10,11 +10,13 @@ namespace CableRoutePlanner.Infrastructure.Routing;
 
 public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRoutePlanner> logger) : IRoutePlanner
 {
-    private static readonly Action<ILogger, int, long, Exception?> FeaturesLoadedLog =
-        LoggerMessage.Define<int, long>(
+    private readonly PreparedRoutingAreaCache _areas = new(data);
+
+    private static readonly Action<ILogger, long, long, Exception?> PreparationLog =
+        LoggerMessage.Define<long, long>(
             LogLevel.Information,
-            new EventId(1, nameof(FeaturesLoadedLog)),
-            "Loaded {FeatureCount} routing features in {ElapsedMilliseconds} ms");
+            new EventId(1, nameof(PreparationLog)),
+            "Routing SQLite query {QueryMilliseconds} ms; WKB, projection and spatial index {PreparationMilliseconds} ms (zero on cache reuse)");
 
     private static readonly Action<ILogger, int, int, long, Exception?> RoutesCompletedLog =
         LoggerMessage.Define<int, int, long>(
@@ -57,13 +59,12 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
             Math.Max(requested.South, coverage.South),
             Math.Min(requested.East, coverage.East),
             Math.Min(requested.North, coverage.North));
-        var queryTimer = Stopwatch.StartNew();
-        var features = await data.QueryAsync(bounds, cancellationToken);
-        FeaturesLoadedLog(logger, features.Count, queryTimer.ElapsedMilliseconds, null);
+        var area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken);
+        PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds, null);
 
         var calculationTimer = Stopwatch.StartNew();
         var routes = await Task.Run<IReadOnlyList<RouteAlternative>>(
-            () => Calculate(points, bounds, features, options, cancellationToken),
+            () => Calculate(points, bounds, area, options, cancellationToken),
             cancellationToken);
         RoutesCompletedLog(logger, routes.Count, points.Count, calculationTimer.ElapsedMilliseconds, null);
         return routes;
@@ -72,12 +73,11 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
     private ReadOnlyCollection<RouteAlternative> Calculate(
         IReadOnlyList<GeoCoordinate> points,
         GeoBounds bounds,
-        IReadOnlyList<MapFeature> features,
+        PreparedRoutingArea area,
         RoutingOptions options,
         CancellationToken ct)
     {
-        var projection = new LocalProjection(
-            new((bounds.South + bounds.North) / 2, (bounds.West + bounds.East) / 2));
+        var projection = area.Projection;
         var min = projection.Forward(new GeoCoordinate(bounds.South, bounds.West));
         var max = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
         if (max.X - min.X > 20000 || max.Y - min.Y > 20000)
@@ -105,7 +105,7 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
             }
         }
 
-        var evaluator = new TerrainEvaluator(features, projection, options.CellSizeMetres);
+        var evaluator = area.Evaluator;
         var cache = new Dictionary<(int, int), EdgeEvaluation?>();
         var gridEdgeEvaluations = 0;
         EdgeEvaluation? GridEdge(int a, int b)
