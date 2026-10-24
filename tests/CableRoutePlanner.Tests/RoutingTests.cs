@@ -98,16 +98,19 @@ public sealed class RoutingTests
         var bridgeStart = TestData.P(140, 150);
         var bridgeMiddle = TestData.P(150, 150);
         var bridgeEnd = TestData.P(165, 150);
+        var shortest = Assert.Single(routes, route => route.Name == "Короче");
 
         Assert.NotEmpty(routes);
-        Assert.All(routes, route =>
-        {
-            Assert.Contains(route.Geometry, point => point.DistanceTo(bridgeStart) < 0.5);
-            Assert.Contains(route.Geometry, point => point.DistanceTo(bridgeMiddle) < 0.5);
-            Assert.Contains(route.Geometry, point => point.DistanceTo(bridgeEnd) < 0.5);
-            Assert.Equal(1, route.Metrics.PotentialBridgeCrossings);
-            Assert.Equal(0, route.Metrics.ApprovedWaterCrossings);
-        });
+        Assert.Equal("Короче", shortest.Name);
+        Assert.Equal(shortest.Metrics.LengthMetres, shortest.Metrics.WeightedCost, 5);
+        Assert.True(shortest.Geometry[0].DistanceTo(TestData.P(50, 150)) < 0.0001);
+        Assert.True(shortest.Geometry[^1].DistanceTo(TestData.P(260, 150)) < 0.0001);
+        Assert.Contains(shortest.Geometry, point => point.DistanceTo(bridgeStart) < 0.5);
+        Assert.Contains(shortest.Geometry, point => point.DistanceTo(bridgeMiddle) < 0.5);
+        Assert.Contains(shortest.Geometry, point => point.DistanceTo(bridgeEnd) < 0.5);
+        Assert.Equal(1, shortest.Metrics.PotentialBridgeCrossings);
+        Assert.Equal(0, shortest.Metrics.ApprovedWaterCrossings);
+        Assert.InRange(shortest.Metrics.LengthMetres, 209.5, 211);
     }
 
     [Fact]

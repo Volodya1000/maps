@@ -20,9 +20,9 @@ ARTIFACTS = ROOT / "artifacts"
 SOLUTION = "CableRoutePlanner.Desktop.slnf"
 
 
-def run(*command: str, cwd: Path = ROOT, timeout: int = 600) -> None:
+def run(*command: str, cwd: Path = ROOT, timeout: int = 600, env: dict[str, str] | None = None) -> None:
     print("+ " + " ".join(command), flush=True)
-    subprocess.run(command, cwd=cwd, check=True, timeout=timeout)
+    subprocess.run(command, cwd=cwd, check=True, timeout=timeout, env=env)
 
 
 def executable(name: str) -> str:
@@ -97,7 +97,9 @@ def terrain() -> None:
                     time.sleep(0.05)
             else:
                 raise TimeoutError("Terrain server did not become ready.")
-            run(npm, "test", cwd=directory)
+            terrain_env = os.environ.copy()
+            terrain_env["TERRAIN_EVIDENCE_DIR"] = str(ARTIFACTS / "terrain-evidence")
+            run(npm, "test", cwd=directory, env=terrain_env)
         finally:
             server.terminate()
             try:

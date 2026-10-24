@@ -14,7 +14,9 @@ public sealed record CostProfile(
         get;
     } = Array.AsReadOnly(
         new[] {
-            new CostProfile("Короче", 0.5, 0.2, 30, 0.85),
+            // The shortest alternative minimizes physical cable length. Terrain preferences
+            // belong to the other profiles; crossing penalties must not hide a bridge detour.
+            new CostProfile("Короче", 0, 0, 0, 1),
             new CostProfile("Баланс", 3, 0.8, 150, 0.65),
             new CostProfile("Проще прокладка", 8, 2, 400, 0.5)
         });

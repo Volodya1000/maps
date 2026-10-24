@@ -63,7 +63,7 @@ internal sealed class TerrainEvaluator
         }
 
         riverIndex.Build();
-        _bridgeCorridorMetres = Math.Max(cellSizeMetres * 0.3, 2);
+        _bridgeCorridorMetres = Math.Max(cellSizeMetres * 0.45, 2);
         var bridgeFeatures = projected
             .Where(f => f.Feature.Kind == TerrainKind.BridgeCandidate)
             .Select(f => (
@@ -130,53 +130,80 @@ internal sealed class TerrainEvaluator
 
     public List<Coordinate> AlignBridgeCrossings(IReadOnlyList<Coordinate> route)
     {
-        var aligned = new List<Coordinate>(route.Count);
-        if (route.Count == 0)
+        var aligned = route.ToList();
+        if (aligned.Count < 2)
         {
             return aligned;
         }
 
-        aligned.Add(route[0]);
-        for (var i = 1; i < route.Count; i++)
+        var usedGuides = new HashSet<BridgeGuide>();
+        for (var i = 1; i < aligned.Count; i++)
         {
-            var previous = route[i - 1];
-            var current = route[i];
+            var previous = aligned[i - 1];
+            var current = aligned[i];
             var segment = _factory.CreateLineString([previous, current]);
             var guide = _bridgeGuides
                 .Where(candidate => candidate.River.Intersects(segment)
                     && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres)
                 .OrderBy(candidate => candidate.Bridge.Distance(segment))
                 .FirstOrDefault();
-            if (guide is not null)
+            if (guide is not null && usedGuides.Add(guide))
             {
-                // Preserve the complete OSM bridge geometry, including both mapped ends. The
-                // water intersection alone only snaps the crossing point and leaves the route
-                // free to cut diagonally across the bridge approaches.
+                if (guide.Bridge.Distance(_factory.CreatePoint(previous)) < 1
+                    && guide.Bridge.Distance(_factory.CreatePoint(current)) < 1)
+                {
+                    continue;
+                }
+
+                // Replace nearby grid vertices with the actual bridge line. Appending bridge
+                // points while retaining those vertices makes a visible kink or short backtrack.
                 var points = guide.Bridge.Coordinates;
                 if (points.Length >= 2)
                 {
-                    if (previous.Distance(points[^1]) < previous.Distance(points[0]))
+                    if (previous.Distance(points[^1]) + current.Distance(points[0])
+                        < previous.Distance(points[0]) + current.Distance(points[^1]))
                     {
                         Array.Reverse(points);
                     }
 
-                    var candidate = new List<Coordinate>(aligned);
-                    candidate.AddRange(points);
-                    candidate.Add(current);
-                    if (IsValidPath(candidate))
+                    var splices = new List<(List<Coordinate> Path, double Length, int BridgeEndIndex)>();
+                    var leftAnchors = Enumerable.Range(Math.Max(0, i - 3), i - Math.Max(0, i - 3))
+                        .Prepend(0)
+                        .Distinct();
+                    var rightAnchors = Enumerable.Range(0, Math.Min(3, aligned.Count - i))
+                        .Select(offset => i + offset)
+                        .Append(aligned.Count - 1)
+                        .Distinct();
+                    foreach (var left in leftAnchors)
                     {
-                        aligned.AddRange(points);
-                        aligned.Add(current);
-                        continue;
+                        foreach (var right in rightAnchors)
+                        {
+                            var candidate = aligned.Take(left + 1).ToList();
+                            candidate.AddRange(points);
+                            candidate.AddRange(aligned.Skip(right));
+                            if (IsValidPath(candidate))
+                            {
+                                splices.Add((candidate, PathLength(candidate), left + points.Length - 1));
+                            }
+                        }
+                    }
+
+                    if (splices.Count > 0)
+                    {
+                        var splice = splices.MinBy(candidate => candidate.Length);
+                        aligned = splice.Path;
+                        i = splice.BridgeEndIndex;
                     }
                 }
             }
-
-            aligned.Add(current);
         }
 
         return aligned;
     }
+
+    private static double PathLength(IReadOnlyList<Coordinate> path) => path
+        .Zip(path.Skip(1), (a, b) => a.Distance(b))
+        .Sum();
 
     private bool IsValidPath(IReadOnlyList<Coordinate> path)
     {

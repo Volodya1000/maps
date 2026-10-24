@@ -14,12 +14,12 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
         with:
           version: '0.12.23'
           python-version: '3.12'
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: data-cache
         with:
           path: artifacts/belarus
@@ -39,7 +39,7 @@ jobs:
         run: |
           cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
           cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: belarus-offline-data
           path: artifacts/belarus/
@@ -49,13 +49,13 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache/restore@v4
+      - uses: actions/checkout@v7
+      - uses: actions/cache/restore@v6
         id: country-cache
         with:
           path: artifacts/belarus
           key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/prepare.py') }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: steps.country-cache.outputs.cache-hit != 'true'
         with:
           name: belarus-offline-data
@@ -64,20 +64,20 @@ jobs:
         run: |
           cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
           cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - run: dotnet workload install android --skip-manifest-update
       - run: dotnet restore src/CableRoutePlanner.Android --locked-mode
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/preview.keystore
           key: cableroute-android-preview-signing-v1
@@ -97,7 +97,7 @@ jobs:
           "$ANDROID_HOME/build-tools/34.0.0/aapt" dump permissions artifacts/apk/*.apk > artifacts/apk/permissions.txt
           if rg 'android.permission.INTERNET' artifacts/apk/permissions.txt; then exit 1; fi
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --print-certs artifacts/apk/*.apk > artifacts/apk/signature.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: full-belarus-apk
           path: artifacts/apk/
@@ -107,12 +107,12 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: belarus-offline-data
           path: artifacts/belarus
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Unpack map and verify application
@@ -142,7 +142,7 @@ jobs:
           Start-Sleep -Seconds 30
           if ($process.HasExited) { throw "Installed desktop app exited at startup" }
           Stop-Process -Id $process.Id
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: full-belarus-windows-installer
           path: |
@@ -154,8 +154,8 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: full-belarus-apk
           path: artifacts/apk
@@ -173,7 +173,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: python3 tools/android_smoke.py --apk artifacts/apk/CableRoutePlanner-0.2.1-Belarus.apk --output artifacts/full-android-smoke --settle-seconds 180 --wait-map-ready
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: full-belarus-startup-evidence

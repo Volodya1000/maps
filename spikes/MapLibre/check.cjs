@@ -1,7 +1,7 @@
 const {chromium}=require('playwright');
 const fs=require('fs');
 const path=require('path');
-const evidence=path.resolve(__dirname,'../../docs/evidence');fs.mkdirSync(evidence,{recursive:true});
+const evidence=path.resolve(process.env.TERRAIN_EVIDENCE_DIR||path.join(__dirname,'../../docs/evidence'));fs.mkdirSync(evidence,{recursive:true});
 (async()=>{
 const browser=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const page=await browser.newPage({viewport:{width:1200,height:800}});
