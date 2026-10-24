@@ -99,7 +99,7 @@ public sealed class RoutingTests
         {
             for (var i = 1; i < route.Geometry.Count; i++)
             {
-                Coordinate C(GeoCoordinate p) => new(p.Longitude, p.Latitude);
+                static Coordinate C(GeoCoordinate p) => new(p.Longitude, p.Latitude);
                 Assert.False(polygon.Intersects(new LineString([C(route.Geometry[i - 1]), C(route.Geometry[i])])));
             }
         }

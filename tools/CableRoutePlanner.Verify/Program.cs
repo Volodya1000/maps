@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 if (args.Length == 3 && args[0] == "--inspect")
 {
-    using var provider = AppBootstrap.CreateServices(args[1], Path.GetTempFileName());
+    using var provider = AppBootstrap.CreateServices(args[1], Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
     await CableRoutePlanner.Verify.PackageInspection.RunAsync(
         provider.GetRequiredService<IGeodataRepository>(), args[2]);
     return 0;
@@ -60,11 +60,12 @@ try
                 type = "FeatureCollection",
                 features
             },
-            VerifyJson.Options));
+            CableRoutePlanner.Verify.VerifyJson.Options));
     foreach (var route in routes)
     {
         Console.WriteLine(
-            FormattableString.Invariant(
+            string.Create(
+                CultureInfo.InvariantCulture,
                 $"{route.Name}: {route.Metrics.LengthMetres:F2} m, cost {route.Metrics.WeightedCost:F2}"));
     }
 
@@ -74,9 +75,4 @@ catch (Exception ex)
 {
     Console.Error.WriteLine(ex.Message);
     return 1;
-}
-
-internal static class VerifyJson
-{
-    public static JsonSerializerOptions Options { get; } = new() { WriteIndented = true };
 }

@@ -40,6 +40,49 @@ public sealed class DomainTests
         Assert.Throws<ArgumentOutOfRangeException>(() => m.CableLengthMetres(-0.1));
     }
 
+    [Fact]
+    public void GeographicBoundsContainInclusivePointsAndNestedBounds()
+    {
+        // Arrange
+        var bounds = new GeoBounds(20, 10, 30, 15);
+        var inside = new GeoCoordinate(12, 25);
+        var edge = new GeoCoordinate(15, 30);
+        var outside = new GeoCoordinate(15.1, 30);
+
+        // Act
+        var pointInside = bounds.Contains(inside);
+        var pointOnEdge = bounds.Contains(edge);
+        var pointOutside = bounds.Contains(outside);
+        var nested = bounds.Contains(new GeoBounds(21, 11, 29, 14));
+        var overlapping = bounds.Contains(new GeoBounds(19, 11, 29, 14));
+
+        // Assert
+        Assert.True(pointInside);
+        Assert.True(pointOnEdge);
+        Assert.False(pointOutside);
+        Assert.True(nested);
+        Assert.False(overlapping);
+    }
+
+    [Theory]
+    [InlineData(4, 100, 0)]
+    [InlineData(201, 100, 0)]
+    [InlineData(25, 99, 0)]
+    [InlineData(25, 1000001, 0)]
+    [InlineData(25, 100, -0.1)]
+    [InlineData(25, 100, 1.1)]
+    public void RoutingOptionsRejectEveryOutOfRangeSetting(double cellSize, int maxNodes, double reserve)
+    {
+        // Arrange
+        var options = new RoutingOptions(cellSize, maxNodes, reserve);
+
+        // Act
+        var error = Record.Exception(options.Validate);
+
+        // Assert
+        Assert.IsType<ArgumentException>(error);
+    }
+
     private sealed class CultureScope : IDisposable
     {
         private readonly System.Globalization.CultureInfo _previous = System.Globalization.CultureInfo.CurrentCulture;

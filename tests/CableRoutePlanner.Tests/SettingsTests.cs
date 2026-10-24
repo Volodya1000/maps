@@ -51,6 +51,25 @@ public sealed class SettingsTests : ReactiveTestScope
         Assert.False(vm.HasChanges);
     }
 
+    [Theory]
+    [InlineData(4, 10)]
+    [InlineData(201, 10)]
+    [InlineData(20, -1)]
+    [InlineData(20, 101)]
+    public void ValuesOutsideSupportedRangesCannotBeSaved(decimal cellSize, decimal reservePercent)
+    {
+        // Arrange
+        using var vm = new SettingsViewModel(new NavigationHost(), new MemorySettings());
+        vm.CellSize = cellSize;
+        vm.ReservePercent = reservePercent;
+
+        // Act
+        var canSave = vm.CanSave;
+
+        // Assert
+        Assert.False(canSave);
+    }
+
     [Fact]
     public async Task NavigationWarnsAndOnlyDiscardsAfterExplicitChoice()
     {

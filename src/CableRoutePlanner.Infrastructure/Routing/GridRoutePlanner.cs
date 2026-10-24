@@ -131,7 +131,7 @@ public sealed class GridRoutePlanner(
                     profile,
                     (from, to) => evaluator.Evaluate(from, to)?.Cost(profile),
                     (from, to) => GridEdge(from, to)?.Cost(profile),
-                    ct);
+                    ct).ToList();
                 part = evaluator.AlignBridgeCrossings(part);
                 if (route.Count > 0)
                 {

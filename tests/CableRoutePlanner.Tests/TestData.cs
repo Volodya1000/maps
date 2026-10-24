@@ -37,7 +37,7 @@ internal static class TestData
         double y2,
         string? approval = null)
     {
-        Coordinate C(double x, double y)
+        static Coordinate C(double x, double y)
         {
             var p = P(x, y);
             return new(p.Longitude, p.Latitude);

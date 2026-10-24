@@ -6,7 +6,7 @@ namespace CableRoutePlanner.Infrastructure.Routing;
 
 public interface IGridPathfinder
 {
-    List<Coordinate> FindPath(
+    IReadOnlyList<Coordinate> FindPath(
         Coordinate start,
         Coordinate destination,
         GridMesh mesh,
@@ -18,7 +18,7 @@ public interface IGridPathfinder
 
 public sealed class AStarGridPathfinder : IGridPathfinder
 {
-    public List<Coordinate> FindPath(
+    public IReadOnlyList<Coordinate> FindPath(
         Coordinate start,
         Coordinate destination,
         GridMesh mesh,
