@@ -65,6 +65,14 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             adapter.SetRoutes(vm.Alternatives.ToArray(), vm.SelectedRoute?.Id);
             void ZoomIn(object? s, Avalonia.Interactivity.RoutedEventArgs e) => adapter.ZoomIn();
             void ZoomOut(object? s, Avalonia.Interactivity.RoutedEventArgs e) => adapter.ZoomOut();
+            async void Attribution(object? s, Avalonia.Interactivity.RoutedEventArgs e)
+            {
+                if (TopLevel.GetTopLevel(this) is { } topLevel)
+                {
+                    await topLevel.Launcher.LaunchUriAsync(new Uri("https://www.openstreetmap.org/copyright"));
+                }
+            }
+            AttributionButton.Click += Attribution;
             ZoomInButton.Click += ZoomIn;
             ZoomOutButton.Click += ZoomOut;
             Disposable.Create(() =>
@@ -76,6 +84,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
                 adapter.PointMoved -= Move;
                 vm.Points.CollectionChanged -= Points;
                 vm.Alternatives.CollectionChanged -= Routes;
+                AttributionButton.Click -= Attribution;
                 ZoomInButton.Click -= ZoomIn;
                 ZoomOutButton.Click -= ZoomOut;
             }).DisposeWith(disposables);

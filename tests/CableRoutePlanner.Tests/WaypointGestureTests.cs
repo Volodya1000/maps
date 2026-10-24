@@ -1,12 +1,8 @@
 using System.Reactive.Linq;
-using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
-using Avalonia.Input;
 using Avalonia.Input.Raw;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.UI.Controls;
@@ -18,66 +14,129 @@ namespace CableRoutePlanner.Tests;
 public sealed class WaypointGestureTests
 {
     [AvaloniaFact]
-    public async Task TouchDragReordersCoordinatesAndRedCrossDeletesItsOwnRow()
+    public async Task HandleDragChangesOrderWithoutChangingPointIdentity()
     {
-        using var vm = new MapViewModel(
-            new NavigationHost(), new PlanningSession(TestData.Planner()),
-            new MemoryData(), new MemorySettings(), new MemoryClipboard());
-        await vm.AddPoint.Execute(TestData.P(40, 150));
-        await vm.AddPoint.Execute(TestData.P(200, 150));
-        await vm.AddPoint.Execute(TestData.P(300, 150));
-        await vm.AddPoint.Execute(TestData.P(350, 150));
-        var ids = vm.Points.Select(point => point.Id).ToArray();
-        var list = new WaypointList { ViewModel = vm };
-        var scroll = new ScrollViewer { Content = list };
-        var window = new Window { Content = scroll, Width = 380, Height = 220 };
-        window.Show();
-        Dispatcher.UIThread.RunJobs();
+        using var fixture = await WaypointListFixture.CreateAsync();
+        var ids = fixture.ViewModel.Points.Select(point => point.Id).ToArray();
+        var start = await fixture.Touch.TargetAsync(fixture.Handle(0));
+        var end = await fixture.Touch.TargetAsync(fixture.Handle(2));
 
-        var handles = list.GetVisualDescendants().OfType<Border>()
-            .Where(border => border.Name == "DragHandle").ToArray();
-        Assert.Equal(4, handles.Length);
-        var start = handles[0].TranslatePoint(new Point(18, 30), window)!.Value;
-        var end = handles[2].TranslatePoint(new Point(18, 30), window)!.Value;
-        // Avalonia.Headless has mouse helpers but no public touch injection API in 11.3.
-        // Reflection is confined to this test to inject real raw touch events into Avalonia.
-        using var device = (TouchDevice)Activator.CreateInstance(typeof(TouchDevice))!;
-        var processInput = typeof(TopLevel).GetMethod("HandleInput", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        void Touch(RawPointerEventType type, Point position, ulong timestamp)
+        fixture.Touch.Send(RawPointerEventType.TouchBegin, start);
+        fixture.Touch.Send(RawPointerEventType.TouchUpdate, end);
+        fixture.Touch.Send(RawPointerEventType.TouchEnd, end);
+
+        Assert.Equal(new[] { ids[1], ids[2], ids[0], ids[3], ids[4], ids[5] }, fixture.ViewModel.Points.Select(point => point.Id));
+        Assert.Equal(Enumerable.Range(1, 6), fixture.ViewModel.Points.Select(point => point.Number));
+    }
+
+    [AvaloniaFact]
+    public async Task DeleteAfterReorderingRemovesTheTappedPointRatherThanTheSelectedPoint()
+    {
+        using var fixture = await WaypointListFixture.CreateAsync();
+        var vm = fixture.ViewModel;
+        var ids = vm.Points.Select(point => point.Id).ToArray();
+        vm.SelectedPoint = vm.Points[0];
+        await vm.ReorderPoints.Execute(new WaypointReorder(ids[0], 2));
+        HeadlessTouch.Present();
+        var delete = fixture.List.GetVisualDescendants().OfType<Button>()
+            .Single(button => Equals(button.Content, "×") && ((WaypointRow)button.DataContext!).Id == ids[2]);
+        var position = await fixture.Touch.TargetAsync(delete);
+
+        fixture.Touch.Send(RawPointerEventType.TouchBegin, position);
+        fixture.Touch.Send(RawPointerEventType.TouchEnd, position);
+
+        Assert.Equal(new[] { ids[1], ids[0], ids[3], ids[4], ids[5] }, vm.Points.Select(point => point.Id));
+        Assert.Equal(ids[0], vm.SelectedPoint?.Id);
+    }
+
+    [AvaloniaFact]
+    public async Task HoldingRowShowsFeedbackAndChangesOrder()
+    {
+        using var fixture = await WaypointListFixture.CreateAsync();
+        var ids = fixture.ViewModel.Points.Select(point => point.Id).ToArray();
+        var card = fixture.Card(0);
+        var normalShadow = card.BoxShadow;
+        var start = card.TranslatePoint(new Point(40, 30), fixture.Window)!.Value;
+        var end = fixture.Card(2).TranslatePoint(new Point(40, 30), fixture.Window)!.Value;
+
+        fixture.Touch.Send(RawPointerEventType.TouchBegin, start);
+        await HeadlessTouch.UntilAsync(() => !Equals(normalShadow, card.BoxShadow), "Holding did not show grab feedback.");
+        fixture.Touch.Send(RawPointerEventType.TouchUpdate, end);
+        fixture.Touch.Send(RawPointerEventType.TouchEnd, end);
+
+        Assert.Equal(new[] { ids[1], ids[2], ids[0], ids[3], ids[4], ids[5] }, fixture.ViewModel.Points.Select(point => point.Id));
+    }
+
+    [AvaloniaFact]
+    public async Task OrdinarySwipeScrollsWithoutReordering()
+    {
+        using var fixture = await WaypointListFixture.CreateAsync();
+        var ids = fixture.ViewModel.Points.Select(point => point.Id).ToArray();
+        var start = fixture.Card(2).TranslatePoint(new Point(40, 30), fixture.Window)!.Value;
+
+        fixture.Touch.Send(RawPointerEventType.TouchBegin, start);
+        fixture.Touch.Send(RawPointerEventType.TouchUpdate, start - new Point(0, 50));
+        fixture.Touch.Send(RawPointerEventType.TouchUpdate, start - new Point(0, 90));
+        fixture.Touch.Send(RawPointerEventType.TouchEnd, start - new Point(0, 90));
+
+        Assert.Equal(ids, fixture.ViewModel.Points.Select(point => point.Id));
+        Assert.True(fixture.Scroll.Offset.Y > 0, "A normal swipe should scroll the list.");
+    }
+
+    private sealed class WaypointListFixture : IDisposable
+    {
+        public MapViewModel ViewModel
         {
-            var constructor = typeof(RawTouchEventArgs).GetConstructors().Single(candidate =>
-                candidate.GetParameters().Length == 7 && candidate.GetParameters()[4].ParameterType == typeof(Point));
-            var input = constructor.Invoke(new object[]
-            {
-                device, timestamp, window, type, position, RawInputModifiers.None, 1L
-            });
-            processInput.Invoke(window, new[] { input });
-            Dispatcher.UIThread.RunJobs();
+            get;
+        } = new(new NavigationHost(), new PlanningSession(TestData.Planner()),
+            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+        public WaypointList List
+        {
+            get;
+        }
+        public ScrollViewer Scroll
+        {
+            get;
+        }
+        public Window Window
+        {
+            get;
+        }
+        public HeadlessTouch Touch
+        {
+            get;
         }
 
-        Touch(RawPointerEventType.TouchBegin, start, 1);
-        Touch(RawPointerEventType.TouchUpdate, end, 2);
-        Touch(RawPointerEventType.TouchEnd, end, 3);
-        Assert.Equal(new[] { ids[1], ids[2], ids[0], ids[3] }, vm.Points.Select(point => point.Id));
-        Assert.Equal(new[] { 1, 2, 3, 4 }, vm.Points.Select(point => point.Number));
+        private WaypointListFixture()
+        {
+            List = new WaypointList { ViewModel = ViewModel };
+            Scroll = new ScrollViewer { Content = List };
+            Window = new Window { Content = Scroll, Width = 380, Height = 220 };
+            Touch = new HeadlessTouch(Window);
+        }
 
-        var cross = list.GetVisualDescendants().OfType<Button>()
-            .First(button => Equals(button.Content, "×") && ((WaypointRow)button.DataContext!).Id == ids[2]);
-        cross.BringIntoView();
-        window.UpdateLayout();
-        // Reordering replaces row visuals; present a frame before hit-testing the new buttons.
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-        Dispatcher.UIThread.RunJobs();
-        Assert.Equal(ids[2], cross.CommandParameter);
-        Assert.True(cross.Command!.CanExecute(cross.CommandParameter));
-        var click = cross.TranslatePoint(new Point(cross.Bounds.Width / 2, cross.Bounds.Height / 2), window)!.Value;
-        var hit = window.InputHitTest(click);
-        Assert.True(ReferenceEquals(hit, cross) || (hit as Visual)?.GetVisualAncestors().Contains(cross) == true,
-            $"Hit {hit?.GetType().Name} at {click}; cross={cross.Bounds}; offset={scroll.Offset}");
-        Touch(RawPointerEventType.TouchBegin, click, 10);
-        Assert.True(cross.IsPressed, "Cross did not receive touch press");
-        Touch(RawPointerEventType.TouchEnd, click, 11);
-        Assert.Equal(new[] { ids[1], ids[0], ids[3] }, vm.Points.Select(point => point.Id));
-        window.Close();
+        public static async Task<WaypointListFixture> CreateAsync()
+        {
+            var fixture = new WaypointListFixture();
+            for (var index = 0; index < 6; index++)
+            {
+                await fixture.ViewModel.AddPoint.Execute(TestData.P(40 + index * 40, 150));
+            }
+            fixture.Window.Show();
+            HeadlessTouch.Present();
+            return fixture;
+        }
+
+        public Border Card(int index) => List.GetVisualDescendants().OfType<Border>()
+            .Where(border => border.Name == "CoordinateCard").ElementAt(index);
+        public Border Handle(int index) => Card(index).GetVisualDescendants().OfType<Border>()
+            .Single(border => border.Name == "DragHandle");
+
+        public void Dispose()
+        {
+            Window.Close();
+            Touch.Dispose();
+            ViewModel.Dispose();
+        }
     }
 }

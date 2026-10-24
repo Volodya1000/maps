@@ -1,4 +1,4 @@
-﻿<rx:ReactiveUserControl
+<rx:ReactiveUserControl
     x:Class="CableRoutePlanner.UI.Controls.WaypointList"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -8,6 +8,10 @@
     x:DataType="vm:MapViewModel"
     x:TypeArguments="vm:MapViewModel">
     <rx:ReactiveUserControl.Styles>
+        <Style Selector="Border.coordinate.dragging">
+            <Setter Property="Background" Value="#DCEEE7" />
+            <Setter Property="BoxShadow" Value="0 3 8 0 #50000000" />
+        </Style>
         <Style Selector="Border.coordinate.drop-target">
             <Setter Property="BorderBrush" Value="#176B55" />
             <Setter Property="BorderThickness" Value="2" />
@@ -35,16 +39,24 @@
                         BorderBrush="#DCE5DF"
                         BorderThickness="1"
                         Classes="coordinate"
-                        CornerRadius="8">
-                        <Grid ColumnDefinitions="36,*">
+                        CornerRadius="8"
+                        Focusable="True"
+                        AutomationProperties.Name="{Binding Display}"
+                        KeyDown="RowKeyDown"
+                        PointerPressed="RowPressed"
+                        PointerExited="RowExited"
+                        PointerMoved="DragMoved"
+                        PointerReleased="DragReleased"
+                        PointerCaptureLost="DragCaptureLost">
+                        <Grid ColumnDefinitions="*,44">
+                            <TextBlock Margin="4,0" VerticalAlignment="Center"
+                                       FontSize="13" Text="{Binding Display}" />
                             <Border
                                 x:Name="DragHandle"
+                                Grid.Column="1"
                                 Background="Transparent"
                                 CornerRadius="8"
-                                PointerCaptureLost="DragCaptureLost"
-                                PointerMoved="DragMoved"
                                 PointerPressed="DragPressed"
-                                PointerReleased="DragReleased"
                                 ToolTip.Tip="Перетащите, чтобы изменить порядок">
                                 <TextBlock
                                     HorizontalAlignment="Center"
@@ -53,18 +65,7 @@
                                     Foreground="#738779"
                                     Text="≡" />
                             </Border>
-                            <Button
-                                Grid.Column="1"
-                                Padding="2,8"
-                                HorizontalContentAlignment="Left"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Command="{Binding $parent[local:WaypointList].ViewModel.SelectPoint}"
-                                CommandParameter="{Binding Id}">
-                                <TextBlock
-                                    FontSize="13"
-                                    Text="{Binding Display}" />
-                            </Button>
+
                         </Grid>
                     </Border>
                     <Button
