@@ -8,6 +8,7 @@ namespace CableRoutePlanner.ViewModels;
 public sealed class StartupViewModel : ReactiveObject, IDisposable
 {
     private readonly CancellationTokenSource _cancellation = new();
+    private readonly Func<IProgress<string>, CancellationToken, Task<ShellViewModel>> _loader;
 
     [Reactive]
     public string Message { get; private set; } = "Подготовка офлайн-карты…";
@@ -31,27 +32,30 @@ public sealed class StartupViewModel : ReactiveObject, IDisposable
 
     public StartupViewModel(Func<IProgress<string>, CancellationToken, Task<ShellViewModel>> loader)
     {
-        Load = ReactiveCommand.CreateFromTask(async () =>
+        _loader = loader;
+        Load = ReactiveCommand.CreateFromTask(LoadAsync, this.WhenAnyValue(vm => vm.IsLoading, loading => !loading));
+    }
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+        try
         {
-            IsLoading = true;
-            try
-            {
-                var progress = new Progress<string>(message => Message = message);
-                Shell = await loader(progress, _cancellation.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                Message = "Загрузка отменена.";
-            }
-            catch (Exception error)
-            {
-                Message = $"Не удалось открыть карту: {error.GetBaseException().Message}";
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }, this.WhenAnyValue(vm => vm.IsLoading, loading => !loading));
+            var progress = new Progress<string>(message => Message = message);
+            Shell = await _loader(progress, _cancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            Message = "Загрузка отменена.";
+        }
+        catch (Exception error)
+        {
+            Message = $"Не удалось открыть карту: {error.GetBaseException().Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     public void Dispose()

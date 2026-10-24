@@ -55,12 +55,14 @@ public sealed class WaypointGestureTests
         using var fixture = await WaypointListFixture.CreateAsync();
         var ids = fixture.ViewModel.Points.Select(point => point.Id).ToArray();
         var card = fixture.Card(0);
-        var normalShadow = card.BoxShadow;
+        var normalAppearance = (card.Background, card.BoxShadow, card.Opacity, card.RenderTransform, card.BorderBrush, card.BorderThickness);
         var start = card.TranslatePoint(new Point(40, 30), fixture.Window)!.Value;
         var end = fixture.Card(2).TranslatePoint(new Point(40, 30), fixture.Window)!.Value;
 
         fixture.Touch.Send(RawPointerEventType.TouchBegin, start);
-        await HeadlessTouch.UntilAsync(() => !Equals(normalShadow, card.BoxShadow), "Holding did not show grab feedback.");
+        await HeadlessTouch.UntilAsync(() => !Equals(normalAppearance,
+            (card.Background, card.BoxShadow, card.Opacity, card.RenderTransform, card.BorderBrush, card.BorderThickness)),
+            "Holding did not show grab feedback.");
         fixture.Touch.Send(RawPointerEventType.TouchUpdate, end);
         fixture.Touch.Send(RawPointerEventType.TouchEnd, end);
 
@@ -76,6 +78,9 @@ public sealed class WaypointGestureTests
 
         fixture.Touch.Send(RawPointerEventType.TouchBegin, start);
         fixture.Touch.Send(RawPointerEventType.TouchUpdate, start - new Point(0, 50));
+        // This duration is deliberate input: scrolling must stay scrolling even
+        // when the contact lasts longer than the 500 ms hold threshold.
+        await Task.Delay(600);
         fixture.Touch.Send(RawPointerEventType.TouchUpdate, start - new Point(0, 90));
         fixture.Touch.Send(RawPointerEventType.TouchEnd, start - new Point(0, 90));
 

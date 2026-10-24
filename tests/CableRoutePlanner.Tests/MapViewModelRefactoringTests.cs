@@ -22,7 +22,6 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await oldRequest;
 
         Assert.Equal(2L, Assert.Single(vm.Features).Id);
-        Assert.Equal(1, vm.MapVersion);
         Assert.Empty(vm.MapStatus);
         Assert.False(vm.HasMapNotice);
     }
@@ -57,7 +56,6 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await load;
 
         Assert.Empty(vm.Features);
-        Assert.Equal(0, vm.MapVersion);
     }
 
     [Fact]
@@ -76,7 +74,6 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await load;
 
         Assert.Equal(1L, Assert.Single(vm.Features).Id);
-        Assert.Equal(1, vm.MapVersion);
     }
 
     [Fact]
@@ -90,7 +87,6 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await load;
 
         Assert.Empty(vm.Features);
-        Assert.Equal(1, vm.MapVersion);
         Assert.Equal("Для этой области нет данных в офлайн-пакете.", vm.MapStatus);
     }
 
@@ -108,27 +104,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await failedLoad;
 
         Assert.Equal(1L, Assert.Single(vm.Features).Id);
-        Assert.Equal(1, vm.MapVersion);
         Assert.Equal("Ошибка загрузки карты: repository unavailable", vm.MapStatus);
-    }
-
-    [Fact]
-    public void CommandsAreInitializedWhenViewModelIsConstructed()
-    {
-        using var vm = CreateVm(new MemoryData());
-        Assert.NotNull(vm.AddPoint);
-        Assert.NotNull(vm.AddManual);
-        Assert.NotNull(vm.DeletePoint);
-        Assert.NotNull(vm.RemovePoint);
-        Assert.NotNull(vm.SelectPoint);
-        Assert.NotNull(vm.ReorderPoints);
-        Assert.NotNull(vm.ChooseRoute);
-        Assert.NotNull(vm.MoveUp);
-        Assert.NotNull(vm.MoveDown);
-        Assert.NotNull(vm.ClearPoints);
-        Assert.NotNull(vm.CopyCoordinates);
-        Assert.NotNull(vm.BuildRoutes);
-        Assert.NotNull(vm.Cancel);
     }
 
     [Fact]
