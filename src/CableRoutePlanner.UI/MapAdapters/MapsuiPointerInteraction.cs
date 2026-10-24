@@ -1,8 +1,8 @@
 using Avalonia;
 using Avalonia.Input;
 using CableRoutePlanner.Application;
+using CableRoutePlanner.Domain;
 using CableRoutePlanner.ViewModels;
-using Mapsui.Extensions;
 using Mapsui.UI.Avalonia;
 
 namespace CableRoutePlanner.UI.MapAdapters;

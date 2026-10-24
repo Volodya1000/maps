@@ -7,6 +7,7 @@ using CableRoutePlanner.Domain;
 using CableRoutePlanner.ViewModels;
 using System.Globalization;
 using Mapsui;
+using Mapsui.Extensions;
 using Mapsui.Layers;
 using Mapsui.Nts;
 using Mapsui.Projections;
