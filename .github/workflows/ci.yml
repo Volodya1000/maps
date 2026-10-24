@@ -13,7 +13,26 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
   DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
 jobs:
+  quality:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.12.23'
+          python-version: '3.12'
+      - run: uv sync --locked
+      - run: uv run --locked python tools/check.py lint
+      - if: github.event_name == 'pull_request'
+        env:
+          CHANGELOG_BASE: origin/${{ github.base_ref }}
+        run: uv run --locked python tools/check_fragments.py --base "$CHANGELOG_BASE"
+      - run: uv run --locked towncrier build --version next --draft
   tests:
+    needs: quality
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -25,22 +44,21 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
-      - run: dotnet restore CableRoutePlanner.Desktop.slnf --locked-mode
-      - run: dotnet build CableRoutePlanner.Desktop.slnf --no-restore -c Release
-      - run: dotnet test CableRoutePlanner.Desktop.slnf --no-restore --no-build -c Release --blame-hang-timeout 30s --logger trx --results-directory artifacts/tests
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.12.23'
+          python-version: '3.12'
       - if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update && sudo apt-get install -y strace
-          strace -f -e trace=connect,sendto -o artifacts/runtime.strace dotnet tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll samples/real-geodata-fixtures/minsk artifacts/route.geojson 53.9490,27.5180 53.9500,27.5190
-          python3 tools/check_network.py artifacts/runtime.strace --output artifacts/network-report.json
-      - if: runner.os == 'Windows'
-        run: dotnet publish src/CableRoutePlanner.Desktop -c Release -r win-x64 --self-contained true -o artifacts/win-x64
+        run: sudo apt-get update && sudo apt-get install -y strace
+      - run: uv sync --locked
+      - run: uv run --locked python tools/check.py desktop
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: desktop-${{ runner.os }}
           path: artifacts/
   data:
+    needs: quality
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -50,9 +68,10 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           version: '0.12.23'
-      - run: uv sync --project tools/GeodataPreparation --locked
-      - run: uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/rebuild_sample.py --output artifacts/rebuilt-minsk
+      - run: uv sync --locked
+      - run: uv run --locked python tools/check.py data
   android:
+    needs: [quality, tests]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -68,20 +87,19 @@ jobs:
           packages: platform-tools
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - run: dotnet workload install android --skip-manifest-update
-      - run: dotnet restore src/CableRoutePlanner.Android --locked-mode
-      - run: dotnet publish src/CableRoutePlanner.Android -c Release -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME"
-      - run: |
-          APK=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk
-          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump permissions "$APK" > permissions.txt
-          if rg 'android.permission.INTERNET' permissions.txt; then exit 1; fi
-          sha256sum "$APK" > apk.sha256
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.12.23'
+          python-version: '3.12'
+      - run: uv sync --locked
+      - run: uv run --locked python tools/check.py android
       - uses: actions/upload-artifact@v4
         with:
           name: android-test-apk
           path: |
             src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/*-Signed.apk
-            permissions.txt
-            apk.sha256
+            artifacts/permissions.txt
+            artifacts/apk.sha256
   android-smoke:
     needs: android
     runs-on: ubuntu-22.04
@@ -111,22 +129,21 @@ jobs:
           name: android-startup-evidence
           path: artifacts/android-smoke/
   terrain-spike:
+    needs: quality
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm ci
-        working-directory: spikes/MapLibre
-      - run: npx playwright install --with-deps chromium
-        working-directory: spikes/MapLibre
-      - run: |
-          python3 serve.py > server.log 2>&1 &
-          SERVER_PID=$!
-          trap 'kill "$SERVER_PID"' EXIT
-          npm test
-        working-directory: spikes/MapLibre
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: '0.12.23'
+          python-version: '3.12'
+      - run: uv sync --locked
+      - env:
+          PLAYWRIGHT_INSTALL_WITH_DEPS: '1'
+        run: uv run --locked python tools/check.py terrain
       - uses: actions/upload-artifact@v4
         if: always()
         with:

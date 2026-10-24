@@ -1,0 +1,27 @@
+[tool.towncrier]
+name = "CableRoutePlanner"
+directory = "changes"
+filename = "CHANGELOG.md"
+title_format = "## {version} — {project_date}"
+issue_format = "[#{issue}](https://github.com/Volodya1000/maps/issues/{issue})"
+ignore = ["README.md"]
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "Новые возможности"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Исправления"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "refactor"
+name = "Сопровождение и архитектура"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "doc"
+name = "Документация"
+showcontent = true

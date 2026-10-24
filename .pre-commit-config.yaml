@@ -1,0 +1,47 @@
+minimum_pre_commit_version: '4.3.0'
+default_install_hook_types: [pre-commit, pre-push]
+repos:
+  - repo: local
+    hooks:
+      - id: changelog-fragment
+        name: Changelog fragment in staged branch
+        entry: uv run --locked python tools/check_fragments.py --staged
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      - id: source-lint
+        name: Python and workflow lint
+        entry: uv run --locked python tools/check.py lint
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      - id: desktop-ci
+        name: CI desktop format, Release build and all tests
+        entry: uv run --locked python tools/check.py desktop
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      - id: geodata-ci
+        name: CI reproducible geodata preparation
+        entry: uv run --locked python tools/check.py data
+        language: system
+        pass_filenames: false
+        files: ^(tools/GeodataPreparation/|samples/|tools/check\.py)
+        stages: [pre-commit]
+      - id: terrain-ci
+        name: CI offline terrain browser test
+        entry: uv run --locked python tools/check.py terrain
+        language: system
+        pass_filenames: false
+        files: ^(spikes/MapLibre/|tools/check\.py)
+        stages: [pre-commit]
+      - id: android-ci
+        name: CI Android Release APK and permission check
+        entry: uv run --locked python tools/check.py android
+        language: system
+        pass_filenames: false
+        files: ^(src/|Directory\.|global\.json|tools/check\.py)
+        stages: [pre-push]
