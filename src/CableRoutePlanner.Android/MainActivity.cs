@@ -48,20 +48,30 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
         await Task.Run(async () =>
         {
             progress.Report("Распаковка карты. Первый запуск может занять некоторое время…");
-            var compressed = Assets.List("Data")!.Contains("geodata.sqlite.gz");
-            using var asset = Assets.Open(compressed ? "Data/geodata.sqlite.gz" : "Data/geodata.sqlite");
-            using Stream input = compressed ? new GZipStream(asset, CompressionMode.Decompress) : asset;
+            var names = Assets.List("Data")!;
+            var chunks = names.Where(name => name.StartsWith("geodata.", StringComparison.Ordinal)
+                    && name.EndsWith(".gz", StringComparison.Ordinal)
+                    && name != "geodata.sqlite.gz")
+                .Order(StringComparer.Ordinal).ToArray();
+            var files = chunks.Length > 0 ? chunks
+                : new[] { names.Contains("geodata.sqlite.gz") ? "geodata.sqlite.gz" : "geodata.sqlite" };
             await using var output = File.Create(database + ".tmp");
             var buffer = new byte[1024 * 1024];
             long copied = 0;
-            int count;
-            while ((count = await input.ReadAsync(buffer, ct)) > 0)
+            foreach (var file in files)
             {
-                await output.WriteAsync(buffer.AsMemory(0, count), ct);
-                copied += count;
-                if (copied % (16 * 1024 * 1024) < buffer.Length)
+                using var asset = Assets.Open("Data/" + file);
+                using Stream input = file.EndsWith(".gz", StringComparison.Ordinal)
+                    ? new GZipStream(asset, CompressionMode.Decompress) : asset;
+                int count;
+                while ((count = await input.ReadAsync(buffer, ct)) > 0)
                 {
-                    progress.Report($"Подготовка карты: {copied / (1024 * 1024)} МБ…");
+                    await output.WriteAsync(buffer.AsMemory(0, count), ct);
+                    copied += count;
+                    if (copied % (16 * 1024 * 1024) < buffer.Length)
+                    {
+                        progress.Report($"Подготовка карты: {copied / (1024 * 1024)} МБ…");
+                    }
                 }
             }
 

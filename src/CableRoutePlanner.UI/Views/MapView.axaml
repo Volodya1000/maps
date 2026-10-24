@@ -139,10 +139,12 @@
                         <TextBlock
                             FontSize="18"
                             FontWeight="SemiBold"
-                            Text="Альтернативы" />
+                            Text="Альтернативы"
+                            IsVisible="{Binding HasAlternatives}" />
                         <ItemsControl
                             x:Name="RouteChoices"
-                            ItemsSource="{Binding RouteChoices}">
+                            ItemsSource="{Binding RouteChoices}"
+                            IsVisible="{Binding HasAlternatives}">
                             <ItemsControl.Styles>
                                 <Style Selector="Button.route-choice">
                                     <Setter Property="HorizontalAlignment" Value="Stretch" />

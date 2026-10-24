@@ -99,6 +99,19 @@ public sealed class PresentationTests : ReactiveTestScope
     }
 
     [Fact]
+    public async Task SingleResultIsPresentedAsARouteNotAsAProfileAlternative()
+    {
+        using var vm = CreateVm(TestData.Planner(), new MemoryData());
+        await vm.AddPoint.Execute(TestData.P(50, 150));
+        await vm.AddPoint.Execute(TestData.P(260, 150));
+        await vm.BuildRoutes.Execute();
+
+        Assert.Single(vm.Alternatives);
+        Assert.False(vm.HasAlternatives);
+        Assert.Equal("Маршрут", Assert.Single(vm.RouteChoices).Name);
+    }
+
+    [Fact]
     public async Task ReorderingRebuildsRouteAndDeletingByIdPreservesSlots()
     {
         using var vm = CreateVm(TestData.Planner(), new MemoryData());
@@ -135,6 +148,7 @@ public sealed class PresentationTests : ReactiveTestScope
         await vm.AddPoint.Execute(TestData.P(300, 150));
         await vm.BuildRoutes.Execute();
         Assert.True(vm.Alternatives.Count > 1);
+        Assert.True(vm.HasAlternatives);
         var first = vm.SelectedRoute!;
         var other = vm.Alternatives.First(route => route.Id != first.Id);
         await vm.ChooseRoute.Execute(other.Id);
