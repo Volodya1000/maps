@@ -52,10 +52,22 @@ def lint() -> None:
 def desktop() -> None:
     dotnet = executable("dotnet")
     run(dotnet, "restore", SOLUTION, "--locked-mode")
+    run(dotnet, "tool", "restore")
     run(dotnet, "format", "whitespace", SOLUTION, "--no-restore", "--verify-no-changes")
+    run(dotnet, "format", "style", SOLUTION, "--no-restore", "--verify-no-changes", "--severity", "warn")
+    run(dotnet, "format", "analyzers", SOLUTION, "--no-restore", "--verify-no-changes", "--severity", "warn")
     run(dotnet, "build", SOLUTION, "--no-restore", "-c", "Release", "-warnaserror")
     run(dotnet, "test", SOLUTION, "--no-restore", "--no-build", "-c", "Release",
-        "--blame-hang-timeout", "30s", "--logger", "trx", "--results-directory", "artifacts/tests", timeout=180)
+        "--blame-hang-timeout", "30s", "--logger", "trx", "--results-directory", "artifacts/tests",
+        "--collect:XPlat Code Coverage", "--settings", "coverage.runsettings", timeout=180)
+    run(sys.executable, "tools/check_coverage.py", "artifacts/tests")
+    run(dotnet, "tool", "run", "reportgenerator",
+        "-reports:artifacts/tests/**/coverage.cobertura.xml",
+        "-targetdir:artifacts/coverage-report", "-reporttypes:Html")
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        report = subprocess.check_output([sys.executable, "tools/check_coverage.py", "artifacts/tests"], cwd=ROOT, text=True)
+        Path(summary).write_text("## C# code coverage\n\n```text\n" + report + "```\n", encoding="utf-8")
     if platform.system() == "Linux":
         run(executable("strace"), "-f", "-e", "trace=connect,sendto", "-o", "artifacts/runtime.strace",
             dotnet, "tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll",

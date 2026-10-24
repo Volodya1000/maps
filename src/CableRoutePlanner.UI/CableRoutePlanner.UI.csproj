@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Views use typed DI factories; runtime parameterless XAML construction is intentionally unavailable. -->
+    <!-- Avalonia compiled XAML warns for DI-only views by design: these views
+         are created through TypedViewLocator and have no runtime constructor. -->
     <NoWarn>$(NoWarn);AVLN3001</NoWarn>
   </PropertyGroup>
   <ItemGroup>

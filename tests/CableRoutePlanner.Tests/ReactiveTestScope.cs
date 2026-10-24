@@ -11,9 +11,17 @@ public abstract class ReactiveTestScope : IDisposable
 
     protected ReactiveTestScope() => RxApp.MainThreadScheduler = ImmediateScheduler.Instance;
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            RxApp.MainThreadScheduler = _previous;
+        }
+    }
+
     public void Dispose()
     {
-        RxApp.MainThreadScheduler = _previous;
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
 }
