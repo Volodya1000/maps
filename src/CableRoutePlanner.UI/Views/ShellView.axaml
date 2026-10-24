@@ -51,6 +51,7 @@
             Grid.Row="2"
             HorizontalContentAlignment="Stretch"
             VerticalContentAlignment="Stretch"
+            PageTransition="{x:Null}"
             Router="{Binding Router}" />
     </Grid>
 </rx:ReactiveUserControl>

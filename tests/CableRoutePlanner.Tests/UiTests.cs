@@ -81,6 +81,39 @@ public sealed class UiTests
     }
 
     [AvaloniaFact]
+    public async Task NavigatingBetweenSettingsAndMapKeepsSettingsValuesVisible()
+    {
+        var settingsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
+        using var provider = AppBootstrap.CreateServices(TestData.RealData, settingsPath, new MemoryClipboard());
+        var shell = provider.GetRequiredService<ShellView>();
+        var settings = provider.GetRequiredService<SettingsViewModel>();
+        var window = new Window { Content = shell, Width = 900, Height = 700 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        await shell.ViewModel!.ShowSettings.Execute();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var inputs = shell.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
+        var cellSize = inputs[0].Value;
+        var reservePercent = inputs[1].Value;
+        Assert.NotNull(cellSize);
+        Assert.NotNull(reservePercent);
+
+        await shell.ViewModel.ShowMap.Execute();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.Equal(cellSize, settings.CellSize);
+        Assert.Equal(reservePercent, settings.ReservePercent);
+
+        await shell.ViewModel.ShowSettings.Execute();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        inputs = shell.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
+        Assert.Equal(cellSize, inputs[0].Value);
+        Assert.Equal(reservePercent, inputs[1].Value);
+        Assert.Null(shell.FindControl<Avalonia.Controls.TransitioningContentControl>("RouteHost")!.PageTransition);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task AlternativesAreHiddenUntilRouteIsBuiltAndAfterClear()
     {
         using var vm = new MapViewModel(new NavigationHost(),
@@ -105,6 +138,8 @@ public sealed class UiTests
         Assert.False(section.IsVisible);
         await vm.BuildRoutes.Execute();
         Assert.True(section.IsVisible);
+        Assert.False(choices.IsVisible);
+        Assert.Equal("Маршрут", Assert.Single(vm.RouteChoices).Name);
         await vm.ClearPoints.Execute();
         Assert.False(section.IsVisible);
         window.Close();

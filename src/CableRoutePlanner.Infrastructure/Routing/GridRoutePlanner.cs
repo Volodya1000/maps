@@ -8,13 +8,24 @@ using NetTopologySuite.Geometries;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
 
-public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRoutePlanner> logger) : IRoutePlanner
+public sealed class GridRoutePlanner(
+    IGeodataRepository data,
+    IGridGenerator gridGenerator,
+    IGridPathfinder pathfinder,
+    ILogger<GridRoutePlanner> logger) : IRoutePlanner
 {
-    private static readonly Action<ILogger, int, long, Exception?> FeaturesLoadedLog =
-        LoggerMessage.Define<int, long>(
+    public GridRoutePlanner(IGeodataRepository data, ILogger<GridRoutePlanner> logger)
+        : this(data, new GridGenerator(), new AStarGridPathfinder(), logger)
+    {
+    }
+
+    private readonly PreparedRoutingAreaCache _areas = new(data);
+
+    private static readonly Action<ILogger, long, long, Exception?> PreparationLog =
+        LoggerMessage.Define<long, long>(
             LogLevel.Information,
-            new EventId(1, nameof(FeaturesLoadedLog)),
-            "Loaded {FeatureCount} routing features in {ElapsedMilliseconds} ms");
+            new EventId(1, nameof(PreparationLog)),
+            "Routing SQLite query {QueryMilliseconds} ms; WKB, projection and spatial index {PreparationMilliseconds} ms (zero on cache reuse)");
 
     private static readonly Action<ILogger, int, int, long, Exception?> RoutesCompletedLog =
         LoggerMessage.Define<int, int, long>(
@@ -57,13 +68,12 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
             Math.Max(requested.South, coverage.South),
             Math.Min(requested.East, coverage.East),
             Math.Min(requested.North, coverage.North));
-        var queryTimer = Stopwatch.StartNew();
-        var features = await data.QueryAsync(bounds, cancellationToken);
-        FeaturesLoadedLog(logger, features.Count, queryTimer.ElapsedMilliseconds, null);
+        var area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken);
+        PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds, null);
 
         var calculationTimer = Stopwatch.StartNew();
         var routes = await Task.Run<IReadOnlyList<RouteAlternative>>(
-            () => Calculate(points, bounds, features, options, cancellationToken),
+            () => Calculate(points, bounds, area, options, cancellationToken),
             cancellationToken);
         RoutesCompletedLog(logger, routes.Count, points.Count, calculationTimer.ElapsedMilliseconds, null);
         return routes;
@@ -72,40 +82,14 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
     private ReadOnlyCollection<RouteAlternative> Calculate(
         IReadOnlyList<GeoCoordinate> points,
         GeoBounds bounds,
-        IReadOnlyList<MapFeature> features,
+        PreparedRoutingArea area,
         RoutingOptions options,
         CancellationToken ct)
     {
-        var projection = new LocalProjection(
-            new((bounds.South + bounds.North) / 2, (bounds.West + bounds.East) / 2));
-        var min = projection.Forward(new GeoCoordinate(bounds.South, bounds.West));
-        var max = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
-        if (max.X - min.X > 20000 || max.Y - min.Y > 20000)
-        {
-            throw new PlanningException(
-                "Расчётная область превышает 20 км. Разбейте трассу на отдельные проекты.");
-        }
+        var projection = area.Projection;
+        var mesh = gridGenerator.Generate(bounds, options, projection);
 
-        var columns = (int)Math.Floor((max.X - min.X) / options.CellSizeMetres) + 1;
-        var rows = (int)Math.Floor((max.Y - min.Y) / options.CellSizeMetres) + 1;
-        if ((long)columns * rows > options.MaxNodes)
-        {
-            throw new PlanningException(
-                "Слишком большая область расчёта. Увеличьте размер ячейки или уменьшите область.");
-        }
-
-        var nodes = new Coordinate[columns * rows];
-        for (var y = 0; y < rows; y++)
-        {
-            for (var x = 0; x < columns; x++)
-            {
-                nodes[y * columns + x] = new(
-                    min.X + x * options.CellSizeMetres,
-                    min.Y + y * options.CellSizeMetres);
-            }
-        }
-
-        var evaluator = new TerrainEvaluator(features, projection, options.CellSizeMetres);
+        var evaluator = area.Evaluator;
         var cache = new Dictionary<(int, int), EdgeEvaluation?>();
         var gridEdgeEvaluations = 0;
         EdgeEvaluation? GridEdge(int a, int b)
@@ -114,7 +98,7 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
             if (!cache.TryGetValue(key, out var edge))
             {
                 gridEdgeEvaluations++;
-                cache[key] = edge = evaluator.Evaluate(nodes[a], nodes[b]);
+                cache[key] = edge = evaluator.Evaluate(mesh.Nodes[a], mesh.Nodes[b]);
             }
 
             return edge;
@@ -140,19 +124,15 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
                     continue;
                 }
 
-                var part = Search(
+                var part = pathfinder.FindPath(
                     start,
                     end,
-                    nodes,
-                    columns,
-                    rows,
-                    min,
-                    options.CellSizeMetres,
+                    mesh,
                     profile,
-                    evaluator,
-                    GridEdge,
-                    projection,
+                    (from, to) => evaluator.Evaluate(from, to)?.Cost(profile),
+                    (from, to) => GridEdge(from, to)?.Cost(profile),
                     ct);
+                part = evaluator.AlignBridgeCrossings(part);
                 if (route.Count > 0)
                 {
                     part.RemoveAt(0);
@@ -205,7 +185,7 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
                         null)));
         }
 
-        SearchCompletedLog(logger, result.Count, nodes.Length, gridEdgeEvaluations, null);
+        SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);
         return result.AsReadOnly();
     }
 
@@ -229,144 +209,4 @@ public sealed class GridRoutePlanner(IGeodataRepository data, ILogger<GridRouteP
         return proposed.Intersection(corridor).Length / proposed.Length >= maximumCorridorOverlap;
     }
 
-    private static List<Coordinate> Search(
-        Coordinate start,
-        Coordinate end,
-        Coordinate[] grid,
-        int columns,
-        int rows,
-        Coordinate min,
-        double cell,
-        CostProfile profile,
-        TerrainEvaluator evaluator,
-        Func<int, int, EdgeEvaluation?> gridEdge,
-        LocalProjection projection,
-        CancellationToken ct)
-    {
-        var startId = grid.Length;
-        var endId = startId + 1;
-        Coordinate Node(int id) => id == startId ? start : id == endId ? end : grid[id];
-        Dictionary<int, EdgeEvaluation> Connect(Coordinate p)
-        {
-            var cx = (int)Math.Round((p.X - min.X) / cell);
-            var cy = (int)Math.Round((p.Y - min.Y) / cell);
-            var connections = new Dictionary<int, EdgeEvaluation>();
-            for (var y = Math.Max(0, cy - 1); y <= Math.Min(rows - 1, cy + 1); y++)
-            {
-                for (var x = Math.Max(0, cx - 1); x <= Math.Min(columns - 1, cx + 1); x++)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    var id = y * columns + x;
-                    var edge = evaluator.Evaluate(p, grid[id]);
-                    if (edge is not null)
-                    {
-                        connections[id] = edge;
-                    }
-                }
-            }
-
-            return connections;
-        }
-
-        var fromStart = Connect(start);
-        var toEnd = Connect(end);
-        var direct = start.Distance(end) <= cell * 2 ? evaluator.Evaluate(start, end) : null;
-        if (fromStart.Count == 0 || toEnd.Count == 0)
-        {
-            throw new PlanningException(
-                "Точка находится в препятствии или не соединяется с допустимой областью сетки.");
-        }
-
-        IEnumerable<(int Id, EdgeEvaluation Edge)> Neighbours(int id)
-        {
-            if (id == startId)
-            {
-                foreach (var e in fromStart)
-                {
-                    yield return (e.Key, e.Value);
-                }
-
-                if (direct is not null)
-                {
-                    yield return (endId, direct);
-                }
-
-                yield break;
-            }
-
-            if (toEnd.TryGetValue(id, out var finish))
-            {
-                yield return (endId, finish);
-            }
-
-            var x = id % columns;
-            var y = id / columns;
-            for (var dy = -1; dy <= 1; dy++)
-            {
-                for (var dx = -1; dx <= 1; dx++)
-                {
-                    if (dx == 0 && dy == 0 || x + dx < 0 || x + dx >= columns || y + dy < 0 || y + dy >= rows)
-                    {
-                        continue;
-                    }
-
-                    var next = (y + dy) * columns + x + dx;
-                    // Test the full segment to prevent skipped obstacles and corner cutting.
-                    var edge = gridEdge(id, next);
-                    if (edge is not null)
-                    {
-                        yield return (next, edge);
-                    }
-                }
-            }
-        }
-
-        var queue = new PriorityQueue<(int Id, double Cost), double>();
-        var distances = Enumerable.Repeat(double.PositiveInfinity, grid.Length + 2).ToArray();
-        var parents = Enumerable.Repeat(-1, distances.Length).ToArray();
-        distances[startId] = 0;
-        queue.Enqueue((startId, 0), 0);
-        while (queue.TryDequeue(out var current, out _))
-        {
-            ct.ThrowIfCancellationRequested();
-            if (current.Cost > distances[current.Id])
-            {
-                continue;
-            }
-
-            if (current.Id == endId)
-            {
-                var path = new List<Coordinate>();
-                for (var id = endId; id != -1; id = parents[id])
-                {
-                    path.Add(Node(id));
-                }
-
-                path.Reverse();
-                return path;
-            }
-
-            foreach (var (next, edge) in Neighbours(current.Id))
-            {
-                var cost = current.Cost + edge.Cost(profile);
-                if (cost >= distances[next])
-                {
-                    continue;
-                }
-
-                distances[next] = cost;
-                parents[next] = current.Id;
-                // 0.49 is below the smallest profile multiplier, with margin for local projection error.
-                // The search uses this local metre projection already. Avoid converting each
-                // expanded node back to latitude/longitude for a geodesic estimate.
-                var heuristic = Node(next).Distance(end) * 0.49;
-                queue.Enqueue((next, cost), cost + heuristic);
-            }
-        }
-
-        throw new PlanningException(
-            "В доступной области нет допустимого маршрута. "
-            + "Река требует разрешённого или потенциального перехода. "
-            + "Можно увеличить область данных или изменить точки.");
-    }
 }

@@ -47,6 +47,17 @@ internal static class TestData
         return new(id, kind, new WKBWriter().Write(geometry), "fixture", approval);
     }
 
+    public static MapFeature Line(long id, TerrainKind kind, params (double X, double Y)[] points)
+    {
+        var coordinates = points.Select(point =>
+        {
+            var geographic = P(point.X, point.Y);
+            return new Coordinate(geographic.Longitude, geographic.Latitude);
+        }).ToArray();
+        var geometry = new GeometryFactory().CreateLineString(coordinates);
+        return new(id, kind, new WKBWriter().Write(geometry), "fixture", null);
+    }
+
     public static IRoutePlanner Planner(params MapFeature[] features) => new GridRoutePlanner(
         new MemoryData(features),
         NullLogger<GridRoutePlanner>.Instance);

@@ -14,6 +14,14 @@ from pathlib import Path
 PACKAGE = "by.cablerouteplanner.app"
 
 
+def file_digest(path):
+    with path.open("rb") as stream:
+        checksum = hashlib.sha256()
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            checksum.update(block)
+        return checksum.hexdigest()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apk", type=Path)
@@ -45,12 +53,12 @@ def main():
             timeout=timeout,
         )
         if check and result.returncode:
-            raise RuntimeError(f"adb {command}: {result.stderr}")
+            raise RuntimeError(f"adb {command}: stdout={result.stdout!r}; stderr={result.stderr!r}")
         return result.stdout
 
     report = dict(
         package=PACKAGE,
-        sha256=hashlib.sha256(apk.read_bytes()).hexdigest(),
+        sha256=file_digest(apk),
         launches=[],
         success=False,
     )
