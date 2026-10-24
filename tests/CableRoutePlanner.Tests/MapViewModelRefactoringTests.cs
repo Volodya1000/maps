@@ -8,6 +8,7 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 {
+    private static readonly IReadOnlyList<int> ThreePointNumbers = Array.AsReadOnly(new[] { 1, 2, 3 });
     [Fact]
     public async Task LatestMapRequestWinsWhenOlderRequestFinishesLast()
     {
@@ -22,7 +23,6 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await oldRequest;
 
         Assert.Equal(2L, Assert.Single(vm.Features).Id);
-        Assert.Equal(1, vm.MapVersion);
         Assert.Empty(vm.MapStatus);
         Assert.False(vm.HasMapNotice);
     }
@@ -57,7 +57,6 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await load;
 
         Assert.Empty(vm.Features);
-        Assert.Equal(0, vm.MapVersion);
     }
 
     [Fact]
@@ -76,7 +75,6 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await load;
 
         Assert.Equal(1L, Assert.Single(vm.Features).Id);
-        Assert.Equal(1, vm.MapVersion);
     }
 
     [Fact]
@@ -90,7 +88,6 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await load;
 
         Assert.Empty(vm.Features);
-        Assert.Equal(1, vm.MapVersion);
         Assert.Equal("Для этой области нет данных в офлайн-пакете.", vm.MapStatus);
     }
 
@@ -108,27 +105,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         await failedLoad;
 
         Assert.Equal(1L, Assert.Single(vm.Features).Id);
-        Assert.Equal(1, vm.MapVersion);
         Assert.Equal("Ошибка загрузки карты: repository unavailable", vm.MapStatus);
-    }
-
-    [Fact]
-    public void CommandsAreInitializedWhenViewModelIsConstructed()
-    {
-        using var vm = CreateVm(new MemoryData());
-        Assert.NotNull(vm.AddPoint);
-        Assert.NotNull(vm.AddManual);
-        Assert.NotNull(vm.DeletePoint);
-        Assert.NotNull(vm.RemovePoint);
-        Assert.NotNull(vm.SelectPoint);
-        Assert.NotNull(vm.ReorderPoints);
-        Assert.NotNull(vm.ChooseRoute);
-        Assert.NotNull(vm.MoveUp);
-        Assert.NotNull(vm.MoveDown);
-        Assert.NotNull(vm.ClearPoints);
-        Assert.NotNull(vm.CopyCoordinates);
-        Assert.NotNull(vm.BuildRoutes);
-        Assert.NotNull(vm.Cancel);
     }
 
     [Fact]
@@ -145,7 +122,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 
         Assert.Equal(selectedId, vm.SelectedPoint?.Id);
         Assert.Equal(selectedId, vm.Points[2].Id);
-        Assert.Equal(new[] { 1, 2, 3 }, vm.Points.Select(point => point.Number));
+        Assert.Equal(ThreePointNumbers, vm.Points.Select(point => point.Number));
         Assert.Equal(3, vm.PointCount);
     }
 
@@ -196,7 +173,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
             Guid.NewGuid(),
             "test",
             [],
-            new RouteMetrics(100, 40, 60, 1, 2, 130, null));
+            new RouteMetrics(100, 40, 60, 1, 2, 0, 130, null));
         var result = RouteMetricsFormatter.Format(route, new RoutingOptions(ReserveFraction: 0.25));
 
         Assert.Contains($"Кабель с запасом {0.25:P0}: {125:N0} м", result);

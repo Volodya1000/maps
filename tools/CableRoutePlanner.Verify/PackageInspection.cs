@@ -7,6 +7,7 @@ namespace CableRoutePlanner.Verify;
 
 internal static class PackageInspection
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     public static async Task RunAsync(IGeodataRepository repository, string output)
     {
         // Administrative-centre coordinates are probes, never routing inputs or stored routes.
@@ -57,7 +58,7 @@ internal static class PackageInspection
             repository.Info.RegionId,
             repository.Info.Bounds,
             probes
-        }, new JsonSerializerOptions { WriteIndented = true }));
+        }, JsonOptions));
         Console.WriteLine($"Verified country overview and {cities.Length} regional centres: {output}");
     }
 }

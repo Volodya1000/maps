@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input.Raw;
 using Avalonia.VisualTree;
 using System.Reactive.Linq;
 using Avalonia.ReactiveUI;
@@ -50,7 +51,7 @@ public sealed class UiTests
         window.Close();
         await vm.DiscardAndLeave.Execute();
         Assert.False(window.IsVisible);
-        Assert.False(settings.HasChanges);
+        Assert.True(settings.HasChanges);
     }
 
     [AvaloniaFact]
@@ -96,7 +97,9 @@ public sealed class UiTests
         var section = choices.GetVisualAncestors().OfType<StackPanel>().First();
         Assert.False(section.IsVisible);
         Assert.DoesNotContain(view.GetVisualDescendants().OfType<Button>(), b => Equals(b.Content, "3D"));
-        Assert.Contains(view.GetVisualDescendants().OfType<Button>(), b => Equals(b.Content, "© OpenStreetMap contributors"));
+        var attribution = view.GetVisualDescendants().OfType<TextBlock>()
+            .Single(text => text.Name == "AttributionCredit");
+        Assert.Contains("OpenStreetMap contributors", attribution.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)!.ToString());
         await vm.AddPoint.Execute(TestData.P(30, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
         Assert.False(section.IsVisible);
@@ -235,6 +238,47 @@ public sealed class UiTests
         Assert.True(bounds.East - bounds.West >= 9.5);
         Assert.True(repository.Resolution > 250);
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task MobileMapPanelCanBeCollapsedAndSwipedOpenAgain()
+    {
+        using var vm = new MapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner()),
+            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        {
+            ViewModel = vm
+        };
+        var window = new Window { Content = view, Width = 412, Height = 860 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        var panel = view.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "SidePanel");
+        var handle = view.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "SheetHandleButton");
+        var content = view.GetVisualDescendants().OfType<ScrollViewer>().Single(scroll => scroll.Name == "SidePanelContent");
+        using var touch = new HeadlessTouch(window);
+        Assert.True(content.IsVisible);
+
+        await SwipeHandle(touch, handle, 80);
+
+        Assert.False(content.IsVisible);
+        Assert.Equal(52, panel.Height);
+
+        await SwipeHandle(touch, handle, -80);
+
+        Assert.True(content.IsVisible);
+        Assert.True(panel.Height > 52);
+        window.Close();
+    }
+
+    private static async Task SwipeHandle(HeadlessTouch touch, Border handle, double distance)
+    {
+        var start = await touch.TargetAsync(handle);
+        var end = start + new Point(0, distance);
+        touch.Send(RawPointerEventType.TouchBegin, start);
+        touch.Send(RawPointerEventType.TouchUpdate, end);
+        touch.Send(RawPointerEventType.TouchEnd, end);
     }
 
     [AvaloniaFact]

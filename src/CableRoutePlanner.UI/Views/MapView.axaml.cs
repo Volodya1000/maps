@@ -3,6 +3,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.ReactiveUI;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.UI.MapAdapters;
@@ -13,93 +14,270 @@ namespace CableRoutePlanner.UI.Views;
 
 public partial class MapView : ReactiveUserControl<MapViewModel>
 {
+    private const double MobileBreakpoint = 760;
+    private const double PanelSwipeThreshold = 36;
+
     private readonly Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter> _adapterFactory;
+
+    private IMapAdapter? _activeAdapter;
+    private IPointer? _panelPointer;
+    private Point _panelPointerStart;
+    private bool _panelExpanded = true;
 
     public MapView(Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter> adapterFactory)
     {
         _adapterFactory = adapterFactory;
         InitializeComponent();
-        this.WhenActivated(disposables =>
-        {
-            var vm = ViewModel!;
-            var adapter = _adapterFactory(MapControl, vm.DataInfo.Bounds).DisposeWith(disposables);
-            void Points(object? s, NotifyCollectionChangedEventArgs e) => adapter.SetPoints(vm.Points.ToArray());
-            void Routes(object? s, NotifyCollectionChangedEventArgs e) => adapter.SetRoutes(vm.Alternatives.ToArray(), vm.SelectedRoute?.Id);
-            void Add(GeoCoordinate p) => vm.AddPoint.Execute(p).Subscribe().Dispose();
-            void Move(Guid id, GeoCoordinate p)
-            {
-                vm.MovePoint(id, p);
-                adapter.SetPoints(vm.Points.ToArray());
-            }
-
-            adapter.PointAdded += Add;
-            adapter.PointMoved += Move;
-            vm.Points.CollectionChanged += Points;
-            vm.Alternatives.CollectionChanged += Routes;
-            // Features are rendered once after the asynchronous load, avoiding quadratic updates.
-            vm.WhenAnyValue(x => x.SelectedRoute).Subscribe(
-                _ => adapter.SetRoutes(vm.Alternatives.ToArray(), vm.SelectedRoute?.Id)).DisposeWith(disposables);
-            vm.WhenAnyValue(x => x.AddMode).Subscribe(adapter.SetAddMode).DisposeWith(disposables);
-            var readyAnnounced = false;
-            vm.WhenAnyValue(x => x.MapVersion).Subscribe(_ =>
-            {
-                adapter.SetFeatures(vm.Features.ToArray());
-                if (!readyAnnounced && vm.MapVersion > 0 && vm.Features.Count > 0)
-                {
-                    // Android routes stdout to logcat. The installer smoke test waits for real
-                    // map data, rather than accepting an Activity stuck on the loading screen.
-                    Console.WriteLine($"CRP_OFFLINE_MAP_READY region={vm.DataInfo.RegionId} features={vm.Features.Count}");
-                    readyAnnounced = true;
-                }
-            }).DisposeWith(disposables);
-            var viewportChanges = new System.Reactive.Subjects.Subject<(GeoBounds Bounds, double Resolution)>().DisposeWith(disposables);
-            void Viewport(GeoBounds bounds, double resolution) => viewportChanges.OnNext((bounds, resolution));
-            adapter.ViewportChanged += Viewport;
-            var cancel = new CancellationTokenSource();
-            viewportChanges.Throttle(TimeSpan.FromMilliseconds(200), RxApp.MainThreadScheduler).Subscribe(bounds =>
-            {
-                _ = vm.LoadMapAreaAsync(bounds.Bounds, cancel.Token, bounds.Resolution);
-            }).DisposeWith(disposables);
-            adapter.InitializeViewport();
-            adapter.SetPoints(vm.Points.ToArray());
-            adapter.SetRoutes(vm.Alternatives.ToArray(), vm.SelectedRoute?.Id);
-            void ZoomIn(object? s, Avalonia.Interactivity.RoutedEventArgs e) => adapter.ZoomIn();
-            void ZoomOut(object? s, Avalonia.Interactivity.RoutedEventArgs e) => adapter.ZoomOut();
-            async void Attribution(object? s, Avalonia.Interactivity.RoutedEventArgs e)
-            {
-                if (TopLevel.GetTopLevel(this) is { } topLevel)
-                {
-                    await topLevel.Launcher.LaunchUriAsync(new Uri("https://www.openstreetmap.org/copyright"));
-                }
-            }
-            AttributionButton.Click += Attribution;
-            ZoomInButton.Click += ZoomIn;
-            ZoomOutButton.Click += ZoomOut;
-            Disposable.Create(() =>
-            {
-                cancel.Cancel();
-                cancel.Dispose();
-                adapter.ViewportChanged -= Viewport;
-                adapter.PointAdded -= Add;
-                adapter.PointMoved -= Move;
-                vm.Points.CollectionChanged -= Points;
-                vm.Alternatives.CollectionChanged -= Routes;
-                AttributionButton.Click -= Attribution;
-                ZoomInButton.Click -= ZoomIn;
-                ZoomOutButton.Click -= ZoomOut;
-            }).DisposeWith(disposables);
-        });
-        SizeChanged += (_, _) => AdaptLayout();
+        this.WhenActivated(Activate);
+        SizeChanged += OnSizeChanged;
     }
+
+    private void Activate(CompositeDisposable lifetime)
+    {
+        var viewModel = ViewModel!;
+        var adapter = _adapterFactory(MapControl, viewModel.DataInfo.Bounds)
+            .DisposeWith(lifetime);
+        _activeAdapter = adapter;
+
+        BindCollections(viewModel, adapter, lifetime);
+        BindMapGestures(viewModel, adapter, lifetime);
+        BindMapState(viewModel, adapter, lifetime);
+        BindViewport(viewModel, adapter, lifetime);
+        BindButtons();
+
+        adapter.InitializeViewport();
+        adapter.SetPoints(viewModel.Points.ToArray());
+        adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
+        Disposable.Create(UnbindButtons)
+            .DisposeWith(lifetime);
+    }
+
+    private static void BindMapGestures(
+        MapViewModel viewModel,
+        IMapAdapter adapter,
+        CompositeDisposable lifetime)
+    {
+        void PointAdded(GeoCoordinate point) =>
+            viewModel.AddPoint.Execute(point).Subscribe().Dispose();
+
+        void PointMoved(Guid id, GeoCoordinate point)
+        {
+            viewModel.MovePoint(id, point);
+            adapter.SetPoints(viewModel.Points.ToArray());
+        }
+
+        adapter.PointAdded += PointAdded;
+        adapter.PointMoved += PointMoved;
+        Disposable.Create(() =>
+        {
+            adapter.PointAdded -= PointAdded;
+            adapter.PointMoved -= PointMoved;
+        }).DisposeWith(lifetime);
+    }
+
+    private static void BindCollections(
+        MapViewModel viewModel,
+        IMapAdapter adapter,
+        CompositeDisposable lifetime)
+    {
+        void PointsChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
+            adapter.SetPoints(viewModel.Points.ToArray());
+
+        void RoutesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
+            adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
+
+        viewModel.Points.CollectionChanged += PointsChanged;
+        viewModel.Alternatives.CollectionChanged += RoutesChanged;
+        Disposable.Create(() =>
+        {
+            viewModel.Points.CollectionChanged -= PointsChanged;
+            viewModel.Alternatives.CollectionChanged -= RoutesChanged;
+        }).DisposeWith(lifetime);
+    }
+
+    private static void BindMapState(
+        MapViewModel viewModel,
+        IMapAdapter adapter,
+        CompositeDisposable lifetime)
+    {
+        viewModel.WhenAnyValue(x => x.SelectedRoute)
+            .Subscribe(_ => adapter.SetRoutes(
+                viewModel.Alternatives.ToArray(),
+                viewModel.SelectedRoute?.Id))
+            .DisposeWith(lifetime);
+
+        viewModel.WhenAnyValue(x => x.AddMode)
+            .Subscribe(adapter.SetAddMode)
+            .DisposeWith(lifetime);
+
+        var readyAnnounced = false;
+        viewModel.WhenAnyValue(x => x.MapVersion)
+            .Subscribe(_ =>
+            {
+                adapter.SetFeatures(viewModel.Features.ToArray());
+                if (readyAnnounced || viewModel.MapVersion <= 0 || viewModel.Features.Count == 0)
+                {
+                    return;
+                }
+
+                // Android routes stdout to logcat for the offline-map startup smoke test.
+                Console.WriteLine(
+                    $"CRP_OFFLINE_MAP_READY region={viewModel.DataInfo.RegionId} "
+                    + $"features={viewModel.Features.Count}");
+                readyAnnounced = true;
+            })
+            .DisposeWith(lifetime);
+    }
+
+    private void BindViewport(
+        MapViewModel viewModel,
+        IMapAdapter adapter,
+        CompositeDisposable lifetime)
+    {
+        var changes = new System.Reactive.Subjects.Subject<(GeoBounds Bounds, double Resolution)>()
+            .DisposeWith(lifetime);
+        void ViewportChanged(GeoBounds bounds, double resolution) => changes.OnNext((bounds, resolution));
+
+        adapter.ViewportChanged += ViewportChanged;
+        var cancellation = new CancellationTokenSource();
+        changes
+            .Throttle(TimeSpan.FromMilliseconds(200), RxApp.MainThreadScheduler)
+            .Subscribe(viewport =>
+                _ = viewModel.LoadMapAreaAsync(viewport.Bounds, cancellation.Token, viewport.Resolution))
+            .DisposeWith(lifetime);
+
+        Disposable.Create(() =>
+        {
+            cancellation.Cancel();
+            cancellation.Dispose();
+            adapter.ViewportChanged -= ViewportChanged;
+        }).DisposeWith(lifetime);
+    }
+
+    private void BindButtons()
+    {
+        ZoomInButton.Click += ZoomInClicked;
+        ZoomOutButton.Click += ZoomOutClicked;
+        SheetHandleButton.PointerPressed += SheetPointerPressed;
+        SheetHandleButton.PointerMoved += SheetPointerMoved;
+        SheetHandleButton.PointerReleased += SheetPointerReleased;
+        SheetHandleButton.KeyDown += SheetHandleKeyDown;
+    }
+
+    private void UnbindButtons()
+    {
+        ZoomInButton.Click -= ZoomInClicked;
+        ZoomOutButton.Click -= ZoomOutClicked;
+        SheetHandleButton.PointerPressed -= SheetPointerPressed;
+        SheetHandleButton.PointerMoved -= SheetPointerMoved;
+        SheetHandleButton.PointerReleased -= SheetPointerReleased;
+        SheetHandleButton.KeyDown -= SheetHandleKeyDown;
+        _activeAdapter = null;
+        _panelPointer?.Capture(null);
+        _panelPointer = null;
+    }
+
+    private void ZoomInClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
+        _activeAdapter?.ZoomIn();
+
+    private void ZoomOutClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
+        _activeAdapter?.ZoomOut();
+
+    private void SheetPointerPressed(object? sender, PointerPressedEventArgs args)
+    {
+        _panelPointer = args.Pointer;
+        _panelPointerStart = args.GetPosition(this);
+        args.Pointer.Capture(SheetHandleButton);
+        args.Handled = true;
+    }
+
+    private void SheetPointerMoved(object? sender, PointerEventArgs args)
+    {
+        if (_panelPointer?.Id != args.Pointer.Id)
+        {
+            return;
+        }
+
+        args.Handled = true;
+    }
+
+    private void SheetPointerReleased(object? sender, PointerReleasedEventArgs args)
+    {
+        if (_panelPointer?.Id != args.Pointer.Id)
+        {
+            return;
+        }
+
+        var distance = args.GetPosition(this).Y - _panelPointerStart.Y;
+        _panelPointer = null;
+        args.Pointer.Capture(null);
+        args.Handled = true;
+
+        if (distance <= -PanelSwipeThreshold)
+        {
+            SetPanelExpanded(true);
+        }
+        else if (distance >= PanelSwipeThreshold)
+        {
+            SetPanelExpanded(false);
+        }
+        else
+        {
+            SetPanelExpanded(!_panelExpanded);
+        }
+    }
+
+    private void SheetHandleKeyDown(object? sender, KeyEventArgs args)
+    {
+        if (args.Key is not (Key.Enter or Key.Space))
+        {
+            return;
+        }
+
+        SetPanelExpanded(!_panelExpanded);
+        args.Handled = true;
+    }
+
+    private void SetPanelExpanded(bool expanded)
+    {
+        _panelExpanded = expanded;
+        AdaptLayout();
+    }
+
+    private void OnSizeChanged(object? sender, SizeChangedEventArgs args) => AdaptLayout();
 
     private void AdaptLayout()
     {
-        var narrow = Bounds.Width < 760;
+        var narrow = Bounds.Width < MobileBreakpoint;
         Layout.ColumnDefinitions = new(narrow ? "*" : "*,350");
-        Layout.RowDefinitions = new(narrow ? "2*,3*,Auto" : "*,Auto");
+        Layout.RowDefinitions = new("*");
+        Grid.SetColumn(MapArea, 0);
+        Grid.SetColumnSpan(MapArea, narrow ? 2 : 1);
+        Grid.SetRow(SidePanel, 0);
         Grid.SetColumn(SidePanel, narrow ? 0 : 1);
-        Grid.SetRow(SidePanel, narrow ? 1 : 0);
-        Grid.SetRow(StatusPanel, narrow ? 2 : 1);
-        Grid.SetColumnSpan(StatusPanel, narrow ? 1 : 2);
+        Grid.SetColumnSpan(SidePanel, narrow ? 2 : 1);
+        SidePanel.VerticalAlignment = narrow
+            ? Avalonia.Layout.VerticalAlignment.Bottom
+            : Avalonia.Layout.VerticalAlignment.Stretch;
+        SheetHandleButton.IsVisible = narrow;
+        SidePanelContent.IsVisible = !narrow || _panelExpanded;
+        SheetHandleText.Text = _panelExpanded
+            ? "Точки и маршруты · потяните вниз, чтобы свернуть"
+            : "↑ Показать точки и маршруты";
+
+        if (narrow)
+        {
+            SidePanel.Height = _panelExpanded
+                ? Math.Min(Bounds.Height * 0.68, 560)
+                : 52;
+            SidePanel.BorderThickness = new(1, 1, 1, 0);
+            SidePanel.Padding = _panelExpanded ? new(10) : new(0);
+        }
+        else
+        {
+            SidePanel.ClearValue(HeightProperty);
+            SidePanel.BorderThickness = new(1, 0, 0, 0);
+            SidePanel.Padding = new(18);
+        }
     }
 }

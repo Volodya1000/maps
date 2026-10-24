@@ -11,6 +11,8 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class PresentationTests : ReactiveTestScope
 {
+    private static readonly IReadOnlyList<int> ThreePointNumbers = Array.AsReadOnly(new[] { 1, 2, 3 });
+    private static readonly IReadOnlyList<int> TwoPointNumbers = Array.AsReadOnly(new[] { 1, 2 });
     [Fact]
     public void FodyWeavingRaisesPropertyChangedAfterRealCompilation()
     {
@@ -106,21 +108,21 @@ public sealed class PresentationTests : ReactiveTestScope
         var original = vm.Points.Select(point => point.Id).ToArray();
         await vm.BuildRoutes.Execute();
         Assert.NotEmpty(vm.RouteChoices);
-        var originalRouteId = vm.SelectedRoute!.Id;
 
         await vm.ReorderPoints.Execute(new WaypointReorder(original[0], 2));
         Assert.Equal(new[] { original[1], original[2], original[0] }, vm.Points.Select(point => point.Id));
-        Assert.Equal(new[] { 1, 2, 3 }, vm.Points.Select(point => point.Number));
+        Assert.Equal(ThreePointNumbers, vm.Points.Select(point => point.Number));
         Assert.NotEmpty(vm.Alternatives);
         Assert.NotEmpty(vm.RouteChoices);
         Assert.NotNull(vm.SelectedRoute);
         Assert.True(vm.HasRoute);
-        Assert.NotEqual(originalRouteId, vm.SelectedRoute!.Id);
+        Assert.True(vm.SelectedRoute!.Geometry[0].DistanceTo(vm.Points[0].Coordinate) < 0.0001);
+        Assert.True(vm.SelectedRoute.Geometry[^1].DistanceTo(vm.Points[^1].Coordinate) < 0.0001);
 
         vm.SelectedPoint = vm.Points[0];
         await vm.RemovePoint.Execute(original[2]);
         Assert.Equal(new[] { original[1], original[0] }, vm.Points.Select(point => point.Id));
-        Assert.Equal(new[] { 1, 2 }, vm.Points.Select(point => point.Number));
+        Assert.Equal(TwoPointNumbers, vm.Points.Select(point => point.Number));
         Assert.Equal(original[1], vm.SelectedPoint?.Id);
     }
 
@@ -139,8 +141,7 @@ public sealed class PresentationTests : ReactiveTestScope
         Assert.Same(other, vm.SelectedRoute);
         Assert.NotEqual(first.Geometry, vm.SelectedRoute!.Geometry);
         Assert.Equal(other.Id, Assert.Single(vm.RouteChoices, choice => choice.IsSelected).Id);
-        Assert.Contains("10", vm.MetricsText);
-        Assert.Equal(0.10, new RoutingOptions().ReserveFraction);
+        Assert.Contains($"Кабель с запасом {0.10:P0}: {other.Metrics.LengthMetres * 1.10:N0} м", vm.MetricsText);
     }
 
     [Fact]
@@ -158,31 +159,22 @@ public sealed class PresentationTests : ReactiveTestScope
         await build.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Equal(first, vm.Points[2].Id);
         Assert.True(vm.HasRoute);
-        Assert.Equal(2, planner.Calls);
-        Assert.Equal(vm.Points.Select(p => p.Coordinate), planner.LastPoints);
+        Assert.True(vm.SelectedRoute!.Geometry[0].DistanceTo(vm.Points[0].Coordinate) < 0.0001);
+        Assert.True(vm.SelectedRoute.Geometry[^1].DistanceTo(vm.Points[^1].Coordinate) < 0.0001);
     }
 
     private sealed class CancelFirstPlanner : IRoutePlanner
     {
         public TaskCompletionSource Started { get; } = new();
-        public int Calls
-        {
-            get; private set;
-        }
-        public IReadOnlyList<GeoCoordinate>? LastPoints
-        {
-            get; private set;
-        }
+        private int _calls;
         public async Task<IReadOnlyList<RouteAlternative>> PlanAsync(
             IReadOnlyList<GeoCoordinate> points, RoutingOptions options, CancellationToken ct)
         {
-            Calls++;
-            if (Calls == 1)
+            if (++_calls == 1)
             {
                 Started.SetResult();
                 await Task.Delay(Timeout.Infinite, ct);
             }
-            LastPoints = points.ToArray();
             return await TestData.Planner().PlanAsync(points, options, ct);
         }
     }

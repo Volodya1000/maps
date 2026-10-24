@@ -13,7 +13,7 @@
     <Grid
         x:Name="Layout"
         ColumnDefinitions="*,350"
-        RowDefinitions="*,Auto">
+        RowDefinitions="*">
         <Grid
             x:Name="MapArea"
             Grid.Column="0"
@@ -48,9 +48,12 @@
                 Background="#ECFFFFFF">
                 <StackPanel>
                     <TextBlock FontSize="11" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
-                    <Button x:Name="AttributionButton" Content="© OpenStreetMap contributors"
-                            Padding="2" FontSize="11" Background="Transparent"
-                            ToolTip.Tip="Источник карты, авторские права и лицензия ODbL" />
+                    <TextBlock
+                        x:Name="AttributionCredit"
+                        Text="ⓘ"
+                        AutomationProperties.Name="© OpenStreetMap contributors · ODbL 1.0"
+                        FontSize="13"
+                        ToolTip.Tip="© OpenStreetMap contributors · ODbL 1.0" />
                 </StackPanel>
             </Border>
         </Grid>
@@ -62,7 +65,24 @@
             Background="White"
             BorderBrush="#DFE5E0"
             BorderThickness="1,0,0,0">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid RowDefinitions="Auto,*">
+                <Border
+                    x:Name="SheetHandleButton"
+                    Height="44"
+                    Margin="0,0,0,8"
+                    Background="Transparent"
+                    CornerRadius="8"
+                    Focusable="True">
+                    <TextBlock
+                        x:Name="SheetHandleText"
+                        HorizontalAlignment="Center"
+                        FontSize="13"
+                        Text="Точки и маршруты · потяните вниз, чтобы свернуть" />
+                </Border>
+                <ScrollViewer
+                    x:Name="SidePanelContent"
+                    Grid.Row="1"
+                    VerticalScrollBarVisibility="Auto">
                 <StackPanel Spacing="12">
                     <TextBlock
                         FontSize="21"
@@ -161,20 +181,19 @@
                         LineHeight="21"
                         Text="{Binding MetricsText}"
                         TextWrapping="Wrap" />
+                    <Border
+                        Padding="8"
+                        Background="#EAF2ED"
+                        CornerRadius="6">
+                        <TextBlock
+                            FontSize="13"
+                            Foreground="#244D3B"
+                            Text="{Binding Status}"
+                            TextWrapping="Wrap" />
+                    </Border>
                 </StackPanel>
-            </ScrollViewer>
-        </Border>
-        <Border
-            x:Name="StatusPanel"
-            Grid.Row="1"
-            Grid.ColumnSpan="2"
-            Padding="14,10"
-            Background="#EAF2ED">
-            <TextBlock
-                FontSize="13"
-                Foreground="#244D3B"
-                Text="{Binding Status}"
-                TextWrapping="Wrap" />
+                </ScrollViewer>
+            </Grid>
         </Border>
     </Grid>
 </rx:ReactiveUserControl>

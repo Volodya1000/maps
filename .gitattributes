@@ -1,4 +1,5 @@
 * text=auto eol=lf
-*.sqlite binary
-*.gz binary
 *.png binary
+*.sqlite binary
+*.pbf binary
+*.gz binary

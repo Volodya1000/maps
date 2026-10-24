@@ -38,38 +38,24 @@ public sealed class InfrastructureTests
     [Fact]
     public void MissingAndCorruptedPackageAreRejected()
     {
-        var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(directory);
-        try
-        {
-            Assert.Throws<PlanningException>(() => new SqliteGeodataRepository(directory));
-            File.Copy(Path.Combine(TestData.RealData, "manifest.json"), Path.Combine(directory, "manifest.json"));
-            File.WriteAllText(Path.Combine(directory, "geodata.sqlite"), "corrupted");
-            Assert.Throws<PlanningException>(() => new SqliteGeodataRepository(directory));
-        }
-        finally
-        {
-            Directory.Delete(directory, true);
-        }
+        using var fixture = new TemporaryDirectory();
+        var directory = fixture.DirectoryPath;
+        Assert.Throws<PlanningException>(() => new SqliteGeodataRepository(directory));
+        File.Copy(Path.Combine(TestData.RealData, "manifest.json"), Path.Combine(directory, "manifest.json"));
+        File.WriteAllText(Path.Combine(directory, "geodata.sqlite"), "corrupted");
+        Assert.Throws<PlanningException>(() => new SqliteGeodataRepository(directory));
     }
 
     [Fact]
     public void SettingsSurviveRestartAndInvalidValuesDoNotOverwriteFile()
     {
-        var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        var path = Path.Combine(directory, "settings.json");
-        try
-        {
-            var store = new JsonSettingsStore(path);
-            store.Save(new(35, 50000, 0.1));
-            Assert.Equal(35, new JsonSettingsStore(path).Load().CellSizeMetres);
-            Assert.Throws<ArgumentException>(() => store.Save(new(-1)));
-            Assert.Equal(35, store.Load().CellSizeMetres);
-        }
-        finally
-        {
-            Directory.Delete(directory, true);
-        }
+        using var fixture = new TemporaryDirectory();
+        var path = Path.Combine(fixture.DirectoryPath, "settings.json");
+        var store = new JsonSettingsStore(path);
+        store.Save(new(35, 50000, 0.1));
+        Assert.Equal(35, new JsonSettingsStore(path).Load().CellSizeMetres);
+        Assert.Throws<ArgumentException>(() => store.Save(new(-1)));
+        Assert.Equal(35, store.Load().CellSizeMetres);
     }
 
     [Fact]

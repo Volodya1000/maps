@@ -8,6 +8,7 @@ using CableRoutePlanner.UI.MapAdapters;
 using CableRoutePlanner.UI.Views;
 using CableRoutePlanner.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 
 namespace CableRoutePlanner.Bootstrap;
@@ -21,7 +22,7 @@ public static class AppBootstrap
         Func<IProgress<string>, CancellationToken, Task>? prepareData = null)
     {
         var services = new ServiceCollection();
-        services.AddLogging();
+        services.AddLogging(logging => logging.AddConsole());
         services.AddSingleton<IGeodataRepository>(_ => new SqliteGeodataRepository(dataDirectory));
         services.AddSingleton<ISettingsStore>(_ => new JsonSettingsStore(settingsPath));
         services.AddSingleton<IRoutePlanner, GridRoutePlanner>();

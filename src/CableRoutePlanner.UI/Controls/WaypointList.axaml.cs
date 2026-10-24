@@ -31,6 +31,8 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
 
     private Border? _card;
 
+    private Control? _draggedContainer;
+
     private Border? _targetCard;
 
     private ScrollViewer? _scroll;
@@ -92,6 +94,7 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
         _pointer = e.Pointer;
         _pointId = row.Id;
         _targetIndex = row.Number - 1;
+        _draggedContainer = Rows.ContainerFromIndex(_targetIndex) as Control;
         _pressed = e.GetPosition(this);
         _card = source.Name == "CoordinateCard" ? source
             : source.GetVisualAncestors().OfType<Border>().First(b => b.Name == "CoordinateCard");
@@ -113,6 +116,7 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
         _ownsCapture = true;
         _pointer.Capture(_card);
         _dragging = true;
+        RaiseDraggedRow();
         _card.Classes.Add("dragging");
         UpdateTarget(_pressed);
     }
@@ -132,18 +136,19 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
 
         if (_waitingForHold)
         {
-            if (Math.Sqrt(Math.Pow(point.X - _pressed.X, 2) + Math.Pow(point.Y - _pressed.Y, 2)) >= DragThreshold)
+            if (DistanceFromPress(point) >= DragThreshold)
             {
                 EndGesture();
             }
             return;
         }
-        if (!_dragging && Math.Sqrt(Math.Pow(point.X - _pressed.X, 2) + Math.Pow(point.Y - _pressed.Y, 2)) < DragThreshold)
+        if (!_dragging && DistanceFromPress(point) < DragThreshold)
         {
             return;
         }
 
         _dragging = true;
+        RaiseDraggedRow();
         _card.Classes.Add("dragging");
         _card.Opacity = 0.8;
         _card.RenderTransform = new TranslateTransform(0, point.Y - _pressed.Y);
@@ -184,9 +189,15 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
         }
 
         _targetCard?.Classes.Remove("drop-target");
-        _targetCard = (Rows.ContainerFromIndex(_targetIndex) as Control)?.GetVisualDescendants().OfType<Border>().FirstOrDefault(b => b.Name == "CoordinateCard");
+        _targetCard = (Rows.ContainerFromIndex(_targetIndex) as Control)?
+            .GetVisualDescendants()
+            .OfType<Border>()
+            .FirstOrDefault(border => border.Name == "CoordinateCard");
         _targetCard?.Classes.Add("drop-target");
     }
+
+    private double DistanceFromPress(Point point) =>
+        Math.Sqrt(Math.Pow(point.X - _pressed.X, 2) + Math.Pow(point.Y - _pressed.Y, 2));
 
     private void AutoScroll()
     {
@@ -195,7 +206,9 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
             return;
         }
 
-        var direction = _lastInScroll.Y < AutoScrollEdge ? -1 : _lastInScroll.Y > _scroll.Bounds.Height - AutoScrollEdge ? 1 : 0;
+        var direction = _lastInScroll.Y < AutoScrollEdge ? -1
+            : _lastInScroll.Y > _scroll.Bounds.Height - AutoScrollEdge ? 1
+            : 0;
         if (direction == 0)
         {
             return;
@@ -210,6 +223,14 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
             {
                 _card.RenderTransform = new TranslateTransform(0, point.Y - _pressed.Y);
             }
+        }
+    }
+
+    private void RaiseDraggedRow()
+    {
+        if (_draggedContainer is not null)
+        {
+            _draggedContainer.ZIndex = 1000;
         }
     }
 
@@ -265,6 +286,11 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
         _waitingForHold = false;
         _holdPress = null;
         _targetCard?.Classes.Remove("drop-target");
+        if (_draggedContainer is not null)
+        {
+            _draggedContainer.ZIndex = 0;
+            _draggedContainer = null;
+        }
         if (_card is not null)
         {
             _card.Classes.Remove("dragging");

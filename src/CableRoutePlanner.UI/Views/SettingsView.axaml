@@ -34,7 +34,8 @@
             <Button
                 Classes="primary"
                 Command="{Binding Save}"
-                Content="Сохранить" />
+                Content="Сохранить"
+                IsVisible="{Binding CanSave}" />
             <TextBlock
                 Text="{Binding Status}"
                 TextWrapping="Wrap" />

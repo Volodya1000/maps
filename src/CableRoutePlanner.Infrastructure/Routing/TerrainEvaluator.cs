@@ -13,9 +13,14 @@ internal sealed record EdgeEvaluation(
     double Field,
     double Clearing,
     IReadOnlyList<long> Roads,
-    IReadOnlyList<long> Crossings)
+    IReadOnlyList<long> Crossings,
+    IReadOnlyList<long> BridgeCandidates)
 {
-    public double Cost(CostProfile p) => Length - Clearing * (1 - p.Clearing) + Forest * p.Forest + Field * p.Field + Roads.Count * p.RoadCrossingMetres;
+    public double Cost(CostProfile p) => Length
+        - Clearing * (1 - p.Clearing)
+        + Forest * p.Forest
+        + Field * p.Field
+        + (Roads.Count + BridgeCandidates.Count) * p.RoadCrossingMetres;
 }
 
 internal sealed class TerrainEvaluator
@@ -24,11 +29,16 @@ internal sealed class TerrainEvaluator
 
     private readonly STRtree<Obstacle> _index = new();
 
+    private readonly STRtree<Geometry> _waterOpenings = new();
+
     private readonly LocalProjection _projection;
 
     private readonly GeometryFactory _factory = new();
 
-    public TerrainEvaluator(IReadOnlyList<MapFeature> features, LocalProjection projection)
+    public TerrainEvaluator(
+        IReadOnlyList<MapFeature> features,
+        LocalProjection projection,
+        double cellSizeMetres)
     {
         _projection = projection;
         var reader = new WKBReader();
@@ -36,24 +46,59 @@ internal sealed class TerrainEvaluator
             f => (Feature: f, Geometry: projection.Forward(reader.Read(f.Wkb)))).ToArray();
         var approvals = projected.Where(
             f => f.Feature.Kind == TerrainKind.ApprovedCrossing
-                && !string.IsNullOrWhiteSpace(f.Feature.ApprovalId)).Select(f => f.Geometry).ToArray();
+                && !string.IsNullOrWhiteSpace(f.Feature.ApprovalId))
+            .Select(f => f.Geometry)
+            .ToArray();
+        var riverIndex = new STRtree<Geometry>();
+        foreach (var river in projected.Where(f => f.Feature.Kind == TerrainKind.River))
+        {
+            riverIndex.Insert(river.Geometry.EnvelopeInternal, river.Geometry);
+        }
+
+        riverIndex.Build();
+        var bridgeOpenings = projected
+            .Where(f => f.Feature.Kind == TerrainKind.BridgeCandidate)
+            .Where(f => riverIndex.Query(f.Geometry.EnvelopeInternal)
+                .Any(river => river.Intersects(f.Geometry)))
+            .Select(f => (
+                Id: f.Feature.Id,
+                Corridor: f.Geometry.Buffer(Math.Max(cellSizeMetres * 0.75, 4))))
+            .ToDictionary(bridge => bridge.Id, bridge => bridge.Corridor);
+        foreach (var opening in approvals.Concat(bridgeOpenings.Values))
+        {
+            _waterOpenings.Insert(opening.EnvelopeInternal, opening);
+        }
+
+        _waterOpenings.Build();
         foreach (var (feature, original) in projected)
         {
             var geometry = original;
             if (feature.Kind == TerrainKind.River)
             {
-                foreach (var approval in approvals)
+                foreach (var opening in _waterOpenings.Query(geometry.EnvelopeInternal))
                 {
-                    geometry = geometry.Difference(approval);
+                    if (geometry.Intersects(opening))
+                    {
+                        geometry = geometry.Difference(opening);
+                    }
                 }
             }
 
             if (feature.Kind == TerrainKind.BridgeCandidate)
             {
-                continue; // OSM bridge is not engineering permission.
+                if (!bridgeOpenings.TryGetValue(feature.Id, out var corridor))
+                {
+                    continue;
+                }
+
+                _index.Insert(corridor.EnvelopeInternal, new(feature.Id, feature.Kind, corridor));
+                continue;
             }
 
-            _index.Insert(geometry.EnvelopeInternal, new(feature.Id, feature.Kind, geometry));
+            if (!geometry.IsEmpty)
+            {
+                _index.Insert(geometry.EnvelopeInternal, new(feature.Id, feature.Kind, geometry));
+            }
         }
 
         _index.Build();
@@ -67,6 +112,7 @@ internal sealed class TerrainEvaluator
         var clearing = 0d;
         var roads = new List<long>();
         var crossings = new List<long>();
+        var bridgeCandidates = new List<long>();
         foreach (var obstacle in _index.Query(line.EnvelopeInternal))
         {
             var geometry = obstacle.Geometry;
@@ -102,6 +148,9 @@ internal sealed class TerrainEvaluator
                 case TerrainKind.ApprovedCrossing:
                     crossings.Add(obstacle.Id);
                     break;
+                case TerrainKind.BridgeCandidate:
+                    bridgeCandidates.Add(obstacle.Id);
+                    break;
             }
         }
 
@@ -114,6 +163,7 @@ internal sealed class TerrainEvaluator
             Math.Min(field, projectedLength) * scale,
             Math.Min(clearing, projectedLength) * scale,
             roads,
-            crossings);
+            crossings,
+            bridgeCandidates);
     }
 }
