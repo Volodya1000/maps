@@ -4,7 +4,8 @@
     <OutputType>Exe</OutputType>
     <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
     <ApplicationId>by.cablerouteplanner.app</ApplicationId>
-    <ApplicationVersion>5</ApplicationVersion>
+    <!-- Monotonically increase this for every distributable APK. -->
+    <ApplicationVersion>6</ApplicationVersion>
     <ApplicationDisplayVersion>$(ReleaseVersion)</ApplicationDisplayVersion>
     <AndroidPackageFormats>apk</AndroidPackageFormats>
     <AndroidNeedsInternetPermission>false</AndroidNeedsInternetPermission>

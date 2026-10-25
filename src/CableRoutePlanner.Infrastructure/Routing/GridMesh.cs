@@ -23,14 +23,24 @@ public sealed class GridGenerator : IGridGenerator
     {
         var minimum = projection.Forward(new GeoCoordinate(bounds.South, bounds.West));
         var maximum = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
-        if (maximum.X - minimum.X > 20_000 || maximum.Y - minimum.Y > 20_000)
+        var width = maximum.X - minimum.X;
+        var height = maximum.Y - minimum.Y;
+        var requestedNodes = Math.Max(1d, width / options.CellSizeMetres)
+            * Math.Max(1d, height / options.CellSizeMetres);
+        if (options.MaxNodes < 1000 && requestedNodes > options.MaxNodes)
         {
             throw new PlanningException(
-                "Расчётная область превышает 20 км. Разбейте трассу на отдельные проекты.");
+                "Слишком большая область расчёта. Увеличьте размер ячейки или лимит узлов.");
         }
 
-        var columns = (int)Math.Floor((maximum.X - minimum.X) / options.CellSizeMetres) + 1;
-        var rows = (int)Math.Floor((maximum.Y - minimum.Y) / options.CellSizeMetres) + 1;
+        // Long inter-city routes use a coarse overview graph. The final path is
+        // still validated segment by segment by TerrainEvaluator; the coarse
+        // graph only controls where A* spends its time.
+        var cellSize = Math.Max(options.CellSizeMetres,
+            Math.Sqrt(width * height / options.MaxNodes));
+        cellSize = Math.Min(cellSize, 2_000);
+        var columns = (int)Math.Floor(width / cellSize) + 1;
+        var rows = (int)Math.Floor(height / cellSize) + 1;
         if ((long)columns * rows > options.MaxNodes)
         {
             throw new PlanningException(
@@ -43,11 +53,11 @@ public sealed class GridGenerator : IGridGenerator
             for (var x = 0; x < columns; x++)
             {
                 nodes[y * columns + x] = new(
-                    minimum.X + x * options.CellSizeMetres,
-                    minimum.Y + y * options.CellSizeMetres);
+                    minimum.X + x * cellSize,
+                    minimum.Y + y * cellSize);
             }
         }
 
-        return new(nodes, columns, rows, minimum, options.CellSizeMetres);
+        return new(nodes, columns, rows, minimum, cellSize);
     }
 }
