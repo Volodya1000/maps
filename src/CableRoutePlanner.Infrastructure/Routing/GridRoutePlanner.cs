@@ -132,8 +132,8 @@ public sealed class GridRoutePlanner(
                 // Roads are a cost contribution, not an obstacle. Keeping a
                 // valid long segment direct avoids a country-sized graph when
                 // the only crossed objects are roads.
-                IReadOnlyList<Coordinate> part = direct is { Forest: 0, Field: 0, Clearing: 0 }
-                    ? [start, end]
+                var part = direct is { Forest: 0, Field: 0, Clearing: 0 }
+                    ? new List<Coordinate> { start, end }
                     : pathfinder.FindPath(
                         start,
                         end,

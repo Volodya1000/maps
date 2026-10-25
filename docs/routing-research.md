@@ -11,7 +11,7 @@ OSRM и GraphHopper используют подготовленный граф �
 Источники:
 
 - [OSRM API](https://project-osrm.org/docs/v5.24.0/api/)
-- [GraphHopper: Contraction Hierarchies](https://www.graphhopper.com/blog/2020/07/22/what-is-contraction-hierarchies/)
+- [GraphHopper technical details](https://github.com/graphhopper/graphhopper/blob/master/docs/core/technical.md)
 - [pgRouting concepts](https://docs.pgrouting.org/latest/en/pgRouting-concepts.html)
 - [pgRouting pgr_dijkstra](https://docs.pgrouting.org/latest/en/pgr_dijkstra.html)
 
@@ -23,6 +23,30 @@ GRASS GIS `r.cost` строит растр накопленной стоимос
 
 - [GRASS r.cost](https://grass.osgeo.org/grass-stable/manuals/r.cost.html)
 - [GRASS r.drain](https://grass.osgeo.org/grass-stable/manuals/r.drain.html)
+
+### Подходы, которые стоит сравнить
+
+| Подход | Где полезен | Ограничение для нашего приложения |
+|---|---|---|
+| Dijkstra | Эталонная точность и проверка A* | Медленный без эвристики |
+| A* | Текущий локальный поиск | Равномерная сетка плохо масштабируется на страну |
+| Bidirectional A* | Длинный поиск от двух концов | Требует симметричных или аккуратно обращённых стоимостей |
+| ALT / landmarks | Много запросов по стабильному графу | Нужна подготовка графа и landmarks |
+| Contraction Hierarchies | Очень быстрый дорожный граф | Плохо подходит для часто меняющихся инженерных ограничений |
+| MLD / tile hierarchy | Быстрый country-scale граф с уровнями | Сложнее подготовка и обновление тайлов |
+| Jump Point Search | Ускорение однообразной grid-среды | Не даёт большого выигрыша при сложной стоимости и геометрии |
+| Theta* / visibility graph | Более гладкие и короткие геометрические пути | Нужно строго проверять каждое видимое ребро |
+| Navmesh / portal graph | Крупные проходимые области и узкие проходы | Требует консервативной генерации порталов |
+| D* Lite | Повторный маршрут после локальных изменений | Полезен только при действительно динамических препятствиях |
+| Multi-objective / Pareto | Показывать компромисс длина–стоимость–риски | Число альтернатив быстро растёт |
+| Steiner tree | Одна сеть к нескольким абонентам | Это уже задача проектирования сети, а не одного маршрута |
+
+Для сравнения реализации и тестового эталона полезны следующие материалы:
+
+- [A* на Red Blob Games](https://www.redblobgames.com/pathfinding/a-star/introduction.html)
+- [NetworkX shortest paths](https://networkx.org/documentation/stable/reference/algorithms/shortest_paths.html)
+- [D* Lite, Koenig & Likhachev (PDF)](https://www.cs.cmu.edu/~maxim/files/dlite_tro05.pdf)
+- [Google OR-Tools routing](https://developers.google.com/optimization/routing)
 
 ## Что это означает для приложения
 
@@ -43,6 +67,14 @@ GRASS GIS `r.cost` строит растр накопленной стоимос
 2. Добавить адаптивный corridor search с повторным расширением и тестами на узкий мост, реку и обход препятствия.
 3. Подготовить benchmark-пакет: Минск–областной центр, короткий городской маршрут, маршрут через мост, маршрут с обходом озера. Для каждого фиксировать время SQLite, подготовки индекса, поиска, число узлов, объём памяти и отклонение длины от точного локального решения.
 4. Только после benchmark заменить равномерную сетку на иерархический граф. CH/MLD имеет смысл лишь для стабильного дорожного подграфа; применять его ко всем инженерным ограничениям нельзя.
+
+## Источники по Android-подписи
+
+Проблема обновления APK не связана с количеством разработчиков: Android связывает обновление с сертификатом, которым подписан установленный пакет.
+
+- [Android app signing](https://developer.android.com/studio/publish/app-signing)
+- [apksigner](https://developer.android.com/tools/apksigner)
+- [GitHub Actions encrypted secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)
 
 ## Критерии точности
 
