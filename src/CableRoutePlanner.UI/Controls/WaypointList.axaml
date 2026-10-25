@@ -8,12 +8,22 @@
     x:DataType="vm:MapViewModel"
     x:TypeArguments="vm:MapViewModel">
     <rx:ReactiveUserControl.Styles>
+        <Style Selector="Border.coordinate">
+            <Setter Property="Background" Value="#F1F5F2" />
+            <Setter Property="BorderBrush" Value="#DCE5DF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
         <Style Selector="Border.coordinate.dragging">
             <Setter Property="Background" Value="#DCEEE7" />
             <Setter Property="BoxShadow" Value="0 3 8 0 #50000000" />
         </Style>
         <Style Selector="Border.coordinate.drop-target">
             <Setter Property="BorderBrush" Value="#176B55" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="Border.coordinate.selected">
+            <Setter Property="Background" Value="#DBEAFB" />
+            <Setter Property="BorderBrush" Value="#1A6FD2" />
             <Setter Property="BorderThickness" Value="2" />
         </Style>
     </rx:ReactiveUserControl.Styles>
@@ -35,10 +45,8 @@
                     <Border
                         x:Name="CoordinateCard"
                         Grid.Column="1"
-                        Background="#F1F5F2"
-                        BorderBrush="#DCE5DF"
-                        BorderThickness="1"
                         Classes="coordinate"
+                        Classes.selected="{Binding IsSelected}"
                         CornerRadius="8"
                         Focusable="True"
                         AutomationProperties.Name="{Binding Display}"

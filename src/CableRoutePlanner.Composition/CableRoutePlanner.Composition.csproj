@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../CableRoutePlanner.Bootstrap/CableRoutePlanner.Bootstrap.csproj" />
+    <ProjectReference Include="../CableRoutePlanner.UI/CableRoutePlanner.UI.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+</Project>

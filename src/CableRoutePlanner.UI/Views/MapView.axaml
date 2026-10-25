@@ -99,7 +99,7 @@
                     <WrapPanel>
                         <Button
                             Command="{Binding CopyCoordinates}"
-                            Content="Копировать координаты" />
+                            Content="{Binding CopyPointText}" />
                         <Button
                             Command="{Binding ClearPoints}"
                             Content="Очистить" />
@@ -183,6 +183,21 @@
                         LineHeight="21"
                         Text="{Binding MetricsText}"
                         TextWrapping="Wrap" />
+                    <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Точки прокладки кабеля" />
+                        <TextBlock FontSize="12" Foreground="#64726A" Text="Все вершины выбранного маршрута, включая точки изменения направления." TextWrapping="Wrap" />
+                        <ListBox MaxHeight="260" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:RouteVertexRow">
+                                    <Grid ColumnDefinitions="32,*">
+                                        <TextBlock Text="{Binding Number}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Display}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Button Command="{Binding CopyRouteVertex}" Content="Копировать выбранную вершину" />
+                    </StackPanel>
                     <Border
                         Padding="8"
                         Background="#EAF2ED"

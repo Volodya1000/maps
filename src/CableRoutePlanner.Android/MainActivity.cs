@@ -4,7 +4,7 @@ using Android.Content.PM;
 using Avalonia;
 using Avalonia.Android;
 using Avalonia.ReactiveUI;
-using CableRoutePlanner.Bootstrap;
+using CableRoutePlanner.Composition;
 using CableRoutePlanner.UI;
 
 namespace CableRoutePlanner.Android;
@@ -23,7 +23,7 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
         Directory.CreateDirectory(directory);
         return builder.AfterSetup(b =>
         {
-            AppBootstrap.ConfigureApplication(
+            AvaloniaAppBootstrap.ConfigureApplication(
                 (PlannerApplication)b.Instance!,
                 directory,
                 Path.Combine(FilesDir.AbsolutePath, "settings.json"),

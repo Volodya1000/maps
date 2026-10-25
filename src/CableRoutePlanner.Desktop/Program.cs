@@ -1,6 +1,6 @@
 using Avalonia;
 using Avalonia.ReactiveUI;
-using CableRoutePlanner.Bootstrap;
+using CableRoutePlanner.Composition;
 
 namespace CableRoutePlanner.Desktop;
 
@@ -16,6 +16,6 @@ internal static class Program
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "CableRoutePlanner",
             "settings.json");
-        return AppBuilder.Configure(() => AppBootstrap.CreateApplication(data, settings)).UsePlatformDetect().UseReactiveUI().LogToTrace();
+        return AppBuilder.Configure(() => AvaloniaAppBootstrap.CreateApplication(data, settings)).UsePlatformDetect().UseReactiveUI().LogToTrace();
     }
 }

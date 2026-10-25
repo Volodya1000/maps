@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../CableRoutePlanner.Bootstrap/CableRoutePlanner.Bootstrap.csproj" />
+    <ProjectReference Include="../CableRoutePlanner.Composition/CableRoutePlanner.Composition.csproj" />
     <PackageReference Include="Avalonia.Desktop" />
   </ItemGroup>
   <ItemGroup>

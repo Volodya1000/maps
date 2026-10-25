@@ -75,7 +75,8 @@ def desktop() -> None:
         run(sys.executable, "tools/check_network.py", "artifacts/runtime.strace", "--output", "artifacts/network-report.json")
     elif platform.system() == "Windows":
         run(dotnet, "publish", "src/CableRoutePlanner.Desktop", "-c", "Release", "-r", "win-x64",
-            "--self-contained", "true", "-o", "artifacts/win-x64")
+            "--self-contained", "true", "-p:NuGetLockFilePath=obj/publish.win-x64.lock.json",
+            "-o", "artifacts/win-x64")
 
 
 def data() -> None:
