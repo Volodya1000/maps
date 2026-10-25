@@ -124,14 +124,24 @@ public sealed class GridRoutePlanner(
                     continue;
                 }
 
-                var part = pathfinder.FindPath(
-                    start,
-                    end,
-                    mesh,
-                    profile,
-                    (from, to) => evaluator.Evaluate(from, to)?.Cost(profile),
-                    (from, to) => GridEdge(from, to)?.Cost(profile),
-                    ct).ToList();
+                var direct = evaluator.Evaluate(start, end);
+                // A country-scale rural leg must not pay for millions of grid
+                // cells when its complete segment is already valid. This is a
+                // certified shortcut: the same obstacle evaluator checked the
+                // whole segment, and only an obstacle-free leg is accepted.
+                // Roads are a cost contribution, not an obstacle. Keeping a
+                // valid long segment direct avoids a country-sized graph when
+                // the only crossed objects are roads.
+                IReadOnlyList<Coordinate> part = direct is { Forest: 0, Field: 0, Clearing: 0 }
+                    ? [start, end]
+                    : pathfinder.FindPath(
+                        start,
+                        end,
+                        mesh,
+                        profile,
+                        (from, to) => evaluator.Evaluate(from, to)?.Cost(profile),
+                        (from, to) => GridEdge(from, to)?.Cost(profile),
+                        ct).ToList();
                 part = evaluator.AlignBridgeCrossings(part);
                 if (route.Count > 0)
                 {

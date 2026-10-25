@@ -8,6 +8,10 @@ namespace CableRoutePlanner.Persistence;
 
 public sealed class SqliteGeodataRepository : IGeodataRepository
 {
+    // A map viewport is a presentation query, not an export query. Keeping this
+    // budget bounded is important on Android: Mapsui creates one feature object
+    // and one geometry for every row returned here.
+    private const int DisplayFeatureBudget = 6000;
     private readonly string _connectionString;
 
     private readonly int _schemaVersion;
@@ -65,7 +69,7 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         }.ToString();
     }
 
-    public Task<IReadOnlyList<MapFeature>> QueryAsync(GeoBounds bounds, CancellationToken cancellationToken) => QueryInternalAsync(bounds, null, cancellationToken);
+    public Task<IReadOnlyList<MapFeature>> QueryAsync(GeoBounds bounds, CancellationToken cancellationToken) => QueryInternalAsync(bounds, null, false, cancellationToken);
 
     public Task<IReadOnlyList<MapFeature>> QueryMapAsync(
         GeoBounds bounds,
@@ -76,12 +80,13 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         // Routing always uses original geometry, so display simplification cannot open an obstacle.
         int? lod = _schemaVersion < 2
             || metresPerPixel <= 10 ? null : metresPerPixel > 250 ? 0 : metresPerPixel > 40 ? 1 : 2;
-        return QueryInternalAsync(bounds, lod, cancellationToken);
+        return QueryInternalAsync(bounds, lod, true, cancellationToken);
     }
 
     private Task<IReadOnlyList<MapFeature>> QueryInternalAsync(
         GeoBounds bounds,
         int? lod,
+        bool displayRequest,
         CancellationToken cancellationToken) => Task.Run<IReadOnlyList<MapFeature>>(() =>
     {
         using var connection = new SqliteConnection(_connectionString);
@@ -92,7 +97,26 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
             JOIN display_index i ON i.id=f.id
             WHERE i.minx <= $east AND i.maxx >= $west AND i.miny <= $north AND i.maxy >= $south
               AND f.lod=$lod
-            ORDER BY f.id
+            ORDER BY CASE f.kind
+                WHEN 'Settlement' THEN 0
+                WHEN 'Road' THEN 1
+                WHEN 'River' THEN 2
+                WHEN 'Lake' THEN 3
+                WHEN 'Forest' THEN 4
+                ELSE 5 END, f.id
+            LIMIT $display_limit
+            """ : displayRequest ? """
+            SELECT f.id,f.kind,f.wkb,f.name,f.approval_id FROM features f
+            JOIN feature_index i ON i.id=f.id
+            WHERE i.minx <= $east AND i.maxx >= $west AND i.miny <= $north AND i.maxy >= $south
+            ORDER BY CASE f.kind
+                WHEN 'Settlement' THEN 0
+                WHEN 'Road' THEN 1
+                WHEN 'River' THEN 2
+                WHEN 'Lake' THEN 3
+                WHEN 'Forest' THEN 4
+                ELSE 5 END, f.id
+            LIMIT $display_limit
             """ : """
             SELECT f.id,f.kind,f.wkb,f.name,f.approval_id FROM features f
             JOIN feature_index i ON i.id=f.id
@@ -102,6 +126,11 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         if (lod.HasValue)
         {
             command.Parameters.AddWithValue("$lod", lod.Value);
+        }
+
+        if (displayRequest)
+        {
+            command.Parameters.AddWithValue("$display_limit", DisplayFeatureBudget);
         }
 
         command.Parameters.AddWithValue("$east", bounds.East);
@@ -116,12 +145,6 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
             if (!Enum.TryParse<TerrainKind>(reader.GetString(1), out var kind))
             {
                 throw new PlanningException("Неизвестный тип геообъекта.");
-            }
-
-            if (result.Count >= 50000)
-            {
-                throw new PlanningException(
-                    "Слишком много объектов. Приблизьте карту или уменьшите область расчёта.");
             }
 
             result.Add(

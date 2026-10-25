@@ -7,7 +7,7 @@ public sealed record RoutingOptions(
 {
     public void Validate()
     {
-        if (!double.IsFinite(CellSizeMetres) || CellSizeMetres is < 5 or > 200
+        if (!double.IsFinite(CellSizeMetres) || CellSizeMetres is < 5 or > 2000
             || MaxNodes is < 100 or > 1000000
             || !double.IsFinite(ReserveFraction) || ReserveFraction is < 0 or > 1)
         {
