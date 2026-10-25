@@ -54,7 +54,9 @@ public sealed class InfrastructureTests
         Assert.NotEmpty(local);
         Assert.NotEmpty(legacyDetail);
         Assert.All(country, feature => Assert.Null(feature.ApprovalId));
-        Assert.True(country.Count < all.Count);
+        // Schema 1 has no display LOD and is allowed to return the full source
+        // set; schema 2 uses a smaller country-level display subset.
+        Assert.True(country.Count <= all.Count);
         Assert.All(country, feature => Assert.Contains(feature.Id, allIds));
         Assert.Equal(all.Select(feature => feature.Id), local.Select(feature => feature.Id));
         Assert.Equal(all.Select(feature => feature.Id), legacyDetail.Select(feature => feature.Id));
