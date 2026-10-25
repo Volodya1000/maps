@@ -11,7 +11,7 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
     // A map viewport is a presentation query, not an export query. Keeping this
     // budget bounded is important on Android: Mapsui creates one feature object
     // and one geometry for every row returned here.
-    private const int DisplayFeatureBudget = 6000;
+    private const int LegacyDisplayFeatureBudget = 6000;
     private readonly string _connectionString;
 
     private readonly int _schemaVersion;
@@ -92,6 +92,13 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
         using var command = connection.CreateCommand();
+        var displayLimit = lod switch
+        {
+            0 => 500,
+            1 => 1_500,
+            2 => 5_000,
+            _ => LegacyDisplayFeatureBudget
+        };
         command.CommandText = lod.HasValue ? """
             SELECT f.id,f.kind,f.wkb,f.name,NULL FROM display_features f
             JOIN display_index i ON i.id=f.id
@@ -130,7 +137,7 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
 
         if (displayRequest)
         {
-            command.Parameters.AddWithValue("$display_limit", DisplayFeatureBudget);
+            command.Parameters.AddWithValue("$display_limit", displayLimit);
         }
 
         command.Parameters.AddWithValue("$east", bounds.East);
