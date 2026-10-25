@@ -2,7 +2,7 @@ name: Pull request Android APKs
 on:
   pull_request:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: pull-request-apks-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -81,7 +81,7 @@ jobs:
             keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/preview.keystore" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=CableRoutePlanner Preview,O=Test,C=BY'
           fi
       - name: Build lightweight Minsk APK
-        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:GeodataDirectory="$GITHUB_WORKSPACE/samples/real-geodata-fixtures/minsk" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
+        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:ApplicationVersion=${{ github.run_number }} -p:GeodataDirectory="$GITHUB_WORKSPACE/samples/real-geodata-fixtures/minsk" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
       - run: |
           mkdir -p artifacts/apk
           cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk artifacts/apk/CableRoutePlanner-PR-${{ github.event.pull_request.number }}-Minsk.apk
@@ -89,7 +89,7 @@ jobs:
       - name: Split country map into bounded Android assets
         run: python3 tools/split_android_map.py artifacts/belarus artifacts/android-belarus
       - name: Build full Belarus APK
-        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:GeodataDirectory="$GITHUB_WORKSPACE/artifacts/android-belarus" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
+        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:ApplicationVersion=${{ github.run_number }} -p:GeodataDirectory="$GITHUB_WORKSPACE/artifacts/android-belarus" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
       - run: |
           cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk artifacts/apk/CableRoutePlanner-PR-${{ github.event.pull_request.number }}-Belarus.apk
           sha256sum artifacts/apk/*.apk > artifacts/apk/SHA256SUMS.txt
@@ -98,3 +98,23 @@ jobs:
           name: pull-request-apks
           path: artifacts/apk/
           compression-level: 0
+      - name: Publish direct APK downloads
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          tag="pr-${PR_NUMBER}-apk"
+          if ! gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" --repo "$REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "PR #${PR_NUMBER} APK previews" --notes "Rolling APK previews for pull request #${PR_NUMBER}. Assets are replaced on every successful build."
+          fi
+          gh release upload "$tag" --repo "$REPOSITORY" artifacts/apk/*.apk --clobber
+          {
+            echo "## Direct APK downloads"
+            echo
+            echo "These links download the APK directly, without an Actions ZIP archive."
+            echo
+            echo "- [Minsk APK](https://github.com/${REPOSITORY}/releases/download/${tag}/CableRoutePlanner-PR-${PR_NUMBER}-Minsk.apk)"
+            echo "- [Belarus APK](https://github.com/${REPOSITORY}/releases/download/${tag}/CableRoutePlanner-PR-${PR_NUMBER}-Belarus.apk)"
+          } >> "$GITHUB_STEP_SUMMARY"
