@@ -50,6 +50,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      - name: Read release version
+        run: python3 tools/release_version.py >> "$GITHUB_ENV"
       - uses: actions/cache/restore@v6
         id: country-cache
         with:
@@ -94,17 +96,17 @@ jobs:
         run: dotnet publish src/CableRoutePlanner.Android -c Release -p:GeodataDirectory="$GITHUB_WORKSPACE/samples/real-geodata-fixtures/minsk" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
       - run: |
           mkdir -p artifacts/apk
-          cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk artifacts/apk/CableRoutePlanner-0.2.1-Minsk.apk
+          cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Minsk.apk"
       - run: dotnet clean src/CableRoutePlanner.Android -c Release
       - name: Split country map into bounded Android assets
         run: python3 tools/split_android_map.py artifacts/belarus artifacts/android-belarus
       - run: dotnet publish src/CableRoutePlanner.Android -c Release -p:GeodataDirectory="$GITHUB_WORKSPACE/artifacts/android-belarus" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
       - run: |
           mkdir -p artifacts/apk
-          cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk artifacts/apk/CableRoutePlanner-0.2.1-Belarus.apk
-          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump permissions artifacts/apk/CableRoutePlanner-0.2.1-Belarus.apk > artifacts/apk/permissions.txt
+          cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk"
+          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump permissions "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk" > artifacts/apk/permissions.txt
           if rg 'android.permission.INTERNET' artifacts/apk/permissions.txt; then exit 1; fi
-          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --print-certs artifacts/apk/CableRoutePlanner-0.2.1-Belarus.apk > artifacts/apk/signature.txt
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --print-certs "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk" > artifacts/apk/signature.txt
       - uses: actions/upload-artifact@v7
         with:
           name: full-belarus-apk
@@ -116,6 +118,12 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Read release version
+        shell: pwsh
+        run: python tools/release_version.py | Add-Content -Path $env:GITHUB_ENV
       - uses: actions/download-artifact@v8
         with:
           name: belarus-offline-data
@@ -137,7 +145,7 @@ jobs:
           dotnet test CableRoutePlanner.Desktop.slnf -c Release --no-restore
           dotnet run --project tools/CableRoutePlanner.Verify -c Release --no-restore -- --inspect artifacts/belarus artifacts/belarus-package-check.json
           dotnet publish src/CableRoutePlanner.Desktop -c Release -r win-x64 --self-contained true -p:GeodataDirectory="$pwd/artifacts/belarus" -o artifacts/win-x64
-          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" tools/Packaging/windows.iss
+          & "${env:ProgramFiles(x86)}/Inno Setup 6/ISCC.exe" "/DAppVersion=$env:RELEASE_VERSION" tools/Packaging/windows.iss
           if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed" }
       - name: Verify offline installer and desktop startup
         shell: pwsh
@@ -163,6 +171,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      - name: Read release version
+        run: python3 tools/release_version.py >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v8
         with:
           name: full-belarus-apk
@@ -181,8 +191,8 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: |
-            python3 tools/android_smoke.py --apk artifacts/apk/CableRoutePlanner-0.2.1-Minsk.apk --output artifacts/light-android-smoke --settle-seconds 90 --wait-map-ready
-            python3 tools/android_smoke.py --apk artifacts/apk/CableRoutePlanner-0.2.1-Belarus.apk --output artifacts/full-android-smoke --settle-seconds 180 --wait-map-ready
+            python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Minsk.apk" --output artifacts/light-android-smoke --settle-seconds 90 --wait-map-ready
+            python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk" --output artifacts/full-android-smoke --settle-seconds 180 --wait-map-ready
       - uses: actions/upload-artifact@v7
         if: always()
         with:

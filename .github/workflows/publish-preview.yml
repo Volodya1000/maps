@@ -23,6 +23,8 @@ jobs:
       REQUESTED_RUN: ${{ inputs.source_run_id }}
     steps:
       - uses: actions/checkout@v7
+      - name: Read release version
+        run: python3 tools/release_version.py >> "$GITHUB_ENV"
       - name: Validate source build and installation checks
         id: source
         run: |
@@ -93,4 +95,4 @@ jobs:
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: |
           cd artifacts/release
-          gh release create v0.2.1-preview --target "$SOURCE_SHA" --prerelease --title '0.2.1 — офлайн-карта Беларуси' --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" *.apk *.exe *.json *.txt
+          gh release create "v${RELEASE_VERSION}-preview" --target "$SOURCE_SHA" --prerelease --title "${RELEASE_VERSION} — офлайн-карта Беларуси" --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" *.apk *.exe *.json *.txt
