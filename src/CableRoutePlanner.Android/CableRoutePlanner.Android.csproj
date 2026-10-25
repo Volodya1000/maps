@@ -5,7 +5,7 @@
     <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
     <ApplicationId>by.cablerouteplanner.app</ApplicationId>
     <ApplicationVersion>5</ApplicationVersion>
-    <ApplicationDisplayVersion>0.2.2</ApplicationDisplayVersion>
+    <ApplicationDisplayVersion>$(ReleaseVersion)</ApplicationDisplayVersion>
     <AndroidPackageFormats>apk</AndroidPackageFormats>
     <AndroidNeedsInternetPermission>false</AndroidNeedsInternetPermission>
     <RunAOTCompilation>false</RunAOTCompilation>
