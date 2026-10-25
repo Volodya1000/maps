@@ -110,13 +110,7 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
             SELECT f.id,f.kind,f.wkb,f.name,f.approval_id FROM features f
             JOIN feature_index i ON i.id=f.id
             WHERE i.minx <= $east AND i.maxx >= $west AND i.miny <= $north AND i.maxy >= $south
-            ORDER BY CASE f.kind
-                WHEN 'Settlement' THEN 0
-                WHEN 'Road' THEN 1
-                WHEN 'River' THEN 2
-                WHEN 'Lake' THEN 3
-                WHEN 'Forest' THEN 4
-                ELSE 5 END, f.id
+            ORDER BY f.id
             LIMIT $display_limit
             """ : """
             SELECT f.id,f.kind,f.wkb,f.name,f.approval_id FROM features f
