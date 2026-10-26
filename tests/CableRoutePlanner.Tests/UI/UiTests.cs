@@ -238,14 +238,15 @@ public sealed class UiTests
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         window.MouseDown(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
         window.MouseUp(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
-        await WaitForRevisionAsync(session, 1);
+        await WaitForRevisionAsync(session, 1, () => vm.Points.Count == 1);
         Assert.Single(vm.Points);
         var before = vm.Points[0].Coordinate;
         var revision = session.Revision;
         window.MouseDown(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
         window.MouseMove(new Avalonia.Point(390, 380));
         window.MouseUp(new Avalonia.Point(390, 380), Avalonia.Input.MouseButton.Left);
-        await WaitForRevisionAsync(session, revision + 1);
+        await WaitForRevisionAsync(session, revision + 1,
+            () => vm.Points.Count == 1 && before.DistanceTo(vm.Points[0].Coordinate) > 1);
         Assert.Single(vm.Points);
         Assert.True(before.DistanceTo(vm.Points[0].Coordinate) > 1,
             $"Point was not moved. Status: {vm.Status}; before: {before}; after: {vm.Points[0].Coordinate}");
@@ -254,10 +255,12 @@ public sealed class UiTests
 
     private static async Task WaitForRevisionAsync(
         CableRoutePlanner.Application.IPlanningSession session,
-        long expectedRevision)
+        long expectedRevision,
+        Func<bool>? presentationReady = null)
     {
         var timeout = Stopwatch.StartNew();
-        while (session.Revision < expectedRevision && timeout.Elapsed < TimeSpan.FromSeconds(2))
+        while ((session.Revision < expectedRevision || presentationReady?.Invoke() == false)
+            && timeout.Elapsed < TimeSpan.FromSeconds(2))
         {
             await Task.Delay(5);
             Avalonia.Threading.Dispatcher.UIThread.RunJobs();
