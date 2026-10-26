@@ -12,6 +12,8 @@ public interface IMapAdapter : IDisposable
 
     event Action<Guid, GeoCoordinate>? PointMoved;
 
+    event Action<double>? NorthIndicatorRotationChanged;
+
     void InitializeViewport();
 
     void SetFeatures(IReadOnlyList<MapFeature> features);
@@ -25,4 +27,6 @@ public interface IMapAdapter : IDisposable
     void ZoomIn();
 
     void ZoomOut();
+
+    void ResetNorth();
 }

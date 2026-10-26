@@ -20,11 +20,16 @@ internal sealed class MapsuiPointerInteraction
     private readonly Action<Guid, GeoCoordinate> _pointMoved;
     private readonly Action<IReadOnlyList<WaypointRow>> _previewChanged;
     private readonly Action _cameraUsed;
+    private readonly Action<double> _rotate;
     private readonly HashSet<long> _pointers = [];
     private Avalonia.Point _pressed;
     private Guid? _dragged;
     private bool _multiTouch;
     private bool _addMode;
+    private long? _rotatingPointer;
+    private Avalonia.Point _rotationCenter;
+    private double _rotationStartAngle;
+    private double _rotationStart;
 
     public MapsuiPointerInteraction(
         MapControl control,
@@ -34,7 +39,8 @@ internal sealed class MapsuiPointerInteraction
         Action<GeoCoordinate> pointAdded,
         Action<Guid, GeoCoordinate> pointMoved,
         Action<IReadOnlyList<WaypointRow>> previewChanged,
-        Action cameraUsed)
+        Action cameraUsed,
+        Action<double> rotate)
     {
         _control = control;
         _waypoints = waypoints;
@@ -44,12 +50,29 @@ internal sealed class MapsuiPointerInteraction
         _pointMoved = pointMoved;
         _previewChanged = previewChanged;
         _cameraUsed = cameraUsed;
+        _rotate = rotate;
     }
 
     public void SetAddMode(bool enabled) => _addMode = enabled;
 
     public void Pressed(object? sender, PointerPressedEventArgs e)
     {
+        if (e.Pointer.Type == PointerType.Mouse
+            && e.GetCurrentPoint(_control).Properties.IsRightButtonPressed)
+        {
+            var viewport = _control.Map.Navigator.Viewport;
+            var position = e.GetPosition(_control);
+            _rotationCenter = new(viewport.Width / 2, viewport.Height / 2);
+            _rotationStartAngle = PointerAngle(position);
+            _rotationStart = viewport.Rotation;
+            _rotatingPointer = e.Pointer.Id;
+            _pointers.Add(e.Pointer.Id);
+            _cameraUsed();
+            e.Pointer.Capture(_control);
+            e.Handled = true;
+            return;
+        }
+
         if (e.Pointer.Type == PointerType.Mouse && !e.GetCurrentPoint(_control).Properties.IsLeftButtonPressed)
         {
             return;
@@ -78,6 +101,14 @@ internal sealed class MapsuiPointerInteraction
 
     public void Moved(object? sender, PointerEventArgs e)
     {
+        if (_rotatingPointer == e.Pointer.Id)
+        {
+            var delta = PointerAngle(e.GetPosition(_control)) - _rotationStartAngle;
+            _rotate(_rotationStart + delta * 180 / Math.PI);
+            e.Handled = true;
+            return;
+        }
+
         if (_dragged is not { } dragged || _multiTouch)
         {
             return;
@@ -96,6 +127,15 @@ internal sealed class MapsuiPointerInteraction
         }
 
         var position = e.GetPosition(_control);
+        if (_rotatingPointer == e.Pointer.Id)
+        {
+            _rotatingPointer = null;
+            e.Pointer.Capture(null);
+            e.Handled = true;
+            _multiTouch = false;
+            return;
+        }
+
         if (_dragged is { } dragged)
         {
             _dragged = null;
@@ -118,10 +158,14 @@ internal sealed class MapsuiPointerInteraction
     public void CaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
         _dragged = null;
+        _rotatingPointer = null;
         _control.Map.Navigator.PanLock = false;
         _pointers.Remove(e.Pointer.Id);
         _previewChanged(_waypoints());
     }
+
+    private double PointerAngle(Avalonia.Point point) =>
+        Math.Atan2(point.Y - _rotationCenter.Y, point.X - _rotationCenter.X);
 
     private bool IsMarkerHit(WaypointRow point, Avalonia.Point position)
     {

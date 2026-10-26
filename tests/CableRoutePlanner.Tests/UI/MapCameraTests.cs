@@ -62,4 +62,69 @@ public sealed class MapCameraTests
         Assert.InRange(viewport.CenterY + viewport.Height * resolution / 2, bottom, top + 0.001);
         window.Close();
     }
+
+    [AvaloniaTheory]
+    [InlineData(0)]
+    [InlineData(30)]
+    [InlineData(45)]
+    [InlineData(90)]
+    [InlineData(180)]
+    [InlineData(270)]
+    public void RotatedViewportRemainsInsideOfflineExtent(double angle)
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        var window = new Window { Content = control, Width = 900, Height = 600 };
+        window.Show();
+        var extent = new MRect(-500, -400, 500, 400);
+        var limiter = new OfflineViewportLimiter(extent);
+        var requested = control.Map.Navigator.Viewport with
+        {
+            CenterX = 100000,
+            CenterY = -100000,
+            Resolution = 0.0001,
+            Rotation = angle
+        };
+
+        var limited = limiter.Limit(requested, null, null);
+        var radians = angle * Math.PI / 180;
+        var halfWidth = (requested.Width * Math.Abs(Math.Cos(radians))
+            + requested.Height * Math.Abs(Math.Sin(radians))) * limited.Resolution / 2;
+        var halfHeight = (requested.Width * Math.Abs(Math.Sin(radians))
+            + requested.Height * Math.Abs(Math.Cos(radians))) * limited.Resolution / 2;
+
+        Assert.InRange(limited.CenterX - halfWidth, extent.MinX - 1e-6, extent.MaxX);
+        Assert.InRange(limited.CenterX + halfWidth, extent.MinX, extent.MaxX + 1e-6);
+        Assert.InRange(limited.CenterY - halfHeight, extent.MinY - 1e-6, extent.MaxY);
+        Assert.InRange(limited.CenterY + halfHeight, extent.MinY, extent.MaxY + 1e-6);
+        Assert.Equal(angle, limited.Rotation);
+        Assert.Equal(requested.Resolution, limited.Resolution);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task CompassResetReturnsNorthAndPreservesCameraCenterAndScale()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        var window = new Window { Content = control, Width = 900, Height = 600 };
+        window.Show();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        adapter.InitializeViewport();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        adapter.ZoomIn();
+        adapter.ZoomIn();
+        adapter.ZoomIn();
+        control.Map.Navigator.RotateTo(45, 0);
+        var before = control.Map.Navigator.Viewport;
+
+        adapter.ResetNorth();
+        await Task.Delay(450);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var after = control.Map.Navigator.Viewport;
+
+        Assert.Equal(0, after.Rotation, 6);
+        Assert.Equal(before.CenterX, after.CenterX, 6);
+        Assert.Equal(before.CenterY, after.CenterY, 6);
+        Assert.Equal(before.Resolution, after.Resolution, 6);
+        window.Close();
+    }
 }

@@ -59,6 +59,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     public event Action<Guid, GeoCoordinate>? PointMoved;
 
+    public event Action<double>? NorthIndicatorRotationChanged;
+
     public MapsuiMapAdapter(MapControl control, GeoBounds bounds)
     {
         _control = control;
@@ -77,7 +79,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         var topRight = Project(new GeoCoordinate(bounds.North, bounds.East));
         _extent = new MRect(bottomLeft.X, bottomLeft.Y, topRight.X, topRight.Y);
         control.Map.Navigator.Limiter = new OfflineViewportLimiter(_extent);
-        control.Map.Navigator.RotationLock = true;
+        control.Map.Navigator.RotationLock = false;
         _pointerInteraction = new MapsuiPointerInteraction(
             control,
             () => _waypoints,
@@ -86,7 +88,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             coordinate => PointAdded?.Invoke(coordinate),
             (id, coordinate) => PointMoved?.Invoke(id, coordinate),
             RenderPoints,
-            () => _cameraWasUsed = true);
+            () => _cameraWasUsed = true,
+            rotation => control.Map.Navigator.RotateTo(rotation, 0));
         control.Map.Navigator.CenterOnAndZoomTo(new MPoint(x, y), 7);
         control.AddHandler(
             Avalonia.Input.InputElement.PointerPressedEvent,
@@ -264,6 +267,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _control.Map.Navigator.ZoomOut();
     }
 
+    public void ResetNorth() => _control.Map.Navigator.RotateTo(0, 350);
+
     private Avalonia.Point ToScreen(GeoCoordinate coordinate)
     {
         var world = Project(coordinate);
@@ -285,6 +290,15 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         {
             return;
         }
+
+        var screenCenter = viewport.WorldToScreen(viewport.CenterX, viewport.CenterY);
+        var screenNorth = viewport.WorldToScreen(
+            viewport.CenterX,
+            viewport.CenterY + Math.Max(viewport.Resolution * 10, 0.01));
+        var northAngle = Math.Atan2(
+            screenNorth.Y - screenCenter.Y,
+            screenNorth.X - screenCenter.X) * 180 / Math.PI + 90;
+        NorthIndicatorRotationChanged?.Invoke(northAngle);
 
         var corners = new[]
         {

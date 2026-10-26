@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.ReactiveUI;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.UI.MapAdapters;
@@ -43,6 +44,10 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         BindMapState(viewModel, adapter, lifetime);
         BindViewport(viewModel, adapter, lifetime);
         BindButtons();
+        void NorthAngleChanged(double angle) => NorthArrow.RenderTransform = new RotateTransform(angle);
+        adapter.NorthIndicatorRotationChanged += NorthAngleChanged;
+        Disposable.Create(() => adapter.NorthIndicatorRotationChanged -= NorthAngleChanged)
+            .DisposeWith(lifetime);
 
         adapter.InitializeViewport();
         adapter.SetPoints(viewModel.Points.ToArray());
@@ -153,6 +158,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
     {
         ZoomInButton.Click += ZoomInClicked;
         ZoomOutButton.Click += ZoomOutClicked;
+        NorthButton.Click += NorthClicked;
         SheetHandleButton.PointerPressed += SheetPointerPressed;
         SheetHandleButton.PointerMoved += SheetPointerMoved;
         SheetHandleButton.PointerReleased += SheetPointerReleased;
@@ -163,6 +169,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
     {
         ZoomInButton.Click -= ZoomInClicked;
         ZoomOutButton.Click -= ZoomOutClicked;
+        NorthButton.Click -= NorthClicked;
         SheetHandleButton.PointerPressed -= SheetPointerPressed;
         SheetHandleButton.PointerMoved -= SheetPointerMoved;
         SheetHandleButton.PointerReleased -= SheetPointerReleased;
@@ -177,6 +184,9 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
     private void ZoomOutClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
         _activeAdapter?.ZoomOut();
+
+    private void NorthClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
+        _activeAdapter?.ResetNorth();
 
     private void SheetPointerPressed(object? sender, PointerPressedEventArgs args)
     {
