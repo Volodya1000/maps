@@ -2,6 +2,7 @@
   <PropertyGroup />
   <ItemGroup>
     <ProjectReference Include="../CableRoutePlanner.Application/CableRoutePlanner.Application.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="NetTopologySuite" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>

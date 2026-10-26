@@ -55,10 +55,11 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         var fromStart = Connect(start);
         var toEnd = Connect(destination);
         var direct = start.Distance(destination) <= mesh.CellSizeMetres * 2 ? evaluate(start, destination) : null;
-        if (fromStart.Count == 0 || toEnd.Count == 0)
+        if ((fromStart.Count == 0 || toEnd.Count == 0) && direct is null)
         {
             throw new PlanningException(
-                "Точка находится в препятствии или не соединяется с допустимой областью сетки.");
+                $"Точка не соединяется с узлами сетки {mesh.CellSizeMetres:F0} м. "
+                + "Это может быть препятствие либо ограничение разрешения сетки; физическая непроходимость не доказана.");
         }
 
         IEnumerable<(int Id, double Cost)> Neighbours(int id)
@@ -140,14 +141,16 @@ public sealed class AStarGridPathfinder : IGridPathfinder
 
                 distances[next] = cost;
                 parents[next] = current.Id;
-                // 0.49 is below the smallest profile multiplier, with margin for projection error.
-                queue.Enqueue((next, cost), cost + Node(next).Distance(destination) * 0.49);
+                // Terrain penalties are nonnegative; the profile's clearing multiplier is its
+                // lowest possible per-metre cost, so this remains an admissible lower bound.
+                queue.Enqueue((next, cost), cost + Node(next).Distance(destination) * profile.MinimumCostPerMetre);
             }
         }
 
         throw new PlanningException(
             "В доступной области нет допустимого маршрута. "
             + "Река требует разрешённого или потенциального перехода. "
+            + $"Сетка {mesh.CellSizeMetres:F0} м может не представить узкий проход; алгоритм не гарантирует полноту. "
             + "Можно увеличить область данных или изменить точки.");
     }
 }

@@ -1,13 +1,26 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Diagnostics;
 using CableRoutePlanner.Application;
-using CableRoutePlanner.Bootstrap;
 using CableRoutePlanner.Domain;
+using CableRoutePlanner.Infrastructure;
+using CableRoutePlanner.Persistence;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+static ServiceProvider CreateServices(string dataDirectory, string settingsPath)
+{
+    var services = new ServiceCollection();
+    services.AddLogging(logging => logging.AddConsole());
+    services.AddInfrastructure();
+    services.AddPersistence(dataDirectory, settingsPath);
+    services.AddSingleton<IPlanningSession, PlanningSession>();
+    return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+}
 
 if (args.Length == 3 && args[0] == "--inspect")
 {
-    using var provider = AppBootstrap.CreateServices(args[1], Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+    using var provider = CreateServices(args[1], Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
     await CableRoutePlanner.Verify.PackageInspection.RunAsync(
         provider.GetRequiredService<IGeodataRepository>(), args[2]);
     return 0;
@@ -34,13 +47,13 @@ try
             double.Parse(parts[0], CultureInfo.InvariantCulture),
             double.Parse(parts[1], CultureInfo.InvariantCulture));
     }).ToArray();
-    using var services = AppBootstrap.CreateServices(
+    using var services = CreateServices(
         args[0],
         Path.Combine(Path.GetTempPath(), "CableRoutePlanner.Verify.settings.json"));
     var session = services.GetRequiredService<IPlanningSession>();
     foreach (var point in points)
     {
-        session.Add(point);
+        await session.AddAsync(point, default);
     }
 
     using var cancel = new CancellationTokenSource();
@@ -49,7 +62,13 @@ try
         e.Cancel = true;
         cancel.Cancel();
     };
+    using var process = Process.GetCurrentProcess();
+    process.Refresh();
+    var initialPeakWorkingSet = process.PeakWorkingSet64;
+    var stopwatch = Stopwatch.StartNew();
     var routes = await session.BuildAsync(new RoutingOptions(), cancel.Token);
+    stopwatch.Stop();
+    process.Refresh();
     var features = routes.Select(
         r => new { type = "Feature", id = r.Id, properties = new { name = r.Name, metrics = r.Metrics }, geometry = new { type = "LineString", coordinates = r.Geometry.Select(p => new[] { p.Longitude, p.Latitude }) } });
     File.WriteAllText(
@@ -68,6 +87,12 @@ try
                 CultureInfo.InvariantCulture,
                 $"{route.Name}: {route.Metrics.LengthMetres:F2} m, cost {route.Metrics.WeightedCost:F2}"));
     }
+
+    Console.WriteLine(string.Create(
+        CultureInfo.InvariantCulture,
+        $"Regression metrics: alternatives={routes.Count}, elapsedMs={stopwatch.ElapsedMilliseconds}, "
+        + $"processPeakWorkingSetDeltaMiB={Math.Max(0, process.PeakWorkingSet64 - initialPeakWorkingSet) / 1048576d:F1}, "
+        + $"cableWith10PercentReserveMetres={routes[0].Metrics.CableLengthMetres(0.1):F2}"));
 
     return routes.Count == 0 ? 1 : 0;
 }

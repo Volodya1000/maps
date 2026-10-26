@@ -76,7 +76,7 @@ public sealed class SettingsTests : ReactiveTestScope
         var screen = new NavigationHost();
         var store = new MemorySettings();
         using var settings = new SettingsViewModel(screen, store);
-        using var map = new MapViewModel(screen, new PlanningSession(TestData.Planner()),
+        using var map = new MapViewModel(screen, new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MemoryData(), store, new MemoryClipboard());
         using var shell = new ShellViewModel(screen, map, settings);
         // Opening reads the actual store, even though this VM is reused.

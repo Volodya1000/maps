@@ -4,8 +4,12 @@ using Android.Content.PM;
 using Avalonia;
 using Avalonia.Android;
 using Avalonia.ReactiveUI;
-using CableRoutePlanner.Composition;
+using CableRoutePlanner.Application;
+using CableRoutePlanner.Infrastructure;
+using CableRoutePlanner.Persistence;
 using CableRoutePlanner.UI;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace CableRoutePlanner.Android;
 
@@ -23,11 +27,16 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
         Directory.CreateDirectory(directory);
         return builder.AfterSetup(b =>
         {
-            AvaloniaAppBootstrap.ConfigureApplication(
-                (PlannerApplication)b.Instance!,
-                directory,
-                Path.Combine(FilesDir.AbsolutePath, "settings.json"),
-                (progress, ct) => PrepareDataAsync(directory, progress, ct));
+            var services = new ServiceCollection();
+            services.AddLogging(logging => logging.AddConsole());
+            services.AddInfrastructure();
+            services.AddPersistence(directory, Path.Combine(FilesDir!.AbsolutePath, "settings.json"));
+            services.AddSingleton<IPlanningSession, PlanningSession>();
+            services.AddPresentation((progress, ct) => PrepareDataAsync(directory, progress, ct));
+            var provider = services.BuildServiceProvider(
+                new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+            PresentationServiceCollectionExtensions.ConfigureApplication(
+                (PlannerApplication)b.Instance!, provider, directory);
         }).UseReactiveUI();
     }
 

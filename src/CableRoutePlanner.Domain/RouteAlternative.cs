@@ -4,4 +4,5 @@ public sealed record RouteAlternative(
     Guid Id,
     string Name,
     IReadOnlyList<GeoCoordinate> Geometry,
-    RouteMetrics Metrics);
+    RouteMetrics Metrics,
+    IReadOnlyList<GeoCoordinate>? TransitionPoints = null);

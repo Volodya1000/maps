@@ -7,47 +7,77 @@ namespace CableRoutePlanner.Tests;
 public sealed class PlanningSessionTests
 {
     [Fact]
-    public void PointMutationsValidateIdsAndIndexes()
-    {
-        var session = new PlanningSession(new Planner());
-        var first = session.Add(new(53, 27));
-        var second = session.Add(new(53.1, 27.1));
+    public void SessionRequiresPlacementValidator() =>
+        Assert.Throws<ArgumentNullException>(() => new PlanningSession(new Planner(), null!));
 
-        session.Move(first.Id, new(53.2, 27.2));
+    [Fact]
+    public async Task PointMutationsValidateIdsAndIndexes()
+    {
+        var session = new PlanningSession(new Planner(), TestData.AllowAllValidator);
+        var first = await session.AddAsync(new(53, 27), default);
+        var second = await session.AddAsync(new(53.1, 27.1), default);
+
+        await session.MoveAsync(first.Id, new(53.2, 27.2), default);
         session.Remove(Guid.NewGuid());
         session.Reorder(1, 0);
         session.Remove(second.Id);
         session.Clear();
 
         Assert.Empty(session.Points);
-        Assert.Throws<PlanningException>(() => session.Move(Guid.NewGuid(), new(53, 27)));
+        await Assert.ThrowsAsync<PlanningException>(() => session.MoveAsync(Guid.NewGuid(), new(53, 27), default));
         Assert.Throws<PlanningException>(() => session.Reorder(-1, 0));
     }
 
     [Fact]
     public async Task BuildRejectsInvalidStateAndHonoursCancellation()
     {
-        var session = new PlanningSession(new Planner());
+        var session = new PlanningSession(new Planner(), TestData.AllowAllValidator);
         await Assert.ThrowsAsync<PlanningException>(() => session.BuildAsync(TestData.Options, default));
         await Assert.ThrowsAsync<ArgumentNullException>(() => session.BuildAsync(null!, default));
 
-        session.Add(new(53, 27));
-        session.Add(new(53.1, 27.1));
+        await session.AddAsync(new(53, 27), default);
+        await session.AddAsync(new(53.1, 27.1), default);
         using var canceled = new CancellationTokenSource();
         canceled.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => session.BuildAsync(TestData.Options, canceled.Token));
     }
 
     [Fact]
-    public void PointLimitIsEnforced()
+    public async Task PointLimitIsEnforced()
     {
-        var session = new PlanningSession(new Planner());
+        var session = new PlanningSession(new Planner(), TestData.AllowAllValidator);
         for (var index = 0; index < 100; index++)
         {
-            session.Add(new(53, 27));
+            await session.AddAsync(new(53, 27), default);
         }
 
-        Assert.Throws<PlanningException>(() => session.Add(new(53, 27)));
+        await Assert.ThrowsAsync<PlanningException>(() => session.AddAsync(new(53, 27), default));
+    }
+
+    [Fact]
+    public async Task CancelledPlacementCannotMutatePublicSessionContract()
+    {
+        var validator = new BlockingPlacementValidator();
+        var session = new PlanningSession(new Planner(), validator);
+        var first = await session.AddAsync(new(53, 27), default);
+        var revision = session.Revision;
+        using var cancellation = new CancellationTokenSource();
+        var move = ((IPlanningSession)session).MoveAsync(first.Id, new(53.1, 27.1), cancellation.Token);
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => move);
+        Assert.Equal(revision, session.Revision);
+        Assert.Equal(first, Assert.Single(session.Points));
+    }
+
+    private sealed class BlockingPlacementValidator : IPointPlacementValidator
+    {
+        private int _requests;
+
+        public Task ValidateAsync(GeoCoordinate coordinate, CancellationToken cancellationToken) =>
+            Interlocked.Increment(ref _requests) == 1
+                ? Task.CompletedTask
+                : Task.Delay(Timeout.Infinite, cancellationToken);
     }
 
     private sealed class Planner : IRoutePlanner

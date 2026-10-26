@@ -13,8 +13,6 @@
             <Module>CableRoutePlanner.ViewModels</Module>
             <Module>CableRoutePlanner.Infrastructure</Module>
             <Module>CableRoutePlanner.Persistence</Module>
-            <Module>CableRoutePlanner.Bootstrap</Module>
-            <Module>CableRoutePlanner.Composition</Module>
             <Module>CableRoutePlanner.UI</Module>
           </Include>
           <Exclude>

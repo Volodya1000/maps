@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.ReactiveUI;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.UI.MapAdapters;
@@ -43,10 +44,15 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         BindMapState(viewModel, adapter, lifetime);
         BindViewport(viewModel, adapter, lifetime);
         BindButtons();
+        void NorthAngleChanged(double angle) => NorthArrow.RenderTransform = new RotateTransform(angle);
+        adapter.NorthIndicatorRotationChanged += NorthAngleChanged;
+        Disposable.Create(() => adapter.NorthIndicatorRotationChanged -= NorthAngleChanged)
+            .DisposeWith(lifetime);
 
         adapter.InitializeViewport();
         adapter.SetPoints(viewModel.Points.ToArray());
         adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
+        adapter.SetRouteVertices(viewModel.RouteVertices.ToArray());
         Disposable.Create(UnbindButtons)
             .DisposeWith(lifetime);
     }
@@ -56,17 +62,49 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         IMapAdapter adapter,
         CompositeDisposable lifetime)
     {
+        var active = true;
         void PointAdded(GeoCoordinate point) =>
-            viewModel.AddPoint.Execute(point).Subscribe().Dispose();
+            viewModel.AddPoint.Execute(point)
+                .Subscribe(_ => { }, viewModel.ReportUnexpectedError)
+                .DisposeWith(lifetime);
 
-        void PointMoved(Guid id, GeoCoordinate point) => viewModel.MovePoint(id, point);
+        async void PointMoved(Guid id, GeoCoordinate point)
+        {
+            try
+            {
+                await viewModel.MovePointAsync(id, point);
+            }
+            catch (Exception error)
+            {
+                viewModel.ReportUnexpectedError(error);
+            }
+            finally
+            {
+                if (active)
+                {
+                    adapter.SetPoints(viewModel.Points.ToArray());
+                }
+            }
+        }
+
+        void WaypointSelected(Guid id) => viewModel.SelectPoint.Execute(id)
+            .Subscribe(_ => { }, viewModel.ReportUnexpectedError)
+            .DisposeWith(lifetime);
+
+        void RouteVertexSelected(int number) => viewModel.SelectedRouteVertex =
+            viewModel.RouteVertices.FirstOrDefault(vertex => vertex.Number == number);
 
         adapter.PointAdded += PointAdded;
         adapter.PointMoved += PointMoved;
+        adapter.WaypointSelected += WaypointSelected;
+        adapter.RouteVertexSelected += RouteVertexSelected;
         Disposable.Create(() =>
         {
+            active = false;
             adapter.PointAdded -= PointAdded;
             adapter.PointMoved -= PointMoved;
+            adapter.WaypointSelected -= WaypointSelected;
+            adapter.RouteVertexSelected -= RouteVertexSelected;
         }).DisposeWith(lifetime);
     }
 
@@ -81,12 +119,17 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         void RoutesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
             adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
 
+        void VerticesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
+            adapter.SetRouteVertices(viewModel.RouteVertices.ToArray());
+
         viewModel.Points.CollectionChanged += PointsChanged;
         viewModel.Alternatives.CollectionChanged += RoutesChanged;
+        viewModel.RouteVertices.CollectionChanged += VerticesChanged;
         Disposable.Create(() =>
         {
             viewModel.Points.CollectionChanged -= PointsChanged;
             viewModel.Alternatives.CollectionChanged -= RoutesChanged;
+            viewModel.RouteVertices.CollectionChanged -= VerticesChanged;
         }).DisposeWith(lifetime);
     }
 
@@ -99,6 +142,10 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             .Subscribe(_ => adapter.SetRoutes(
                 viewModel.Alternatives.ToArray(),
                 viewModel.SelectedRoute?.Id))
+            .DisposeWith(lifetime);
+
+        viewModel.WhenAnyValue(x => x.SelectedRouteVertex)
+            .Subscribe(_ => adapter.SetRouteVertices(viewModel.RouteVertices.ToArray()))
             .DisposeWith(lifetime);
 
         viewModel.WhenAnyValue(x => x.AddMode)
@@ -135,11 +182,27 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
         adapter.ViewportChanged += ViewportChanged;
         var cancellation = new CancellationTokenSource();
+        var token = cancellation.Token;
         changes
             .Throttle(TimeSpan.FromMilliseconds(200), RxApp.MainThreadScheduler)
-            .Subscribe(viewport =>
-                _ = viewModel.LoadMapAreaAsync(viewport.Bounds, cancellation.Token, viewport.Resolution))
+            .Subscribe(viewport => _ = LoadViewportAsync(viewport.Bounds, viewport.Resolution))
             .DisposeWith(lifetime);
+
+        async Task LoadViewportAsync(GeoBounds bounds, double resolution)
+        {
+            try
+            {
+                await viewModel.LoadMapAreaAsync(bounds, token, resolution);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                System.Diagnostics.Debug.WriteLine("Устаревшая загрузка карты отменена.");
+            }
+            catch (Exception error)
+            {
+                viewModel.ReportUnexpectedError(error);
+            }
+        }
 
         Disposable.Create(() =>
         {
@@ -153,6 +216,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
     {
         ZoomInButton.Click += ZoomInClicked;
         ZoomOutButton.Click += ZoomOutClicked;
+        NorthButton.Click += NorthClicked;
         SheetHandleButton.PointerPressed += SheetPointerPressed;
         SheetHandleButton.PointerMoved += SheetPointerMoved;
         SheetHandleButton.PointerReleased += SheetPointerReleased;
@@ -163,6 +227,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
     {
         ZoomInButton.Click -= ZoomInClicked;
         ZoomOutButton.Click -= ZoomOutClicked;
+        NorthButton.Click -= NorthClicked;
         SheetHandleButton.PointerPressed -= SheetPointerPressed;
         SheetHandleButton.PointerMoved -= SheetPointerMoved;
         SheetHandleButton.PointerReleased -= SheetPointerReleased;
@@ -177,6 +242,9 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
     private void ZoomOutClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
         _activeAdapter?.ZoomOut();
+
+    private void NorthClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
+        _activeAdapter?.ResetNorth();
 
     private void SheetPointerPressed(object? sender, PointerPressedEventArgs args)
     {

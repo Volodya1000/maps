@@ -19,6 +19,13 @@ public interface IGridGenerator
 
 public sealed class GridGenerator : IGridGenerator
 {
+    // Tiny meshes cannot represent a long route after coarsening; reject instead of
+    // producing a misleading sparse path. Keep the historical threshold for compatibility.
+    private const int MinimumNodesForAdaptiveCoarsening = 1000;
+
+    // Upper bound for the overview graph; wider cells risk losing narrow passages.
+    private const double MaximumAdaptiveCellSizeMetres = 2_000;
+
     public GridMesh Generate(GeoBounds bounds, RoutingOptions options, LocalProjection projection)
     {
         var minimum = projection.Forward(new GeoCoordinate(bounds.South, bounds.West));
@@ -27,7 +34,7 @@ public sealed class GridGenerator : IGridGenerator
         var height = maximum.Y - minimum.Y;
         var requestedNodes = Math.Max(1d, width / options.CellSizeMetres)
             * Math.Max(1d, height / options.CellSizeMetres);
-        if (options.MaxNodes < 1000 && requestedNodes > options.MaxNodes)
+        if (options.MaxNodes < MinimumNodesForAdaptiveCoarsening && requestedNodes > options.MaxNodes)
         {
             throw new PlanningException(
                 "Слишком большая область расчёта. Увеличьте размер ячейки или лимит узлов.");
@@ -38,7 +45,7 @@ public sealed class GridGenerator : IGridGenerator
         // graph only controls where A* spends its time.
         var cellSize = Math.Max(options.CellSizeMetres,
             Math.Sqrt(width * height / options.MaxNodes));
-        cellSize = Math.Min(cellSize, 2_000);
+        cellSize = Math.Min(cellSize, MaximumAdaptiveCellSizeMetres);
         var columns = (int)Math.Floor(width / cellSize) + 1;
         var rows = (int)Math.Floor(height / cellSize) + 1;
         if ((long)columns * rows > options.MaxNodes)

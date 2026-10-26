@@ -1,6 +1,7 @@
 using System.Reactive.Threading.Tasks;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
+using CableRoutePlanner.Infrastructure;
 using CableRoutePlanner.ViewModels;
 using Xunit;
 
@@ -9,6 +10,20 @@ namespace CableRoutePlanner.Tests;
 public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 {
     private static readonly IReadOnlyList<int> ThreePointNumbers = Array.AsReadOnly(new[] { 1, 2, 3 });
+
+    [Fact]
+    public void UnexpectedErrorHasUserMessageAndDoesNotUpdateDisposedScreen()
+    {
+        var vm = CreateVm(new MemoryData());
+        vm.ReportUnexpectedError(new InvalidOperationException("internal details"));
+        Assert.Contains("внутренней ошибки", vm.Status);
+        Assert.DoesNotContain("internal details", vm.Status);
+        var status = vm.Status;
+        vm.Dispose();
+        vm.ReportUnexpectedError(new InvalidOperationException("later"));
+        Assert.Equal(status, vm.Status);
+    }
+
     [Fact]
     public async Task LatestMapRequestWinsWhenOlderRequestFinishesLast()
     {
@@ -167,6 +182,27 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     }
 
     [Fact]
+    public async Task InvalidPointMoveKeepsSessionPointAndSelection()
+    {
+        var building = TestData.Polygon(1, TerrainKind.Building, 90, 140, 110, 160);
+        var data = new MemoryData(building);
+        var session = new PlanningSession(
+            TestData.Planner(building), new GeodataPointPlacementValidator(data));
+        using var vm = new MapViewModel(
+            new NavigationHost(), session, data, new MemorySettings(), new MemoryClipboard());
+        await vm.AddPoint.Execute(TestData.P(50, 150)).ToTask();
+        var original = Assert.Single(vm.Points);
+        var revision = session.Revision;
+
+        await vm.MovePointAsync(original.Id, TestData.P(100, 150));
+
+        Assert.Equal(original, Assert.Single(vm.Points));
+        Assert.Equal(original.Id, vm.SelectedPoint?.Id);
+        Assert.Equal(revision, session.Revision);
+        Assert.Contains("здания", vm.Status);
+    }
+
+    [Fact]
     public void RouteMetricsFormattingUsesTheSettingsForTheActualCalculation()
     {
         var route = new RouteAlternative(
@@ -182,7 +218,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 
     private static MapViewModel CreateVm(IGeodataRepository data) => new(
         new NavigationHost(),
-        new PlanningSession(TestData.Planner()),
+        new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
         data,
         new MemorySettings(),
         new MemoryClipboard());

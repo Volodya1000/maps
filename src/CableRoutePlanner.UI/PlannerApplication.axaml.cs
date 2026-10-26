@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform;
 
 namespace CableRoutePlanner.UI;
 
@@ -29,6 +30,9 @@ public sealed partial class PlannerApplication : Avalonia.Application
             desktop.MainWindow = new Window
             {
                 Title = "Планировщик кабельных маршрутов",
+#pragma warning disable S1075 // Avalonia resources require an avares URI, not a filesystem path.
+                Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://CableRoutePlanner.UI/Assets/app_icon.png"))),
+#pragma warning restore S1075
                 Width = 1280,
                 Height = 850,
                 MinWidth = 420,

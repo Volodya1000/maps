@@ -15,7 +15,15 @@ public sealed record WaypointRow(Guid Id, int Number, GeoCoordinate Coordinate, 
     public string Display => Coordinate.ToString();
 }
 
-public sealed record RouteVertexRow(int Number, GeoCoordinate Coordinate)
+public enum RouteVertexKind
+{
+    Endpoint,
+    UserWaypoint,
+    Transition,
+    Turn
+}
+
+public sealed record RouteVertexRow(int Number, GeoCoordinate Coordinate, RouteVertexKind Kind = RouteVertexKind.Turn, bool IsSelected = false)
 {
     public string Display => Coordinate.ToString();
 }
@@ -40,6 +48,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private CancellationTokenSource? _calculation;
 
+    private CancellationTokenSource? _pointMove;
+
     private Task _calculationFinished = Task.CompletedTask;
 
     private readonly ObservableAsPropertyHelper<bool> _canBuild;
@@ -49,6 +59,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private RoutingOptions _resultOptions = new();
 
     private WaypointRow? _selectedPoint;
+    private RouteVertexRow? _selectedRouteVertex;
 
     public string UrlPathSegment => "Карта";
 
@@ -74,6 +85,11 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         get => _selectedPoint;
         set
         {
+            if (value is not null)
+            {
+                SelectedRouteVertex = null;
+            }
+
             for (var index = 0; index < Points.Count; index++)
             {
                 var row = Points[index];
@@ -94,11 +110,38 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public string CopyPointText => SelectedPoint is { } point ? $"Копировать точку {point.Number}" : "Выберите точку";
 
-    [Reactive]
     public RouteVertexRow? SelectedRouteVertex
     {
-        get; set;
+        get => _selectedRouteVertex;
+        set
+        {
+            for (var index = 0; index < RouteVertices.Count; index++)
+            {
+                var row = RouteVertices[index];
+                var selected = row.Number == value?.Number;
+                if (row.IsSelected != selected)
+                {
+                    RouteVertices[index] = row with
+                    {
+                        IsSelected = selected
+                    };
+                }
+            }
+
+            if (value is not null)
+            {
+                SelectedPoint = null;
+            }
+
+            this.RaiseAndSetIfChanged(ref _selectedRouteVertex,
+                RouteVertices.FirstOrDefault(row => row.Number == value?.Number));
+            this.RaisePropertyChanged(nameof(CopyRouteVertexText));
+        }
     }
+
+    public string CopyRouteVertexText => SelectedRouteVertex is { } vertex
+        ? $"Копировать вершину {vertex.Number}"
+        : "Выберите вершину";
 
     public ReactiveCommand<Unit, Unit> CopyRouteVertex
     {
@@ -264,8 +307,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         nameof(Cancel))]
     private void InitializeCommands()
     {
-        AddPoint = ReactiveCommand.Create<GeoCoordinate>(AddAt).DisposeWith(_lifetime);
-        AddManual = ReactiveCommand.Create(AddManually).DisposeWith(_lifetime);
+        AddPoint = ReactiveCommand.CreateFromTask<GeoCoordinate>(AddAtAsync).DisposeWith(_lifetime);
+        AddManual = ReactiveCommand.CreateFromTask(AddManuallyAsync).DisposeWith(_lifetime);
         RemovePoint = ReactiveCommand.Create<Guid>(id => Change(() => _session.Remove(id))).DisposeWith(_lifetime);
         SelectPoint = ReactiveCommand.Create<Guid>(SelectPointById).DisposeWith(_lifetime);
         DeletePoint = ReactiveCommand.Create(DeleteSelectedPoint).DisposeWith(_lifetime);
@@ -294,13 +337,21 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             .DisposeWith(_lifetime);
     }
 
-    private void AddAt(GeoCoordinate coordinate) => Change(() =>
+    private async Task AddAtAsync(GeoCoordinate coordinate)
     {
-        EnsureInBounds(coordinate, "Для этой точки нет данных в офлайн-пакете.");
-        _session.Add(coordinate);
-    });
+        try
+        {
+            EnsureInBounds(coordinate, "Для этой точки нет данных в офлайн-пакете.");
+            await _session.AddAsync(coordinate, CancellationToken.None);
+            RefreshAfterChange();
+        }
+        catch (PlanningException ex)
+        {
+            Status = ex.Message;
+        }
+    }
 
-    private void AddManually()
+    private async Task AddManuallyAsync()
     {
         if (!double.TryParse(
                 LatitudeText,
@@ -319,7 +370,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
         try
         {
-            AddAt(new GeoCoordinate(latitude, longitude));
+            await AddAtAsync(new GeoCoordinate(latitude, longitude));
         }
         catch (ArgumentOutOfRangeException)
         {
@@ -414,12 +465,9 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
         if (route is not null)
         {
-            foreach (var coordinate in route.Geometry)
+            foreach (var vertex in RouteVertexProjection.Project(route, Points.Select(point => point.Coordinate).ToArray()))
             {
-                if (RouteVertices.Count == 0 || RouteVertices[^1].Coordinate != coordinate)
-                {
-                    RouteVertices.Add(new RouteVertexRow(RouteVertices.Count + 1, coordinate));
-                }
+                RouteVertices.Add(vertex);
             }
         }
 
@@ -470,12 +518,54 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         }
     }
 
-    public void MovePoint(Guid id, GeoCoordinate coordinate) => Change(() =>
+    public async Task MovePointAsync(Guid id, GeoCoordinate coordinate)
     {
-        EnsureInBounds(coordinate, "Точка за пределами офлайн-пакета.");
+        if (_disposed)
+        {
+            return;
+        }
 
-        _session.Move(id, coordinate);
-    });
+        var current = new CancellationTokenSource();
+        var previous = _pointMove;
+        _pointMove = current;
+        previous?.Cancel();
+        try
+        {
+            var selected = SelectedPoint?.Id;
+            EnsureInBounds(coordinate, "Для этой точки нет данных в офлайн-пакете.");
+            await _session.MoveAsync(id, coordinate, current.Token);
+            current.Token.ThrowIfCancellationRequested();
+            RefreshAfterChange(selected ?? id);
+        }
+        catch (OperationCanceledException) when (current.IsCancellationRequested)
+        {
+            System.Diagnostics.Debug.WriteLine("Устаревшее перемещение точки отменено.");
+        }
+        catch (PlanningException ex)
+        {
+            Status = ex.Message;
+        }
+        finally
+        {
+            if (ReferenceEquals(_pointMove, current))
+            {
+                _pointMove = null;
+            }
+
+            current.Dispose();
+        }
+    }
+
+    public void ReportUnexpectedError(Exception error)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        Console.Error.WriteLine(error);
+        Status = "Операция не выполнена из-за внутренней ошибки. Повторите действие.";
+    }
 
     private void Reorder(int direction)
     {
@@ -498,18 +588,24 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         {
             var selected = SelectedPoint?.Id;
             operation();
-            _calculation?.Cancel();
-            Alternatives.Clear();
-            RouteChoices.Clear();
-            SelectedRoute = null;
-            SelectedPoint = _pointRows.Refresh(_session.Points, selected);
-            PointCount = Points.Count;
-            Status = "Точки изменены. Для актуальных результатов постройте маршруты.";
+            RefreshAfterChange(selected);
         }
         catch (PlanningException ex)
         {
             Status = ex.Message;
         }
+    }
+
+    private void RefreshAfterChange(Guid? selected = null)
+    {
+        _calculation?.Cancel();
+        _pointMove?.Cancel();
+        Alternatives.Clear();
+        RouteChoices.Clear();
+        SelectedRoute = null;
+        SelectedPoint = _pointRows.Refresh(_session.Points, selected);
+        PointCount = Points.Count;
+        Status = "Точки изменены. Для актуальных результатов постройте маршруты.";
     }
 
     private async Task BuildAsync()
@@ -523,11 +619,17 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         Status = "Анализ местности и поиск маршрутов…";
         using var cts = new CancellationTokenSource();
         _calculation = cts;
+        var inputRevision = _session.Revision;
         try
         {
             _resultOptions = _settings.Load();
             var routes = await _session.BuildAsync(_resultOptions, cts.Token);
             cts.Token.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(_calculation, cts) || inputRevision != _session.Revision)
+            {
+                return;
+            }
+
             foreach (var route in routes)
             {
                 Alternatives.Add(route);
@@ -538,20 +640,26 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         }
         catch (OperationCanceledException)
         {
-            Status = "Расчёт отменён. Актуальных маршрутов нет.";
+            if (ReferenceEquals(_calculation, cts) && inputRevision == _session.Revision)
+            {
+                Status = "Расчёт отменён. Актуальных маршрутов нет.";
+            }
         }
         catch (Exception ex)
         {
-            Status = $"Не удалось построить маршрут: {ex.Message}";
+            if (ReferenceEquals(_calculation, cts) && inputRevision == _session.Revision)
+            {
+                Status = $"Не удалось построить маршрут: {ex.Message}";
+            }
         }
         finally
         {
             if (ReferenceEquals(_calculation, cts))
             {
                 _calculation = null;
+                IsBusy = false;
             }
 
-            IsBusy = false;
             finished.TrySetResult();
         }
     }

@@ -8,7 +8,7 @@ C# / Avalonia / ReactiveUI. **Рабочая реализация 2D и расч
 - A* по сетке местности с произвольными конечными точками и последовательными промежуточными точками. До трёх различных трасс по профилям стоимости; одинаковые трассы не дублируются.
 - Запрет болот, озёр, зданий; реки пересекаются по явному разрешению или по OSM-коридору кандидата моста. Кандидаты помечаются отдельно и требуют проверки на местности и согласования. Штрафы за лес, поле и пересечение дорог.
 - Длина и характеристики вычисляются по полученной геометрии и реальным слоям. При изменении точек маршруты удаляются; запоздавшие результаты не публикуются.
-- Отдельные Domain, Application, Infrastructure, ViewModels, UI, Bootstrap, Desktop и Android, отдельный Persistence. DI, ReactiveCommand, RoutingState, типизированный ViewLocator, compiled bindings, ReactiveUI.Fody.
+- Отдельные Domain, Application, Infrastructure, Persistence, ViewModels, UI, Desktop, Android и Verify. DI, ReactiveCommand, RoutingState, типизированный ViewLocator, compiled bindings, ReactiveUI.Fody.
 - xUnit, Avalonia.Headless, GitHub Actions, самостоятельный инструмент проверки реального маршрута.
 
 ## Скачать автономные установщики

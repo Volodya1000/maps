@@ -42,6 +42,23 @@
                         Content="−" />
                 </StackPanel>
             </Border>
+            <Button
+                x:Name="NorthButton"
+                Width="46"
+                Height="46"
+                Margin="14"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Background="#EEFFFFFF"
+                ToolTip.Tip="Вернуть карту к северу"
+                AutomationProperties.Name="Вернуть карту к северу">
+                <TextBlock
+                    x:Name="NorthArrow"
+                    FontSize="25"
+                    FontWeight="Bold"
+                    Foreground="#244B3A"
+                    Text="↑" />
+            </Button>
             <Border
                 Grid.Row="1"
                 Padding="10,5"
@@ -91,7 +108,7 @@
                     <TextBlock
                         FontSize="12"
                         Foreground="#64726A"
-                        Text="Нажмите на карту. Маркеры можно перетаскивать. При выключенном добавлении карта свободно перемещается."
+                        Text="Нажмите на карту. Маркеры можно перетаскивать. При выключенном добавлении карта свободно перемещается. На Desktop вращайте её правой кнопкой мыши; на Android используйте два пальца."
                         TextWrapping="Wrap" />
                     <controls:WaypointList
                         x:Name="WaypointList"
@@ -189,14 +206,16 @@
                         <ListBox MaxHeight="260" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:RouteVertexRow">
-                                    <Grid ColumnDefinitions="32,*">
-                                        <TextBlock Text="{Binding Number}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding Display}" />
-                                    </Grid>
+                                    <Border Padding="5" Classes.selected="{Binding IsSelected}">
+                                        <Grid ColumnDefinitions="32,*">
+                                            <TextBlock Text="{Binding Number}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Display}" />
+                                        </Grid>
+                                    </Border>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                        <Button Command="{Binding CopyRouteVertex}" Content="Копировать выбранную вершину" />
+                        <Button Command="{Binding CopyRouteVertex}" Content="{Binding CopyRouteVertexText}" />
                     </StackPanel>
                     <Border
                         Padding="8"

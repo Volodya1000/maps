@@ -2,8 +2,15 @@ using CableRoutePlanner.Domain;
 
 namespace CableRoutePlanner.Application;
 
-public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
+public sealed class PlanningSession(
+    IRoutePlanner planner,
+    IPointPlacementValidator pointPlacementValidator) : IPlanningSession
 {
+    public const int MaximumWaypointCount = 100;
+
+    private readonly IPointPlacementValidator _pointPlacementValidator =
+        pointPlacementValidator ?? throw new ArgumentNullException(nameof(pointPlacementValidator));
+
     private readonly List<Waypoint> _points = [];
 
     public IReadOnlyList<Waypoint> Points => _points.AsReadOnly();
@@ -13,11 +20,13 @@ public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
         get; private set;
     }
 
-    public Waypoint Add(GeoCoordinate coordinate)
+    public async Task<Waypoint> AddAsync(GeoCoordinate coordinate, CancellationToken cancellationToken)
     {
-        if (_points.Count >= 100)
+        await _pointPlacementValidator.ValidateAsync(coordinate, cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (_points.Count >= MaximumWaypointCount)
         {
-            throw new PlanningException("Допускается не более 100 точек.");
+            throw new PlanningException($"Допускается не более {MaximumWaypointCount} точек.");
         }
 
         var point = new Waypoint(Guid.NewGuid(), coordinate);
@@ -26,7 +35,7 @@ public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
         return point;
     }
 
-    public void Move(Guid id, GeoCoordinate coordinate)
+    public async Task MoveAsync(Guid id, GeoCoordinate coordinate, CancellationToken cancellationToken)
     {
         var index = _points.FindIndex(p => p.Id == id);
         if (index < 0)
@@ -34,6 +43,8 @@ public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
             throw new PlanningException("Точка не найдена.");
         }
 
+        await _pointPlacementValidator.ValidateAsync(coordinate, cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         _points[index] = _points[index] with
         {
             Coordinate = coordinate

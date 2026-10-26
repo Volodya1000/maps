@@ -5,11 +5,59 @@ using CableRoutePlanner.Infrastructure.Routing;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace CableRoutePlanner.Tests;
 
-public sealed class RoutingTests
+public sealed class RoutingTests(ITestOutputHelper output)
 {
+    [Fact]
+    public void ThirtyKilometreGridSearchRecordsCostAndResources()
+    {
+        var origin = new GeoCoordinate(54, 27);
+        var projection = new LocalProjection(origin);
+        var start = projection.Forward(origin);
+        var finish = new Coordinate(30_000, 500);
+        var end = projection.Inverse(finish);
+        var options = new RoutingOptions(200, 30_000);
+        var mesh = new GridGenerator().Generate(GeoBounds.Around([origin, end]), options, projection);
+        var edges = 0;
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        process.Refresh();
+        var initialMemory = process.WorkingSet64;
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+
+        var path = new AStarGridPathfinder().FindPath(start, finish, mesh, CostProfile.Defaults[0],
+            (from, to) => from.Distance(to),
+            (from, to) =>
+            {
+                edges++;
+                return mesh.Nodes[from].Distance(mesh.Nodes[to]);
+            }, default);
+        timer.Stop();
+        process.Refresh();
+        var length = path.Zip(path.Skip(1), (from, to) => from.Distance(to)).Sum();
+        output.WriteLine($"long-grid: length={length:F1}m cost={length:F1} nodes={mesh.Nodes.Length} "
+            + $"edgesChecked={edges} elapsedMs={timer.ElapsedMilliseconds} "
+            + $"workingSetDeltaMiB={Math.Max(0, process.WorkingSet64 - initialMemory) / 1048576d:F1}");
+        Assert.True(length >= start.Distance(finish));
+        Assert.True(double.IsFinite(length));
+        Assert.True(edges > 0);
+    }
+
+    [Fact]
+    public void DirectEdgeRemainsUsableWhenGridEndpointsAreDisconnected()
+    {
+        var start = new Coordinate(1, 0);
+        var finish = new Coordinate(2, 0);
+        var mesh = new GridMesh([new Coordinate(100, 100)], 1, 1, new Coordinate(100, 100), 10);
+        var path = new AStarGridPathfinder().FindPath(
+            start, finish, mesh, CostProfile.Defaults[0],
+            (from, to) => from == start && to == finish ? 1d : null,
+            (_, _) => null, default);
+        Assert.Equal([start, finish], path);
+    }
+
     [Fact]
     public void GridGeneratorBuildsExpectedMeshAndHonoursNodeLimit()
     {
@@ -153,6 +201,11 @@ public sealed class RoutingTests
         Assert.Equal(1, shortest.Metrics.PotentialBridgeCrossings);
         Assert.Equal(0, shortest.Metrics.ApprovedWaterCrossings);
         Assert.InRange(shortest.Metrics.LengthMetres, 209.5, 211);
+        Assert.NotEmpty(shortest.TransitionPoints!);
+        var routeLine = new LineString(shortest.Geometry
+            .Select(coordinate => new Coordinate(coordinate.Longitude, coordinate.Latitude)).ToArray());
+        Assert.All(shortest.TransitionPoints!, transition =>
+            Assert.True(routeLine.Distance(new Point(transition.Longitude, transition.Latitude)) < 0.000001));
     }
 
     [Fact]
@@ -204,6 +257,36 @@ public sealed class RoutingTests
         Assert.True(routes.Count >= 2);
         Assert.True(routes.Min(r => r.Metrics.ForestMetres) < routes.Max(r => r.Metrics.ForestMetres));
         Assert.All(routes, r => Assert.Null(r.Metrics.AscentMetres));
+    }
+
+    [Fact]
+    public async Task PassableDirectRoadCrossingCanLoseToALongerCheaperDetour()
+    {
+        var road = TestData.Line(1, TerrainKind.Road, (150, 100), (150, 200));
+        var routes = await TestData.Planner(road).PlanAsync(
+            [TestData.P(50, 150), TestData.P(250, 150)],
+            TestData.Options,
+            default);
+
+        Assert.Contains(routes, route => route.Name == "Короче" && route.Metrics.RoadCrossings == 1);
+        Assert.Contains(routes, route => route.Name == "Баланс" && route.Metrics.RoadCrossings == 0);
+    }
+
+    [Fact]
+    public async Task CostReducingClearingDetourIsSearchedEvenWhenDirectSegmentIsClear()
+    {
+        var clearing = TestData.Polygon(1, TerrainKind.Clearing, 100, 150, 300, 300);
+        var routes = await TestData.Planner(clearing).PlanAsync(
+            [TestData.P(50, 350), TestData.P(350, 350)],
+            TestData.Options,
+            default);
+
+        var balanced = Assert.Single(routes, route => route.Name == "Баланс");
+        Assert.True(balanced.Metrics.LengthMetres > TestData.P(50, 350).DistanceTo(TestData.P(350, 350)));
+        Assert.True(balanced.Metrics.WeightedCost < TestData.P(50, 350).DistanceTo(TestData.P(350, 350)));
+        var clearingGeometry = new WKBReader().Read(clearing.Wkb);
+        Assert.Contains(balanced.Geometry, point => clearingGeometry.Covers(
+            new Point(point.Longitude, point.Latitude)));
     }
 
     [Fact]

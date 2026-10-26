@@ -12,13 +12,20 @@ public sealed class OfflineViewportLimiter(MRect extent) : IViewportLimiter
             return viewport;
         }
 
-        // At the overview, keep unavoidable aspect-ratio margins centred. At
-        // closer zoom levels keep every visible edge within the offline area.
-        var maximum = Math.Max(extent.Width / viewport.Width, extent.Height / viewport.Height);
+        // Rotation enlarges the axis-aligned world footprint of the screen. Fit the
+        // complete package at overview, then clamp its visible footprint on closer zooms.
+        var radians = viewport.Rotation * Math.PI / 180;
+        var cosine = Math.Abs(Math.Cos(radians));
+        var sine = Math.Abs(Math.Sin(radians));
+        var projectedWidth = extent.Width * cosine + extent.Height * sine;
+        var projectedHeight = extent.Width * sine + extent.Height * cosine;
+        var maximum = Math.Max(projectedWidth / viewport.Width, projectedHeight / viewport.Height);
         var minimum = Math.Min(zoomBounds?.Min ?? 0, maximum);
         var resolution = Math.Clamp(viewport.Resolution, minimum, maximum);
-        var horizontal = Math.Min(extent.Width / 2, viewport.Width * resolution / 2);
-        var vertical = Math.Min(extent.Height / 2, viewport.Height * resolution / 2);
+        var visibleHalfWidth = (viewport.Width * cosine + viewport.Height * sine) * resolution / 2;
+        var visibleHalfHeight = (viewport.Width * sine + viewport.Height * cosine) * resolution / 2;
+        var horizontal = Math.Min(extent.Width / 2, visibleHalfWidth);
+        var vertical = Math.Min(extent.Height / 2, visibleHalfHeight);
         return viewport with
         {
             Resolution = resolution,

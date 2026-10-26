@@ -1,6 +1,7 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
+using System.Diagnostics;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.ViewModels;
@@ -34,7 +35,7 @@ public sealed class PresentationTests : ReactiveTestScope
         await vm.AddPoint.Execute(TestData.P(260, 150));
         await vm.BuildRoutes.Execute();
         Assert.NotEmpty(vm.Alternatives);
-        vm.MovePoint(vm.Points[0].Id, TestData.P(55, 155));
+        await vm.MovePointAsync(vm.Points[0].Id, TestData.P(55, 155));
         Assert.Empty(vm.Alternatives);
         Assert.Null(vm.SelectedRoute);
         vm.SelectedPoint = vm.Points[0];
@@ -47,7 +48,7 @@ public sealed class PresentationTests : ReactiveTestScope
     public async Task ClipboardUsesSelectedPointAndOrderIsControlledByList()
     {
         var clipboard = new MemoryClipboard();
-        var session = new PlanningSession(TestData.Planner());
+        var session = new PlanningSession(TestData.Planner(), TestData.AllowAllValidator);
         using var vm = new MapViewModel(
             new NavigationHost(),
             session,
@@ -68,13 +69,41 @@ public sealed class PresentationTests : ReactiveTestScope
     public async Task ChangedInputCannotPublishLateCalculation()
     {
         var pending = new TaskCompletionSource<IReadOnlyList<RouteAlternative>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var session = new PlanningSession(new DeferredPlanner(pending.Task));
-        session.Add(TestData.P(50, 150));
-        session.Add(TestData.P(260, 150));
+        var session = new PlanningSession(new DeferredPlanner(pending.Task), TestData.AllowAllValidator);
+        await session.AddAsync(TestData.P(50, 150), default);
+        await session.AddAsync(TestData.P(260, 150), default);
         var build = session.BuildAsync(TestData.Options, default);
-        session.Move(session.Points[0].Id, TestData.P(55, 155));
+        await session.MoveAsync(session.Points[0].Id, TestData.P(55, 155), default);
         pending.SetResult([]);
         await Assert.ThrowsAsync<PlanningException>(() => build);
+    }
+
+    [Fact]
+    public async Task CancelledOldBuildCannotPublishAfterANewerBuildStarts()
+    {
+        var planner = new SequentialDeferredPlanner();
+        using var vm = CreateVm(planner, new MemoryData());
+        await vm.AddPoint.Execute(TestData.P(50, 150));
+        await vm.AddPoint.Execute(TestData.P(260, 150));
+
+        var oldBuild = vm.BuildRoutes.Execute().ToTask();
+        var oldRequest = await planner.WaitForRequestAsync(0);
+        await vm.MovePointAsync(vm.Points[0].Id, TestData.P(55, 155));
+        oldRequest.SetResult([Route("устаревший", TestData.P(50, 150), TestData.P(260, 150))]);
+        await oldBuild;
+
+        Assert.Empty(vm.Alternatives);
+        Assert.False(vm.IsBusy);
+
+        var currentBuild = vm.BuildRoutes.Execute().ToTask();
+        var currentRequest = await planner.WaitForRequestAsync(1);
+        var currentGeometry = new[] { vm.Points[0].Coordinate, vm.Points[1].Coordinate };
+        currentRequest.SetResult([Route("актуальный", currentGeometry[0], currentGeometry[1])]);
+        await currentBuild;
+
+        Assert.Equal("актуальный", Assert.Single(vm.Alternatives).Name);
+        Assert.False(vm.IsBusy);
+        Assert.Contains("Найдено", vm.Status);
     }
 
     [Fact]
@@ -198,7 +227,7 @@ public sealed class PresentationTests : ReactiveTestScope
         IGeodataRepository data,
         IScreen? screen = null) => new(
         screen ?? new NavigationHost(),
-        new PlanningSession(planner),
+        new PlanningSession(planner, TestData.AllowAllValidator),
         data,
         new MemorySettings(),
         new MemoryClipboard());
@@ -209,5 +238,47 @@ public sealed class PresentationTests : ReactiveTestScope
             IReadOnlyList<GeoCoordinate> p,
             RoutingOptions o,
             CancellationToken ct) => result;
+    }
+
+    private static RouteAlternative Route(string name, GeoCoordinate start, GeoCoordinate end) => new(
+        Guid.NewGuid(), name, [start, end], new RouteMetrics(100, 0, 0, 0, 0, 0, 100, null));
+
+    private sealed class SequentialDeferredPlanner : IRoutePlanner
+    {
+        private readonly List<TaskCompletionSource<IReadOnlyList<RouteAlternative>>> _requests = [];
+
+        public Task<IReadOnlyList<RouteAlternative>> PlanAsync(
+            IReadOnlyList<GeoCoordinate> points,
+            RoutingOptions options,
+            CancellationToken cancellationToken)
+        {
+            var request = new TaskCompletionSource<IReadOnlyList<RouteAlternative>>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (_requests)
+            {
+                _requests.Add(request);
+            }
+
+            return request.Task;
+        }
+
+        public async Task<TaskCompletionSource<IReadOnlyList<RouteAlternative>>> WaitForRequestAsync(int index)
+        {
+            var timeout = Stopwatch.StartNew();
+            while (timeout.Elapsed < TimeSpan.FromSeconds(2))
+            {
+                lock (_requests)
+                {
+                    if (_requests.Count > index)
+                    {
+                        return _requests[index];
+                    }
+                }
+
+                await Task.Delay(5);
+            }
+
+            throw new TimeoutException($"Planner request {index} did not start.");
+        }
     }
 }

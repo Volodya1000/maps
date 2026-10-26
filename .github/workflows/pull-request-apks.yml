@@ -1,20 +1,48 @@
 name: Pull request Android APKs
 on:
-  pull_request:
+  workflow_call:
+    inputs:
+      pr_number:
+        description: Pull request number from the caller's pull_request payload
+        required: true
+        type: string
+      tested_sha:
+        description: Exact commit SHA checked by the caller workflow
+        required: true
+        type: string
 permissions:
-  contents: write
-concurrency:
-  group: pull-request-apks-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  contents: read
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
   DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
 jobs:
+  verify-source:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Confirm tested commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER_PAYLOAD: ${{ github.event.pull_request.number }}
+          TESTED_SHA: ${{ inputs.tested_sha }}
+        run: |
+          test "$EVENT_NAME" = pull_request
+          test -n "$PR_NUMBER_PAYLOAD" && test "$PR_NUMBER" = "$PR_NUMBER_PAYLOAD"
+          [[ "$TESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+
   geodata:
+    needs: verify-source
+    outputs:
+      android_version_code: ${{ steps.version.outputs.android_version_code }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tested_sha }}
+      - name: Read application version
+        id: version
+        run: echo "android_version_code=$(python3 tools/release_version.py | sed -n 's/^ANDROID_VERSION_CODE=//p')" >> "$GITHUB_OUTPUT"
       - uses: astral-sh/setup-uv@v10.3.2
         with:
           version: '0.12.23'
@@ -46,11 +74,18 @@ jobs:
           compression-level: 0
 
   android:
-    needs: geodata
+    needs: [verify-source, geodata]
     runs-on: ubuntu-22.04
     timeout-minutes: 30
+    env:
+      ANDROID_VERSION_CODE: ${{ needs.geodata.outputs.android_version_code }}
+      # The signing key is temporary. A per-attempt package ID prevents Android
+      # from treating different PR previews as incompatible updates.
+      PREVIEW_PACKAGE_ID: by.cablerouteplanner.preview.pr${{ inputs.pr_number }}.r${{ github.run_id }}a${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tested_sha }}
       - uses: actions/download-artifact@v8
         with:
           name: pull-request-belarus-data
@@ -67,54 +102,92 @@ jobs:
           packages: platform-tools
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - run: dotnet workload install android --skip-manifest-update
-      - uses: actions/cache@v6
-        with:
-          path: ${{ runner.temp }}/preview.keystore
-          key: cableroute-android-preview-signing-v1
       - name: Prepare preview signing key
-        env:
-          KEYSTORE: ${{ secrets.ANDROID_TEST_KEYSTORE }}
         run: |
-          if [ -n "$KEYSTORE" ]; then
-            printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/preview.keystore"
-          elif [ ! -f "$RUNNER_TEMP/preview.keystore" ]; then
-            keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/preview.keystore" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=CableRoutePlanner Preview,O=Test,C=BY'
-          fi
+          keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/preview.keystore" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=CableRoutePlanner Preview,O=Test,C=BY'
       - name: Build lightweight Minsk APK
-        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:GeodataDirectory="$GITHUB_WORKSPACE/samples/real-geodata-fixtures/minsk" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
+        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:AndroidVersionCode="$ANDROID_VERSION_CODE" -p:ApplicationId="$PREVIEW_PACKAGE_ID" -p:GeodataDirectory="$GITHUB_WORKSPACE/samples/real-geodata-fixtures/minsk" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
       - run: |
           mkdir -p artifacts/apk
-          cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk artifacts/apk/CableRoutePlanner-PR-${{ github.event.pull_request.number }}-Minsk.apk
+          publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish
+          mapfile -t signed_apks < <(find "$publish_dir" -maxdepth 1 -type f -name '*-Signed.apk')
+          test "${#signed_apks[@]}" -eq 1
+          cp "${signed_apks[0]}" "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Minsk.apk"
       - run: dotnet clean src/CableRoutePlanner.Android -c Release
       - name: Split country map into bounded Android assets
         run: python3 tools/split_android_map.py artifacts/belarus artifacts/android-belarus
       - name: Build full Belarus APK
-        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:GeodataDirectory="$GITHUB_WORKSPACE/artifacts/android-belarus" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
+        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:AndroidVersionCode="$ANDROID_VERSION_CODE" -p:ApplicationId="$PREVIEW_PACKAGE_ID" -p:GeodataDirectory="$GITHUB_WORKSPACE/artifacts/android-belarus" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
       - run: |
-          cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk artifacts/apk/CableRoutePlanner-PR-${{ github.event.pull_request.number }}-Belarus.apk
+          publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish
+          mapfile -t signed_apks < <(find "$publish_dir" -maxdepth 1 -type f -name '*-Signed.apk')
+          test "${#signed_apks[@]}" -eq 1
+          cp "${signed_apks[0]}" "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk"
           sha256sum artifacts/apk/*.apk > artifacts/apk/SHA256SUMS.txt
+      - name: Verify distributable APK packages and signing certificates
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk_tools="$ANDROID_HOME/build-tools/34.0.0"
+          signer=""
+          for variant in Minsk Belarus; do
+            apk="artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-${variant}.apk"
+            test -s "$apk"
+            unzip -tq "$apk" >/dev/null
+            badging=$("$apk_tools/aapt" dump badging "$apk")
+            grep -F "name='$PREVIEW_PACKAGE_ID'" <<< "$badging"
+            grep -F "versionCode='$ANDROID_VERSION_CODE'" <<< "$badging"
+            "$apk_tools/apksigner" verify --verbose "$apk"
+            actual_signer=$("$apk_tools/apksigner" verify --print-certs "$apk" |
+              sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+            test -n "$actual_signer"
+            if [ -n "$signer" ] && [ "$signer" != "$actual_signer" ]; then
+              echo "Minsk and Belarus APKs have incompatible signing certificates." >&2
+              exit 1
+            fi
+            signer="$actual_signer"
+          done
+
+      - name: Enable KVM for Android 15 emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install the exact published Minsk APK on Android 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            set -e
+            adb install -r "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Minsk.apk"
+            adb shell pm path "$PREVIEW_PACKAGE_ID" | grep -F 'package:'
+      - name: Explain preview installation behavior
+        run: |
+          {
+            echo "## Installable Android PR previews"
+            echo
+            echo "APK package ID: \`$PREVIEW_PACKAGE_ID\`"
+            echo
+            echo "Each run/attempt uses a separate test app ID and temporary signing key."
+            echo "Previews can be installed alongside the main application; they do not update older preview runs."
+            echo "The exact downloadable Minsk APK was installed on an Android 15 emulator."
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
-          name: pull-request-apks
-          path: artifacts/apk/
-          compression-level: 0
-      - name: Publish direct APK downloads
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          tag="pr-${PR_NUMBER}-apk"
-          if ! gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
-            gh release create "$tag" --repo "$REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "PR #${PR_NUMBER} APK previews" --notes "Rolling APK previews for pull request #${PR_NUMBER}. Assets are replaced on every successful build."
-          fi
-          gh release upload "$tag" --repo "$REPOSITORY" artifacts/apk/*.apk --clobber
-          {
-            echo "## Direct APK downloads"
-            echo
-            echo "These links download the APK directly, without an Actions ZIP archive."
-            echo
-            echo "- [Minsk APK](https://github.com/${REPOSITORY}/releases/download/${tag}/CableRoutePlanner-PR-${PR_NUMBER}-Minsk.apk)"
-            echo "- [Belarus APK](https://github.com/${REPOSITORY}/releases/download/${tag}/CableRoutePlanner-PR-${PR_NUMBER}-Belarus.apk)"
-          } >> "$GITHUB_STEP_SUMMARY"
+          path: artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Minsk.apk
+          archive: false
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          path: artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk
+          archive: false
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          name: CableRoutePlanner-PR-${{ inputs.pr_number }}-checksums
+          path: artifacts/apk/SHA256SUMS.txt
+          if-no-files-found: error

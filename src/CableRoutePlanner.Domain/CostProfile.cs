@@ -7,6 +7,12 @@ public sealed record CostProfile(
     double RoadCrossingMetres,
     double Clearing)
 {
+    public const double MinimumClearingMultiplier = 0;
+    public const double MaximumClearingMultiplier = 1;
+
+    /// <summary>A lower bound on cost per physical metre, used by admissible search heuristics.</summary>
+    public double MinimumCostPerMetre => Math.Min(1, Clearing);
+
     public static IReadOnlyList<CostProfile> Defaults
     {
         get;
@@ -21,13 +27,27 @@ public sealed record CostProfile(
 
     public void Validate()
     {
-        if (!double.IsFinite(Forest) || Forest < 0
-            || !double.IsFinite(Field) || Field < 0
-            || !double.IsFinite(RoadCrossingMetres) || RoadCrossingMetres < 0
-            || !double.IsFinite(Clearing) || Clearing <= 0 || Clearing > 1)
+        if (string.IsNullOrWhiteSpace(Name))
         {
-            throw new ArgumentException(
-                "Стоимость должна быть конечной и неотрицательной; множитель просеки — (0, 1].");
+            throw new ArgumentException("Название профиля должно быть непустым.", nameof(Name));
+        }
+
+        ValidateNonNegative(Forest, nameof(Forest), "Стоимость прохождения леса");
+        ValidateNonNegative(Field, nameof(Field), "Стоимость прохождения поля");
+        ValidateNonNegative(RoadCrossingMetres, nameof(RoadCrossingMetres), "Штраф за пересечение дороги");
+        if (!double.IsFinite(Clearing) || Clearing is <= MinimumClearingMultiplier or > MaximumClearingMultiplier)
+        {
+            throw new ArgumentOutOfRangeException(nameof(Clearing), Clearing,
+                $"Множитель стоимости просеки должен быть конечным и находиться в диапазоне ({MinimumClearingMultiplier}, {MaximumClearingMultiplier}].");
+        }
+    }
+
+    private static void ValidateNonNegative(double value, string parameterName, string label)
+    {
+        if (!double.IsFinite(value) || value < 0)
+        {
+            throw new ArgumentOutOfRangeException(parameterName, value,
+                $"{label} должна быть конечной и неотрицательной.");
         }
     }
 }

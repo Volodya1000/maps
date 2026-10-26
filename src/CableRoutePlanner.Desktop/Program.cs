@@ -1,6 +1,11 @@
 using Avalonia;
 using Avalonia.ReactiveUI;
-using CableRoutePlanner.Composition;
+using CableRoutePlanner.Application;
+using CableRoutePlanner.Infrastructure;
+using CableRoutePlanner.Persistence;
+using CableRoutePlanner.UI;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace CableRoutePlanner.Desktop;
 
@@ -16,6 +21,19 @@ internal static class Program
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "CableRoutePlanner",
             "settings.json");
-        return AppBuilder.Configure(() => AvaloniaAppBootstrap.CreateApplication(data, settings)).UsePlatformDetect().UseReactiveUI().LogToTrace();
+        return AppBuilder.Configure(() =>
+        {
+            var services = new ServiceCollection();
+            services.AddLogging(logging => logging.AddConsole());
+            services.AddInfrastructure();
+            services.AddPersistence(data, settings);
+            services.AddSingleton<IPlanningSession, PlanningSession>();
+            services.AddPresentation();
+            var provider = services.BuildServiceProvider(
+                new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+            var app = new PlannerApplication();
+            PresentationServiceCollectionExtensions.ConfigureApplication(app, provider, data);
+            return app;
+        }).UsePlatformDetect().UseReactiveUI().LogToTrace();
     }
 }

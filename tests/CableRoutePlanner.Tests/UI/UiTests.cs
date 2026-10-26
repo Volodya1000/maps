@@ -4,9 +4,12 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input.Raw;
 using Avalonia.VisualTree;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using Avalonia.ReactiveUI;
-using CableRoutePlanner.Composition;
+using CableRoutePlanner.Application;
+using CableRoutePlanner.Infrastructure;
+using CableRoutePlanner.Persistence;
 using CableRoutePlanner.UI;
 using CableRoutePlanner.UI.Views;
 using CableRoutePlanner.ViewModels;
@@ -20,6 +23,29 @@ namespace CableRoutePlanner.Tests;
 public static class TestApplication
 {
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<PlannerApplication>().UseHeadless(new AvaloniaHeadlessPlatformOptions()).UseReactiveUI();
+
+    public static ServiceProvider CreateServices(
+        string dataDirectory,
+        string settingsPath,
+        IClipboardService? clipboard = null,
+        Func<IProgress<string>, CancellationToken, Task>? prepareData = null)
+    {
+        var services = new ServiceCollection();
+        services.AddInfrastructure();
+        services.AddPersistence(dataDirectory, settingsPath);
+        services.AddSingleton<IPlanningSession, PlanningSession>();
+        services.AddPresentation(prepareData, clipboard);
+        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+    }
+
+    public static ServiceProvider CreateCoreServices(string dataDirectory, string settingsPath)
+    {
+        var services = new ServiceCollection();
+        services.AddInfrastructure();
+        services.AddPersistence(dataDirectory, settingsPath);
+        services.AddSingleton<IPlanningSession, PlanningSession>();
+        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+    }
 }
 
 public sealed class UiTests
@@ -54,7 +80,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task SystemBackAndWindowCloseWarnAboutUnsavedSettings()
     {
-        using var provider = AvaloniaAppBootstrap.CreateServices(TestData.RealData,
+        using var provider = TestApplication.CreateServices(TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), new MemoryClipboard());
         var shell = provider.GetRequiredService<ShellView>();
         var vm = shell.ViewModel!;
@@ -111,7 +137,7 @@ public sealed class UiTests
     public async Task NavigatingBetweenSettingsAndMapKeepsSettingsValuesVisible()
     {
         var settingsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
-        using var provider = AvaloniaAppBootstrap.CreateServices(TestData.RealData, settingsPath, new MemoryClipboard());
+        using var provider = TestApplication.CreateServices(TestData.RealData, settingsPath, new MemoryClipboard());
         var shell = provider.GetRequiredService<ShellView>();
         var settings = provider.GetRequiredService<SettingsViewModel>();
         var window = new Window { Content = shell, Width = 900, Height = 700 };
@@ -144,7 +170,7 @@ public sealed class UiTests
     public async Task AlternativesAreHiddenUntilRouteIsBuiltAndAfterClear()
     {
         using var vm = new MapViewModel(new NavigationHost(),
-            new CableRoutePlanner.Application.PlanningSession(TestData.Planner()),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MemoryData(), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
@@ -175,7 +201,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public void CompiledXamlAndTypedViewLocatorResolveAllRegisteredScreens()
     {
-        using var provider = AvaloniaAppBootstrap.CreateServices(
+        using var provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());
@@ -193,13 +219,14 @@ public sealed class UiTests
     }
 
     [AvaloniaFact]
-    public void MapMouseInputAddsAndMovesViewModelPoints()
+    public async Task MapMouseInputAddsAndMovesViewModelPoints()
     {
-        using var provider = AvaloniaAppBootstrap.CreateServices(
+        using var provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());
         var vm = provider.GetRequiredService<MapViewModel>();
+        var session = provider.GetRequiredService<CableRoutePlanner.Application.IPlanningSession>();
         var view = (MapView)provider.GetRequiredService<TypedViewLocator>().ResolveView(vm)!;
         var window = new Window
         {
@@ -211,14 +238,36 @@ public sealed class UiTests
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         window.MouseDown(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
         window.MouseUp(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
+        await WaitForRevisionAsync(session, 1, () => vm.Points.Count == 1);
         Assert.Single(vm.Points);
         var before = vm.Points[0].Coordinate;
+        var revision = session.Revision;
         window.MouseDown(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
         window.MouseMove(new Avalonia.Point(390, 380));
         window.MouseUp(new Avalonia.Point(390, 380), Avalonia.Input.MouseButton.Left);
+        await WaitForRevisionAsync(session, revision + 1,
+            () => vm.Points.Count == 1 && before.DistanceTo(vm.Points[0].Coordinate) > 1);
         Assert.Single(vm.Points);
-        Assert.True(before.DistanceTo(vm.Points[0].Coordinate) > 1);
+        Assert.True(before.DistanceTo(vm.Points[0].Coordinate) > 1,
+            $"Point was not moved. Status: {vm.Status}; before: {before}; after: {vm.Points[0].Coordinate}");
         window.Close();
+    }
+
+    private static async Task WaitForRevisionAsync(
+        CableRoutePlanner.Application.IPlanningSession session,
+        long expectedRevision,
+        Func<bool>? presentationReady = null)
+    {
+        var timeout = Stopwatch.StartNew();
+        while ((session.Revision < expectedRevision || presentationReady?.Invoke() == false)
+            && timeout.Elapsed < TimeSpan.FromSeconds(2))
+        {
+            await Task.Delay(5);
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        }
+
+        Assert.True(session.Revision >= expectedRevision,
+            $"PlanningSession did not reach revision {expectedRevision}.");
     }
 
     [AvaloniaFact]
@@ -226,7 +275,7 @@ public sealed class UiTests
     {
         var forest = TestData.Polygon(1, CableRoutePlanner.Domain.TerrainKind.Forest, 100, 60, 220, 240);
         using var vm = new MapViewModel(new NavigationHost(),
-            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(forest)),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(forest), TestData.AllowAllValidator),
             new MemoryData(forest), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(30, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
@@ -260,7 +309,7 @@ public sealed class UiTests
     public async Task StartupOpensShellAfterBackgroundDataPreparation()
     {
         var prepared = false;
-        using var provider = AvaloniaAppBootstrap.CreateServices(TestData.RealData,
+        using var provider = TestApplication.CreateServices(TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), new MemoryClipboard(),
             async (_, ct) => { await Task.Delay(10, ct); prepared = true; });
         var view = provider.GetRequiredService<StartupView>();
@@ -282,7 +331,7 @@ public sealed class UiTests
     {
         var repository = new ViewportRepository();
         using var vm = new MapViewModel(new NavigationHost(),
-            new CableRoutePlanner.Application.PlanningSession(TestData.Planner()),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             repository, new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
@@ -306,7 +355,7 @@ public sealed class UiTests
     public async Task MobileMapPanelCanBeCollapsedAndSwipedOpenAgain()
     {
         using var vm = new MapViewModel(new NavigationHost(),
-            new CableRoutePlanner.Application.PlanningSession(TestData.Planner()),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MemoryData(), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
@@ -399,7 +448,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public void UnknownViewModelCannotFallBackToReflection()
     {
-        using var provider = AvaloniaAppBootstrap.CreateServices(
+        using var provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());

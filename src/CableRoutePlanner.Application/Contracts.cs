@@ -35,9 +35,9 @@ public interface IRoutePlanner
         CancellationToken cancellationToken);
 }
 
-public interface IClipboardService
+public interface IPointPlacementValidator
 {
-    Task SetTextAsync(string text);
+    Task ValidateAsync(GeoCoordinate coordinate, CancellationToken cancellationToken);
 }
 
 public interface ISettingsStore
@@ -76,9 +76,9 @@ public interface IPlanningSession
         get;
     }
 
-    Waypoint Add(GeoCoordinate coordinate);
+    Task<Waypoint> AddAsync(GeoCoordinate coordinate, CancellationToken cancellationToken);
 
-    void Move(Guid id, GeoCoordinate coordinate);
+    Task MoveAsync(Guid id, GeoCoordinate coordinate, CancellationToken cancellationToken);
 
     void Remove(Guid id);
 

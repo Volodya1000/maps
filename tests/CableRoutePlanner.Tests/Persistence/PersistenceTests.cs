@@ -16,7 +16,8 @@ public sealed class PersistenceTests
         Assert.Empty(await repository.QueryMapAsync(repository.Info.Bounds, 1500, default));
         Assert.Equal(TerrainKind.Marsh, Assert.Single(await repository.QueryAsync(repository.Info.Bounds, default)).Kind);
 
-        var planner = new GridRoutePlanner(repository, NullLogger<GridRoutePlanner>.Instance);
+        var planner = new GridRoutePlanner(repository, new GridGenerator(), new AStarGridPathfinder(),
+            NullLogger<GridRoutePlanner>.Instance);
         await Assert.ThrowsAsync<PlanningException>(() => planner.PlanAsync(
             new[] { TestData.P(50, 150), TestData.P(260, 150) }, TestData.Options, default));
     }

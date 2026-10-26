@@ -16,11 +16,16 @@ internal sealed record EdgeEvaluation(
     IReadOnlyList<long> Crossings,
     IReadOnlyList<long> BridgeCandidates)
 {
-    public double Cost(CostProfile p) => Length
-        - Clearing * (1 - p.Clearing)
-        + Forest * p.Forest
-        + Field * p.Field
-        + (Roads.Count + BridgeCandidates.Count) * p.RoadCrossingMetres;
+    public double Cost(CostProfile profile) => RouteCostCalculator.Calculate(
+        new SegmentTerrainFacts(
+            Length,
+            Forest,
+            Field,
+            Clearing,
+            Roads.Count,
+            BridgeCandidates.Count,
+            Crossings.Count),
+        profile);
 }
 
 internal sealed class TerrainEvaluator
@@ -209,6 +214,26 @@ internal sealed class TerrainEvaluator
         return aligned;
     }
 
+    public IReadOnlyList<Coordinate> BridgeTransitionPoints(IReadOnlyList<Coordinate> route)
+    {
+        var points = new Dictionary<(double X, double Y), Coordinate>();
+        for (var index = 1; index < route.Count; index++)
+        {
+            var segment = _factory.CreateLineString([route[index - 1], route[index]]);
+            foreach (var guide in _bridgeGuides.Where(candidate =>
+                candidate.River.Intersects(segment)
+                && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres))
+            {
+                foreach (var coordinate in guide.WaterSection.Coordinates)
+                {
+                    points.TryAdd((coordinate.X, coordinate.Y), coordinate);
+                }
+            }
+        }
+
+        return points.Values.ToArray();
+    }
+
     private static double PathLength(IReadOnlyList<Coordinate> path) => path
         .Zip(path.Skip(1), (a, b) => a.Distance(b))
         .Sum();
@@ -257,9 +282,9 @@ internal sealed class TerrainEvaluator
         var scale = projectedLength > 0 ? length / projectedLength : 1;
         return new(
             length,
-            Math.Min(contribution.Forest, projectedLength) * scale,
-            Math.Min(contribution.Field, projectedLength) * scale,
-            Math.Min(contribution.Clearing, projectedLength) * scale,
+            Math.Min(Math.Min(contribution.Forest, projectedLength) * scale, length),
+            Math.Min(Math.Min(contribution.Field, projectedLength) * scale, length),
+            Math.Min(Math.Min(contribution.Clearing, projectedLength) * scale, length),
             contribution.Roads,
             contribution.Crossings,
             contribution.BridgeCandidates);

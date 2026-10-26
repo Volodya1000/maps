@@ -5,7 +5,9 @@
     <NoWarn>$(NoWarn);AVLN3001</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <AvaloniaResource Include="Assets/app_icon.png" />
     <ProjectReference Include="../CableRoutePlanner.ViewModels/CableRoutePlanner.ViewModels.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.ReactiveUI" />
     <PackageReference Include="Avalonia.Themes.Fluent" />

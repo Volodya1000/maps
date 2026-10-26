@@ -1,6 +1,7 @@
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.Infrastructure.Routing;
+using CableRoutePlanner.ViewModels;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
@@ -24,6 +25,17 @@ internal sealed class MemoryData(params MapFeature[] features) : IGeodataReposit
 
 internal static class TestData
 {
+    public static IPointPlacementValidator AllowAllValidator { get; } = new AllowAllPointPlacementValidator();
+
+    private sealed class AllowAllPointPlacementValidator : IPointPlacementValidator
+    {
+        public Task ValidateAsync(GeoCoordinate coordinate, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        }
+    }
+
     public static GeoCoordinate P(double x, double y) => new(
         54 + y / 111195.08,
         27 + x / (111195.08 * Math.Cos(54 * Math.PI / 180)));
@@ -60,6 +72,8 @@ internal static class TestData
 
     public static IRoutePlanner Planner(params MapFeature[] features) => new GridRoutePlanner(
         new MemoryData(features),
+        new GridGenerator(),
+        new AStarGridPathfinder(),
         NullLogger<GridRoutePlanner>.Instance);
 
     public static readonly RoutingOptions Options = new(20, 100000);

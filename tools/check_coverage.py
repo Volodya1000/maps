@@ -17,8 +17,6 @@ REQUIRED_PROJECTS = (
     "CableRoutePlanner.ViewModels",
     "CableRoutePlanner.Infrastructure",
     "CableRoutePlanner.Persistence",
-    "CableRoutePlanner.Bootstrap",
-    "CableRoutePlanner.Composition",
     "CableRoutePlanner.UI",
 )
 CONDITION_COVERAGE = re.compile(r"\((\d+)\s*/\s*(\d+)\)")

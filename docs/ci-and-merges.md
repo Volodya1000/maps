@@ -15,3 +15,7 @@ Workflow [Build and verify](../.github/workflows/ci.yml) запускается 
 Для обычных независимых изменений указывайте `main` как base PR. Если PR намеренно основан на другом ещё не влитом PR, считайте его зависимым: влейте нижний PR в `main`, затем обновите base/head верхнего PR относительно `main`. Не вливайте цепочку PR в промежуточные source branches, считая, что это автоматически обновит основную ветку.
 
 Это поведение исправляется порядком интеграции, а не повторным запуском всех jobs после каждого merge в любой ветке. Отдельный push-trigger для всех feature-веток дублировал бы работу при каждом обновлении head PR и тратил бы Actions без новой проверки пользовательского результата.
+
+## APK превью для pull request
+
+После обязательных jobs `quality`, `tests`, `data`, `terrain-spike` и `android` workflow `Build and verify` вызывает reusable workflow `Pull request Android APKs` через локальный `workflow_call`. Это позволяет проверить цепочку до merge без зависимости от наличия нового workflow в `main`. В вызов передаются номер PR из payload текущего `pull_request` и точный `github.sha`, проверенный jobs этого запуска; reusable workflow сверяет событие и номер, затем checkout-ит этот SHA. Версия APK вычисляется в job подготовки геоданных и передаётся как output в Android job. Minsk и Belarus загружаются как два отдельных single-file Actions artifacts без ZIP; SHA-256 публикуется отдельно. Права ограничены `contents: read`, секреты в fork PR не используются.
