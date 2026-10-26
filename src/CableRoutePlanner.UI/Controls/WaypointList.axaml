@@ -7,26 +7,6 @@
     xmlns:vm="using:CableRoutePlanner.ViewModels"
     x:DataType="vm:MapViewModel"
     x:TypeArguments="vm:MapViewModel">
-    <rx:ReactiveUserControl.Styles>
-        <Style Selector="Border.coordinate">
-            <Setter Property="Background" Value="#F1F5F2" />
-            <Setter Property="BorderBrush" Value="#DCE5DF" />
-            <Setter Property="BorderThickness" Value="1" />
-        </Style>
-        <Style Selector="Border.coordinate.dragging">
-            <Setter Property="Background" Value="#DCEEE7" />
-            <Setter Property="BoxShadow" Value="0 3 8 0 #50000000" />
-        </Style>
-        <Style Selector="Border.coordinate.drop-target">
-            <Setter Property="BorderBrush" Value="#176B55" />
-            <Setter Property="BorderThickness" Value="2" />
-        </Style>
-        <Style Selector="Border.coordinate.selected">
-            <Setter Property="Background" Value="#DBEAFB" />
-            <Setter Property="BorderBrush" Value="#1A6FD2" />
-            <Setter Property="BorderThickness" Value="2" />
-        </Style>
-    </rx:ReactiveUserControl.Styles>
     <ItemsControl
         x:Name="Rows"
         ItemsSource="{Binding Points}">
@@ -38,16 +18,15 @@
                     ColumnDefinitions="28,*,44">
                     <!--  Slot numbers are outside the dragged coordinate card.  -->
                     <TextBlock
+                        Classes="waypoint-number"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Foreground="#6E7C73"
                         Text="{Binding Number}" />
                     <Border
                         x:Name="CoordinateCard"
                         Grid.Column="1"
                         Classes="coordinate"
                         Classes.selected="{Binding IsSelected}"
-                        CornerRadius="8"
                         Focusable="True"
                         AutomationProperties.Name="{Binding Display}"
                         KeyDown="RowKeyDown"
@@ -57,36 +36,29 @@
                         PointerReleased="DragReleased"
                         PointerCaptureLost="DragCaptureLost">
                         <Grid ColumnDefinitions="*,44">
-                            <TextBlock Margin="4,0" VerticalAlignment="Center"
-                                       FontSize="13" Text="{Binding Display}" />
+                            <TextBlock Classes="coordinate-label" VerticalAlignment="Center"
+                                       Text="{Binding Display}" />
                             <Border
                                 x:Name="DragHandle"
+                                Classes="drag-handle"
                                 Grid.Column="1"
-                                Background="Transparent"
-                                CornerRadius="8"
                                 PointerPressed="DragPressed"
                                 ToolTip.Tip="Перетащите, чтобы изменить порядок">
                                 <TextBlock
+                                    Classes="drag-glyph"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    FontSize="25"
-                                    Foreground="#738779"
                                     Text="≡" />
                             </Border>
 
                         </Grid>
                     </Border>
                     <Button
+                        Classes="remove-waypoint"
                         Grid.Column="2"
-                        MinWidth="44"
-                        MinHeight="48"
-                        Padding="0"
-                        Background="Transparent"
                         Command="{Binding $parent[local:WaypointList].ViewModel.RemovePoint}"
                         CommandParameter="{Binding Id}"
                         Content="×"
-                        FontSize="25"
-                        Foreground="#C83D3D"
                         ToolTip.Tip="Удалить точку" />
                 </Grid>
             </DataTemplate>
