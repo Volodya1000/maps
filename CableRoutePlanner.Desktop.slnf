@@ -9,6 +9,7 @@
       "src\\CableRoutePlanner.ViewModels\\CableRoutePlanner.ViewModels.csproj",
       "src\\CableRoutePlanner.Domain\\CableRoutePlanner.Domain.csproj",
       "src\\CableRoutePlanner.Bootstrap\\CableRoutePlanner.Bootstrap.csproj",
+      "src\\CableRoutePlanner.Composition\\CableRoutePlanner.Composition.csproj",
       "tests\\CableRoutePlanner.Tests\\CableRoutePlanner.Tests.csproj",
       "tools\\CableRoutePlanner.Verify\\CableRoutePlanner.Verify.csproj",
       "src\\CableRoutePlanner.Persistence\\CableRoutePlanner.Persistence.csproj"

@@ -22,11 +22,13 @@ internal sealed class WaypointListProjection
 
     public WaypointRow? Refresh(IReadOnlyList<Waypoint> waypoints, Guid? selectedId)
     {
+        selectedId = waypoints.FirstOrDefault(point => point.Id == selectedId)?.Id
+            ?? (waypoints.Count > 0 ? waypoints[^1].Id : null);
         Points.Clear();
         for (var index = 0; index < waypoints.Count; index++)
         {
             var waypoint = waypoints[index];
-            Points.Add(new WaypointRow(waypoint.Id, index + 1, waypoint.Coordinate));
+            Points.Add(new WaypointRow(waypoint.Id, index + 1, waypoint.Coordinate, waypoint.Id == selectedId));
         }
 
         return Points.FirstOrDefault(point => point.Id == selectedId) ?? Points.LastOrDefault();

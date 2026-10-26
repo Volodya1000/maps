@@ -76,6 +76,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         var bottomLeft = Project(new GeoCoordinate(bounds.South, bounds.West));
         var topRight = Project(new GeoCoordinate(bounds.North, bounds.East));
         _extent = new MRect(bottomLeft.X, bottomLeft.Y, topRight.X, topRight.Y);
+        control.Map.Navigator.Limiter = new OfflineViewportLimiter(_extent);
+        control.Map.Navigator.RotationLock = true;
         _pointerInteraction = new MapsuiPointerInteraction(
             control,
             () => _waypoints,
@@ -190,7 +192,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             feature.Styles.Add(
                 new SymbolStyle
                 {
-                    Fill = new Brush(new Color(21, 109, 85)),
+                    Fill = new Brush(p.IsSelected ? new Color(26, 111, 210) : new Color(21, 109, 85)),
                     Outline = new Pen(Color.White, 2),
                     SymbolScale = 0.8
                 });

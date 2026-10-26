@@ -14,6 +14,27 @@ namespace CableRoutePlanner.Tests;
 public sealed class WaypointGestureTests
 {
     [AvaloniaFact]
+    public async Task TappingCoordinateChangesItsVisibleHighlightAndCopyTarget()
+    {
+        using var fixture = await WaypointListFixture.CreateAsync();
+        var vm = fixture.ViewModel;
+        vm.SelectedPoint = vm.Points[1];
+        HeadlessTouch.Present();
+        var id = vm.Points[0].Id;
+        var unselected = fixture.Card(0).Background;
+        var position = fixture.Card(0).TranslatePoint(new Point(40, 30), fixture.Window)!.Value;
+        fixture.Touch.Send(RawPointerEventType.TouchBegin, position);
+        fixture.Touch.Send(RawPointerEventType.TouchEnd, position);
+        HeadlessTouch.Present();
+
+        Assert.Equal(id, vm.SelectedPoint?.Id);
+        Assert.NotEqual(unselected, fixture.Card(0).Background);
+        Assert.NotEqual(fixture.Card(1).Background, fixture.Card(0).Background);
+        await vm.CopyCoordinates.Execute();
+        Assert.Contains(vm.Points[0].Display, vm.Status);
+    }
+
+    [AvaloniaFact]
     public async Task HandleDragChangesOrderWithoutChangingPointIdentity()
     {
         using var fixture = await WaypointListFixture.CreateAsync();

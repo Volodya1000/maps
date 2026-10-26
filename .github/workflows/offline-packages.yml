@@ -69,6 +69,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+          skip-lts-prepass: true
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -131,6 +132,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+          skip-lts-prepass: true
       - name: Unpack map and verify application
         shell: pwsh
         run: |

@@ -44,6 +44,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+          skip-lts-prepass: true
       - uses: astral-sh/setup-uv@v10.3.2
         with:
           version: '0.12.23'
@@ -79,6 +80,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+          skip-lts-prepass: true
       - uses: actions/setup-java@v6
         with:
           distribution: temurin

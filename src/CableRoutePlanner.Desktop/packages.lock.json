@@ -465,9 +465,16 @@
         "dependencies": {
           "CableRoutePlanner.Infrastructure": "[1.0.0, )",
           "CableRoutePlanner.Persistence": "[1.0.0, )",
-          "CableRoutePlanner.UI": "[1.0.0, )",
           "Microsoft.Extensions.DependencyInjection": "[8.0.1, )",
           "Microsoft.Extensions.Logging.Console": "[8.0.1, )"
+        }
+      },
+      "cablerouteplanner.composition": {
+        "type": "Project",
+        "dependencies": {
+          "CableRoutePlanner.Bootstrap": "[1.0.0, )",
+          "CableRoutePlanner.UI": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection": "[8.0.1, )"
         }
       },
       "cablerouteplanner.domain": {

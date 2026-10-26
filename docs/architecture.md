@@ -2,10 +2,11 @@
 
 ```mermaid
 graph TD
- Desktop --> Bootstrap
- Android --> Bootstrap
+ Desktop --> Composition
+ Android --> Composition
  Verify --> Bootstrap
- Bootstrap --> UI
+ Composition --> Bootstrap
+ Composition --> UI
  Bootstrap --> Infrastructure
  Bootstrap --> Persistence
  Persistence --> Application
@@ -15,7 +16,7 @@ graph TD
  Application --> Domain
 ```
 
-Domain использует только BCL: проверенные координаты, геодезические длины, профили стоимости и результаты. Application определяет контракты геоданных, маршрутизации, настроек, clipboard и сессии; управляет точками и ревизией ввода. Persistence реализует контракты геоданных и настроек, SQLite/R-tree и JSON. Infrastructure реализует NTS и A*. ViewModels содержат ReactiveObject, Fody-свойства и команды; прямой ссылки на Infrastructure или Mapsui нет. UI отвечает за XAML, типизированные View и технологический ввод. Bootstrap — единственная точка регистрации зависимостей, также для Verify.
+Domain использует только BCL: проверенные координаты, геодезические длины, профили стоимости и результаты. Application определяет контракты геоданных, маршрутизации, настроек, clipboard и сессии; управляет точками и ревизией ввода. Persistence реализует контракты геоданных и настроек, SQLite/R-tree и JSON. Infrastructure реализует NTS и A*. ViewModels содержат ReactiveObject, Fody-свойства и команды; прямой ссылки на Infrastructure или Mapsui нет. UI отвечает за XAML, типизированные View, технологический ввод и отображение ошибок запуска. Bootstrap регистрирует только прикладные сервисы и используется консольным Verify без Avalonia. Composition дополняет эти регистрации ViewModels, Avalonia views, clipboard и адаптером карты для Desktop и Android.
 
 `NavigationHost` реализует IScreen. Map/Settings — singleton ViewModels с IRoutableViewModel, Shell получает их через DI. RoutingState сохраняет не более двух записей; back работает, количество экранов и подписок не растёт от повторных переходов. View создаются зарегистрированными типизированными фабриками, без поиска по строкам и reflection.
 

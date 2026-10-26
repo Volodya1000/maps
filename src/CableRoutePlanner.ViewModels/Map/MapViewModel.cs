@@ -10,7 +10,12 @@ using ReactiveUI.Fody.Helpers;
 
 namespace CableRoutePlanner.ViewModels;
 
-public sealed record WaypointRow(Guid Id, int Number, GeoCoordinate Coordinate)
+public sealed record WaypointRow(Guid Id, int Number, GeoCoordinate Coordinate, bool IsSelected = false)
+{
+    public string Display => Coordinate.ToString();
+}
+
+public sealed record RouteVertexRow(int Number, GeoCoordinate Coordinate)
 {
     public string Display => Coordinate.ToString();
 }
@@ -43,6 +48,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private RoutingOptions _resultOptions = new();
 
+    private WaypointRow? _selectedPoint;
+
     public string UrlPathSegment => "Карта";
 
     public IScreen HostScreen
@@ -56,14 +63,46 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public ObservableCollection<RouteChoice> RouteChoices { get; } = [];
 
+    public ObservableCollection<RouteVertexRow> RouteVertices { get; } = [];
+
     public ObservableCollection<MapFeature> Features { get; } = [];
 
     public DataPackageInfo DataInfo => _mapLoader.Info;
 
-    [Reactive]
     public WaypointRow? SelectedPoint
     {
+        get => _selectedPoint;
+        set
+        {
+            for (var index = 0; index < Points.Count; index++)
+            {
+                var row = Points[index];
+                var selected = row.Id == value?.Id;
+                if (row.IsSelected != selected)
+                {
+                    Points[index] = row with
+                    {
+                        IsSelected = selected
+                    };
+                }
+            }
+
+            this.RaiseAndSetIfChanged(ref _selectedPoint, Points.FirstOrDefault(row => row.Id == value?.Id));
+            this.RaisePropertyChanged(nameof(CopyPointText));
+        }
+    }
+
+    public string CopyPointText => SelectedPoint is { } point ? $"Копировать точку {point.Number}" : "Выберите точку";
+
+    [Reactive]
+    public RouteVertexRow? SelectedRouteVertex
+    {
         get; set;
+    }
+
+    public ReactiveCommand<Unit, Unit> CopyRouteVertex
+    {
+        get;
     }
 
     [Reactive]
@@ -199,6 +238,13 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             x => x.IsBusy,
             (count, busy) => count >= 2 && !busy).ToProperty(this, x => x.CanBuild).DisposeWith(_lifetime);
         InitializeCommands();
+        CopyRouteVertex = ReactiveCommand.CreateFromTask(async () =>
+        {
+            if (SelectedRouteVertex is { } vertex)
+            {
+                await CopyCoordinateAsync(vertex.Coordinate, vertex.Number);
+            }
+        }, this.WhenAnyValue(x => x.SelectedRouteVertex).Select(vertex => vertex is not null)).DisposeWith(_lifetime);
         SetupSubscriptions();
     }
 
@@ -221,15 +267,15 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         AddPoint = ReactiveCommand.Create<GeoCoordinate>(AddAt).DisposeWith(_lifetime);
         AddManual = ReactiveCommand.Create(AddManually).DisposeWith(_lifetime);
         RemovePoint = ReactiveCommand.Create<Guid>(id => Change(() => _session.Remove(id))).DisposeWith(_lifetime);
-        SelectPoint = ReactiveCommand.Create<Guid>(id =>
-            SelectedPoint = Points.FirstOrDefault(point => point.Id == id)).DisposeWith(_lifetime);
+        SelectPoint = ReactiveCommand.Create<Guid>(SelectPointById).DisposeWith(_lifetime);
         DeletePoint = ReactiveCommand.Create(DeleteSelectedPoint).DisposeWith(_lifetime);
         ReorderPoints = ReactiveCommand.CreateFromTask<WaypointReorder>(ReorderByIdAsync).DisposeWith(_lifetime);
         ChooseRoute = ReactiveCommand.Create<Guid>(ChooseRouteById).DisposeWith(_lifetime);
         ClearPoints = ReactiveCommand.Create(() => Change(_session.Clear)).DisposeWith(_lifetime);
         MoveUp = ReactiveCommand.Create(() => Reorder(-1)).DisposeWith(_lifetime);
         MoveDown = ReactiveCommand.Create(() => Reorder(1)).DisposeWith(_lifetime);
-        CopyCoordinates = ReactiveCommand.CreateFromTask(CopySelectedCoordinatesAsync).DisposeWith(_lifetime);
+        CopyCoordinates = ReactiveCommand.CreateFromTask(CopySelectedCoordinatesAsync,
+            this.WhenAnyValue(x => x.SelectedPoint).Select(point => point is not null)).DisposeWith(_lifetime);
         BuildRoutes = ReactiveCommand.CreateFromTask(BuildAsync, this.WhenAnyValue(x => x.CanBuild)).DisposeWith(_lifetime);
         Cancel = ReactiveCommand.Create(() => _calculation?.Cancel()).DisposeWith(_lifetime);
     }
@@ -289,6 +335,14 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         }
     }
 
+    private void SelectPointById(Guid id)
+    {
+        SelectedPoint = Points.FirstOrDefault(point => point.Id == id);
+        Status = SelectedPoint is { } point
+            ? $"Выбрана точка {point.Number}: {point.Display}."
+            : Status;
+    }
+
     private async Task ReorderByIdAsync(WaypointReorder request)
     {
         var source = _pointRows.IndexOf(request.PointId);
@@ -327,10 +381,15 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             return;
         }
 
+        await CopyCoordinateAsync(point.Coordinate, point.Number);
+    }
+
+    private async Task CopyCoordinateAsync(GeoCoordinate coordinate, int number)
+    {
         try
         {
-            await _clipboard.SetTextAsync(point.Coordinate.ToString());
-            Status = "Координаты скопированы.";
+            await _clipboard.SetTextAsync(coordinate.ToString());
+            Status = $"Скопирована точка {number}: {coordinate}.";
         }
         catch (Exception ex)
         {
@@ -341,6 +400,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private void UpdateRoutePresentation(RouteAlternative? route)
     {
         RouteChoices.Clear();
+        RouteVertices.Clear();
+        SelectedRouteVertex = null;
         var hasAlternatives = Alternatives.Count > 1;
         foreach (var alternative in Alternatives)
         {
@@ -349,6 +410,17 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 hasAlternatives ? alternative.Name : "Маршрут",
                 $"{alternative.Metrics.LengthMetres:N0} м",
                 alternative.Id == route?.Id));
+        }
+
+        if (route is not null)
+        {
+            foreach (var coordinate in route.Geometry)
+            {
+                if (RouteVertices.Count == 0 || RouteVertices[^1].Coordinate != coordinate)
+                {
+                    RouteVertices.Add(new RouteVertexRow(RouteVertices.Count + 1, coordinate));
+                }
+            }
         }
 
         this.RaisePropertyChanged(nameof(HasAlternatives));
