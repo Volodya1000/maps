@@ -16,6 +16,10 @@
             <Setter Property="Background" Value="#176B55" />
             <Setter Property="Foreground" Value="White" />
         </Style>
+        <Style Selector="Button.map-compass">
+            <Setter Property="CornerRadius" Value="23" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
         <Style Selector="ToggleButton:checked">
             <Setter Property="Background" Value="#DCEEE7" />
             <Setter Property="Foreground" Value="#155742" />

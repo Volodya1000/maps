@@ -35,6 +35,7 @@ def executable(name: str) -> str:
 def lint() -> None:
     run(sys.executable, "tools/check_architecture.py")
     run(executable("uv"), "run", "--locked", "ruff", "check", ".")
+    run(executable("uv"), "run", "--locked", "yamllint", ".")
     for name in subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, text=True).split("\0"):
         path = ROOT / name
         if not name or not path.is_file():

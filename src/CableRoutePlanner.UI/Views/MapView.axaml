@@ -44,20 +44,46 @@
             </Border>
             <Button
                 x:Name="NorthButton"
+                Classes="map-compass"
                 Width="46"
                 Height="46"
                 Margin="14"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
-                Background="#EEFFFFFF"
+                Background="Transparent"
+                BorderThickness="0"
+                Padding="0"
                 ToolTip.Tip="Вернуть карту к северу"
                 AutomationProperties.Name="Вернуть карту к северу">
-                <TextBlock
-                    x:Name="NorthArrow"
-                    FontSize="25"
-                    FontWeight="Bold"
-                    Foreground="#244B3A"
-                    Text="↑" />
+                <Border
+                    Background="#F9FFFFFF"
+                    BoxShadow="0 2 8 0 #33000000"
+                    CornerRadius="23">
+                    <Grid
+                        x:Name="NorthArrow"
+                        RenderTransformOrigin="0.5,0.5">
+                        <TextBlock
+                            Margin="0,-12,0,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="20"
+                            Foreground="#D64B43"
+                            Text="▲" />
+                        <TextBlock
+                            Margin="0,12,0,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="18"
+                            Foreground="#52636A"
+                            Text="▼" />
+                        <Ellipse
+                            Width="5"
+                            Height="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Fill="#FFFFFF" />
+                    </Grid>
+                </Border>
             </Button>
             <Border
                 Grid.Row="1"
@@ -200,10 +226,18 @@
                         LineHeight="21"
                         Text="{Binding MetricsText}"
                         TextWrapping="Wrap" />
-                    <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
-                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Точки прокладки кабеля" />
-                        <TextBlock FontSize="12" Foreground="#64726A" Text="Все вершины выбранного маршрута, включая точки изменения направления." TextWrapping="Wrap" />
-                        <ListBox MaxHeight="260" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
+                    <Expander
+                        IsExpanded="False"
+                        IsVisible="{Binding HasRoute}">
+                        <Expander.Header>
+                            <TextBlock
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Text="{Binding RouteVertexSectionTitle}" />
+                        </Expander.Header>
+                        <StackPanel Margin="0,8,0,0" Spacing="4">
+                            <TextBlock FontSize="12" Foreground="#64726A" Text="Значимые повороты и переходы выбранного маршрута." TextWrapping="Wrap" />
+                            <ListBox MaxHeight="220" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:RouteVertexRow">
                                     <Border Padding="5" Classes.selected="{Binding IsSelected}">
@@ -214,9 +248,10 @@
                                     </Border>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
-                        </ListBox>
-                        <Button Command="{Binding CopyRouteVertex}" Content="{Binding CopyRouteVertexText}" />
-                    </StackPanel>
+                            </ListBox>
+                            <Button Command="{Binding CopyRouteVertex}" Content="{Binding CopyRouteVertexText}" />
+                        </StackPanel>
+                    </Expander>
                     <Border
                         Padding="8"
                         Background="#EAF2ED"

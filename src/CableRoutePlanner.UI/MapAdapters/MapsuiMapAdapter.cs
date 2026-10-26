@@ -20,6 +20,9 @@ namespace CableRoutePlanner.UI.MapAdapters;
 
 public sealed class MapsuiMapAdapter : IMapAdapter
 {
+    private const double MapReloadDistanceViewportFraction = 0.25;
+
+    private const double MapReloadResolutionRatio = 1.25;
     private readonly MapControl _control;
 
     private readonly MemoryLayer _base = new("Офлайн OSM")
@@ -46,6 +49,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private IReadOnlyList<RouteVertexRow> _vertices = [];
 
+    private IReadOnlyList<MapFeature> _features = [];
+
     private bool _fitQueued;
 
     private bool _cameraWasUsed;
@@ -59,6 +64,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     private readonly MRect _extent;
 
     private readonly MapsuiPointerInteraction _pointerInteraction;
+
+    private Viewport? _lastMapDataViewport;
 
     public event Action<GeoBounds, double>? ViewportChanged;
 
@@ -168,6 +175,12 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     public void SetFeatures(IReadOnlyList<MapFeature> features)
     {
+        if (SameFeatures(_features, features))
+        {
+            return;
+        }
+
+        _features = features.ToArray();
         var reader = new WKBReader();
         var transform = new MercatorTransformer();
         _base.Features = features.OrderBy(
@@ -194,6 +207,26 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         }).ToArray();
         _base.DataHasChanged();
         _control.RefreshGraphics();
+    }
+
+    private static bool SameFeatures(IReadOnlyList<MapFeature> previous, IReadOnlyList<MapFeature> current)
+    {
+        if (previous.Count != current.Count)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < previous.Count; index++)
+        {
+            var left = previous[index];
+            var right = current[index];
+            if (left.Id != right.Id || left.Kind != right.Kind || !left.Wkb.AsSpan().SequenceEqual(right.Wkb))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void SetPoints(IReadOnlyList<WaypointRow> points)
@@ -224,6 +257,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             {
                 Text = vertex.Number.ToString(CultureInfo.InvariantCulture),
                 ForeColor = Color.White,
+                CollisionDetection = false,
                 HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center,
                 VerticalAlignment = LabelStyle.VerticalAlignmentEnum.Center
             });
@@ -251,6 +285,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                     Text = p.Number.ToString(CultureInfo.InvariantCulture),
                     ForeColor = Color.White,
                     BackColor = null,
+                    CollisionDetection = false,
                     HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center,
                     VerticalAlignment = LabelStyle.VerticalAlignmentEnum.Center
                 });
@@ -358,6 +393,13 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             screenNorth.X - screenCenter.X) * 180 / Math.PI + 90;
         NorthIndicatorRotationChanged?.Invoke(northAngle);
 
+        if (!RequiresMapDataReload(viewport))
+        {
+            return;
+        }
+
+        _lastMapDataViewport = viewport;
+
         var corners = new[]
         {
             ToGeo(new(0, 0)),
@@ -372,6 +414,29 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 corners.Max(p => p.Longitude),
                 corners.Max(p => p.Latitude)),
             viewport.Resolution);
+    }
+
+    private bool RequiresMapDataReload(Viewport viewport)
+    {
+        if (_lastMapDataViewport is not { } previous)
+        {
+            return true;
+        }
+
+        var resolutionRatio = Math.Max(
+            viewport.Resolution / previous.Resolution,
+            previous.Resolution / viewport.Resolution);
+        if (resolutionRatio >= MapReloadResolutionRatio
+            || viewport.Width != previous.Width
+            || viewport.Height != previous.Height)
+        {
+            return true;
+        }
+
+        var horizontalThreshold = viewport.Width * viewport.Resolution * MapReloadDistanceViewportFraction;
+        var verticalThreshold = viewport.Height * viewport.Resolution * MapReloadDistanceViewportFraction;
+        return Math.Abs(viewport.CenterX - previous.CenterX) >= horizontalThreshold
+            || Math.Abs(viewport.CenterY - previous.CenterY) >= verticalThreshold;
     }
 
     public void Dispose()

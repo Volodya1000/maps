@@ -143,6 +143,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         ? $"Копировать вершину {vertex.Number}"
         : "Выберите вершину";
 
+    public string RouteVertexSectionTitle => $"Точки прокладки кабеля · {RouteVertices.Count}";
+
     public ReactiveCommand<Unit, Unit> CopyRouteVertex
     {
         get;
@@ -462,6 +464,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 $"{alternative.Metrics.LengthMetres:N0} м",
                 alternative.Id == route?.Id));
         }
+
+        this.RaisePropertyChanged(nameof(RouteVertexSectionTitle));
 
         if (route is not null)
         {
