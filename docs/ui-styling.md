@@ -19,4 +19,4 @@ UI приложения находится в `src/CableRoutePlanner.UI`. Раз
 
 Не переносите в стили свойства с `Binding`, имена элементов `x:Name`, команды и события, структуру `Grid`, управление размерами на мобильных устройствах из code-behind. Чистый HTML/CSS пример находится отдельно в `spikes/MapLibre`; он не является частью Avalonia UI. Стили картографических объектов Mapsui заданы в коде отдельного адаптера.
 
-**Проверки:** `python tools/check.py lint`, `python tools/check.py desktop`, `python tools/check.py android` (последняя требует Android SDK). UI headless-тест проверяет применённые размеры и цвета; проверяйте также жесты списка точек и компас на Android после изменений визуального оформления.
+**Проверки:** `uv run --locked python tools/check.py lint`, `uv run --locked python tools/check.py desktop`, `uv run --locked python tools/check.py android` (последняя требует Android SDK). UI headless-тест проверяет применённые размеры и цвета; проверяйте также жесты списка точек и компас на Android после изменений визуального оформления.
