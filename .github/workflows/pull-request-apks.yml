@@ -1,20 +1,38 @@
 name: Pull request Android APKs
 on:
-  pull_request:
+  workflow_run:
+    workflows: [Build and verify]
+    types: [completed]
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: pull-request-apks-${{ github.event.pull_request.number }}
+  group: pull-request-apks-${{ github.event.workflow_run.pull_requests[0].number }}
   cancel-in-progress: true
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
   DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
 jobs:
+  verify-source:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.pull_requests[0].head.sha == github.event.workflow_run.head_sha
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Confirm tested commit
+        env:
+          PR_HEAD: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: test -n "$PR_HEAD" && test "$PR_HEAD" = "$TESTED_SHA"
+
   geodata:
+    needs: verify-source
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: astral-sh/setup-uv@v10.3.2
         with:
           version: '0.12.23'
@@ -46,11 +64,13 @@ jobs:
           compression-level: 0
 
   android:
-    needs: geodata
+    needs: [verify-source, geodata]
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: actions/download-artifact@v8
         with:
           name: pull-request-belarus-data
@@ -67,19 +87,9 @@ jobs:
           packages: platform-tools
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - run: dotnet workload install android --skip-manifest-update
-      - uses: actions/cache@v6
-        with:
-          path: ${{ runner.temp }}/preview.keystore
-          key: cableroute-android-preview-signing-v1
       - name: Prepare preview signing key
-        env:
-          KEYSTORE: ${{ secrets.ANDROID_TEST_KEYSTORE }}
         run: |
-          if [ -n "$KEYSTORE" ]; then
-            printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/preview.keystore"
-          elif [ ! -f "$RUNNER_TEMP/preview.keystore" ]; then
-            keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/preview.keystore" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=CableRoutePlanner Preview,O=Test,C=BY'
-          fi
+          keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/preview.keystore" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=CableRoutePlanner Preview,O=Test,C=BY'
       - name: Build lightweight Minsk APK
         run: dotnet publish src/CableRoutePlanner.Android -c Release -p:GeodataDirectory="$GITHUB_WORKSPACE/samples/real-geodata-fixtures/minsk" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
       - run: |
@@ -95,26 +105,15 @@ jobs:
           sha256sum artifacts/apk/*.apk > artifacts/apk/SHA256SUMS.txt
       - uses: actions/upload-artifact@v7
         with:
-          name: pull-request-apks
-          path: artifacts/apk/
-          compression-level: 0
-      - name: Publish direct APK downloads
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          tag="pr-${PR_NUMBER}-apk"
-          if ! gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
-            gh release create "$tag" --repo "$REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "PR #${PR_NUMBER} APK previews" --notes "Rolling APK previews for pull request #${PR_NUMBER}. Assets are replaced on every successful build."
-          fi
-          gh release upload "$tag" --repo "$REPOSITORY" artifacts/apk/*.apk --clobber
-          {
-            echo "## Direct APK downloads"
-            echo
-            echo "These links download the APK directly, without an Actions ZIP archive."
-            echo
-            echo "- [Minsk APK](https://github.com/${REPOSITORY}/releases/download/${tag}/CableRoutePlanner-PR-${PR_NUMBER}-Minsk.apk)"
-            echo "- [Belarus APK](https://github.com/${REPOSITORY}/releases/download/${tag}/CableRoutePlanner-PR-${PR_NUMBER}-Belarus.apk)"
-          } >> "$GITHUB_STEP_SUMMARY"
+          path: artifacts/apk/CableRoutePlanner-PR-${{ github.event.workflow_run.pull_requests[0].number }}-Minsk.apk
+          archive: false
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          path: artifacts/apk/CableRoutePlanner-PR-${{ github.event.workflow_run.pull_requests[0].number }}-Belarus.apk
+          archive: false
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          path: artifacts/apk/SHA256SUMS.txt
+          if-no-files-found: error

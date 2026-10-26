@@ -8,9 +8,7 @@ Android разрешает обновить установленный APK по�
 
 Иконка задаётся в `src/CableRoutePlanner.Android/Resources/drawable/app_icon.xml`; чтобы заменить её в следующем APK, достаточно заменить этот vector-resource, сохранив ссылку `android:icon` в manifest. Для каждого распространяемого APK необходимо повышать `ApplicationVersion`.
 
-Для каждого pull request workflow `Pull request Android APKs` публикует артефакт `pull-request-apks` с двумя файлами: `...-Minsk.apk` для быстрого небольшого пакета и `...-Belarus.apk` с полной картой страны. Обычный CI дополнительно публикует `android-preview-apk` с Minsk APK; его startup-evidence является отдельным артефактом.
-
-GitHub Actions всегда отдаёт артефакты в ZIP-обёртке. Поэтому для PR дополнительно обновляется rolling prerelease `pr-<номер>-apk` с прямыми Release Assets `.apk`. Для одного PR это один переиспользуемый prerelease, а не новый релиз на каждый commit. Для fork-PR запись в Releases запрещена, поэтому там остаётся Actions artifact.
+Workflow `Pull request Android APKs` запускается только после успешного workflow `Build and verify` для того же commit SHA. Два файла `...-Minsk.apk` и `...-Belarus.apk` публикуются отдельными Actions artifacts без ZIP-обёртки; контрольная сумма публикуется отдельным артефактом. Доступ к Actions artifacts есть в запуске workflow сборки превью. Workflow не имеет `contents: write` и не публикует PR-код в Releases.
 
 После merge изменений в `main` дождитесь успешного CI Android job, который сохраняет preview-ключ для `main`. Затем в GitHub Actions вручную запустите `Full Belarus offline installers`, выбрав ветку `main`: workflow соберёт и опубликует полноразмерную версию. Он не запускается от обычной push/PR-сборки, чтобы тестовый APK с картой Минска не выдавался за релиз всей Беларуси. Для предупреждений Actions используйте раздел «Annotations»: устаревшие Node/Java runtime предупреждения не означают ошибку сборки, но action версии в workflow обновляются вместе с Dependabot.
 
