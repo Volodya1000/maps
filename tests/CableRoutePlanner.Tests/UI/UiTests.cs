@@ -51,6 +51,51 @@ public static class TestApplication
 public sealed class UiTests
 {
     [AvaloniaFact]
+    public async Task ExtractedStylesKeepMapAndWaypointAppearance()
+    {
+        using var vm = new MapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+        await vm.AddPoint.Execute(TestData.P(30, 150));
+        await vm.AddPoint.Execute(TestData.P(300, 150));
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        {
+            ViewModel = vm
+        };
+        var window = new Window { Content = view, Width = 1100, Height = 900 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        var compass = view.GetVisualDescendants().OfType<Button>()
+            .Single(button => button.Name == "NorthButton");
+        Assert.Equal(46d, compass.Width);
+        Assert.Equal(46d, compass.Height);
+        Assert.Equal(Avalonia.Media.Color.Parse("#EEFFFFFF"),
+            Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(compass.Background).Color);
+
+        var waypoints = view.GetVisualDescendants().OfType<Border>()
+            .Where(border => border.Name == "CoordinateCard").ToArray();
+        Assert.Equal(2, waypoints.Length);
+        var selected = Assert.Single(waypoints,
+            border => border.DataContext is WaypointRow { IsSelected: true });
+        var unselected = Assert.Single(waypoints,
+            border => border.DataContext is WaypointRow { IsSelected: false });
+
+        Assert.Equal(new CornerRadius(8), selected.CornerRadius);
+        Assert.Equal(new Thickness(2), selected.BorderThickness);
+        Assert.Equal(Avalonia.Media.Color.Parse("#DBEAFB"),
+            Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(selected.Background).Color);
+        Assert.Equal(Avalonia.Media.Color.Parse("#1A6FD2"),
+            Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(selected.BorderBrush).Color);
+
+        Assert.Equal(new CornerRadius(8), unselected.CornerRadius);
+        Assert.Equal(new Thickness(1), unselected.BorderThickness);
+        Assert.Equal(Avalonia.Media.Color.Parse("#F1F5F2"),
+            Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(unselected.Background).Color);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void MapAdapterRendersEveryTerrainCategory()
     {
         // Arrange

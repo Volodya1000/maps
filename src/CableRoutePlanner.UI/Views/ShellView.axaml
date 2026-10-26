@@ -7,18 +7,13 @@
     x:DataType="vm:ShellViewModel"
     x:TypeArguments="vm:ShellViewModel">
     <Grid
-        Background="#F5F7F5"
+        Classes="shell-layout"
         RowDefinitions="Auto,Auto,*">
-        <Border
-            Padding="16,12"
-            Background="White"
-            BorderBrush="#DFE5E0"
-            BorderThickness="0,0,0,1">
+        <Border Classes="shell-header">
             <WrapPanel VerticalAlignment="Center">
                 <TextBlock
+                    Classes="section-heading"
                     Margin="0,0,20,8"
-                    FontSize="21"
-                    FontWeight="SemiBold"
                     Text="Кабельные маршруты" />
                 <StackPanel
                     VerticalAlignment="Center"
@@ -35,7 +30,7 @@
                 </StackPanel>
             </WrapPanel>
         </Border>
-        <Border Grid.Row="1" Padding="16" Background="#FFF1D6"
+        <Border Grid.Row="1" Classes="unsaved-warning"
                 IsVisible="{Binding ShowUnsavedWarning}">
             <StackPanel Spacing="8">
                 <TextBlock Text="Есть несохранённые изменения настроек. Остаться и сохранить их или уйти без сохранения?"

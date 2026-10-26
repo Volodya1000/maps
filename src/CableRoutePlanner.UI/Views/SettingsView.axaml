@@ -13,8 +13,7 @@
             HorizontalAlignment="Stretch"
             Spacing="16">
             <TextBlock
-                FontSize="28"
-                FontWeight="SemiBold"
+                Classes="settings-title"
                 Text="Настройки расчёта" />
             <TextBlock Text="Размер ячейки сетки, м (5–200)" />
             <NumericUpDown

@@ -3,25 +3,18 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     RequestedThemeVariant="Light">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://CableRoutePlanner.UI/Resources/Brushes.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
     <Application.Styles>
         <FluentTheme />
-        <Style Selector="TextBlock">
-            <Setter Property="FontSize" Value="14" />
-        </Style>
-        <Style Selector="Button">
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Padding" Value="14,9" />
-        </Style>
-        <Style Selector="Button.primary">
-            <Setter Property="Background" Value="#176B55" />
-            <Setter Property="Foreground" Value="White" />
-        </Style>
-        <Style Selector="ToggleButton:checked">
-            <Setter Property="Background" Value="#DCEEE7" />
-            <Setter Property="Foreground" Value="#155742" />
-        </Style>
-        <Style Selector="TextBox">
-            <Setter Property="CornerRadius" Value="6" />
-        </Style>
+        <StyleInclude Source="avares://CableRoutePlanner.UI/Styles/Common.axaml" />
+        <StyleInclude Source="avares://CableRoutePlanner.UI/Styles/Shell.axaml" />
+        <StyleInclude Source="avares://CableRoutePlanner.UI/Styles/Map.axaml" />
+        <StyleInclude Source="avares://CableRoutePlanner.UI/Styles/WaypointList.axaml" />
     </Application.Styles>
 </Application>

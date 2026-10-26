@@ -15,8 +15,7 @@
             VerticalAlignment="Center"
             Spacing="16">
             <TextBlock
-                FontSize="24"
-                FontWeight="SemiBold"
+                Classes="startup-title"
                 Text="Кабельные маршруты" />
             <TextBlock
                 Text="{Binding Message}"

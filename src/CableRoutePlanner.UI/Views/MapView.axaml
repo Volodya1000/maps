@@ -22,12 +22,9 @@
                 x:Name="MapControl"
                 Grid.RowSpan="2" />
             <Border
-                Margin="14"
-                Padding="10"
+                Classes="map-toolbar"
                 HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                Background="#EEFFFFFF"
-                CornerRadius="8">
+                VerticalAlignment="Top">
                 <StackPanel
                     Orientation="Horizontal"
                     Spacing="8">
@@ -44,56 +41,44 @@
             </Border>
             <Button
                 x:Name="NorthButton"
-                Width="46"
-                Height="46"
-                Margin="14"
+                Classes="north-button"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
-                Background="#EEFFFFFF"
                 ToolTip.Tip="Вернуть карту к северу"
                 AutomationProperties.Name="Вернуть карту к северу">
                 <TextBlock
                     x:Name="NorthArrow"
-                    FontSize="25"
-                    FontWeight="Bold"
-                    Foreground="#244B3A"
+                    Classes="north-arrow"
                     Text="↑" />
             </Button>
             <Border
                 Grid.Row="1"
-                Padding="10,5"
-                Background="#ECFFFFFF">
+                Classes="map-footer">
                 <StackPanel>
-                    <TextBlock FontSize="11" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
+                    <TextBlock Classes="map-notice" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
                     <TextBlock
                         x:Name="AttributionCredit"
+                        Classes="map-attribution"
                         Text="ⓘ"
                         AutomationProperties.Name="© OpenStreetMap contributors · ODbL 1.0"
-                        FontSize="13"
                         ToolTip.Tip="© OpenStreetMap contributors · ODbL 1.0" />
                 </StackPanel>
             </Border>
         </Grid>
         <Border
             x:Name="SidePanel"
+            Classes="map-side-panel"
             Grid.Row="0"
-            Grid.Column="1"
-            Padding="18"
-            Background="White"
-            BorderBrush="#DFE5E0"
-            BorderThickness="1,0,0,0">
+            Grid.Column="1">
             <Grid RowDefinitions="Auto,*">
                 <Border
                     x:Name="SheetHandleButton"
-                    Height="44"
-                    Margin="0,0,0,8"
-                    Background="Transparent"
-                    CornerRadius="8"
+                    Classes="map-sheet-handle"
                     Focusable="True">
                     <TextBlock
                         x:Name="SheetHandleText"
+                        Classes="map-sheet-hint"
                         HorizontalAlignment="Center"
-                        FontSize="13"
                         Text="Точки и маршруты · потяните вниз, чтобы свернуть" />
                 </Border>
                 <ScrollViewer
@@ -102,14 +87,11 @@
                     VerticalScrollBarVisibility="Auto">
                 <StackPanel Spacing="12">
                     <TextBlock
-                        FontSize="21"
-                        FontWeight="SemiBold"
+                        Classes="section-heading"
                         Text="Точки маршрута" />
                     <TextBlock
-                        FontSize="12"
-                        Foreground="#64726A"
-                        Text="Нажмите на карту. Маркеры можно перетаскивать. При выключенном добавлении карта свободно перемещается. На Desktop вращайте её правой кнопкой мыши; на Android используйте два пальца."
-                        TextWrapping="Wrap" />
+                        Classes="view-hint"
+                        Text="Нажмите на карту. Маркеры можно перетаскивать. При выключенном добавлении карта свободно перемещается. На Desktop вращайте её правой кнопкой мыши; на Android используйте два пальца." />
                     <controls:WaypointList
                         x:Name="WaypointList"
                         DataContext="{Binding}" />
@@ -141,7 +123,7 @@
                         Command="{Binding BuildRoutes}"
                         Content="Построить маршруты" />
                     <ProgressBar
-                        Height="4"
+                        Classes="route-progress"
                         IsIndeterminate="True"
                         IsVisible="{Binding IsBusy}" />
                     <Button
@@ -149,31 +131,15 @@
                         Content="Отменить расчёт"
                         IsVisible="{Binding IsBusy}" />
                     <StackPanel IsVisible="{Binding HasRoute}" Spacing="12">
-                        <Border
-                            Height="1"
-                            Margin="0,4"
-                            Background="#E5EAE5" />
+                        <Border Classes="route-divider" />
                         <TextBlock
-                            FontSize="18"
-                            FontWeight="SemiBold"
+                            Classes="alternatives-heading"
                             Text="Альтернативы"
                             IsVisible="{Binding HasAlternatives}" />
                         <ItemsControl
                             x:Name="RouteChoices"
                             ItemsSource="{Binding RouteChoices}"
                             IsVisible="{Binding HasAlternatives}">
-                            <ItemsControl.Styles>
-                                <Style Selector="Button.route-choice">
-                                    <Setter Property="HorizontalAlignment" Value="Stretch" />
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                    <Setter Property="Margin" Value="0,0,0,6" />
-                                </Style>
-                                <Style Selector="Button.route-choice.selected">
-                                    <Setter Property="Background" Value="#DBEAFB" />
-                                    <Setter Property="BorderBrush" Value="#1A6FD2" />
-                                    <Setter Property="BorderThickness" Value="2" />
-                                </Style>
-                            </ItemsControl.Styles>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:RouteChoice">
                                     <Button
@@ -183,11 +149,11 @@
                                         CommandParameter="{Binding Id}">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <TextBlock
-                                                FontWeight="SemiBold"
+                                                Classes="route-choice-name"
                                                 Text="{Binding Name}" />
                                             <TextBlock
+                                                Classes="route-choice-length"
                                                 Grid.Column="1"
-                                                Margin="12,0,0,0"
                                                 Text="{Binding LengthText}" />
                                         </Grid>
                                     </Button>
@@ -196,17 +162,15 @@
                         </ItemsControl>
                     </StackPanel>
                     <TextBlock
-                        FontSize="13"
-                        LineHeight="21"
-                        Text="{Binding MetricsText}"
-                        TextWrapping="Wrap" />
+                        Classes="route-metrics"
+                        Text="{Binding MetricsText}" />
                     <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
-                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Точки прокладки кабеля" />
-                        <TextBlock FontSize="12" Foreground="#64726A" Text="Все вершины выбранного маршрута, включая точки изменения направления." TextWrapping="Wrap" />
-                        <ListBox MaxHeight="260" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
+                        <TextBlock Classes="route-vertices-heading" Text="Точки прокладки кабеля" />
+                        <TextBlock Classes="view-hint" Text="Все вершины выбранного маршрута, включая точки изменения направления." />
+                        <ListBox Classes="route-vertex-list" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:RouteVertexRow">
-                                    <Border Padding="5" Classes.selected="{Binding IsSelected}">
+                                    <Border Classes="route-vertex-row" Classes.selected="{Binding IsSelected}">
                                         <Grid ColumnDefinitions="32,*">
                                             <TextBlock Text="{Binding Number}" />
                                             <TextBlock Grid.Column="1" Text="{Binding Display}" />
@@ -217,15 +181,10 @@
                         </ListBox>
                         <Button Command="{Binding CopyRouteVertex}" Content="{Binding CopyRouteVertexText}" />
                     </StackPanel>
-                    <Border
-                        Padding="8"
-                        Background="#EAF2ED"
-                        CornerRadius="6">
+                    <Border Classes="route-status">
                         <TextBlock
-                            FontSize="13"
-                            Foreground="#244D3B"
-                            Text="{Binding Status}"
-                            TextWrapping="Wrap" />
+                            Classes="route-status-text"
+                            Text="{Binding Status}" />
                     </Border>
                 </StackPanel>
                 </ScrollViewer>

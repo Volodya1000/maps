@@ -1,0 +1,99 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style Selector="Border.map-toolbar">
+        <Setter Property="Margin" Value="14" />
+        <Setter Property="Padding" Value="10" />
+        <Setter Property="Background" Value="{DynamicResource AppOverlayBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="Button.north-button">
+        <Setter Property="Width" Value="46" />
+        <Setter Property="Height" Value="46" />
+        <Setter Property="Margin" Value="14" />
+        <Setter Property="Background" Value="{DynamicResource AppOverlayBrush}" />
+    </Style>
+    <Style Selector="TextBlock.north-arrow">
+        <Setter Property="FontSize" Value="25" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource AppCompassArrowBrush}" />
+    </Style>
+    <Style Selector="Border.map-footer">
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Background" Value="{DynamicResource AppMapFooterBrush}" />
+    </Style>
+    <Style Selector="TextBlock.map-notice">
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="TextBlock.map-attribution">
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Border.map-side-panel">
+        <Setter Property="Padding" Value="18" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1,0,0,0" />
+    </Style>
+    <Style Selector="Border.map-sheet-handle">
+        <Setter Property="Height" Value="44" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="Background" Value="{DynamicResource AppTransparentBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="TextBlock.map-sheet-hint">
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Border.route-divider">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Background" Value="{DynamicResource AppRouteDividerBrush}" />
+    </Style>
+    <Style Selector="TextBlock.alternatives-heading">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.route-choice">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+    <Style Selector="Button.route-choice.selected">
+        <Setter Property="Background" Value="{DynamicResource AppSelectionBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppSelectionBorderBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="ProgressBar.route-progress">
+        <Setter Property="Height" Value="4" />
+    </Style>
+    <Style Selector="TextBlock.route-choice-name">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.route-choice-length">
+        <Setter Property="Margin" Value="12,0,0,0" />
+    </Style>
+    <Style Selector="ListBox.route-vertex-list">
+        <Setter Property="MaxHeight" Value="260" />
+    </Style>
+    <Style Selector="Border.route-vertex-row">
+        <Setter Property="Padding" Value="5" />
+    </Style>
+    <Style Selector="TextBlock.route-metrics">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="LineHeight" Value="21" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.route-vertices-heading">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.route-status">
+        <Setter Property="Padding" Value="8" />
+        <Setter Property="Background" Value="{DynamicResource AppStatusPanelBrush}" />
+        <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="TextBlock.route-status-text">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource AppStatusTextBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+</Styles>
