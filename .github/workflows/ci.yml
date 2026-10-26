@@ -44,6 +44,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+          skip-lts-prepass: true
       - uses: astral-sh/setup-uv@v10.3.2
         with:
           version: '0.12.23'
@@ -79,6 +80,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+          skip-lts-prepass: true
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -114,10 +116,6 @@ jobs:
           version: '0.12.23'
           python-version: '3.12'
       - run: uv sync --locked
-      - name: Inspect SDK-implied Android lockfile update (temporary)
-        run: |
-          dotnet restore src/CableRoutePlanner.Android --force-evaluate
-          git diff -- src/CableRoutePlanner.Android/packages.lock.json
       - name: Build and verify signed Android APK
         run: uv run --locked python tools/check.py android
       - name: Record APK build diagnostics
