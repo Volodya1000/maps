@@ -11,7 +11,9 @@
     <SolidColorBrush x:Key="AppAccentCheckedTextBrush" Color="#155742" />
     <SolidColorBrush x:Key="AppOverlayBrush" Color="#EEFFFFFF" />
     <SolidColorBrush x:Key="AppMapFooterBrush" Color="#ECFFFFFF" />
-    <SolidColorBrush x:Key="AppCompassArrowBrush" Color="#244B3A" />
+    <SolidColorBrush x:Key="AppCompassFaceBrush" Color="#F9FFFFFF" />
+    <SolidColorBrush x:Key="AppCompassNorthBrush" Color="#D64B43" />
+    <SolidColorBrush x:Key="AppCompassSouthBrush" Color="#52636A" />
     <SolidColorBrush x:Key="AppMutedTextBrush" Color="#64726A" />
     <SolidColorBrush x:Key="AppRouteDividerBrush" Color="#E5EAE5" />
     <SolidColorBrush x:Key="AppStatusPanelBrush" Color="#EAF2ED" />

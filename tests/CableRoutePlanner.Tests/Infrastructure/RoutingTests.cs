@@ -202,6 +202,7 @@ public sealed class RoutingTests(ITestOutputHelper output)
         Assert.Equal(0, shortest.Metrics.ApprovedWaterCrossings);
         Assert.InRange(shortest.Metrics.LengthMetres, 209.5, 211);
         Assert.NotEmpty(shortest.TransitionPoints!);
+        Assert.InRange(shortest.TransitionPoints!.Count, 1, 2);
         var routeLine = new LineString(shortest.Geometry
             .Select(coordinate => new Coordinate(coordinate.Longitude, coordinate.Latitude)).ToArray());
         Assert.All(shortest.TransitionPoints!, transition =>

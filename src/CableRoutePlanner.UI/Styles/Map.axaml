@@ -11,12 +11,31 @@
         <Setter Property="Width" Value="46" />
         <Setter Property="Height" Value="46" />
         <Setter Property="Margin" Value="14" />
-        <Setter Property="Background" Value="{DynamicResource AppOverlayBrush}" />
+        <Setter Property="Background" Value="{DynamicResource AppTransparentBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="23" />
     </Style>
-    <Style Selector="TextBlock.north-arrow">
-        <Setter Property="FontSize" Value="25" />
-        <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="Foreground" Value="{DynamicResource AppCompassArrowBrush}" />
+    <Style Selector="Border.compass-face">
+        <Setter Property="Width" Value="46" />
+        <Setter Property="Height" Value="46" />
+        <Setter Property="Background" Value="{DynamicResource AppCompassFaceBrush}" />
+        <Setter Property="BoxShadow" Value="0 2 8 0 #33000000" />
+        <Setter Property="ClipToBounds" Value="True" />
+        <Setter Property="CornerRadius" Value="23" />
+    </Style>
+    <Style Selector="Canvas.compass-needle">
+        <Setter Property="Width" Value="46" />
+        <Setter Property="Height" Value="46" />
+    </Style>
+    <Style Selector="Polygon.compass-north">
+        <Setter Property="Fill" Value="{DynamicResource AppCompassNorthBrush}" />
+    </Style>
+    <Style Selector="Polygon.compass-south">
+        <Setter Property="Fill" Value="{DynamicResource AppCompassSouthBrush}" />
+    </Style>
+    <Style Selector="Ellipse.compass-center">
+        <Setter Property="Fill" Value="{DynamicResource AppSurfaceBrush}" />
     </Style>
     <Style Selector="Border.map-footer">
         <Setter Property="Padding" Value="10,5" />
@@ -72,7 +91,7 @@
         <Setter Property="Margin" Value="12,0,0,0" />
     </Style>
     <Style Selector="ListBox.route-vertex-list">
-        <Setter Property="MaxHeight" Value="260" />
+        <Setter Property="MaxHeight" Value="220" />
     </Style>
     <Style Selector="Border.route-vertex-row">
         <Setter Property="Padding" Value="5" />

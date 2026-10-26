@@ -17,6 +17,8 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 {
     private const double PanelSwipeThreshold = 36;
 
+    private readonly RotateTransform _northArrowRotation = new();
+
     private readonly Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter> _adapterFactory;
 
     private IMapAdapter? _activeAdapter;
@@ -28,6 +30,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
     {
         _adapterFactory = adapterFactory;
         InitializeComponent();
+        NorthArrow.RenderTransform = _northArrowRotation;
         this.WhenActivated(Activate);
         SizeChanged += OnSizeChanged;
     }
@@ -44,7 +47,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         BindMapState(viewModel, adapter, lifetime);
         BindViewport(viewModel, adapter, lifetime);
         BindButtons();
-        void NorthAngleChanged(double angle) => NorthArrow.RenderTransform = new RotateTransform(angle);
+        void NorthAngleChanged(double angle) => _northArrowRotation.Angle = angle;
         adapter.NorthIndicatorRotationChanged += NorthAngleChanged;
         Disposable.Create(() => adapter.NorthIndicatorRotationChanged -= NorthAngleChanged)
             .DisposeWith(lifetime);
@@ -182,19 +185,25 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
         adapter.ViewportChanged += ViewportChanged;
         var cancellation = new CancellationTokenSource();
+        CancellationTokenSource? latestMapLoad = null;
         var token = cancellation.Token;
         changes
             .Throttle(TimeSpan.FromMilliseconds(200), RxApp.MainThreadScheduler)
-            .Subscribe(viewport => _ = LoadViewportAsync(viewport.Bounds, viewport.Resolution))
+            .Subscribe(viewport =>
+            {
+                latestMapLoad?.Cancel();
+                latestMapLoad = CancellationTokenSource.CreateLinkedTokenSource(token);
+                _ = LoadViewportAsync(viewport.Bounds, viewport.Resolution, latestMapLoad);
+            })
             .DisposeWith(lifetime);
 
-        async Task LoadViewportAsync(GeoBounds bounds, double resolution)
+        async Task LoadViewportAsync(GeoBounds bounds, double resolution, CancellationTokenSource request)
         {
             try
             {
-                await viewModel.LoadMapAreaAsync(bounds, token, resolution);
+                await viewModel.LoadMapAreaAsync(bounds, request.Token, resolution);
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            catch (OperationCanceledException) when (request.IsCancellationRequested)
             {
                 System.Diagnostics.Debug.WriteLine("Устаревшая загрузка карты отменена.");
             }
@@ -202,11 +211,21 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             {
                 viewModel.ReportUnexpectedError(error);
             }
+            finally
+            {
+                if (ReferenceEquals(latestMapLoad, request))
+                {
+                    latestMapLoad = null;
+                }
+
+                request.Dispose();
+            }
         }
 
         Disposable.Create(() =>
         {
             cancellation.Cancel();
+            latestMapLoad?.Cancel();
             cancellation.Dispose();
             adapter.ViewportChanged -= ViewportChanged;
         }).DisposeWith(lifetime);

@@ -134,7 +134,9 @@ public sealed class GridRoutePlanner(
                         (from, to) => evaluator.Evaluate(from, to)?.Cost(profile),
                         (from, to) => GridEdge(from, to)?.Cost(profile),
                         ct).ToList();
-                part = evaluator.AlignBridgeCrossings(part);
+                // Smooth the grid path first, then impose the surveyed bridge alignment.
+                // The latter remains part of the engineering geometry and is not collapsed.
+                part = evaluator.AlignBridgeCrossings(evaluator.SimplifyPath(part, profile));
                 if (route.Count > 0)
                 {
                     part.RemoveAt(0);

@@ -30,6 +30,10 @@ internal sealed record EdgeEvaluation(
 
 internal sealed class TerrainEvaluator
 {
+    private const double CostComparisonTolerance = 0.001;
+
+    private const int MaximumSimplificationLookahead = 64;
+
     private sealed record Obstacle(long Id, TerrainKind Kind, Geometry Geometry);
 
     private sealed record BridgeGuide(Geometry Bridge, Geometry River, Geometry WaterSection);
@@ -224,14 +228,57 @@ internal sealed class TerrainEvaluator
                 candidate.River.Intersects(segment)
                 && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres))
             {
-                foreach (var coordinate in guide.WaterSection.Coordinates)
+                var waterSection = guide.WaterSection.Coordinates;
+                if (waterSection.Length > 0)
                 {
-                    points.TryAdd((coordinate.X, coordinate.Y), coordinate);
+                    // The entry and exit are the meaningful display transitions. The
+                    // source geometry can contain many technical vertices along one bridge.
+                    var first = waterSection[0];
+                    var last = waterSection[^1];
+                    points.TryAdd((first.X, first.Y), first);
+                    points.TryAdd((last.X, last.Y), last);
                 }
             }
         }
 
         return points.Values.ToArray();
+    }
+
+    public List<Coordinate> SimplifyPath(IReadOnlyList<Coordinate> path, CostProfile profile)
+    {
+        if (path.Count < 3)
+        {
+            return path.ToList();
+        }
+
+        var simplified = new List<Coordinate> { path[0] };
+        var anchor = 0;
+        while (anchor < path.Count - 1)
+        {
+            var best = anchor + 1;
+            var originalCost = 0d;
+            var lastCandidate = Math.Min(path.Count - 1, anchor + MaximumSimplificationLookahead);
+            for (var candidate = anchor + 1; candidate <= lastCandidate; candidate++)
+            {
+                var originalEdge = Evaluate(path[candidate - 1], path[candidate]);
+                if (originalEdge is null)
+                {
+                    break;
+                }
+
+                originalCost += originalEdge.Cost(profile);
+                var direct = Evaluate(path[anchor], path[candidate]);
+                if (direct is not null && direct.Cost(profile) <= originalCost + CostComparisonTolerance)
+                {
+                    best = candidate;
+                }
+            }
+
+            simplified.Add(path[best]);
+            anchor = best;
+        }
+
+        return simplified;
     }
 
     private static double PathLength(IReadOnlyList<Coordinate> path) => path

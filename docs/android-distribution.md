@@ -1,6 +1,6 @@
 # Android APK: тестовая сборка и релиз
 
-Обычная CI-сборка тестирует `CableRoutePlanner-CI-Minsk.apk` на Android-эмуляторе, но APK не публикуется как скачиваемый артефакт. Диагностический артефакт содержит только журнал smoke-теста. Ранее скачиваемый APK размером около 68 МБ был небольшой тестовой сборкой только с участком карты Минска, не картой всей Беларуси.
+Обычная CI-сборка тестирует `CableRoutePlanner-CI-Minsk.apk` на Android-эмуляторе и публикует этот один APK как single-file artifact без ZIP. Это небольшая тестовая сборка только с участком карты Минска, не картой всей Беларуси.
 
 Полный набор OSM находится в APK с суффиксом `-Belarus.apk` в [GitHub Releases](https://github.com/Volodya1000/maps/releases). После сжатия он всё ещё занимает около 1,2 ГБ, а после первого запуска требует порядка 2,6 ГБ свободного места для распаковки. Первую загрузку карты приложение показывает с прогрессом.
 
@@ -8,7 +8,7 @@ Android разрешает обновить установленный APK по�
 
 Иконка задаётся в `src/CableRoutePlanner.Android/Resources/drawable/app_icon.xml`; чтобы заменить её в следующем APK, достаточно заменить этот vector-resource, сохранив ссылку `android:icon` в manifest. `ApplicationVersion` вычисляется из canonical `ReleaseVersion` (`major*1,000,000 + minor*1,000 + patch`), поэтому каждое изменение версии релиза увеличивает Android version code при соблюдении границ компонентов ниже 1000.
 
-Workflow `Pull request Android APKs` запускается только после успешного workflow `Build and verify` для того же commit SHA. Два файла `...-Minsk.apk` и `...-Belarus.apk` публикуются отдельными Actions artifacts без ZIP-обёртки; контрольная сумма публикуется отдельным артефактом. Доступ к Actions artifacts есть в запуске workflow сборки превью. Workflow не имеет `contents: write` и не публикует PR-код в Releases.
+Полный workflow `Pull request Android APKs` запускается только после успешного `Build and verify` для того же commit SHA и только когда на PR есть метка `build-belarus-apk`. Он публикует `...-Minsk.apk` и `...-Belarus.apk` отдельными Actions artifacts без ZIP-обёртки, а контрольную сумму — отдельно. Подготовка страны занимает много минут и не входит в обычный PR-путь. Workflow не имеет `contents: write` и не публикует PR-код в Releases.
 
 После merge изменений в `main` дождитесь успешных проверок. Затем в GitHub Actions вручную запустите `Full Belarus offline installers`, выбрав ветку `main`: workflow соберёт Minsk и полноразмерный APK с устойчивой подписью из секрета и проверит запуск эмулятором. Он не запускается от обычной push/PR-сборки, чтобы тестовый APK с картой Минска не выдавался за релиз всей Беларуси. Для предупреждений Actions используйте раздел «Annotations»: устаревшие Node/Java runtime предупреждения не означают ошибку сборки, но action версии в workflow обновляются вместе с Dependabot.
 

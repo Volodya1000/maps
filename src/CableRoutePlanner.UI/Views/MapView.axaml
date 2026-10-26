@@ -46,10 +46,22 @@
                 VerticalAlignment="Top"
                 ToolTip.Tip="Вернуть карту к северу"
                 AutomationProperties.Name="Вернуть карту к северу">
-                <TextBlock
-                    x:Name="NorthArrow"
-                    Classes="north-arrow"
-                    Text="↑" />
+                <Border Classes="compass-face">
+                    <!-- The compass face stays fixed; only the needle rotates. -->
+                    <Canvas
+                        x:Name="NorthArrow"
+                        Classes="compass-needle"
+                        RenderTransformOrigin="50%,50%">
+                        <Polygon Classes="compass-north" Points="23,6 14,22 32,22" />
+                        <Polygon Classes="compass-south" Points="23,40 14,24 32,24" />
+                        <Ellipse
+                            Classes="compass-center"
+                            Width="5"
+                            Height="5"
+                            Canvas.Left="20.5"
+                            Canvas.Top="20.5" />
+                    </Canvas>
+                </Border>
             </Button>
             <Border
                 Grid.Row="1"
@@ -164,23 +176,40 @@
                     <TextBlock
                         Classes="route-metrics"
                         Text="{Binding MetricsText}" />
-                    <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
-                        <TextBlock Classes="route-vertices-heading" Text="Точки прокладки кабеля" />
-                        <TextBlock Classes="view-hint" Text="Все вершины выбранного маршрута, включая точки изменения направления." />
-                        <ListBox Classes="route-vertex-list" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate x:DataType="vm:RouteVertexRow">
-                                    <Border Classes="route-vertex-row" Classes.selected="{Binding IsSelected}">
-                                        <Grid ColumnDefinitions="32,*">
-                                            <TextBlock Text="{Binding Number}" />
-                                            <TextBlock Grid.Column="1" Text="{Binding Display}" />
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                        <Button Command="{Binding CopyRouteVertex}" Content="{Binding CopyRouteVertexText}" />
-                    </StackPanel>
+                    <Expander
+                        IsExpanded="False"
+                        IsVisible="{Binding HasRoute}">
+                        <Expander.Header>
+                            <TextBlock
+                                Classes="route-vertices-heading"
+                                Text="Точки прокладки кабеля" />
+                        </Expander.Header>
+                        <StackPanel Margin="0,8,0,0" Spacing="4">
+                            <TextBlock
+                                Classes="view-hint"
+                                Text="Значимые повороты и переходы выбранного маршрута." />
+                            <ListBox
+                                Classes="route-vertex-list"
+                                ItemsSource="{Binding RouteVertices}"
+                                SelectedItem="{Binding SelectedRouteVertex}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:RouteVertexRow">
+                                        <Border
+                                            Classes="route-vertex-row"
+                                            Classes.selected="{Binding IsSelected}">
+                                            <Grid ColumnDefinitions="32,*">
+                                                <TextBlock Text="{Binding Number}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Display}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <Button
+                                Command="{Binding CopyRouteVertex}"
+                                Content="{Binding CopyRouteVertexText}" />
+                        </StackPanel>
+                    </Expander>
                     <Border Classes="route-status">
                         <TextBlock
                             Classes="route-status-text"

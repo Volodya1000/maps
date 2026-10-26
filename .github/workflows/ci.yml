@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 permissions:
   contents: read
@@ -137,9 +138,9 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: android-preview-apk
           path: artifacts/CableRoutePlanner-CI-Minsk.apk
-          compression-level: 0
+          archive: false
+          if-no-files-found: error
   terrain-spike:
     needs: quality
     runs-on: ubuntu-22.04
@@ -162,7 +163,10 @@ jobs:
           name: terrain-spike-evidence
           path: artifacts/terrain-evidence/
   pull-request-apks:
-    if: github.event_name == 'pull_request' && github.event.pull_request.number != ''
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.number != ''
+      && contains(github.event.pull_request.labels.*.name, 'build-belarus-apk')
     needs: [quality, tests, data, terrain-spike, android]
     uses: ./.github/workflows/pull-request-apks.yml
     with:

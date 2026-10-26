@@ -43,7 +43,7 @@ public sealed class MapCameraTests
     [InlineData(-1, 1)]
     [InlineData(1, -1)]
     [InlineData(1, 1)]
-    public void PanningStopsAtPackageEdgeWithoutResettingZoom(int horizontal, int vertical)
+    public void PanningRetainsVisibleMapStripAndLetsAnEdgeReachScreenCentre(int horizontal, int vertical)
     {
         var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
@@ -60,10 +60,14 @@ public sealed class MapCameraTests
         var viewport = control.Map.Navigator.Viewport;
 
         Assert.Equal(resolution, viewport.Resolution);
-        Assert.InRange(viewport.CenterX - viewport.Width * resolution / 2, left - 0.001, right);
-        Assert.InRange(viewport.CenterX + viewport.Width * resolution / 2, left, right + 0.001);
-        Assert.InRange(viewport.CenterY - viewport.Height * resolution / 2, bottom - 0.001, top);
-        Assert.InRange(viewport.CenterY + viewport.Height * resolution / 2, bottom, top + 0.001);
+        var visibleHalfWidth = viewport.Width * resolution / 2;
+        var visibleHalfHeight = viewport.Height * resolution / 2;
+        Assert.True(viewport.CenterX + visibleHalfWidth > left);
+        Assert.True(viewport.CenterX - visibleHalfWidth < right);
+        Assert.True(viewport.CenterY + visibleHalfHeight > bottom);
+        Assert.True(viewport.CenterY - visibleHalfHeight < top);
+        Assert.True(Math.Abs(viewport.CenterX - (horizontal < 0 ? left : right)) < visibleHalfWidth);
+        Assert.True(Math.Abs(viewport.CenterY - (vertical < 0 ? bottom : top)) < visibleHalfHeight);
         window.Close();
     }
 
@@ -74,7 +78,7 @@ public sealed class MapCameraTests
     [InlineData(90)]
     [InlineData(180)]
     [InlineData(270)]
-    public void RotatedViewportRemainsInsideOfflineExtent(double angle)
+    public void RotatedViewportRetainsOfflineExtentAtEveryAngle(double angle)
     {
         var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
@@ -96,10 +100,10 @@ public sealed class MapCameraTests
         var halfHeight = (requested.Width * Math.Abs(Math.Sin(radians))
             + requested.Height * Math.Abs(Math.Cos(radians))) * limited.Resolution / 2;
 
-        Assert.InRange(limited.CenterX - halfWidth, extent.MinX - 1e-6, extent.MaxX);
-        Assert.InRange(limited.CenterX + halfWidth, extent.MinX, extent.MaxX + 1e-6);
-        Assert.InRange(limited.CenterY - halfHeight, extent.MinY - 1e-6, extent.MaxY);
-        Assert.InRange(limited.CenterY + halfHeight, extent.MinY, extent.MaxY + 1e-6);
+        Assert.True(limited.CenterX + halfWidth > extent.MinX);
+        Assert.True(limited.CenterX - halfWidth < extent.MaxX);
+        Assert.True(limited.CenterY + halfHeight > extent.MinY);
+        Assert.True(limited.CenterY - halfHeight < extent.MaxY);
         Assert.Equal(angle, limited.Rotation);
         Assert.Equal(requested.Resolution, limited.Resolution);
         window.Close();
@@ -140,6 +144,28 @@ public sealed class MapCameraTests
     }
 
     [AvaloniaFact]
+    public void RotationUpdatesCompassWithoutReloadingMapData()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        var window = new Window { Content = control, Width = 900, Height = 600 };
+        window.Show();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        adapter.InitializeViewport();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var mapDataEvents = 0;
+        adapter.ViewportChanged += (_, _) => mapDataEvents++;
+        var viewport = control.Map.Navigator.Viewport;
+
+        control.Map.Navigator.SetViewport(
+            new Viewport(viewport.CenterX, viewport.CenterY, viewport.Resolution, 45, viewport.Width, viewport.Height),
+            0,
+            new Mapsui.Animations.Easing(progress => progress));
+
+        Assert.Equal(0, mapDataEvents);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void DesktopRightDragRotatesMapAndResetLeavesRotationAvailable()
     {
         var control = new Mapsui.UI.Avalonia.MapControl();
@@ -161,6 +187,23 @@ public sealed class MapCameraTests
         window.MouseUp(new Avalonia.Point(700, 325), Avalonia.Input.MouseButton.Right);
         Assert.NotEqual(0, control.Map.Navigator.Viewport.Rotation);
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void BridgeTransitionsAndUserWaypointsDoNotDuplicateMapMarkers()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        adapter.SetRouteVertices(
+        [
+            new RouteVertexRow(1, new GeoCoordinate(53.4, 27.4), RouteVertexKind.Transition),
+            new RouteVertexRow(2, new GeoCoordinate(53.5, 27.5), RouteVertexKind.UserWaypoint),
+            new RouteVertexRow(3, new GeoCoordinate(53.6, 27.6), RouteVertexKind.Turn)
+        ]);
+
+        var layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            candidate => candidate.Name == "Вершины маршрута");
+        Assert.Single(layer.Features);
     }
 
     [AvaloniaFact]
