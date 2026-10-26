@@ -4,7 +4,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/CableRoutePlanner.Bootstrap/CableRoutePlanner.Bootstrap.csproj" />
+    <ProjectReference Include="../../src/CableRoutePlanner.Composition/CableRoutePlanner.Composition.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="coverlet.collector" PrivateAssets="all" />
     <PackageReference Include="xunit" />

@@ -17,14 +17,13 @@ public sealed partial class PlannerApplication : Avalonia.Application
         get; set;
     }
 
+    public string DataDirectory { get; set; } = "";
+
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     public override void OnFrameworkInitializationCompleted()
     {
-        var content = ContentFactory?.Invoke() ?? new TextBlock
-        {
-            Text = "Не задана конфигурация приложения."
-        };
+        var content = CreateContent();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new Window
@@ -44,5 +43,37 @@ public sealed partial class PlannerApplication : Avalonia.Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    public Control CreateContent()
+    {
+        try
+        {
+            return ContentFactory?.Invoke() ?? new TextBlock { Text = "Не задана конфигурация приложения." };
+        }
+        catch (Exception ex)
+        {
+            return new ScrollViewer
+            {
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(28),
+                    Spacing = 16,
+                    Children =
+                    {
+                        new TextBlock { Text = "Не удалось открыть офлайн-карту", FontSize = 24 },
+                        new TextBlock { Text = ex.GetBaseException().Message, TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                        new TextBlock
+                        {
+                            Text = $"Каталог данных: {DataDirectory}\n"
+                                + "Проверьте наличие manifest.json и geodata.sqlite. "
+                                + "Для Desktop путь задаётся CABLEROUTE_DATA. "
+                                + "После исправления перезапустите приложение.",
+                            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                        }
+                    }
+                }
+            };
+        }
     }
 }

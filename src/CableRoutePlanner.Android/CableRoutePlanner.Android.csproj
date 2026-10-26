@@ -13,7 +13,7 @@
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../CableRoutePlanner.Bootstrap/CableRoutePlanner.Bootstrap.csproj" />
+    <ProjectReference Include="../CableRoutePlanner.Composition/CableRoutePlanner.Composition.csproj" />
     <PackageReference Include="Avalonia.Android" />
   </ItemGroup>
   <ItemGroup>
