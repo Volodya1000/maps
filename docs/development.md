@@ -26,6 +26,8 @@ uv run --locked pre-commit run --all-files --hook-stage pre-push
 
 `desktop` выполняет restore, `dotnet format` для whitespace/style/analyzers, Release build и единственный запуск xUnit-тестов с Coverlet. Покрытие собирается в Cobertura, проверяется `tools/check_coverage.py`, а HTML создаётся ReportGenerator в `artifacts/coverage-report`. Минимумы — 85% строк и 80% ветвей; проценты считаются по суммарному числу покрытых и всех строк/ветвей, а не как среднее проектов. В статистику входят Domain, Application, ViewModels, Infrastructure, Persistence и UI. Desktop/Android entry points и тестовая сборка не входят; Android анализируется отдельной Android-проверкой.
 
+[Ресурсы и стили Avalonia](ui-styling.md) описывают палитру, подключение StyleInclude и раздельные обязанности разметки и оформления.
+
 Windows publish записывает RID-зависимости в отдельный `obj/publish.win-x64.lock.json` каждого проекта. Обычные `packages.lock.json` сохраняются: повторный locked restore должен проходить после публикации. Структура тестовых каталогов описана в [README тестов](../tests/CableRoutePlanner.Tests/README.md).
 
 Для просмотра отчёта локально откройте `artifacts/coverage-report/index.html`. Непокрытые строки и покрытие классов/методов видны в HTML. `line coverage` показывает выполненные исходные строки, `branch coverage` — выполненные варианты условных переходов. Сгенерированный компилятором/Avalonia/Fody код и сторонние библиотеки исключаются в `coverage.runsettings`; самостоятельно написанный прикладной код не исключается.
