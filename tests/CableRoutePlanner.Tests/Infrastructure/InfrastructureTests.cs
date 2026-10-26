@@ -36,7 +36,7 @@ public sealed class InfrastructureTests
     }
 
     [Fact]
-    public async Task DisplayQueriesSelectAppropriateDetailAndPreserveOriginalRoutingFeatures()
+    public async Task DisplayQueriesSelectAppropriateDetailAndPreserveSourceIdentity()
     {
         // Arrange
         var repository = new SqliteGeodataRepository(TestData.RealData);
@@ -46,15 +46,20 @@ public sealed class InfrastructureTests
         var country = await repository.QueryMapAsync(bounds, 500, default);
         var local = await repository.QueryMapAsync(bounds, 5, default);
         var legacyDetail = await repository.QueryMapAsync(bounds, 0, default);
+        var all = await repository.QueryAsync(bounds, default);
+        var allIds = all.Select(feature => feature.Id).ToHashSet();
 
         // Assert
         Assert.NotEmpty(country);
         Assert.NotEmpty(local);
         Assert.NotEmpty(legacyDetail);
         Assert.All(country, feature => Assert.Null(feature.ApprovalId));
-        Assert.Equal(
-            (await repository.QueryAsync(bounds, default)).Select(feature => feature.Id),
-            country.Select(feature => feature.Id));
+        // Schema 1 has no display LOD and is allowed to return the full source
+        // set; schema 2 uses a smaller country-level display subset.
+        Assert.True(country.Count <= all.Count);
+        Assert.All(country, feature => Assert.Contains(feature.Id, allIds));
+        Assert.Equal(all.Select(feature => feature.Id), local.Select(feature => feature.Id));
+        Assert.Equal(all.Select(feature => feature.Id), legacyDetail.Select(feature => feature.Id));
     }
 
     [Fact]

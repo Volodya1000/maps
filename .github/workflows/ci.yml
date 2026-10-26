@@ -144,6 +144,12 @@ jobs:
         with:
           name: android-startup-evidence
           path: artifacts/android-smoke/
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-preview-apk
+          path: artifacts/CableRoutePlanner-CI-Minsk.apk
+          compression-level: 0
   terrain-spike:
     needs: quality
     runs-on: ubuntu-22.04
