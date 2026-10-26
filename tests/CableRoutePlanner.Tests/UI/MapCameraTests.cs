@@ -1,8 +1,12 @@
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using CableRoutePlanner.UI.MapAdapters;
 using Mapsui;
+using Mapsui.Extensions;
 using Mapsui.Projections;
+using CableRoutePlanner.Domain;
+using CableRoutePlanner.ViewModels;
 using Xunit;
 
 namespace CableRoutePlanner.Tests;
@@ -113,7 +117,14 @@ public sealed class MapCameraTests
         adapter.ZoomIn();
         adapter.ZoomIn();
         adapter.ZoomIn();
-        control.Map.Navigator.RotateTo(45, 0);
+        var northAngle = double.NaN;
+        adapter.NorthIndicatorRotationChanged += angle => northAngle = angle;
+        var initial = control.Map.Navigator.Viewport;
+        control.Map.Navigator.SetViewport(
+            new Viewport(initial.CenterX, initial.CenterY, initial.Resolution, 45, initial.Width, initial.Height),
+            0,
+            new Mapsui.Animations.Easing(progress => progress));
+        Assert.Equal(45, northAngle, 1);
         var before = control.Map.Navigator.Viewport;
 
         adapter.ResetNorth();
@@ -122,9 +133,69 @@ public sealed class MapCameraTests
         var after = control.Map.Navigator.Viewport;
 
         Assert.Equal(0, after.Rotation, 6);
+        Assert.Equal(0, northAngle, 1);
         Assert.Equal(before.CenterX, after.CenterX, 6);
         Assert.Equal(before.CenterY, after.CenterY, 6);
         Assert.Equal(before.Resolution, after.Resolution, 6);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void DesktopRightDragRotatesMapAndResetLeavesRotationAvailable()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        var window = new Window { Content = control, Width = 900, Height = 600 };
+        window.Show();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        adapter.InitializeViewport();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        window.MouseDown(new Avalonia.Point(700, 300), Avalonia.Input.MouseButton.Right);
+        window.MouseMove(new Avalonia.Point(700, 350));
+        window.MouseUp(new Avalonia.Point(700, 350), Avalonia.Input.MouseButton.Right);
+
+        Assert.NotEqual(0, control.Map.Navigator.Viewport.Rotation);
+        adapter.ResetNorth();
+        Assert.Equal(0, control.Map.Navigator.Viewport.Rotation);
+        window.MouseDown(new Avalonia.Point(700, 300), Avalonia.Input.MouseButton.Right);
+        window.MouseMove(new Avalonia.Point(700, 325));
+        window.MouseUp(new Avalonia.Point(700, 325), Avalonia.Input.MouseButton.Right);
+        Assert.NotEqual(0, control.Map.Navigator.Viewport.Rotation);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void MapRouteVertexLayerAndPointerSelectionMatchListedNumber()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        var window = new Window { Content = control, Width = 900, Height = 600 };
+        window.Show();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        var vertex = new RouteVertexRow(7, new GeoCoordinate(53.5, 27.5), RouteVertexKind.Turn);
+        adapter.SetRouteVertices([vertex]);
+        adapter.InitializeViewport();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var selectedNumber = 0;
+        adapter.RouteVertexSelected += number => selectedNumber = number;
+        var (worldX, worldY) = SphericalMercator.FromLonLat(vertex.Coordinate.Longitude, vertex.Coordinate.Latitude);
+        var screen = control.Map.Navigator.Viewport.WorldToScreen(worldX, worldY);
+
+        window.MouseDown(new Avalonia.Point(screen.X, screen.Y), Avalonia.Input.MouseButton.Left);
+        window.MouseUp(new Avalonia.Point(screen.X, screen.Y), Avalonia.Input.MouseButton.Left);
+
+        Assert.Equal(7, selectedNumber);
+        Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            layer => layer.Name == "Вершины маршрута");
+        var waypoint = new WaypointRow(Guid.NewGuid(), 1, new GeoCoordinate(53.55, 27.55));
+        adapter.SetPoints([waypoint]);
+        var selectedWaypoint = Guid.Empty;
+        adapter.WaypointSelected += id => selectedWaypoint = id;
+        var (waypointX, waypointY) = SphericalMercator.FromLonLat(
+            waypoint.Coordinate.Longitude, waypoint.Coordinate.Latitude);
+        var waypointScreen = control.Map.Navigator.Viewport.WorldToScreen(waypointX, waypointY);
+        window.MouseDown(new Avalonia.Point(waypointScreen.X, waypointScreen.Y), Avalonia.Input.MouseButton.Left);
+        window.MouseUp(new Avalonia.Point(waypointScreen.X, waypointScreen.Y), Avalonia.Input.MouseButton.Left);
+        Assert.Equal(waypoint.Id, selectedWaypoint);
         window.Close();
     }
 }

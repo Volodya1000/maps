@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input.Raw;
 using Avalonia.VisualTree;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using Avalonia.ReactiveUI;
 using CableRoutePlanner.Application;
@@ -218,13 +219,14 @@ public sealed class UiTests
     }
 
     [AvaloniaFact]
-    public void MapMouseInputAddsAndMovesViewModelPoints()
+    public async Task MapMouseInputAddsAndMovesViewModelPoints()
     {
         using var provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());
         var vm = provider.GetRequiredService<MapViewModel>();
+        var session = provider.GetRequiredService<CableRoutePlanner.Application.IPlanningSession>();
         var view = (MapView)provider.GetRequiredService<TypedViewLocator>().ResolveView(vm)!;
         var window = new Window
         {
@@ -236,14 +238,33 @@ public sealed class UiTests
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         window.MouseDown(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
         window.MouseUp(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
+        await WaitForRevisionAsync(session, 1);
         Assert.Single(vm.Points);
         var before = vm.Points[0].Coordinate;
+        var revision = session.Revision;
         window.MouseDown(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
         window.MouseMove(new Avalonia.Point(390, 380));
         window.MouseUp(new Avalonia.Point(390, 380), Avalonia.Input.MouseButton.Left);
+        await WaitForRevisionAsync(session, revision + 1);
         Assert.Single(vm.Points);
-        Assert.True(before.DistanceTo(vm.Points[0].Coordinate) > 1);
+        Assert.True(before.DistanceTo(vm.Points[0].Coordinate) > 1,
+            $"Point was not moved. Status: {vm.Status}; before: {before}; after: {vm.Points[0].Coordinate}");
         window.Close();
+    }
+
+    private static async Task WaitForRevisionAsync(
+        CableRoutePlanner.Application.IPlanningSession session,
+        long expectedRevision)
+    {
+        var timeout = Stopwatch.StartNew();
+        while (session.Revision < expectedRevision && timeout.Elapsed < TimeSpan.FromSeconds(2))
+        {
+            await Task.Delay(5);
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        }
+
+        Assert.True(session.Revision >= expectedRevision,
+            $"PlanningSession did not reach revision {expectedRevision}.");
     }
 
     [AvaloniaFact]

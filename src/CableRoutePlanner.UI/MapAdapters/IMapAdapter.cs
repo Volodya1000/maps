@@ -12,13 +12,19 @@ public interface IMapAdapter : IDisposable
 
     event Action<Guid, GeoCoordinate>? PointMoved;
 
+    event Action<Guid>? WaypointSelected;
+
     event Action<double>? NorthIndicatorRotationChanged;
+
+    event Action<int>? RouteVertexSelected;
 
     void InitializeViewport();
 
     void SetFeatures(IReadOnlyList<MapFeature> features);
 
     void SetPoints(IReadOnlyList<WaypointRow> points);
+
+    void SetRouteVertices(IReadOnlyList<RouteVertexRow> vertices);
 
     void SetRoutes(IReadOnlyList<RouteAlternative> routes, Guid? selectedId);
 

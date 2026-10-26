@@ -81,7 +81,7 @@ public sealed class InfrastructureTests
         var store = new JsonSettingsStore(path);
         store.Save(new(35, 50000, 0.1));
         Assert.Equal(35, new JsonSettingsStore(path).Load().CellSizeMetres);
-        Assert.Throws<ArgumentException>(() => store.Save(new(-1)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => store.Save(new(-1)));
         Assert.Equal(35, store.Load().CellSizeMetres);
     }
 
@@ -112,7 +112,8 @@ public sealed class InfrastructureTests
     public async Task RealOsmRouteIsComputedFromPackage()
     {
         var data = new SqliteGeodataRepository(TestData.RealData);
-        var planner = new GridRoutePlanner(data, NullLogger<GridRoutePlanner>.Instance);
+        var planner = new GridRoutePlanner(data, new GridGenerator(), new AStarGridPathfinder(),
+            NullLogger<GridRoutePlanner>.Instance);
         // OSM service road in the real Novinki area; endpoints chosen on mapped free ground.
         var result = await planner.PlanAsync([new(53.9490, 27.5180), new(53.9500, 27.5190)], new(25), default);
         Assert.NotEmpty(result);

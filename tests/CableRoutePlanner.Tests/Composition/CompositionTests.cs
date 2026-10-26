@@ -3,9 +3,13 @@ using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Infrastructure.Routing;
+using CableRoutePlanner.Infrastructure;
+using CableRoutePlanner.Domain;
 using CableRoutePlanner.UI;
 using CableRoutePlanner.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using NetTopologySuite.Geometries;
 using Xunit;
 
 namespace CableRoutePlanner.Tests;
@@ -23,6 +27,28 @@ public sealed class CompositionTests
         Assert.DoesNotContain(typeof(GridRoutePlanner).Assembly.GetReferencedAssemblies(),
             assembly => assembly.Name?.Contains("Avalonia", StringComparison.Ordinal) == true
                 || assembly.Name == "CableRoutePlanner.UI");
+    }
+
+    [Fact]
+    public async Task InfrastructureRoutePlannerUsesRegisteredGridServices()
+    {
+        var generator = new CountingGridGenerator();
+        var pathfinder = new CountingPathfinder();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IGeodataRepository>(new MemoryData());
+        services.AddInfrastructure();
+        services.AddSingleton<IGridGenerator>(generator);
+        services.AddSingleton<IGridPathfinder>(pathfinder);
+        using var provider = services.BuildServiceProvider();
+
+        var planner = provider.GetRequiredService<IRoutePlanner>();
+        await planner.PlanAsync([TestData.P(50, 150), TestData.P(250, 150)], TestData.Options, default);
+
+        Assert.Same(generator, provider.GetRequiredService<IGridGenerator>());
+        Assert.Same(pathfinder, provider.GetRequiredService<IGridPathfinder>());
+        Assert.Equal(1, generator.Calls);
+        Assert.True(pathfinder.Calls > 0);
     }
 
     [AvaloniaFact]
@@ -59,5 +85,43 @@ public sealed class CompositionTests
     {
         var app = new PlannerApplication();
         Assert.Equal("Не задана конфигурация приложения.", Assert.IsType<TextBlock>(app.CreateContent()).Text);
+    }
+
+    private sealed class CountingGridGenerator : IGridGenerator
+    {
+        private readonly GridGenerator _inner = new();
+        public int Calls
+        {
+            get; private set;
+        }
+
+        public GridMesh Generate(GeoBounds bounds, RoutingOptions options, CableRoutePlanner.Infrastructure.Geography.LocalProjection projection)
+        {
+            Calls++;
+            return _inner.Generate(bounds, options, projection);
+        }
+    }
+
+    private sealed class CountingPathfinder : IGridPathfinder
+    {
+        public int Calls
+        {
+            get; private set;
+        }
+
+        public IReadOnlyList<Coordinate> FindPath(
+            Coordinate start,
+            Coordinate destination,
+            GridMesh mesh,
+            CostProfile profile,
+            Func<Coordinate, Coordinate, double?> evaluate,
+            Func<int, int, double?> gridEdgeCost,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Calls++;
+            Assert.NotNull(evaluate(start, destination));
+            return [start, destination];
+        }
     }
 }

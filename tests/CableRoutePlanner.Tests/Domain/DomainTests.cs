@@ -1,4 +1,5 @@
 using CableRoutePlanner.Domain;
+using CableRoutePlanner.Application;
 using Xunit;
 
 namespace CableRoutePlanner.Tests;
@@ -29,7 +30,34 @@ public sealed class DomainTests
     [InlineData(-1)]
     [InlineData(double.NaN)]
     [InlineData(double.PositiveInfinity)]
-    public void InvalidCostsAreRejected(double cost) => Assert.Throws<ArgumentException>(() => new CostProfile("test", cost, 0, 0, 1).Validate());
+    public void InvalidCostsAreRejected(double cost) => Assert.Throws<ArgumentOutOfRangeException>(() => new CostProfile("test", cost, 0, 0, 1).Validate());
+
+    [Theory]
+    [InlineData(nameof(CostProfile.Forest), -1d)]
+    [InlineData(nameof(CostProfile.Field), double.NaN)]
+    [InlineData(nameof(CostProfile.RoadCrossingMetres), double.PositiveInfinity)]
+    [InlineData(nameof(CostProfile.Clearing), 0d)]
+    [InlineData(nameof(CostProfile.Clearing), 1.1d)]
+    public void InvalidCostProfileReportsItsOwnParameter(string parameter, double value)
+    {
+        var profile = new CostProfile("test",
+            parameter == nameof(CostProfile.Forest) ? value : 0,
+            parameter == nameof(CostProfile.Field) ? value : 0,
+            parameter == nameof(CostProfile.RoadCrossingMetres) ? value : 0,
+            parameter == nameof(CostProfile.Clearing) ? value : 1);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(profile.Validate);
+
+        Assert.Equal(parameter, error.ParamName);
+        Assert.Equal(value, error.ActualValue);
+    }
+
+    [Theory]
+    [InlineData("Короче", 1d)]
+    [InlineData("Баланс", 0.65d)]
+    [InlineData("Проще прокладка", 0.5d)]
+    public void EachCostProfileProvidesAnAdmissibleMinimumCost(string name, double minimumCostPerMetre) =>
+        Assert.Equal(minimumCostPerMetre, Assert.Single(CostProfile.Defaults, profile => profile.Name == name).MinimumCostPerMetre);
 
     [Fact]
     public void CableReserveIsAppliedToMeasuredLength()
@@ -65,6 +93,58 @@ public sealed class DomainTests
                 + 3 * profile.RoadCrossingMetres;
             Assert.Equal(expected, RouteCostCalculator.Calculate(facts, profile), 8);
         }
+    }
+
+    [Theory]
+    [InlineData(nameof(SegmentTerrainFacts.LengthMetres), -1d)]
+    [InlineData(nameof(SegmentTerrainFacts.LengthMetres), double.NaN)]
+    [InlineData(nameof(SegmentTerrainFacts.LengthMetres), double.PositiveInfinity)]
+    [InlineData(nameof(SegmentTerrainFacts.LengthMetres), double.NegativeInfinity)]
+    [InlineData(nameof(SegmentTerrainFacts.ForestMetres), -1d)]
+    [InlineData(nameof(SegmentTerrainFacts.FieldMetres), double.NaN)]
+    [InlineData(nameof(SegmentTerrainFacts.ClearingMetres), double.PositiveInfinity)]
+    public void SegmentFactsReportInvalidDistanceParameterAndValue(string parameter, double value)
+    {
+        var facts = parameter switch
+        {
+            nameof(SegmentTerrainFacts.LengthMetres) => new SegmentTerrainFacts(value, 0, 0, 0, 0, 0, 0),
+            nameof(SegmentTerrainFacts.ForestMetres) => new SegmentTerrainFacts(0, value, 0, 0, 0, 0, 0),
+            nameof(SegmentTerrainFacts.FieldMetres) => new SegmentTerrainFacts(0, 0, value, 0, 0, 0, 0),
+            _ => new SegmentTerrainFacts(0, 0, 0, value, 0, 0, 0)
+        };
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(facts.Validate);
+
+        Assert.Equal(parameter, error.ParamName);
+        Assert.Equal(value, error.ActualValue);
+        Assert.False(string.IsNullOrWhiteSpace(error.Message));
+    }
+
+    [Theory]
+    [InlineData(nameof(SegmentTerrainFacts.RoadCrossings))]
+    [InlineData(nameof(SegmentTerrainFacts.BridgeCandidates))]
+    [InlineData(nameof(SegmentTerrainFacts.ApprovedCrossings))]
+    public void SegmentFactsReportInvalidCountParameterAndValue(string parameter)
+    {
+        var facts = parameter switch
+        {
+            nameof(SegmentTerrainFacts.RoadCrossings) => new SegmentTerrainFacts(0, 0, 0, 0, -2, 0, 0),
+            nameof(SegmentTerrainFacts.BridgeCandidates) => new SegmentTerrainFacts(0, 0, 0, 0, 0, -2, 0),
+            _ => new SegmentTerrainFacts(0, 0, 0, 0, 0, 0, -2)
+        };
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(facts.Validate);
+
+        Assert.Equal(parameter, error.ParamName);
+        Assert.Equal(-2, error.ActualValue);
+    }
+
+    [Fact]
+    public void SegmentFactsAllowZeroAndOverlappingTerrainMeasurements()
+    {
+        new SegmentTerrainFacts(0, 0, 0, 0, 0, 0, 0).Validate();
+        // Terrain layers can overlap; measured contributions are not necessarily a partition of length.
+        new SegmentTerrainFacts(10, 12, 8, 15, 0, 0, 0).Validate();
     }
 
     [Fact]
@@ -111,7 +191,7 @@ public sealed class DomainTests
         var error = Record.Exception(options.Validate);
 
         // Assert
-        Assert.IsType<ArgumentException>(error);
+        Assert.IsType<ArgumentOutOfRangeException>(error);
     }
 
     private sealed class CultureScope : IDisposable

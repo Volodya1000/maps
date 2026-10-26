@@ -1,6 +1,7 @@
 using System.Reactive.Threading.Tasks;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
+using CableRoutePlanner.Infrastructure;
 using CableRoutePlanner.ViewModels;
 using Xunit;
 
@@ -164,6 +165,27 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 
         Assert.Empty(vm.Points);
         Assert.Equal("Для этой точки нет данных в офлайн-пакете.", vm.Status);
+    }
+
+    [Fact]
+    public async Task InvalidPointMoveKeepsSessionPointAndSelection()
+    {
+        var building = TestData.Polygon(1, TerrainKind.Building, 90, 140, 110, 160);
+        var data = new MemoryData(building);
+        var session = new PlanningSession(
+            TestData.Planner(building), new GeodataPointPlacementValidator(data));
+        using var vm = new MapViewModel(
+            new NavigationHost(), session, data, new MemorySettings(), new MemoryClipboard());
+        await vm.AddPoint.Execute(TestData.P(50, 150)).ToTask();
+        var original = Assert.Single(vm.Points);
+        var revision = session.Revision;
+
+        await vm.MovePointAsync(original.Id, TestData.P(100, 150));
+
+        Assert.Equal(original, Assert.Single(vm.Points));
+        Assert.Equal(original.Id, vm.SelectedPoint?.Id);
+        Assert.Equal(revision, session.Revision);
+        Assert.Contains("здания", vm.Status);
     }
 
     [Fact]

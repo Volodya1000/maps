@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Diagnostics;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.Infrastructure;
@@ -52,7 +53,7 @@ try
     var session = services.GetRequiredService<IPlanningSession>();
     foreach (var point in points)
     {
-        session.Add(point);
+        await session.AddValidatedAsync(point, default);
     }
 
     using var cancel = new CancellationTokenSource();
@@ -61,7 +62,13 @@ try
         e.Cancel = true;
         cancel.Cancel();
     };
+    using var process = Process.GetCurrentProcess();
+    process.Refresh();
+    var initialPeakWorkingSet = process.PeakWorkingSet64;
+    var stopwatch = Stopwatch.StartNew();
     var routes = await session.BuildAsync(new RoutingOptions(), cancel.Token);
+    stopwatch.Stop();
+    process.Refresh();
     var features = routes.Select(
         r => new { type = "Feature", id = r.Id, properties = new { name = r.Name, metrics = r.Metrics }, geometry = new { type = "LineString", coordinates = r.Geometry.Select(p => new[] { p.Longitude, p.Latitude }) } });
     File.WriteAllText(
@@ -80,6 +87,12 @@ try
                 CultureInfo.InvariantCulture,
                 $"{route.Name}: {route.Metrics.LengthMetres:F2} m, cost {route.Metrics.WeightedCost:F2}"));
     }
+
+    Console.WriteLine(string.Create(
+        CultureInfo.InvariantCulture,
+        $"Regression metrics: alternatives={routes.Count}, elapsedMs={stopwatch.ElapsedMilliseconds}, "
+        + $"processPeakWorkingSetDeltaMiB={Math.Max(0, process.PeakWorkingSet64 - initialPeakWorkingSet) / 1048576d:F1}, "
+        + $"cableWith10PercentReserveMetres={routes[0].Metrics.CableLengthMetres(0.1):F2}"));
 
     return routes.Count == 0 ? 1 : 0;
 }

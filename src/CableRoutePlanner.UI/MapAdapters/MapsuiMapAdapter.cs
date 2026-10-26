@@ -37,7 +37,14 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         Style = null
     };
 
+    private readonly MemoryLayer _routeVertices = new("Вершины маршрута")
+    {
+        Style = null
+    };
+
     private IReadOnlyList<WaypointRow> _waypoints = [];
+
+    private IReadOnlyList<RouteVertexRow> _vertices = [];
 
     private bool _fitQueued;
 
@@ -59,7 +66,11 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     public event Action<Guid, GeoCoordinate>? PointMoved;
 
+    public event Action<Guid>? WaypointSelected;
+
     public event Action<double>? NorthIndicatorRotationChanged;
+
+    public event Action<int>? RouteVertexSelected;
 
     public MapsuiMapAdapter(MapControl control, GeoBounds bounds)
     {
@@ -71,6 +82,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         };
         control.Map.Layers.Add(_base);
         control.Map.Layers.Add(_routes);
+        control.Map.Layers.Add(_routeVertices);
         control.Map.Layers.Add(_points);
         var (x, y) = SphericalMercator.FromLonLat(
             (bounds.West + bounds.East) / 2,
@@ -83,13 +95,16 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _pointerInteraction = new MapsuiPointerInteraction(
             control,
             () => _waypoints,
+            () => _vertices,
             ToScreen,
             ToGeo,
             coordinate => PointAdded?.Invoke(coordinate),
             (id, coordinate) => PointMoved?.Invoke(id, coordinate),
+            id => WaypointSelected?.Invoke(id),
             RenderPoints,
+            number => RouteVertexSelected?.Invoke(number),
             () => _cameraWasUsed = true,
-            rotation => control.Map.Navigator.RotateTo(rotation, 0));
+            SetRotation);
         control.Map.Navigator.CenterOnAndZoomTo(new MPoint(x, y), 7);
         control.AddHandler(
             Avalonia.Input.InputElement.PointerPressedEvent,
@@ -187,6 +202,37 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         RenderPoints(_waypoints);
     }
 
+    public void SetRouteVertices(IReadOnlyList<RouteVertexRow> vertices)
+    {
+        _vertices = vertices.ToArray();
+        _routeVertices.Features = _vertices.Select(vertex =>
+        {
+            var feature = new GeometryFeature(new Point(Project(vertex.Coordinate)));
+            feature.Styles.Add(new SymbolStyle
+            {
+                Fill = new Brush(vertex.IsSelected ? new Color(183, 75, 36)
+                    : vertex.Kind == RouteVertexKind.UserWaypoint ? new Color(112, 72, 161)
+                    : vertex.Kind == RouteVertexKind.Transition ? new Color(198, 127, 31)
+                    : new Color(23, 107, 85)),
+                Outline = new Pen(vertex.IsSelected ? Color.White : new Color(30, 43, 39), vertex.IsSelected ? 4 : 2),
+                SymbolScale = vertex.IsSelected ? 1.15
+                    : vertex.Kind == RouteVertexKind.Transition ? 1
+                    : vertex.Kind == RouteVertexKind.UserWaypoint ? 0.95
+                    : 0.8
+            });
+            feature.Styles.Add(new LabelStyle
+            {
+                Text = vertex.Number.ToString(CultureInfo.InvariantCulture),
+                ForeColor = Color.White,
+                HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center,
+                VerticalAlignment = LabelStyle.VerticalAlignmentEnum.Center
+            });
+            return (IFeature)feature;
+        }).ToArray();
+        _routeVertices.DataHasChanged();
+        _control.RefreshGraphics();
+    }
+
     private void RenderPoints(IReadOnlyList<WaypointRow> points)
     {
         _points.Features = points.Select(p =>
@@ -267,7 +313,19 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _control.Map.Navigator.ZoomOut();
     }
 
-    public void ResetNorth() => _control.Map.Navigator.RotateTo(0, 350);
+    // RotateTo uses Dispatcher.PushFrame even with a zero duration in Mapsui 4.1.
+    // SetViewport applies the complete target viewport, preserving camera position.
+    public void ResetNorth()
+        => SetRotation(0);
+
+    private void SetRotation(double rotation)
+    {
+        var current = _control.Map.Navigator.Viewport;
+        _control.Map.Navigator.SetViewport(
+            new Viewport(current.CenterX, current.CenterY, current.Resolution, rotation, current.Width, current.Height),
+            0,
+            new Mapsui.Animations.Easing(progress => progress));
+    }
 
     private Avalonia.Point ToScreen(GeoCoordinate coordinate)
     {

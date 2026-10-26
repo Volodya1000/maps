@@ -35,6 +35,11 @@ public interface IRoutePlanner
         CancellationToken cancellationToken);
 }
 
+public interface IPointPlacementValidator
+{
+    Task ValidateAsync(GeoCoordinate coordinate, CancellationToken cancellationToken);
+}
+
 public interface ISettingsStore
 {
     RoutingOptions Load();
@@ -73,7 +78,11 @@ public interface IPlanningSession
 
     Waypoint Add(GeoCoordinate coordinate);
 
+    Task<Waypoint> AddValidatedAsync(GeoCoordinate coordinate, CancellationToken cancellationToken);
+
     void Move(Guid id, GeoCoordinate coordinate);
+
+    Task MoveValidatedAsync(Guid id, GeoCoordinate coordinate, CancellationToken cancellationToken);
 
     void Remove(Guid id);
 

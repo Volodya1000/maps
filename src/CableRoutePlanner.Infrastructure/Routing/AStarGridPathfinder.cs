@@ -58,7 +58,8 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         if (fromStart.Count == 0 || toEnd.Count == 0)
         {
             throw new PlanningException(
-                "Точка находится в препятствии или не соединяется с допустимой областью сетки.");
+                $"Точка находится в препятствии или не соединяется с сеткой {mesh.CellSizeMetres:F0} м. "
+                + "Крупная сетка может не представить узкий проход; расчёт не гарантирует полноту поиска.");
         }
 
         IEnumerable<(int Id, double Cost)> Neighbours(int id)
@@ -149,6 +150,7 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         throw new PlanningException(
             "В доступной области нет допустимого маршрута. "
             + "Река требует разрешённого или потенциального перехода. "
+            + $"Сетка {mesh.CellSizeMetres:F0} м может не представить узкий проход; алгоритм не гарантирует полноту. "
             + "Можно увеличить область данных или изменить точки.");
     }
 }

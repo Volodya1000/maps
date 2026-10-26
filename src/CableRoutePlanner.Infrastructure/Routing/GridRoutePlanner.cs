@@ -14,11 +14,6 @@ public sealed class GridRoutePlanner(
     IGridPathfinder pathfinder,
     ILogger<GridRoutePlanner> logger) : IRoutePlanner
 {
-    public GridRoutePlanner(IGeodataRepository data, ILogger<GridRoutePlanner> logger)
-        : this(data, new GridGenerator(), new AStarGridPathfinder(), logger)
-    {
-    }
-
     private readonly PreparedRoutingAreaCache _areas = new(data);
 
     private static readonly Action<ILogger, long, long, Exception?> PreparationLog =
@@ -48,11 +43,6 @@ public sealed class GridRoutePlanner(
         if (points.Count < 2)
         {
             throw new PlanningException("Установите минимум две точки.");
-        }
-
-        if (points.Count > 100)
-        {
-            throw new PlanningException("Слишком много точек (максимум 100).");
         }
 
         if (points.Any(p => !data.Info.Bounds.Contains(p)))
@@ -125,14 +115,16 @@ public sealed class GridRoutePlanner(
                 }
 
                 var direct = evaluator.Evaluate(start, end);
-                // A country-scale rural leg must not pay for millions of grid
-                // cells when its complete segment is already valid. This is a
-                // certified shortcut: the same obstacle evaluator checked the
-                // whole segment, and only an obstacle-free leg is accepted.
-                // Roads are a cost contribution, not an obstacle. Keeping a
-                // valid long segment direct avoids a country-sized graph when
-                // the only crossed objects are roads.
-                var part = direct is { Forest: 0, Field: 0, Clearing: 0, Roads.Count: 0 }
+                // The direct segment is globally optimal only for a pure length
+                // profile: Euclidean distance is a lower bound, and every terrain
+                // contribution is nonnegative. Other profiles must search because
+                // a longer clearing route can cost less, even when the direct leg
+                // contains no obstacle.
+                var lengthOnlyProfile = profile.Clearing == 1
+                    && profile.Forest == 0
+                    && profile.Field == 0
+                    && profile.RoadCrossingMetres == 0;
+                var part = lengthOnlyProfile && direct is not null
                     ? new List<Coordinate> { start, end }
                     : pathfinder.FindPath(
                         start,
@@ -192,7 +184,9 @@ public sealed class GridRoutePlanner(
                         crossings.Count,
                         bridgeCandidates.Count,
                         cost,
-                        null)));
+                        null),
+                    Array.AsReadOnly(evaluator.BridgeTransitionPoints(route)
+                        .Select(projection.Inverse).ToArray())));
         }
 
         SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);

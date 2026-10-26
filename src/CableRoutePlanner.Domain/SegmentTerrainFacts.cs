@@ -12,13 +12,30 @@ public sealed record SegmentTerrainFacts(
 {
     public void Validate()
     {
-        if (!double.IsFinite(LengthMetres) || LengthMetres < 0
-            || !double.IsFinite(ForestMetres) || ForestMetres < 0
-            || !double.IsFinite(FieldMetres) || FieldMetres < 0
-            || !double.IsFinite(ClearingMetres) || ClearingMetres < 0
-            || RoadCrossings < 0 || BridgeCandidates < 0 || ApprovedCrossings < 0)
+        ValidateDistance(LengthMetres, nameof(LengthMetres), "Длина участка");
+        ValidateDistance(ForestMetres, nameof(ForestMetres), "Длина участка в лесу");
+        ValidateDistance(FieldMetres, nameof(FieldMetres), "Длина участка в поле");
+        ValidateDistance(ClearingMetres, nameof(ClearingMetres), "Длина участка по просеке");
+        ValidateCount(RoadCrossings, nameof(RoadCrossings), "Количество пересечений дорог");
+        ValidateCount(BridgeCandidates, nameof(BridgeCandidates), "Количество потенциальных мостовых переходов");
+        ValidateCount(ApprovedCrossings, nameof(ApprovedCrossings), "Количество одобренных переходов");
+    }
+
+    private static void ValidateDistance(double value, string parameterName, string label)
+    {
+        if (!double.IsFinite(value) || value < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(LengthMetres), "Некорректные характеристики участка.");
+            throw new ArgumentOutOfRangeException(parameterName, value,
+                $"{label} должна быть конечной и неотрицательной.");
+        }
+    }
+
+    private static void ValidateCount(int value, string parameterName, string label)
+    {
+        if (value < 0)
+        {
+            throw new ArgumentOutOfRangeException(parameterName, value,
+                $"{label} не может быть отрицательным.");
         }
     }
 }

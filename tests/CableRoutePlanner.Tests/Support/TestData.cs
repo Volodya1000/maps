@@ -61,6 +61,8 @@ internal static class TestData
 
     public static IRoutePlanner Planner(params MapFeature[] features) => new GridRoutePlanner(
         new MemoryData(features),
+        new GridGenerator(),
+        new AStarGridPathfinder(),
         NullLogger<GridRoutePlanner>.Instance);
 
     public static readonly RoutingOptions Options = new(20, 100000);

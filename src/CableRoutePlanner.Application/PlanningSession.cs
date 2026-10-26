@@ -2,8 +2,12 @@ using CableRoutePlanner.Domain;
 
 namespace CableRoutePlanner.Application;
 
-public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
+public sealed class PlanningSession(
+    IRoutePlanner planner,
+    IPointPlacementValidator? pointPlacementValidator = null) : IPlanningSession
 {
+    public const int MaximumWaypointCount = 100;
+
     private readonly List<Waypoint> _points = [];
 
     public IReadOnlyList<Waypoint> Points => _points.AsReadOnly();
@@ -15,7 +19,7 @@ public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
 
     public Waypoint Add(GeoCoordinate coordinate)
     {
-        if (_points.Count >= 100)
+        if (_points.Count >= MaximumWaypointCount)
         {
             throw new PlanningException("Допускается не более 100 точек.");
         }
@@ -24,6 +28,19 @@ public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
         _points.Add(point);
         Revision++;
         return point;
+    }
+
+    public async Task<Waypoint> AddValidatedAsync(
+        GeoCoordinate coordinate,
+        CancellationToken cancellationToken)
+    {
+        if (pointPlacementValidator is not null)
+        {
+            await pointPlacementValidator.ValidateAsync(coordinate, cancellationToken);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return Add(coordinate);
     }
 
     public void Move(Guid id, GeoCoordinate coordinate)
@@ -39,6 +56,20 @@ public sealed class PlanningSession(IRoutePlanner planner) : IPlanningSession
             Coordinate = coordinate
         };
         Revision++;
+    }
+
+    public async Task MoveValidatedAsync(
+        Guid id,
+        GeoCoordinate coordinate,
+        CancellationToken cancellationToken)
+    {
+        if (pointPlacementValidator is not null)
+        {
+            await pointPlacementValidator.ValidateAsync(coordinate, cancellationToken);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        Move(id, coordinate);
     }
 
     public void Remove(Guid id)

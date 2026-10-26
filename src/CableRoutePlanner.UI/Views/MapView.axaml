@@ -206,14 +206,16 @@
                         <ListBox MaxHeight="260" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:RouteVertexRow">
-                                    <Grid ColumnDefinitions="32,*">
-                                        <TextBlock Text="{Binding Number}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding Display}" />
-                                    </Grid>
+                                    <Border Padding="5" Classes.selected="{Binding IsSelected}">
+                                        <Grid ColumnDefinitions="32,*">
+                                            <TextBlock Text="{Binding Number}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Display}" />
+                                        </Grid>
+                                    </Border>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                        <Button Command="{Binding CopyRouteVertex}" Content="Копировать выбранную вершину" />
+                        <Button Command="{Binding CopyRouteVertex}" Content="{Binding CopyRouteVertexText}" />
                     </StackPanel>
                     <Border
                         Padding="8"

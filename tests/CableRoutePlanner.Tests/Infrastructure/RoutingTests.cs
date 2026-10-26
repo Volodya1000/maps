@@ -153,6 +153,11 @@ public sealed class RoutingTests
         Assert.Equal(1, shortest.Metrics.PotentialBridgeCrossings);
         Assert.Equal(0, shortest.Metrics.ApprovedWaterCrossings);
         Assert.InRange(shortest.Metrics.LengthMetres, 209.5, 211);
+        Assert.NotEmpty(shortest.TransitionPoints!);
+        var routeLine = new LineString(shortest.Geometry
+            .Select(coordinate => new Coordinate(coordinate.Longitude, coordinate.Latitude)).ToArray());
+        Assert.All(shortest.TransitionPoints!, transition =>
+            Assert.True(routeLine.Distance(new Point(transition.Longitude, transition.Latitude)) < 0.000001));
     }
 
     [Fact]
@@ -217,6 +222,23 @@ public sealed class RoutingTests
 
         Assert.Contains(routes, route => route.Name == "Короче" && route.Metrics.RoadCrossings == 1);
         Assert.Contains(routes, route => route.Name == "Баланс" && route.Metrics.RoadCrossings == 0);
+    }
+
+    [Fact]
+    public async Task CostReducingClearingDetourIsSearchedEvenWhenDirectSegmentIsClear()
+    {
+        var clearing = TestData.Polygon(1, TerrainKind.Clearing, 100, 150, 300, 300);
+        var routes = await TestData.Planner(clearing).PlanAsync(
+            [TestData.P(50, 350), TestData.P(350, 350)],
+            TestData.Options,
+            default);
+
+        var balanced = Assert.Single(routes, route => route.Name == "Баланс");
+        Assert.True(balanced.Metrics.LengthMetres > TestData.P(50, 350).DistanceTo(TestData.P(350, 350)));
+        Assert.True(balanced.Metrics.WeightedCost < TestData.P(50, 350).DistanceTo(TestData.P(350, 350)));
+        var clearingGeometry = new WKBReader().Read(clearing.Wkb);
+        Assert.Contains(balanced.Geometry, point => clearingGeometry.Covers(
+            new Point(point.Longitude, point.Latitude)));
     }
 
     [Fact]

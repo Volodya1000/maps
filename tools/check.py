@@ -33,6 +33,7 @@ def executable(name: str) -> str:
 
 
 def lint() -> None:
+    run(sys.executable, "tools/check_architecture.py")
     run(executable("uv"), "run", "--locked", "ruff", "check", ".")
     for name in subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, text=True).split("\0"):
         path = ROOT / name
@@ -71,7 +72,7 @@ def desktop() -> None:
     if platform.system() == "Linux":
         run(executable("strace"), "-f", "-e", "trace=connect,sendto", "-o", "artifacts/runtime.strace",
             dotnet, "tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll",
-            "samples/real-geodata-fixtures/minsk", "artifacts/route.geojson", "53.9490,27.5180", "53.9500,27.5190")
+            "samples/real-geodata-fixtures/minsk", "artifacts/route.geojson", "53.9400,27.4900", "53.9550,27.5200")
         run(sys.executable, "tools/check_network.py", "artifacts/runtime.strace", "--output", "artifacts/network-report.json")
     elif platform.system() == "Windows":
         run(dotnet, "publish", "src/CableRoutePlanner.Desktop", "-c", "Release", "-r", "win-x64",
@@ -94,9 +95,11 @@ def terrain() -> None:
     if os.environ.get("PLAYWRIGHT_INSTALL_WITH_DEPS") == "1":
         install.append("--with-deps")
     run(*install, "chromium", cwd=directory)
-    # Do not accidentally test against a pre-existing server from another checkout.
+    # Detect an active listener without treating stale TIME_WAIT sockets as occupied.
     with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 8765))
+        probe.settimeout(0.1)
+        if probe.connect_ex(("127.0.0.1", 8765)) == 0:
+            raise ValueError("Port 8765 is already served by another process.")
     with (ARTIFACTS / "terrain-server.log").open("w", encoding="utf-8") as log:
         server = subprocess.Popen([sys.executable, "serve.py"], cwd=directory, stdout=log, stderr=subprocess.STDOUT)
         try:
@@ -128,7 +131,13 @@ def android() -> None:
     if not sdk:
         raise ValueError("Set ANDROID_HOME to Android SDK with API/build-tools 34.0.0; install JDK 17 and the .NET Android workload.")
     run(dotnet, "restore", "src/CableRoutePlanner.Android", "--locked-mode")
-    version_code = os.environ.get("ANDROID_VERSION_CODE", "6")
+    version_values = subprocess.check_output(
+        [sys.executable, "tools/release_version.py"], cwd=ROOT, text=True)
+    version = next(line.split("=", 1)[1] for line in version_values.splitlines() if line.startswith("RELEASE_VERSION="))
+    version_code = next(line.split("=", 1)[1] for line in version_values.splitlines() if line.startswith("ANDROID_VERSION_CODE="))
+    configured_version_code = os.environ.get("ANDROID_VERSION_CODE")
+    if configured_version_code and configured_version_code != version_code:
+        raise ValueError(f"ANDROID_VERSION_CODE={configured_version_code} does not match release version {version_code}.")
     publish = [
         dotnet,
         "publish",
@@ -162,6 +171,19 @@ def android() -> None:
     (ARTIFACTS / "permissions.txt").write_text(permissions, encoding="utf-8")
     if "android.permission.INTERNET" in permissions:
         raise ValueError("Release APK unexpectedly requests INTERNET.")
+    apk_entries = subprocess.check_output([str(aapt), "list", str(apk)], text=True)
+    for required_asset in ("assets/Data/manifest.json", "assets/Data/geodata.sqlite"):
+        if required_asset not in apk_entries.splitlines():
+            raise ValueError(f"APK is missing required offline map asset {required_asset}.")
+    badging = subprocess.check_output([str(aapt), "dump", "badging", str(apk)], text=True)
+    package_line = next((line for line in badging.splitlines() if line.startswith("package:")), "")
+    for expected in (
+        "name='by.cablerouteplanner.app'",
+        f"versionCode='{version_code}'",
+        f"versionName='{version}'",
+    ):
+        if expected not in package_line:
+            raise ValueError(f"APK badging does not contain expected value {expected}: {package_line}")
     downloadable_apk = ARTIFACTS / "CableRoutePlanner-CI-Minsk.apk"
     shutil.copy2(apk, downloadable_apk)
     with downloadable_apk.open("rb") as source:

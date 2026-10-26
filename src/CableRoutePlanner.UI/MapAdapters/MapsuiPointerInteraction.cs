@@ -14,11 +14,14 @@ internal sealed class MapsuiPointerInteraction
 
     private readonly MapControl _control;
     private readonly Func<IReadOnlyList<WaypointRow>> _waypoints;
+    private readonly Func<IReadOnlyList<RouteVertexRow>> _routeVertices;
     private readonly Func<GeoCoordinate, Avalonia.Point> _toScreen;
     private readonly Func<Avalonia.Point, GeoCoordinate> _toGeo;
     private readonly Action<GeoCoordinate> _pointAdded;
     private readonly Action<Guid, GeoCoordinate> _pointMoved;
+    private readonly Action<Guid> _waypointSelected;
     private readonly Action<IReadOnlyList<WaypointRow>> _previewChanged;
+    private readonly Action<int> _routeVertexSelected;
     private readonly Action _cameraUsed;
     private readonly Action<double> _rotate;
     private readonly HashSet<long> _pointers = [];
@@ -30,25 +33,33 @@ internal sealed class MapsuiPointerInteraction
     private Avalonia.Point _rotationCenter;
     private double _rotationStartAngle;
     private double _rotationStart;
+    private GeoCoordinate? _lastDragCoordinate;
+    private int? _pressedRouteVertex;
 
     public MapsuiPointerInteraction(
         MapControl control,
         Func<IReadOnlyList<WaypointRow>> waypoints,
+        Func<IReadOnlyList<RouteVertexRow>> routeVertices,
         Func<GeoCoordinate, Avalonia.Point> toScreen,
         Func<Avalonia.Point, GeoCoordinate> toGeo,
         Action<GeoCoordinate> pointAdded,
         Action<Guid, GeoCoordinate> pointMoved,
+        Action<Guid> waypointSelected,
         Action<IReadOnlyList<WaypointRow>> previewChanged,
+        Action<int> routeVertexSelected,
         Action cameraUsed,
         Action<double> rotate)
     {
         _control = control;
         _waypoints = waypoints;
+        _routeVertices = routeVertices;
         _toScreen = toScreen;
         _toGeo = toGeo;
         _pointAdded = pointAdded;
         _pointMoved = pointMoved;
+        _waypointSelected = waypointSelected;
         _previewChanged = previewChanged;
+        _routeVertexSelected = routeVertexSelected;
         _cameraUsed = cameraUsed;
         _rotate = rotate;
     }
@@ -84,11 +95,13 @@ internal sealed class MapsuiPointerInteraction
         {
             _multiTouch = true;
             _dragged = null;
+            _pressedRouteVertex = null;
             _control.Map.Navigator.PanLock = false;
             return;
         }
 
         _pressed = e.GetPosition(_control);
+        _lastDragCoordinate = null;
         _multiTouch = false;
         _dragged = _waypoints().FirstOrDefault(point => IsMarkerHit(point, _pressed))?.Id;
         if (_dragged is not null)
@@ -96,7 +109,20 @@ internal sealed class MapsuiPointerInteraction
             _control.Map.Navigator.PanLock = true;
             e.Pointer.Capture(_control);
             e.Handled = true;
+            return;
         }
+
+        _pressedRouteVertex = _routeVertices()
+            .Where(vertex => vertex.Kind != RouteVertexKind.UserWaypoint)
+            .FirstOrDefault(vertex => IsRouteVertexHit(vertex, _pressed))?.Number;
+        if (_pressedRouteVertex is not null)
+        {
+            _control.Map.Navigator.PanLock = true;
+            e.Pointer.Capture(_control);
+            e.Handled = true;
+            return;
+        }
+
     }
 
     public void Moved(object? sender, PointerEventArgs e)
@@ -109,12 +135,19 @@ internal sealed class MapsuiPointerInteraction
             return;
         }
 
+        if (_pressedRouteVertex is not null)
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (_dragged is not { } dragged || _multiTouch)
         {
             return;
         }
 
         var coordinate = _toGeo(e.GetPosition(_control));
+        _lastDragCoordinate = coordinate;
         _previewChanged(_waypoints().Select(p => p.Id == dragged ? p with { Coordinate = coordinate } : p).ToArray());
         e.Handled = true;
     }
@@ -136,12 +169,33 @@ internal sealed class MapsuiPointerInteraction
             return;
         }
 
+        if (_pressedRouteVertex is { } routeVertex)
+        {
+            _pressedRouteVertex = null;
+            _control.Map.Navigator.PanLock = false;
+            e.Pointer.Capture(null);
+            if (IsClick(position))
+            {
+                _routeVertexSelected(routeVertex);
+            }
+
+            e.Handled = true;
+            return;
+        }
+
         if (_dragged is { } dragged)
         {
             _dragged = null;
             _control.Map.Navigator.PanLock = false;
             e.Pointer.Capture(null);
-            _pointMoved(dragged, _toGeo(position));
+            if (IsClick(position))
+            {
+                _waypointSelected(dragged);
+            }
+            else
+            {
+                _pointMoved(dragged, _lastDragCoordinate ?? _toGeo(position));
+            }
             e.Handled = true;
         }
         else if (_addMode && !_multiTouch && IsClick(position))
@@ -158,6 +212,7 @@ internal sealed class MapsuiPointerInteraction
     public void CaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
         _dragged = null;
+        _pressedRouteVertex = null;
         _rotatingPointer = null;
         _control.Map.Navigator.PanLock = false;
         _pointers.Remove(e.Pointer.Id);
@@ -170,6 +225,14 @@ internal sealed class MapsuiPointerInteraction
     private bool IsMarkerHit(WaypointRow point, Avalonia.Point position)
     {
         var screen = _toScreen(point.Coordinate);
+        var dx = screen.X - position.X;
+        var dy = screen.Y - position.Y;
+        return dx * dx + dy * dy <= MarkerHitRadius * MarkerHitRadius;
+    }
+
+    private bool IsRouteVertexHit(RouteVertexRow vertex, Avalonia.Point position)
+    {
+        var screen = _toScreen(vertex.Coordinate);
         var dx = screen.X - position.X;
         var dy = screen.Y - position.Y;
         return dx * dx + dy * dy <= MarkerHitRadius * MarkerHitRadius;

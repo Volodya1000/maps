@@ -214,6 +214,26 @@ internal sealed class TerrainEvaluator
         return aligned;
     }
 
+    public IReadOnlyList<Coordinate> BridgeTransitionPoints(IReadOnlyList<Coordinate> route)
+    {
+        var points = new Dictionary<(double X, double Y), Coordinate>();
+        for (var index = 1; index < route.Count; index++)
+        {
+            var segment = _factory.CreateLineString([route[index - 1], route[index]]);
+            foreach (var guide in _bridgeGuides.Where(candidate =>
+                candidate.River.Intersects(segment)
+                && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres))
+            {
+                foreach (var coordinate in guide.WaterSection.Coordinates)
+                {
+                    points.TryAdd((coordinate.X, coordinate.Y), coordinate);
+                }
+            }
+        }
+
+        return points.Values.ToArray();
+    }
+
     private static double PathLength(IReadOnlyList<Coordinate> path) => path
         .Zip(path.Skip(1), (a, b) => a.Distance(b))
         .Sum();

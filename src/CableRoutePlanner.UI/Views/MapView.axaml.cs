@@ -52,6 +52,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         adapter.InitializeViewport();
         adapter.SetPoints(viewModel.Points.ToArray());
         adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
+        adapter.SetRouteVertices(viewModel.RouteVertices.ToArray());
         Disposable.Create(UnbindButtons)
             .DisposeWith(lifetime);
     }
@@ -62,16 +63,29 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         CompositeDisposable lifetime)
     {
         void PointAdded(GeoCoordinate point) =>
-            viewModel.AddPoint.Execute(point).Subscribe().Dispose();
+            viewModel.AddPoint.Execute(point).Subscribe(_ => { }, _ => { });
 
-        void PointMoved(Guid id, GeoCoordinate point) => viewModel.MovePoint(id, point);
+        async void PointMoved(Guid id, GeoCoordinate point)
+        {
+            await viewModel.MovePointAsync(id, point);
+            adapter.SetPoints(viewModel.Points.ToArray());
+        }
+
+        void WaypointSelected(Guid id) => viewModel.SelectPoint.Execute(id).Subscribe(_ => { }, _ => { });
+
+        void RouteVertexSelected(int number) => viewModel.SelectedRouteVertex =
+            viewModel.RouteVertices.FirstOrDefault(vertex => vertex.Number == number);
 
         adapter.PointAdded += PointAdded;
         adapter.PointMoved += PointMoved;
+        adapter.WaypointSelected += WaypointSelected;
+        adapter.RouteVertexSelected += RouteVertexSelected;
         Disposable.Create(() =>
         {
             adapter.PointAdded -= PointAdded;
             adapter.PointMoved -= PointMoved;
+            adapter.WaypointSelected -= WaypointSelected;
+            adapter.RouteVertexSelected -= RouteVertexSelected;
         }).DisposeWith(lifetime);
     }
 
@@ -86,12 +100,17 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         void RoutesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
             adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
 
+        void VerticesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
+            adapter.SetRouteVertices(viewModel.RouteVertices.ToArray());
+
         viewModel.Points.CollectionChanged += PointsChanged;
         viewModel.Alternatives.CollectionChanged += RoutesChanged;
+        viewModel.RouteVertices.CollectionChanged += VerticesChanged;
         Disposable.Create(() =>
         {
             viewModel.Points.CollectionChanged -= PointsChanged;
             viewModel.Alternatives.CollectionChanged -= RoutesChanged;
+            viewModel.RouteVertices.CollectionChanged -= VerticesChanged;
         }).DisposeWith(lifetime);
     }
 
@@ -104,6 +123,10 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             .Subscribe(_ => adapter.SetRoutes(
                 viewModel.Alternatives.ToArray(),
                 viewModel.SelectedRoute?.Id))
+            .DisposeWith(lifetime);
+
+        viewModel.WhenAnyValue(x => x.SelectedRouteVertex)
+            .Subscribe(_ => adapter.SetRouteVertices(viewModel.RouteVertices.ToArray()))
             .DisposeWith(lifetime);
 
         viewModel.WhenAnyValue(x => x.AddMode)

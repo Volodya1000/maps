@@ -24,13 +24,22 @@ public sealed record CostProfile(
 
     public void Validate()
     {
-        if (!double.IsFinite(Forest) || Forest < 0
-            || !double.IsFinite(Field) || Field < 0
-            || !double.IsFinite(RoadCrossingMetres) || RoadCrossingMetres < 0
-            || !double.IsFinite(Clearing) || Clearing <= 0 || Clearing > 1)
+        ValidateNonNegative(Forest, nameof(Forest), "Стоимость прохождения леса");
+        ValidateNonNegative(Field, nameof(Field), "Стоимость прохождения поля");
+        ValidateNonNegative(RoadCrossingMetres, nameof(RoadCrossingMetres), "Штраф за пересечение дороги");
+        if (!double.IsFinite(Clearing) || Clearing is <= 0 or > 1)
         {
-            throw new ArgumentException(
-                "Стоимость должна быть конечной и неотрицательной; множитель просеки — (0, 1].");
+            throw new ArgumentOutOfRangeException(nameof(Clearing), Clearing,
+                "Множитель стоимости просеки должен быть конечным и находиться в диапазоне (0, 1].");
+        }
+    }
+
+    private static void ValidateNonNegative(double value, string parameterName, string label)
+    {
+        if (!double.IsFinite(value) || value < 0)
+        {
+            throw new ArgumentOutOfRangeException(parameterName, value,
+                $"{label} должна быть конечной и неотрицательной.");
         }
     }
 }
