@@ -170,7 +170,7 @@ public sealed class UiTests
     public async Task AlternativesAreHiddenUntilRouteIsBuiltAndAfterClear()
     {
         using var vm = new MapViewModel(new NavigationHost(),
-            new CableRoutePlanner.Application.PlanningSession(TestData.Planner()),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MemoryData(), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
@@ -272,7 +272,7 @@ public sealed class UiTests
     {
         var forest = TestData.Polygon(1, CableRoutePlanner.Domain.TerrainKind.Forest, 100, 60, 220, 240);
         using var vm = new MapViewModel(new NavigationHost(),
-            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(forest)),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(forest), TestData.AllowAllValidator),
             new MemoryData(forest), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(30, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
@@ -328,7 +328,7 @@ public sealed class UiTests
     {
         var repository = new ViewportRepository();
         using var vm = new MapViewModel(new NavigationHost(),
-            new CableRoutePlanner.Application.PlanningSession(TestData.Planner()),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             repository, new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
@@ -352,7 +352,7 @@ public sealed class UiTests
     public async Task MobileMapPanelCanBeCollapsedAndSwipedOpenAgain()
     {
         using var vm = new MapViewModel(new NavigationHost(),
-            new CableRoutePlanner.Application.PlanningSession(TestData.Planner()),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MemoryData(), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {

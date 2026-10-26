@@ -117,7 +117,7 @@ public sealed class WaypointGestureTests
         public MapViewModel ViewModel
         {
             get;
-        } = new(new NavigationHost(), new PlanningSession(TestData.Planner()),
+        } = new(new NavigationHost(), new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MemoryData(), new MemorySettings(), new MemoryClipboard());
         public WaypointList List
         {

@@ -62,16 +62,34 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         IMapAdapter adapter,
         CompositeDisposable lifetime)
     {
+        var active = true;
         void PointAdded(GeoCoordinate point) =>
-            viewModel.AddPoint.Execute(point).Subscribe(_ => { }, _ => { });
+            viewModel.AddPoint.Execute(point)
+                .Subscribe(_ => { }, viewModel.ReportUnexpectedError)
+                .DisposeWith(lifetime);
 
         async void PointMoved(Guid id, GeoCoordinate point)
         {
-            await viewModel.MovePointAsync(id, point);
-            adapter.SetPoints(viewModel.Points.ToArray());
+            try
+            {
+                await viewModel.MovePointAsync(id, point);
+            }
+            catch (Exception error)
+            {
+                viewModel.ReportUnexpectedError(error);
+            }
+            finally
+            {
+                if (active)
+                {
+                    adapter.SetPoints(viewModel.Points.ToArray());
+                }
+            }
         }
 
-        void WaypointSelected(Guid id) => viewModel.SelectPoint.Execute(id).Subscribe(_ => { }, _ => { });
+        void WaypointSelected(Guid id) => viewModel.SelectPoint.Execute(id)
+            .Subscribe(_ => { }, viewModel.ReportUnexpectedError)
+            .DisposeWith(lifetime);
 
         void RouteVertexSelected(int number) => viewModel.SelectedRouteVertex =
             viewModel.RouteVertices.FirstOrDefault(vertex => vertex.Number == number);
@@ -82,6 +100,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         adapter.RouteVertexSelected += RouteVertexSelected;
         Disposable.Create(() =>
         {
+            active = false;
             adapter.PointAdded -= PointAdded;
             adapter.PointMoved -= PointMoved;
             adapter.WaypointSelected -= WaypointSelected;
@@ -163,11 +182,27 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
         adapter.ViewportChanged += ViewportChanged;
         var cancellation = new CancellationTokenSource();
+        var token = cancellation.Token;
         changes
             .Throttle(TimeSpan.FromMilliseconds(200), RxApp.MainThreadScheduler)
-            .Subscribe(viewport =>
-                _ = viewModel.LoadMapAreaAsync(viewport.Bounds, cancellation.Token, viewport.Resolution))
+            .Subscribe(viewport => _ = LoadViewportAsync(viewport.Bounds, viewport.Resolution))
             .DisposeWith(lifetime);
+
+        async Task LoadViewportAsync(GeoBounds bounds, double resolution)
+        {
+            try
+            {
+                await viewModel.LoadMapAreaAsync(bounds, token, resolution);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                System.Diagnostics.Debug.WriteLine("Устаревшая загрузка карты отменена.");
+            }
+            catch (Exception error)
+            {
+                viewModel.ReportUnexpectedError(error);
+            }
+        }
 
         Disposable.Create(() =>
         {

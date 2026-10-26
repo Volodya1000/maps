@@ -10,6 +10,20 @@ namespace CableRoutePlanner.Tests;
 public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 {
     private static readonly IReadOnlyList<int> ThreePointNumbers = Array.AsReadOnly(new[] { 1, 2, 3 });
+
+    [Fact]
+    public void UnexpectedErrorHasUserMessageAndDoesNotUpdateDisposedScreen()
+    {
+        var vm = CreateVm(new MemoryData());
+        vm.ReportUnexpectedError(new InvalidOperationException("internal details"));
+        Assert.Contains("внутренней ошибки", vm.Status);
+        Assert.DoesNotContain("internal details", vm.Status);
+        var status = vm.Status;
+        vm.Dispose();
+        vm.ReportUnexpectedError(new InvalidOperationException("later"));
+        Assert.Equal(status, vm.Status);
+    }
+
     [Fact]
     public async Task LatestMapRequestWinsWhenOlderRequestFinishesLast()
     {
@@ -204,7 +218,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 
     private static MapViewModel CreateVm(IGeodataRepository data) => new(
         new NavigationHost(),
-        new PlanningSession(TestData.Planner()),
+        new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
         data,
         new MemorySettings(),
         new MemoryClipboard());

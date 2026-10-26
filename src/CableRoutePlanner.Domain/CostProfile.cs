@@ -7,6 +7,9 @@ public sealed record CostProfile(
     double RoadCrossingMetres,
     double Clearing)
 {
+    public const double MinimumClearingMultiplier = 0;
+    public const double MaximumClearingMultiplier = 1;
+
     /// <summary>A lower bound on cost per physical metre, used by admissible search heuristics.</summary>
     public double MinimumCostPerMetre => Math.Min(1, Clearing);
 
@@ -24,13 +27,18 @@ public sealed record CostProfile(
 
     public void Validate()
     {
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            throw new ArgumentException("Название профиля должно быть непустым.", nameof(Name));
+        }
+
         ValidateNonNegative(Forest, nameof(Forest), "Стоимость прохождения леса");
         ValidateNonNegative(Field, nameof(Field), "Стоимость прохождения поля");
         ValidateNonNegative(RoadCrossingMetres, nameof(RoadCrossingMetres), "Штраф за пересечение дороги");
-        if (!double.IsFinite(Clearing) || Clearing is <= 0 or > 1)
+        if (!double.IsFinite(Clearing) || Clearing is <= MinimumClearingMultiplier or > MaximumClearingMultiplier)
         {
             throw new ArgumentOutOfRangeException(nameof(Clearing), Clearing,
-                "Множитель стоимости просеки должен быть конечным и находиться в диапазоне (0, 1].");
+                $"Множитель стоимости просеки должен быть конечным и находиться в диапазоне ({MinimumClearingMultiplier}, {MaximumClearingMultiplier}].");
         }
     }
 

@@ -55,11 +55,11 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         var fromStart = Connect(start);
         var toEnd = Connect(destination);
         var direct = start.Distance(destination) <= mesh.CellSizeMetres * 2 ? evaluate(start, destination) : null;
-        if (fromStart.Count == 0 || toEnd.Count == 0)
+        if ((fromStart.Count == 0 || toEnd.Count == 0) && direct is null)
         {
             throw new PlanningException(
-                $"Точка находится в препятствии или не соединяется с сеткой {mesh.CellSizeMetres:F0} м. "
-                + "Крупная сетка может не представить узкий проход; расчёт не гарантирует полноту поиска.");
+                $"Точка не соединяется с узлами сетки {mesh.CellSizeMetres:F0} м. "
+                + "Это может быть препятствие либо ограничение разрешения сетки; физическая непроходимость не доказана.");
         }
 
         IEnumerable<(int Id, double Cost)> Neighbours(int id)

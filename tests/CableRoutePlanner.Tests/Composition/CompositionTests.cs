@@ -17,12 +17,12 @@ namespace CableRoutePlanner.Tests;
 public sealed class CompositionTests
 {
     [Fact]
-    public void CoreProviderResolvesPlanningWithoutLoadingUiAssemblies()
+    public async Task CoreProviderResolvesPlanningWithoutLoadingUiAssemblies()
     {
         using var directory = new TemporaryDirectory();
         using var provider = TestApplication.CreateCoreServices(TestData.RealData, Path.Combine(directory.DirectoryPath, "settings.json"));
         var session = provider.GetRequiredService<IPlanningSession>();
-        session.Add(TestData.P(50, 150));
+        await session.AddAsync(new GeoCoordinate(53.9490, 27.5180), default);
         Assert.Single(session.Points);
         Assert.DoesNotContain(typeof(GridRoutePlanner).Assembly.GetReferencedAssemblies(),
             assembly => assembly.Name?.Contains("Avalonia", StringComparison.Ordinal) == true

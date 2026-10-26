@@ -48,7 +48,7 @@ public sealed class PresentationTests : ReactiveTestScope
     public async Task ClipboardUsesSelectedPointAndOrderIsControlledByList()
     {
         var clipboard = new MemoryClipboard();
-        var session = new PlanningSession(TestData.Planner());
+        var session = new PlanningSession(TestData.Planner(), TestData.AllowAllValidator);
         using var vm = new MapViewModel(
             new NavigationHost(),
             session,
@@ -69,11 +69,11 @@ public sealed class PresentationTests : ReactiveTestScope
     public async Task ChangedInputCannotPublishLateCalculation()
     {
         var pending = new TaskCompletionSource<IReadOnlyList<RouteAlternative>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var session = new PlanningSession(new DeferredPlanner(pending.Task));
-        session.Add(TestData.P(50, 150));
-        session.Add(TestData.P(260, 150));
+        var session = new PlanningSession(new DeferredPlanner(pending.Task), TestData.AllowAllValidator);
+        await session.AddAsync(TestData.P(50, 150), default);
+        await session.AddAsync(TestData.P(260, 150), default);
         var build = session.BuildAsync(TestData.Options, default);
-        session.Move(session.Points[0].Id, TestData.P(55, 155));
+        await session.MoveAsync(session.Points[0].Id, TestData.P(55, 155), default);
         pending.SetResult([]);
         await Assert.ThrowsAsync<PlanningException>(() => build);
     }
@@ -227,7 +227,7 @@ public sealed class PresentationTests : ReactiveTestScope
         IGeodataRepository data,
         IScreen? screen = null) => new(
         screen ?? new NavigationHost(),
-        new PlanningSession(planner),
+        new PlanningSession(planner, TestData.AllowAllValidator),
         data,
         new MemorySettings(),
         new MemoryClipboard());

@@ -25,6 +25,17 @@ internal sealed class MemoryData(params MapFeature[] features) : IGeodataReposit
 
 internal static class TestData
 {
+    public static IPointPlacementValidator AllowAllValidator { get; } = new AllowAllPointPlacementValidator();
+
+    private sealed class AllowAllPointPlacementValidator : IPointPlacementValidator
+    {
+        public Task ValidateAsync(GeoCoordinate coordinate, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        }
+    }
+
     public static GeoCoordinate P(double x, double y) => new(
         54 + y / 111195.08,
         27 + x / (111195.08 * Math.Cos(54 * Math.PI / 180)));

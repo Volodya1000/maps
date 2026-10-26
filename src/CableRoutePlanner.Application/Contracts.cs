@@ -76,13 +76,9 @@ public interface IPlanningSession
         get;
     }
 
-    Waypoint Add(GeoCoordinate coordinate);
+    Task<Waypoint> AddAsync(GeoCoordinate coordinate, CancellationToken cancellationToken);
 
-    Task<Waypoint> AddValidatedAsync(GeoCoordinate coordinate, CancellationToken cancellationToken);
-
-    void Move(Guid id, GeoCoordinate coordinate);
-
-    Task MoveValidatedAsync(Guid id, GeoCoordinate coordinate, CancellationToken cancellationToken);
+    Task MoveAsync(Guid id, GeoCoordinate coordinate, CancellationToken cancellationToken);
 
     void Remove(Guid id);
 

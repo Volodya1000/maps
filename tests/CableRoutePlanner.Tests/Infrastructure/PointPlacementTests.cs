@@ -18,7 +18,7 @@ public sealed class PointPlacementTests
         var session = new PlanningSession(TestData.Planner(), validator);
 
         var error = await Assert.ThrowsAsync<PlanningException>(
-            () => session.AddValidatedAsync(TestData.P(50, 150), default));
+            () => ((IPlanningSession)session).AddAsync(TestData.P(50, 150), default));
 
         Assert.Contains("Нельзя установить точку", error.Message);
         Assert.Empty(session.Points);
@@ -35,6 +35,16 @@ public sealed class PointPlacementTests
             () => validator.ValidateAsync(TestData.P(50, 150), default));
 
         Assert.Contains("русла реки", error.Message);
+    }
+
+    [Fact]
+    public async Task LinearRiverUsesDocumentedCoordinateUncertaintyOnly()
+    {
+        var river = TestData.Line(1, TerrainKind.River, (40, 150), (60, 150));
+        var validator = new GeodataPointPlacementValidator(new MemoryData(river));
+        await Assert.ThrowsAsync<PlanningException>(
+            () => validator.ValidateAsync(TestData.P(50, 150.5), default));
+        await validator.ValidateAsync(TestData.P(50, 152), default);
     }
 
     [Fact]
@@ -56,11 +66,11 @@ public sealed class PointPlacementTests
         var session = new PlanningSession(
             TestData.Planner(),
             new GeodataPointPlacementValidator(new MemoryData(obstacle)));
-        var point = session.Add(TestData.P(50, 150));
+        var point = await session.AddAsync(TestData.P(50, 150), default);
         var revision = session.Revision;
 
         await Assert.ThrowsAsync<PlanningException>(
-            () => session.MoveValidatedAsync(point.Id, TestData.P(100, 150), default));
+            () => session.MoveAsync(point.Id, TestData.P(100, 150), default));
 
         Assert.Equal(point, Assert.Single(session.Points));
         Assert.Equal(revision, session.Revision);

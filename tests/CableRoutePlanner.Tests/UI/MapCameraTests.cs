@@ -106,7 +106,7 @@ public sealed class MapCameraTests
     }
 
     [AvaloniaFact]
-    public async Task CompassResetReturnsNorthAndPreservesCameraCenterAndScale()
+    public void CompassResetReturnsNorthAndPreservesCameraCenterAndScale()
     {
         var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
@@ -128,7 +128,6 @@ public sealed class MapCameraTests
         var before = control.Map.Navigator.Viewport;
 
         adapter.ResetNorth();
-        await Task.Delay(450);
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         var after = control.Map.Navigator.Viewport;
 

@@ -48,6 +48,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private CancellationTokenSource? _calculation;
 
+    private CancellationTokenSource? _pointMove;
+
     private Task _calculationFinished = Task.CompletedTask;
 
     private readonly ObservableAsPropertyHelper<bool> _canBuild;
@@ -340,7 +342,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         try
         {
             EnsureInBounds(coordinate, "Для этой точки нет данных в офлайн-пакете.");
-            await _session.AddValidatedAsync(coordinate, CancellationToken.None);
+            await _session.AddAsync(coordinate, CancellationToken.None);
             RefreshAfterChange();
         }
         catch (PlanningException ex)
@@ -463,27 +465,9 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
         if (route is not null)
         {
-            var expandedGeometry = ExpandWithTransitionPoints(route);
-            var coordinates = expandedGeometry
-                .Where((coordinate, index) => index == 0 || coordinate != expandedGeometry[index - 1])
-                .ToArray();
-            for (var index = 0; index < coordinates.Length; index++)
+            foreach (var vertex in RouteVertexProjection.Project(route, Points.Select(point => point.Coordinate).ToArray()))
             {
-                var coordinate = coordinates[index];
-                var isEndpoint = index == 0 || index == coordinates.Length - 1;
-                var isWaypoint = Points.Any(point => point.Coordinate.DistanceTo(coordinate) <= 1);
-                var isTransition = route.TransitionPoints?.Any(point => point.DistanceTo(coordinate) <= 1) == true;
-                var isTurn = index > 0 && index < coordinates.Length - 1 && IsSignificantTurn(
-                    coordinates[index - 1], coordinate, coordinates[index + 1]);
-                if ((isEndpoint || isWaypoint || isTransition || isTurn)
-                    && (RouteVertices.Count == 0 || RouteVertices[^1].Coordinate != coordinate))
-                {
-                    var kind = isWaypoint ? RouteVertexKind.UserWaypoint
-                        : isTransition ? RouteVertexKind.Transition
-                        : isEndpoint ? RouteVertexKind.Endpoint
-                        : RouteVertexKind.Turn;
-                    RouteVertices.Add(new RouteVertexRow(RouteVertices.Count + 1, coordinate, kind));
-                }
+                RouteVertices.Add(vertex);
             }
         }
 
@@ -492,88 +476,6 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         MetricsText = route is null
             ? "Актуальный маршрут не выбран."
             : RouteMetricsFormatter.Format(route, _resultOptions);
-    }
-
-    private static IReadOnlyList<GeoCoordinate> ExpandWithTransitionPoints(RouteAlternative route)
-    {
-        if (route.Geometry.Count < 2 || route.TransitionPoints is not { Count: > 0 } transitions)
-        {
-            return route.Geometry;
-        }
-
-        var expanded = new List<GeoCoordinate> { route.Geometry[0] };
-        for (var index = 1; index < route.Geometry.Count; index++)
-        {
-            var start = route.Geometry[index - 1];
-            var end = route.Geometry[index];
-            foreach (var transition in transitions
-                .Select(point => (Point: point, Position: PositionOnSegment(start, end, point)))
-                .Where(item => item.Position.DistanceMetres <= 2
-                    && item.Position.Fraction > 0
-                    && item.Position.Fraction < 1)
-                .OrderBy(item => item.Position.Fraction))
-            {
-                if (expanded[^1] != transition.Point)
-                {
-                    expanded.Add(transition.Point);
-                }
-            }
-
-            if (expanded[^1] != end)
-            {
-                expanded.Add(end);
-            }
-        }
-
-        return expanded;
-    }
-
-    private static (double Fraction, double DistanceMetres) PositionOnSegment(
-        GeoCoordinate start,
-        GeoCoordinate end,
-        GeoCoordinate point)
-    {
-        var latitudeScale = Math.Cos((start.Latitude + end.Latitude) / 2 * Math.PI / 180) * 111_320;
-        const double latitudeMetresPerDegree = 111_132;
-        var dx = (end.Longitude - start.Longitude) * latitudeScale;
-        var dy = (end.Latitude - start.Latitude) * latitudeMetresPerDegree;
-        var px = (point.Longitude - start.Longitude) * latitudeScale;
-        var py = (point.Latitude - start.Latitude) * latitudeMetresPerDegree;
-        var lengthSquared = dx * dx + dy * dy;
-        if (lengthSquared == 0)
-        {
-            return (0, Math.Sqrt(px * px + py * py));
-        }
-
-        var fraction = Math.Clamp((px * dx + py * dy) / lengthSquared, 0, 1);
-        var offsetX = px - fraction * dx;
-        var offsetY = py - fraction * dy;
-        return (fraction, Math.Sqrt(offsetX * offsetX + offsetY * offsetY));
-    }
-
-    private static bool IsSignificantTurn(GeoCoordinate previous, GeoCoordinate current, GeoCoordinate next)
-    {
-        var firstLength = previous.DistanceTo(current);
-        var secondLength = current.DistanceTo(next);
-        if (firstLength < 15 || secondLength < 15)
-        {
-            return false;
-        }
-
-        static double Bearing(GeoCoordinate from, GeoCoordinate to)
-        {
-            var latitude1 = from.Latitude * Math.PI / 180;
-            var latitude2 = to.Latitude * Math.PI / 180;
-            var longitudeDelta = (to.Longitude - from.Longitude) * Math.PI / 180;
-            return Math.Atan2(
-                Math.Sin(longitudeDelta) * Math.Cos(latitude2),
-                Math.Cos(latitude1) * Math.Sin(latitude2)
-                    - Math.Sin(latitude1) * Math.Cos(latitude2) * Math.Cos(longitudeDelta));
-        }
-
-        var difference = Math.Abs(Bearing(previous, current) - Bearing(current, next));
-        difference = Math.Min(difference, 2 * Math.PI - difference);
-        return difference >= 25 * Math.PI / 180;
     }
 
     private void EnsureInBounds(GeoCoordinate coordinate, string errorMessage)
@@ -618,17 +520,51 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public async Task MovePointAsync(Guid id, GeoCoordinate coordinate)
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        var current = new CancellationTokenSource();
+        var previous = _pointMove;
+        _pointMove = current;
+        previous?.Cancel();
         try
         {
             var selected = SelectedPoint?.Id;
             EnsureInBounds(coordinate, "Для этой точки нет данных в офлайн-пакете.");
-            await _session.MoveValidatedAsync(id, coordinate, CancellationToken.None);
+            await _session.MoveAsync(id, coordinate, current.Token);
+            current.Token.ThrowIfCancellationRequested();
             RefreshAfterChange(selected ?? id);
+        }
+        catch (OperationCanceledException) when (current.IsCancellationRequested)
+        {
+            System.Diagnostics.Debug.WriteLine("Устаревшее перемещение точки отменено.");
         }
         catch (PlanningException ex)
         {
             Status = ex.Message;
         }
+        finally
+        {
+            if (ReferenceEquals(_pointMove, current))
+            {
+                _pointMove = null;
+            }
+
+            current.Dispose();
+        }
+    }
+
+    public void ReportUnexpectedError(Exception error)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        Console.Error.WriteLine(error);
+        Status = "Операция не выполнена из-за внутренней ошибки. Повторите действие.";
     }
 
     private void Reorder(int direction)
@@ -663,6 +599,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private void RefreshAfterChange(Guid? selected = null)
     {
         _calculation?.Cancel();
+        _pointMove?.Cancel();
         Alternatives.Clear();
         RouteChoices.Clear();
         SelectedRoute = null;

@@ -16,6 +16,21 @@ public sealed record SegmentTerrainFacts(
         ValidateDistance(ForestMetres, nameof(ForestMetres), "Длина участка в лесу");
         ValidateDistance(FieldMetres, nameof(FieldMetres), "Длина участка в поле");
         ValidateDistance(ClearingMetres, nameof(ClearingMetres), "Длина участка по просеке");
+        if (ClearingMetres > LengthMetres)
+        {
+            throw new ArgumentOutOfRangeException(nameof(ClearingMetres), ClearingMetres,
+                "Длина просеки не может превышать физическую длину участка.");
+        }
+        if (ForestMetres > LengthMetres)
+        {
+            throw new ArgumentOutOfRangeException(nameof(ForestMetres), ForestMetres,
+                "Длина в лесу не может превышать физическую длину участка.");
+        }
+        if (FieldMetres > LengthMetres)
+        {
+            throw new ArgumentOutOfRangeException(nameof(FieldMetres), FieldMetres,
+                "Длина в поле не может превышать физическую длину участка.");
+        }
         ValidateCount(RoadCrossings, nameof(RoadCrossings), "Количество пересечений дорог");
         ValidateCount(BridgeCandidates, nameof(BridgeCandidates), "Количество потенциальных мостовых переходов");
         ValidateCount(ApprovedCrossings, nameof(ApprovedCrossings), "Количество одобренных переходов");
@@ -48,11 +63,18 @@ public static class RouteCostCalculator
         ArgumentNullException.ThrowIfNull(profile);
         facts.Validate();
         profile.Validate();
-        return facts.LengthMetres
+        var cost = facts.LengthMetres
             - facts.ClearingMetres * (1 - profile.Clearing)
             + facts.ForestMetres * profile.Forest
             + facts.FieldMetres * profile.Field
-            + (facts.RoadCrossings + facts.BridgeCandidates) * profile.RoadCrossingMetres;
+            + ((double)facts.RoadCrossings + facts.BridgeCandidates) * profile.RoadCrossingMetres;
+        if (!double.IsFinite(cost) || cost < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(facts), facts,
+                "Стоимость участка должна быть конечной и неотрицательной; проверьте длины и штрафы пересечений.");
+        }
+
+        return cost;
     }
 }
 

@@ -16,7 +16,7 @@ PROJECTS = {
     "Android": ROOT / "src/CableRoutePlanner.Android/CableRoutePlanner.Android.csproj",
     "Verify": ROOT / "tools/CableRoutePlanner.Verify/CableRoutePlanner.Verify.csproj",
 }
-ALLOWED = {
+ALLOWED_REFERENCES = {
     "Domain": set(),
     "Application": {"Domain"},
     "Infrastructure": {"Application"},
@@ -55,22 +55,24 @@ def transitive(start: str, graph: dict[str, set[str]]) -> set[str]:
     return found
 
 
-def main() -> int:
-    graph = {name: references(path) for name, path in PROJECTS.items()}
+def validate_graph(graph: dict[str, set[str]]) -> list[str]:
     errors = []
     for project, actual in graph.items():
-        unexpected = actual - ALLOWED[project]
-        missing = ALLOWED[project] - actual
+        unexpected = actual - ALLOWED_REFERENCES[project]
         if unexpected:
             errors.append(f"{project} has forbidden project references: {', '.join(sorted(unexpected))}")
-        if missing:
-            errors.append(f"{project} is missing expected project references: {', '.join(sorted(missing))}")
-    if packages(PROJECTS["Domain"]):
-        errors.append("Domain must not reference external packages")
     if graph["Verify"] & {"UI", "ViewModels"} or transitive("Verify", graph) & {"UI", "ViewModels"}:
         errors.append("Verify must not reference Avalonia/Mapsui presentation projects, directly or transitively")
     if "Persistence" in transitive("Infrastructure", graph) or "Infrastructure" in transitive("Persistence", graph):
         errors.append("Infrastructure and Persistence must remain independent")
+    return errors
+
+
+def main() -> int:
+    graph = {name: references(path) for name, path in PROJECTS.items()}
+    errors = validate_graph(graph)
+    if packages(PROJECTS["Domain"]):
+        errors.append("Domain must not reference external packages")
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1

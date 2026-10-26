@@ -53,7 +53,7 @@ try
     var session = services.GetRequiredService<IPlanningSession>();
     foreach (var point in points)
     {
-        await session.AddValidatedAsync(point, default);
+        await session.AddAsync(point, default);
     }
 
     using var cancel = new CancellationTokenSource();

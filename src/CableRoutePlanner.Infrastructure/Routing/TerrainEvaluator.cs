@@ -282,9 +282,9 @@ internal sealed class TerrainEvaluator
         var scale = projectedLength > 0 ? length / projectedLength : 1;
         return new(
             length,
-            Math.Min(contribution.Forest, projectedLength) * scale,
-            Math.Min(contribution.Field, projectedLength) * scale,
-            Math.Min(contribution.Clearing, projectedLength) * scale,
+            Math.Min(Math.Min(contribution.Forest, projectedLength) * scale, length),
+            Math.Min(Math.Min(contribution.Field, projectedLength) * scale, length),
+            Math.Min(Math.Min(contribution.Clearing, projectedLength) * scale, length),
             contribution.Roads,
             contribution.Crossings,
             contribution.BridgeCandidates);

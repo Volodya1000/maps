@@ -12,7 +12,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
     public async Task SelectingCopyingAndRemovingWaypointKeepVisibleSelectionConsistent()
     {
         var clipboard = new MemoryClipboard();
-        using var vm = new MapViewModel(new NavigationHost(), new PlanningSession(TestData.Planner()),
+        using var vm = new MapViewModel(new NavigationHost(), new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MemoryData(), new MemorySettings(), clipboard);
         await vm.AddPoint.Execute(TestData.P(50, 150));
         await vm.AddPoint.Execute(TestData.P(260, 150));
@@ -34,7 +34,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
     {
         var clipboard = new MemoryClipboard();
         var data = new MemoryData();
-        using var vm = new MapViewModel(new NavigationHost(), new PlanningSession(new VertexPlanner()),
+        using var vm = new MapViewModel(new NavigationHost(), new PlanningSession(new VertexPlanner(), TestData.AllowAllValidator),
             data, new MemorySettings(), clipboard);
         await vm.AddPoint.Execute(TestData.P(50, 150));
         await vm.AddPoint.Execute(TestData.P(260, 150));

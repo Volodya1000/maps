@@ -41,3 +41,5 @@ Compiled bindings включены глобально; Views и DataTemplate и�
 - [AvaloniaRoutingExample](https://github.com/Volodya1000/AvaloniaRoutingExample), SHA `1487137f30f5c9b12da5d8752ce543c32a920c91`: navigate/back, сопоставление View, отдельная библиотека VM. Фабрики View регистрируются в UI-модуле представления.
 - [AvaloniaUserControlTest](https://github.com/Volodya1000/AvaloniaUserControlTest), SHA `274b041925a1ef345ff96c5baab64a52296a4cfe`: ReactiveUserControl, ReactiveCommand, [Reactive], коллекции и компоненты. UI-события не выполняют прикладные операции непосредственно.
 - [ReactiveUI PR 1503](https://github.com/reactiveui/ReactiveUI/pull/1503): историческое включение Fody в проект; не доказательство совместимости текущих пакетов, поэтому добавлен тест реального weaving.
+
+Презентационная проекция `RouteVertexProjection` выбирает для списка и карты значимые повороты, пользовательские точки и переходы. Она не изменяет расчётную геометрию или стоимость. `MapViewModel` хранит выделение и координирует обновление проекции.

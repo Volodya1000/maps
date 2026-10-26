@@ -4,9 +4,12 @@ namespace CableRoutePlanner.Application;
 
 public sealed class PlanningSession(
     IRoutePlanner planner,
-    IPointPlacementValidator? pointPlacementValidator = null) : IPlanningSession
+    IPointPlacementValidator pointPlacementValidator) : IPlanningSession
 {
     public const int MaximumWaypointCount = 100;
+
+    private readonly IPointPlacementValidator _pointPlacementValidator =
+        pointPlacementValidator ?? throw new ArgumentNullException(nameof(pointPlacementValidator));
 
     private readonly List<Waypoint> _points = [];
 
@@ -17,11 +20,13 @@ public sealed class PlanningSession(
         get; private set;
     }
 
-    public Waypoint Add(GeoCoordinate coordinate)
+    public async Task<Waypoint> AddAsync(GeoCoordinate coordinate, CancellationToken cancellationToken)
     {
+        await _pointPlacementValidator.ValidateAsync(coordinate, cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         if (_points.Count >= MaximumWaypointCount)
         {
-            throw new PlanningException("Допускается не более 100 точек.");
+            throw new PlanningException($"Допускается не более {MaximumWaypointCount} точек.");
         }
 
         var point = new Waypoint(Guid.NewGuid(), coordinate);
@@ -30,20 +35,7 @@ public sealed class PlanningSession(
         return point;
     }
 
-    public async Task<Waypoint> AddValidatedAsync(
-        GeoCoordinate coordinate,
-        CancellationToken cancellationToken)
-    {
-        if (pointPlacementValidator is not null)
-        {
-            await pointPlacementValidator.ValidateAsync(coordinate, cancellationToken);
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        return Add(coordinate);
-    }
-
-    public void Move(Guid id, GeoCoordinate coordinate)
+    public async Task MoveAsync(Guid id, GeoCoordinate coordinate, CancellationToken cancellationToken)
     {
         var index = _points.FindIndex(p => p.Id == id);
         if (index < 0)
@@ -51,25 +43,13 @@ public sealed class PlanningSession(
             throw new PlanningException("Точка не найдена.");
         }
 
+        await _pointPlacementValidator.ValidateAsync(coordinate, cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         _points[index] = _points[index] with
         {
             Coordinate = coordinate
         };
         Revision++;
-    }
-
-    public async Task MoveValidatedAsync(
-        Guid id,
-        GeoCoordinate coordinate,
-        CancellationToken cancellationToken)
-    {
-        if (pointPlacementValidator is not null)
-        {
-            await pointPlacementValidator.ValidateAsync(coordinate, cancellationToken);
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        Move(id, coordinate);
     }
 
     public void Remove(Guid id)

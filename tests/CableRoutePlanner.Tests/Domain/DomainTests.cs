@@ -144,7 +144,27 @@ public sealed class DomainTests
     {
         new SegmentTerrainFacts(0, 0, 0, 0, 0, 0, 0).Validate();
         // Terrain layers can overlap; measured contributions are not necessarily a partition of length.
-        new SegmentTerrainFacts(10, 12, 8, 15, 0, 0, 0).Validate();
+        new SegmentTerrainFacts(10, 10, 8, 10, 0, 0, 0).Validate();
+    }
+
+    [Theory]
+    [InlineData(11, 0, 0, nameof(SegmentTerrainFacts.ForestMetres))]
+    [InlineData(0, 11, 0, nameof(SegmentTerrainFacts.FieldMetres))]
+    [InlineData(0, 0, 11, nameof(SegmentTerrainFacts.ClearingMetres))]
+    public void TerrainContributionCannotExceedSegment(double forest, double field, double clearing, string parameter)
+    {
+        var facts = new SegmentTerrainFacts(10, forest, field, clearing, 0, 0, 0);
+        var error = Assert.Throws<ArgumentOutOfRangeException>(facts.Validate);
+        Assert.Equal(parameter, error.ParamName);
+        Assert.Equal(11d, error.ActualValue);
+    }
+
+    [Fact]
+    public void ExtremeFiniteInputsCannotProduceInfiniteCost()
+    {
+        var facts = new SegmentTerrainFacts(double.MaxValue, double.MaxValue, 0, 0, 0, 0, 0);
+        var profile = new CostProfile("extreme", double.MaxValue, 0, 0, 1);
+        Assert.Throws<ArgumentOutOfRangeException>(() => RouteCostCalculator.Calculate(facts, profile));
     }
 
     [Fact]

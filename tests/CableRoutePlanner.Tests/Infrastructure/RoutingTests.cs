@@ -5,11 +5,59 @@ using CableRoutePlanner.Infrastructure.Routing;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace CableRoutePlanner.Tests;
 
-public sealed class RoutingTests
+public sealed class RoutingTests(ITestOutputHelper output)
 {
+    [Fact]
+    public void ThirtyKilometreGridSearchRecordsCostAndResources()
+    {
+        var origin = new GeoCoordinate(54, 27);
+        var projection = new LocalProjection(origin);
+        var start = projection.Forward(origin);
+        var finish = new Coordinate(30_000, 500);
+        var end = projection.Inverse(finish);
+        var options = new RoutingOptions(200, 30_000);
+        var mesh = new GridGenerator().Generate(GeoBounds.Around([origin, end]), options, projection);
+        var edges = 0;
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        process.Refresh();
+        var initialMemory = process.WorkingSet64;
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+
+        var path = new AStarGridPathfinder().FindPath(start, finish, mesh, CostProfile.Defaults[0],
+            (from, to) => from.Distance(to),
+            (from, to) =>
+            {
+                edges++;
+                return mesh.Nodes[from].Distance(mesh.Nodes[to]);
+            }, default);
+        timer.Stop();
+        process.Refresh();
+        var length = path.Zip(path.Skip(1), (from, to) => from.Distance(to)).Sum();
+        output.WriteLine($"long-grid: length={length:F1}m cost={length:F1} nodes={mesh.Nodes.Length} "
+            + $"edgesChecked={edges} elapsedMs={timer.ElapsedMilliseconds} "
+            + $"workingSetDeltaMiB={Math.Max(0, process.WorkingSet64 - initialMemory) / 1048576d:F1}");
+        Assert.True(length >= start.Distance(finish));
+        Assert.True(double.IsFinite(length));
+        Assert.True(edges > 0);
+    }
+
+    [Fact]
+    public void DirectEdgeRemainsUsableWhenGridEndpointsAreDisconnected()
+    {
+        var start = new Coordinate(1, 0);
+        var finish = new Coordinate(2, 0);
+        var mesh = new GridMesh([new Coordinate(100, 100)], 1, 1, new Coordinate(100, 100), 10);
+        var path = new AStarGridPathfinder().FindPath(
+            start, finish, mesh, CostProfile.Defaults[0],
+            (from, to) => from == start && to == finish ? 1d : null,
+            (_, _) => null, default);
+        Assert.Equal([start, finish], path);
+    }
+
     [Fact]
     public void GridGeneratorBuildsExpectedMeshAndHonoursNodeLimit()
     {
