@@ -1,0 +1,46 @@
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style Selector="Border.coordinate">
+        <Setter Property="Background" Value="{DynamicResource AppCoordinateBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppCoordinateBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="Border.coordinate.dragging">
+        <Setter Property="Background" Value="{DynamicResource AppAccentCheckedBrush}" />
+        <Setter Property="BoxShadow" Value="0 3 8 0 #50000000" />
+    </Style>
+    <Style Selector="Border.coordinate.drop-target">
+        <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="Border.coordinate.selected">
+        <Setter Property="Background" Value="{DynamicResource AppSelectionBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppSelectionBorderBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="TextBlock.waypoint-number">
+        <Setter Property="Foreground" Value="{DynamicResource AppWaypointNumberBrush}" />
+    </Style>
+    <Style Selector="TextBlock.coordinate-label">
+        <Setter Property="Margin" Value="4,0" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Border.drag-handle">
+        <Setter Property="Background" Value="{DynamicResource AppTransparentBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="TextBlock.drag-glyph">
+        <Setter Property="FontSize" Value="25" />
+        <Setter Property="Foreground" Value="{DynamicResource AppDragGlyphBrush}" />
+    </Style>
+    <Style Selector="Button.remove-waypoint">
+        <Setter Property="MinWidth" Value="44" />
+        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="{DynamicResource AppTransparentBrush}" />
+        <Setter Property="FontSize" Value="25" />
+        <Setter Property="Foreground" Value="{DynamicResource AppDestructiveBrush}" />
+    </Style>
+</Styles>
