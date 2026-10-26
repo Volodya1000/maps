@@ -67,8 +67,8 @@ public sealed class UiTests
 
         var compass = view.GetVisualDescendants().OfType<Button>()
             .Single(button => button.Name == "NorthButton");
-        Assert.Equal(46, compass.Width);
-        Assert.Equal(46, compass.Height);
+        Assert.Equal(46d, compass.Width);
+        Assert.Equal(46d, compass.Height);
         Assert.Equal(Avalonia.Media.Color.Parse("#EEFFFFFF"),
             Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(compass.Background).Color);
 
