@@ -123,7 +123,7 @@
                         Command="{Binding BuildRoutes}"
                         Content="Построить маршруты" />
                     <ProgressBar
-                        Height="4"
+                        Classes="route-progress"
                         IsIndeterminate="True"
                         IsVisible="{Binding IsBusy}" />
                     <Button
@@ -149,11 +149,11 @@
                                         CommandParameter="{Binding Id}">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <TextBlock
-                                                FontWeight="SemiBold"
+                                                Classes="route-choice-name"
                                                 Text="{Binding Name}" />
                                             <TextBlock
+                                                Classes="route-choice-length"
                                                 Grid.Column="1"
-                                                Margin="12,0,0,0"
                                                 Text="{Binding LengthText}" />
                                         </Grid>
                                     </Button>
@@ -167,10 +167,10 @@
                     <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
                         <TextBlock Classes="route-vertices-heading" Text="Точки прокладки кабеля" />
                         <TextBlock Classes="view-hint" Text="Все вершины выбранного маршрута, включая точки изменения направления." />
-                        <ListBox MaxHeight="260" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
+                        <ListBox Classes="route-vertex-list" ItemsSource="{Binding RouteVertices}" SelectedItem="{Binding SelectedRouteVertex}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:RouteVertexRow">
-                                    <Border Padding="5" Classes.selected="{Binding IsSelected}">
+                                    <Border Classes="route-vertex-row" Classes.selected="{Binding IsSelected}">
                                         <Grid ColumnDefinitions="32,*">
                                             <TextBlock Text="{Binding Number}" />
                                             <TextBlock Grid.Column="1" Text="{Binding Display}" />
