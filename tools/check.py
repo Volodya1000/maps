@@ -128,7 +128,16 @@ def android() -> None:
     if not sdk:
         raise ValueError("Set ANDROID_HOME to Android SDK with API/build-tools 34.0.0; install JDK 17 and the .NET Android workload.")
     run(dotnet, "restore", "src/CableRoutePlanner.Android", "--locked-mode")
-    publish = [dotnet, "publish", "src/CableRoutePlanner.Android", "-c", "Release", f"-p:AndroidSdkDirectory={sdk}"]
+    version_code = os.environ.get("ANDROID_VERSION_CODE", "6")
+    publish = [
+        dotnet,
+        "publish",
+        "src/CableRoutePlanner.Android",
+        "-c",
+        "Release",
+        f"-p:AndroidSdkDirectory={sdk}",
+        f"-p:AndroidVersionCode={version_code}",
+    ]
     keystore = os.environ.get("ANDROID_SIGNING_KEYSTORE")
     if keystore:
         publish.extend((

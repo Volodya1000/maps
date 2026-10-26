@@ -77,6 +77,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      - name: Read application version
+        run: python3 tools/release_version.py >> "$GITHUB_ENV"
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -92,19 +94,9 @@ jobs:
         run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - name: Install .NET Android workload
         run: dotnet workload install android --skip-manifest-update
-      - uses: actions/cache@v6
-        with:
-          path: ${{ runner.temp }}/preview.keystore
-          key: cableroute-android-preview-signing-v1
       - name: Prepare preview signing key
-        env:
-          KEYSTORE: ${{ secrets.ANDROID_TEST_KEYSTORE }}
         run: |
-          if [ -n "$KEYSTORE" ]; then
-            printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/preview.keystore"
-          elif [ ! -f "$RUNNER_TEMP/preview.keystore" ]; then
-            keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/preview.keystore" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=CableRoutePlanner Preview,O=Test,C=BY'
-          fi
+          keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/preview.keystore" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=CableRoutePlanner Preview,O=Test,C=BY'
           {
             echo "ANDROID_SIGNING_KEYSTORE=$RUNNER_TEMP/preview.keystore"
             echo "ANDROID_SIGNING_KEY_ALIAS=androiddebugkey"

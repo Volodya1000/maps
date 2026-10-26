@@ -5,7 +5,8 @@
     <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
     <ApplicationId>by.cablerouteplanner.app</ApplicationId>
     <!-- Monotonically increase this for every distributable APK. -->
-    <ApplicationVersion>6</ApplicationVersion>
+    <ApplicationVersion Condition="'$(AndroidVersionCode)' == ''">6</ApplicationVersion>
+    <ApplicationVersion Condition="'$(AndroidVersionCode)' != ''">$(AndroidVersionCode)</ApplicationVersion>
     <ApplicationDisplayVersion>$(ReleaseVersion)</ApplicationDisplayVersion>
     <AndroidPackageFormats>apk</AndroidPackageFormats>
     <AndroidNeedsInternetPermission>false</AndroidNeedsInternetPermission>
