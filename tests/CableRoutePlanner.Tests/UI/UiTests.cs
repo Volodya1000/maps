@@ -73,7 +73,7 @@ public sealed class UiTests
         Assert.Equal(Avalonia.Media.Colors.Transparent,
             Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(compass.Background).Color);
         var face = view.GetVisualDescendants().OfType<Border>()
-            .Single(border => border.Classes.Contains("compass-face"));
+            .Single(border => border.Classes.Contains("compass-face", StringComparer.Ordinal));
         Assert.Equal(new CornerRadius(23), face.CornerRadius);
         Assert.Equal(Avalonia.Media.Color.Parse("#F9FFFFFF"),
             Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(face.Background).Color);
