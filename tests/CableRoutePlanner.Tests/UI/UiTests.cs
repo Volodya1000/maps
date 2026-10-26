@@ -51,6 +51,37 @@ public static class TestApplication
 public sealed class UiTests
 {
     [AvaloniaFact]
+    public async Task ExtractedStylesKeepMapAndWaypointAppearance()
+    {
+        using var vm = new MapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+        await vm.AddPoint.Execute(TestData.P(30, 150));
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        {
+            ViewModel = vm
+        };
+        var window = new Window { Content = view, Width = 1100, Height = 900 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        var compass = view.GetVisualDescendants().OfType<Button>()
+            .Single(button => button.Name == "NorthButton");
+        Assert.Equal(46, compass.Width);
+        Assert.Equal(46, compass.Height);
+        Assert.Equal(Avalonia.Media.Color.Parse("#EEFFFFFF"),
+            Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(compass.Background).Color);
+
+        var waypoint = view.GetVisualDescendants().OfType<Border>()
+            .Single(border => border.Name == "CoordinateCard");
+        Assert.Equal(new CornerRadius(8), waypoint.CornerRadius);
+        Assert.Equal(new Thickness(1), waypoint.BorderThickness);
+        Assert.Equal(Avalonia.Media.Color.Parse("#F1F5F2"),
+            Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(waypoint.Background).Color);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void MapAdapterRendersEveryTerrainCategory()
     {
         // Arrange
