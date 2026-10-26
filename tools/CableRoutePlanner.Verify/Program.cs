@@ -1,13 +1,25 @@
 using System.Globalization;
 using System.Text.Json;
 using CableRoutePlanner.Application;
-using CableRoutePlanner.Bootstrap;
 using CableRoutePlanner.Domain;
+using CableRoutePlanner.Infrastructure;
+using CableRoutePlanner.Persistence;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+static ServiceProvider CreateServices(string dataDirectory, string settingsPath)
+{
+    var services = new ServiceCollection();
+    services.AddLogging(logging => logging.AddConsole());
+    services.AddInfrastructure();
+    services.AddPersistence(dataDirectory, settingsPath);
+    services.AddSingleton<IPlanningSession, PlanningSession>();
+    return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+}
 
 if (args.Length == 3 && args[0] == "--inspect")
 {
-    using var provider = AppBootstrap.CreateServices(args[1], Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+    using var provider = CreateServices(args[1], Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
     await CableRoutePlanner.Verify.PackageInspection.RunAsync(
         provider.GetRequiredService<IGeodataRepository>(), args[2]);
     return 0;
@@ -34,7 +46,7 @@ try
             double.Parse(parts[0], CultureInfo.InvariantCulture),
             double.Parse(parts[1], CultureInfo.InvariantCulture));
     }).ToArray();
-    using var services = AppBootstrap.CreateServices(
+    using var services = CreateServices(
         args[0],
         Path.Combine(Path.GetTempPath(), "CableRoutePlanner.Verify.settings.json"));
     var session = services.GetRequiredService<IPlanningSession>();

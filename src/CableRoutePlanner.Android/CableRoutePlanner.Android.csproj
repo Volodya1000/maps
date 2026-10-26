@@ -13,7 +13,11 @@
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../CableRoutePlanner.Composition/CableRoutePlanner.Composition.csproj" />
+    <ProjectReference Include="../CableRoutePlanner.UI/CableRoutePlanner.UI.csproj" />
+    <ProjectReference Include="../CableRoutePlanner.Infrastructure/CableRoutePlanner.Infrastructure.csproj" />
+    <ProjectReference Include="../CableRoutePlanner.Persistence/CableRoutePlanner.Persistence.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="Avalonia.Android" />
   </ItemGroup>
   <ItemGroup>

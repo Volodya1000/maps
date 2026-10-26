@@ -6,7 +6,9 @@ using Avalonia.Input.Raw;
 using Avalonia.VisualTree;
 using System.Reactive.Linq;
 using Avalonia.ReactiveUI;
-using CableRoutePlanner.Composition;
+using CableRoutePlanner.Application;
+using CableRoutePlanner.Infrastructure;
+using CableRoutePlanner.Persistence;
 using CableRoutePlanner.UI;
 using CableRoutePlanner.UI.Views;
 using CableRoutePlanner.ViewModels;
@@ -20,6 +22,29 @@ namespace CableRoutePlanner.Tests;
 public static class TestApplication
 {
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<PlannerApplication>().UseHeadless(new AvaloniaHeadlessPlatformOptions()).UseReactiveUI();
+
+    public static ServiceProvider CreateServices(
+        string dataDirectory,
+        string settingsPath,
+        IClipboardService? clipboard = null,
+        Func<IProgress<string>, CancellationToken, Task>? prepareData = null)
+    {
+        var services = new ServiceCollection();
+        services.AddInfrastructure();
+        services.AddPersistence(dataDirectory, settingsPath);
+        services.AddSingleton<IPlanningSession, PlanningSession>();
+        services.AddPresentation(prepareData, clipboard);
+        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+    }
+
+    public static ServiceProvider CreateCoreServices(string dataDirectory, string settingsPath)
+    {
+        var services = new ServiceCollection();
+        services.AddInfrastructure();
+        services.AddPersistence(dataDirectory, settingsPath);
+        services.AddSingleton<IPlanningSession, PlanningSession>();
+        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+    }
 }
 
 public sealed class UiTests
@@ -54,7 +79,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task SystemBackAndWindowCloseWarnAboutUnsavedSettings()
     {
-        using var provider = AvaloniaAppBootstrap.CreateServices(TestData.RealData,
+        using var provider = TestApplication.CreateServices(TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), new MemoryClipboard());
         var shell = provider.GetRequiredService<ShellView>();
         var vm = shell.ViewModel!;
@@ -111,7 +136,7 @@ public sealed class UiTests
     public async Task NavigatingBetweenSettingsAndMapKeepsSettingsValuesVisible()
     {
         var settingsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
-        using var provider = AvaloniaAppBootstrap.CreateServices(TestData.RealData, settingsPath, new MemoryClipboard());
+        using var provider = TestApplication.CreateServices(TestData.RealData, settingsPath, new MemoryClipboard());
         var shell = provider.GetRequiredService<ShellView>();
         var settings = provider.GetRequiredService<SettingsViewModel>();
         var window = new Window { Content = shell, Width = 900, Height = 700 };
@@ -175,7 +200,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public void CompiledXamlAndTypedViewLocatorResolveAllRegisteredScreens()
     {
-        using var provider = AvaloniaAppBootstrap.CreateServices(
+        using var provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());
@@ -195,7 +220,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public void MapMouseInputAddsAndMovesViewModelPoints()
     {
-        using var provider = AvaloniaAppBootstrap.CreateServices(
+        using var provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());
@@ -260,7 +285,7 @@ public sealed class UiTests
     public async Task StartupOpensShellAfterBackgroundDataPreparation()
     {
         var prepared = false;
-        using var provider = AvaloniaAppBootstrap.CreateServices(TestData.RealData,
+        using var provider = TestApplication.CreateServices(TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), new MemoryClipboard(),
             async (_, ct) => { await Task.Delay(10, ct); prepared = true; });
         var view = provider.GetRequiredService<StartupView>();
@@ -399,7 +424,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public void UnknownViewModelCannotFallBackToReflection()
     {
-        using var provider = AvaloniaAppBootstrap.CreateServices(
+        using var provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());

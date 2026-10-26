@@ -1,22 +1,25 @@
 # Архитектура
 
 ```mermaid
-graph TD
- Desktop --> Composition
- Android --> Composition
- Verify --> Bootstrap
- Composition --> Bootstrap
- Composition --> UI
- Bootstrap --> Infrastructure
- Bootstrap --> Persistence
- Persistence --> Application
+graph TB
+ Desktop --> UI
+ Android --> UI
  UI --> ViewModels
  ViewModels --> Application
- Infrastructure --> Application
  Application --> Domain
+ Infrastructure --> Application
+ Persistence --> Application
+ Desktop -. registration .-> Infrastructure
+ Desktop -. registration .-> Persistence
+ Android -. registration .-> Infrastructure
+ Android -. registration .-> Persistence
+ Verify -. registration .-> Infrastructure
+ Verify -. registration .-> Persistence
 ```
 
-Domain использует только BCL: проверенные координаты, геодезические длины, профили стоимости и результаты. Application определяет контракты геоданных, маршрутизации, настроек, clipboard и сессии; управляет точками и ревизией ввода. Persistence реализует контракты геоданных и настроек, SQLite/R-tree и JSON. Infrastructure реализует NTS и A*. ViewModels содержат ReactiveObject, Fody-свойства и команды; прямой ссылки на Infrastructure или Mapsui нет. UI отвечает за XAML, типизированные View, технологический ввод и отображение ошибок запуска. Bootstrap регистрирует только прикладные сервисы и используется консольным Verify без Avalonia. Composition дополняет эти регистрации ViewModels, Avalonia views, clipboard и адаптером карты для Desktop и Android.
+Domain использует только BCL и содержит географические инварианты, правила проходимости, стоимостные профили, расчёт стоимости участков и сравнение альтернатив. Application определяет контракты геоданных, маршрутизации, настроек и сессии; управляет точками и ревизией ввода. Persistence отвечает за SQLite/R-tree, чтение исходных геометрий, настройки и проверку офлайн-пакетов. Infrastructure реализует NTS-операции, пространственные индексы, A* и генерацию сетки, вызывая предметные правила Domain. ViewModels содержат состояние и команды, включая контракт clipboard; прямой ссылки на UI-технологии нет. UI содержит XAML, карты и `AvaloniaClipboardService`.
+
+Desktop, Android и Verify являются Composition Root. Они вызывают модульные `AddInfrastructure()`, `AddPersistence(dataDirectory, settingsPath)` и `AddPresentation(prepareData)`, затем регистрируют `IPlanningSession`. Проектов Bootstrap и Composition больше нет; Infrastructure и Persistence друг от друга не зависят.
 
 `NavigationHost` реализует IScreen. Map/Settings — singleton ViewModels с IRoutableViewModel, Shell получает их через DI. RoutingState сохраняет не более двух записей; back работает, количество экранов и подписок не растёт от повторных переходов. View создаются зарегистрированными типизированными фабриками, без поиска по строкам и reflection.
 
@@ -33,6 +36,6 @@ Compiled bindings включены глобально; Views и DataTemplate и�
 ## Изученные референсы перед реализацией
 
 - [AvaloniaRoutingExampleMenuAndSettings](https://github.com/Volodya1000/AvaloniaRoutingExampleMenuAndSettings), SHA `197a4763a46e3bc9a7dd69e33d8e2d780d209cf5`: IScreen, IRoutableViewModel, RoutingState, RoutedViewHost, выбранный раздел, Fody. Исправлены new зависимых VM и строковый locator.
-- [AvaloniaRoutingExample](https://github.com/Volodya1000/AvaloniaRoutingExample), SHA `1487137f30f5c9b12da5d8752ce543c32a920c91`: navigate/back, сопоставление View, отдельная библиотека VM. Фабрики View перенесены в Bootstrap.
+- [AvaloniaRoutingExample](https://github.com/Volodya1000/AvaloniaRoutingExample), SHA `1487137f30f5c9b12da5d8752ce543c32a920c91`: navigate/back, сопоставление View, отдельная библиотека VM. Фабрики View регистрируются в UI-модуле представления.
 - [AvaloniaUserControlTest](https://github.com/Volodya1000/AvaloniaUserControlTest), SHA `274b041925a1ef345ff96c5baab64a52296a4cfe`: ReactiveUserControl, ReactiveCommand, [Reactive], коллекции и компоненты. UI-события не выполняют прикладные операции непосредственно.
 - [ReactiveUI PR 1503](https://github.com/reactiveui/ReactiveUI/pull/1503): историческое включение Fody в проект; не доказательство совместимости текущих пакетов, поэтому добавлен тест реального weaving.

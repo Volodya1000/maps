@@ -7,6 +7,9 @@ public sealed record CostProfile(
     double RoadCrossingMetres,
     double Clearing)
 {
+    /// <summary>A lower bound on cost per physical metre, used by admissible search heuristics.</summary>
+    public double MinimumCostPerMetre => Math.Min(1, Clearing);
+
     public static IReadOnlyList<CostProfile> Defaults
     {
         get;

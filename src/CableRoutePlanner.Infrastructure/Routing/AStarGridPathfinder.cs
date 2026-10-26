@@ -140,8 +140,9 @@ public sealed class AStarGridPathfinder : IGridPathfinder
 
                 distances[next] = cost;
                 parents[next] = current.Id;
-                // 0.49 is below the smallest profile multiplier, with margin for projection error.
-                queue.Enqueue((next, cost), cost + Node(next).Distance(destination) * 0.49);
+                // Terrain penalties are nonnegative; the profile's clearing multiplier is its
+                // lowest possible per-metre cost, so this remains an admissible lower bound.
+                queue.Enqueue((next, cost), cost + Node(next).Distance(destination) * profile.MinimumCostPerMetre);
             }
         }
 

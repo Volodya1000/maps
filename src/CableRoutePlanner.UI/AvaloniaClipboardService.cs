@@ -1,5 +1,6 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using CableRoutePlanner.Application;
+using CableRoutePlanner.ViewModels;
 
 namespace CableRoutePlanner.UI;
 

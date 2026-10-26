@@ -16,11 +16,16 @@ internal sealed record EdgeEvaluation(
     IReadOnlyList<long> Crossings,
     IReadOnlyList<long> BridgeCandidates)
 {
-    public double Cost(CostProfile p) => Length
-        - Clearing * (1 - p.Clearing)
-        + Forest * p.Forest
-        + Field * p.Field
-        + (Roads.Count + BridgeCandidates.Count) * p.RoadCrossingMetres;
+    public double Cost(CostProfile profile) => RouteCostCalculator.Calculate(
+        new SegmentTerrainFacts(
+            Length,
+            Forest,
+            Field,
+            Clearing,
+            Roads.Count,
+            BridgeCandidates.Count,
+            Crossings.Count),
+        profile);
 }
 
 internal sealed class TerrainEvaluator

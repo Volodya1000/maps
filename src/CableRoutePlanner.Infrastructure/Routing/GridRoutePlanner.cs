@@ -132,7 +132,7 @@ public sealed class GridRoutePlanner(
                 // Roads are a cost contribution, not an obstacle. Keeping a
                 // valid long segment direct avoids a country-sized graph when
                 // the only crossed objects are roads.
-                var part = direct is { Forest: 0, Field: 0, Clearing: 0 }
+                var part = direct is { Forest: 0, Field: 0, Clearing: 0, Roads.Count: 0 }
                     ? new List<Coordinate> { start, end }
                     : pathfinder.FindPath(
                         start,
@@ -207,7 +207,6 @@ public sealed class GridRoutePlanner(
     {
         // A sub-cell deviation is usually not a meaningful alternative corridor. Compare metres,
         // not exact floating-point equality of vertices. 90% overlap suppresses near-duplicates.
-        const double maximumCorridorOverlap = 0.90;
         var reference = new LineString(existing.Select(projection.Forward).ToArray());
         var proposed = new LineString(candidate.ToArray());
         var corridor = reference.Buffer(cellSize * 0.75);
@@ -216,7 +215,8 @@ public sealed class GridRoutePlanner(
             return true;
         }
 
-        return proposed.Intersection(corridor).Length / proposed.Length >= maximumCorridorOverlap;
+        return proposed.Intersection(corridor).Length / proposed.Length
+            >= AlternativeRoutePolicy.MaximumCorridorOverlap;
     }
 
 }

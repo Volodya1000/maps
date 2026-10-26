@@ -523,11 +523,17 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         Status = "Анализ местности и поиск маршрутов…";
         using var cts = new CancellationTokenSource();
         _calculation = cts;
+        var inputRevision = _session.Revision;
         try
         {
             _resultOptions = _settings.Load();
             var routes = await _session.BuildAsync(_resultOptions, cts.Token);
             cts.Token.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(_calculation, cts) || inputRevision != _session.Revision)
+            {
+                return;
+            }
+
             foreach (var route in routes)
             {
                 Alternatives.Add(route);
@@ -538,20 +544,26 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         }
         catch (OperationCanceledException)
         {
-            Status = "Расчёт отменён. Актуальных маршрутов нет.";
+            if (ReferenceEquals(_calculation, cts) && inputRevision == _session.Revision)
+            {
+                Status = "Расчёт отменён. Актуальных маршрутов нет.";
+            }
         }
         catch (Exception ex)
         {
-            Status = $"Не удалось построить маршрут: {ex.Message}";
+            if (ReferenceEquals(_calculation, cts) && inputRevision == _session.Revision)
+            {
+                Status = $"Не удалось построить маршрут: {ex.Message}";
+            }
         }
         finally
         {
             if (ReferenceEquals(_calculation, cts))
             {
                 _calculation = null;
+                IsBusy = false;
             }
 
-            IsBusy = false;
             finished.TrySetResult();
         }
     }

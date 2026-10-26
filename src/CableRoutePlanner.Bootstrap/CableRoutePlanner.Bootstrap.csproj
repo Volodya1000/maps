@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup />
-  <ItemGroup>
-    <ProjectReference Include="../CableRoutePlanner.Persistence/CableRoutePlanner.Persistence.csproj" />
-    <ProjectReference Include="../CableRoutePlanner.Infrastructure/CableRoutePlanner.Infrastructure.csproj" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
-  </ItemGroup>
-</Project>

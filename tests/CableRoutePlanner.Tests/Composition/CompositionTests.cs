@@ -2,8 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using CableRoutePlanner.Application;
-using CableRoutePlanner.Bootstrap;
-using CableRoutePlanner.Composition;
+using CableRoutePlanner.Infrastructure.Routing;
 using CableRoutePlanner.UI;
 using CableRoutePlanner.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,11 +16,11 @@ public sealed class CompositionTests
     public void CoreProviderResolvesPlanningWithoutLoadingUiAssemblies()
     {
         using var directory = new TemporaryDirectory();
-        using var provider = AppBootstrap.CreateServices(TestData.RealData, Path.Combine(directory.DirectoryPath, "settings.json"));
+        using var provider = TestApplication.CreateCoreServices(TestData.RealData, Path.Combine(directory.DirectoryPath, "settings.json"));
         var session = provider.GetRequiredService<IPlanningSession>();
         session.Add(TestData.P(50, 150));
         Assert.Single(session.Points);
-        Assert.DoesNotContain(typeof(AppBootstrap).Assembly.GetReferencedAssemblies(),
+        Assert.DoesNotContain(typeof(GridRoutePlanner).Assembly.GetReferencedAssemblies(),
             assembly => assembly.Name?.Contains("Avalonia", StringComparison.Ordinal) == true
                 || assembly.Name == "CableRoutePlanner.UI");
     }
@@ -30,7 +29,9 @@ public sealed class CompositionTests
     public void ConfiguredApplicationBuildsStartupContentAndOwnsServices()
     {
         using var directory = new TemporaryDirectory();
-        var app = AvaloniaAppBootstrap.CreateApplication(TestData.RealData, Path.Combine(directory.DirectoryPath, "settings.json"));
+        var services = TestApplication.CreateServices(TestData.RealData, Path.Combine(directory.DirectoryPath, "settings.json"));
+        var app = new PlannerApplication();
+        PresentationServiceCollectionExtensions.ConfigureApplication(app, services, TestData.RealData);
         using var lifetime = app.ServiceLifetime;
         Assert.IsType<StartupView>(app.CreateContent());
         Assert.Equal(TestData.RealData, app.DataDirectory);

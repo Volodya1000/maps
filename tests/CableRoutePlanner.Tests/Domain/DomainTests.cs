@@ -40,6 +40,37 @@ public sealed class DomainTests
         Assert.Throws<ArgumentOutOfRangeException>(() => m.CableLengthMetres(-0.1));
     }
 
+    [Theory]
+    [InlineData(TerrainKind.Forest, TerrainTraversalRule.Costed)]
+    [InlineData(TerrainKind.Field, TerrainTraversalRule.Costed)]
+    [InlineData(TerrainKind.Clearing, TerrainTraversalRule.Costed)]
+    [InlineData(TerrainKind.Marsh, TerrainTraversalRule.Blocked)]
+    [InlineData(TerrainKind.Lake, TerrainTraversalRule.Blocked)]
+    [InlineData(TerrainKind.River, TerrainTraversalRule.Blocked)]
+    [InlineData(TerrainKind.Building, TerrainTraversalRule.Blocked)]
+    [InlineData(TerrainKind.Road, TerrainTraversalRule.CrossingPenalty)]
+    [InlineData(TerrainKind.BridgeCandidate, TerrainTraversalRule.ConditionalTransition)]
+    [InlineData(TerrainKind.ApprovedCrossing, TerrainTraversalRule.ApprovedTransition)]
+    public void TraversalPolicyDefinesSubjectRules(TerrainKind terrain, TerrainTraversalRule expected) =>
+        Assert.Equal(expected, TerrainTraversalPolicy.For(terrain));
+
+    [Fact]
+    public void SegmentCostMatchesEachConfiguredProfile()
+    {
+        var facts = new SegmentTerrainFacts(100, 20, 10, 5, 2, 1, 1);
+        foreach (var profile in CostProfile.Defaults)
+        {
+            var expected = 100 - 5 * (1 - profile.Clearing)
+                + 20 * profile.Forest + 10 * profile.Field
+                + 3 * profile.RoadCrossingMetres;
+            Assert.Equal(expected, RouteCostCalculator.Calculate(facts, profile), 8);
+        }
+    }
+
+    [Fact]
+    public void AlternativesUseNamedCorridorPolicyThreshold() =>
+        Assert.Equal(0.90, AlternativeRoutePolicy.MaximumCorridorOverlap);
+
     [Fact]
     public void GeographicBoundsContainInclusivePointsAndNestedBounds()
     {

@@ -35,11 +35,6 @@ public interface IRoutePlanner
         CancellationToken cancellationToken);
 }
 
-public interface IClipboardService
-{
-    Task SetTextAsync(string text);
-}
-
 public interface ISettingsStore
 {
     RoutingOptions Load();

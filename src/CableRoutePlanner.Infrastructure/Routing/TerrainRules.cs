@@ -58,7 +58,7 @@ internal sealed class TerrainRules(IEnumerable<ITerrainRule>? rules = null)
     {
         public TerrainKind Kind => kind;
 
-        public bool Blocks => true;
+        public bool Blocks => TerrainTraversalPolicy.For(kind) == TerrainTraversalRule.Blocked;
 
         public void Apply(Geometry intersection, long featureId, TerrainContribution contribution)
         {

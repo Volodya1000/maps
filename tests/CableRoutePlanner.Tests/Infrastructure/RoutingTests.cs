@@ -207,6 +207,19 @@ public sealed class RoutingTests
     }
 
     [Fact]
+    public async Task PassableDirectRoadCrossingCanLoseToALongerCheaperDetour()
+    {
+        var road = TestData.Line(1, TerrainKind.Road, (150, 100), (150, 200));
+        var routes = await TestData.Planner(road).PlanAsync(
+            [TestData.P(50, 150), TestData.P(250, 150)],
+            TestData.Options,
+            default);
+
+        Assert.Contains(routes, route => route.Name == "Короче" && route.Metrics.RoadCrossings == 1);
+        Assert.Contains(routes, route => route.Name == "Баланс" && route.Metrics.RoadCrossings == 0);
+    }
+
+    [Fact]
     public async Task IdenticalGeometryIsNotPresentedAsThreeAlternatives()
     {
         var routes = await TestData.Planner().PlanAsync(
