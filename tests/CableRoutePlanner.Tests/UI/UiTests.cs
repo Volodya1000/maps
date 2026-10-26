@@ -190,11 +190,61 @@ public sealed class UiTests
         await vm.AddPoint.Execute(TestData.P(300, 150));
         Assert.False(section.IsVisible);
         await vm.BuildRoutes.Execute();
+        var routeVertexHeader = view.GetVisualDescendants().OfType<Expander>()
+            .Select(expander => expander.Header)
+            .OfType<TextBlock>()
+            .Single(header => header.Text == "Точки прокладки кабеля");
+        Assert.Equal("Точки прокладки кабеля", routeVertexHeader.Text);
         Assert.True(section.IsVisible);
         Assert.False(choices.IsVisible);
         Assert.Equal("Маршрут", Assert.Single(vm.RouteChoices).Name);
         await vm.ClearPoints.Execute();
         Assert.False(section.IsVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void RotatingCompassKeepsTheNeedleCenteredInsideTheFixedButton()
+    {
+        using var vm = new MapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+        var view = new MapView((control, bounds) =>
+            new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        {
+            ViewModel = vm
+        };
+        var window = new Window { Content = view, Width = 412, Height = 860 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        var button = view.GetVisualDescendants().OfType<Button>()
+            .Single(candidate => candidate.Name == "NorthButton");
+        var needle = view.GetVisualDescendants().OfType<Canvas>()
+            .Single(candidate => candidate.Name == "NorthArrow");
+        var map = view.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
+        var buttonPosition = button.TranslatePoint(new Point(0, 0), window)!.Value;
+        var needleCenter = needle.TranslatePoint(new Point(23, 23), button)!.Value;
+        Assert.Equal(46, needle.Bounds.Width);
+        Assert.Equal(46, needle.Bounds.Height);
+
+        foreach (var angle in new[] { 0d, 45d, 90d, 180d, 270d })
+        {
+            var viewport = map.Map.Navigator.Viewport;
+            map.Map.Navigator.SetViewport(
+                new Mapsui.Viewport(viewport.CenterX, viewport.CenterY, viewport.Resolution,
+                    angle, viewport.Width, viewport.Height),
+                0, new Mapsui.Animations.Easing(progress => progress));
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+            var currentCenter = needle.TranslatePoint(new Point(23, 23), button)!.Value;
+            var currentButtonPosition = button.TranslatePoint(new Point(0, 0), window)!.Value;
+            Assert.Equal(needleCenter.X, currentCenter.X, 2);
+            Assert.Equal(needleCenter.Y, currentCenter.Y, 2);
+            Assert.Equal(buttonPosition.X, currentButtonPosition.X, 2);
+            Assert.Equal(buttonPosition.Y, currentButtonPosition.Y, 2);
+        }
+
         window.Close();
     }
 

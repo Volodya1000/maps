@@ -17,6 +17,8 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 {
     private const double PanelSwipeThreshold = 36;
 
+    private readonly RotateTransform _northArrowRotation = new();
+
     private readonly Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter> _adapterFactory;
 
     private IMapAdapter? _activeAdapter;
@@ -28,6 +30,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
     {
         _adapterFactory = adapterFactory;
         InitializeComponent();
+        NorthArrow.RenderTransform = _northArrowRotation;
         this.WhenActivated(Activate);
         SizeChanged += OnSizeChanged;
     }
@@ -44,7 +47,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         BindMapState(viewModel, adapter, lifetime);
         BindViewport(viewModel, adapter, lifetime);
         BindButtons();
-        void NorthAngleChanged(double angle) => NorthArrow.RenderTransform = new RotateTransform(angle);
+        void NorthAngleChanged(double angle) => _northArrowRotation.Angle = angle;
         adapter.NorthIndicatorRotationChanged += NorthAngleChanged;
         Disposable.Create(() => adapter.NorthIndicatorRotationChanged -= NorthAngleChanged)
             .DisposeWith(lifetime);

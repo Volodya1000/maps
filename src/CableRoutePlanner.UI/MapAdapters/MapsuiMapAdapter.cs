@@ -237,7 +237,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     public void SetRouteVertices(IReadOnlyList<RouteVertexRow> vertices)
     {
-        _vertices = vertices.ToArray();
+        // Bridge transitions are engineering geometry, not extra map waypoints.
+        // User waypoints already have their own interactive markers in the points layer.
+        _vertices = vertices.Where(vertex => vertex.Kind is not
+            (RouteVertexKind.Transition or RouteVertexKind.UserWaypoint)).ToArray();
         _routeVertices.Features = _vertices.Select(vertex =>
         {
             var feature = new GeometryFeature(new Point(Project(vertex.Coordinate)));

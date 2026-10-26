@@ -190,6 +190,23 @@ public sealed class MapCameraTests
     }
 
     [AvaloniaFact]
+    public void BridgeTransitionsAndUserWaypointsDoNotDuplicateMapMarkers()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        adapter.SetRouteVertices(
+        [
+            new RouteVertexRow(1, new GeoCoordinate(53.4, 27.4), RouteVertexKind.Transition),
+            new RouteVertexRow(2, new GeoCoordinate(53.5, 27.5), RouteVertexKind.UserWaypoint),
+            new RouteVertexRow(3, new GeoCoordinate(53.6, 27.6), RouteVertexKind.Turn)
+        ]);
+
+        var layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            candidate => candidate.Name == "Вершины маршрута");
+        Assert.Single(layer.Features);
+    }
+
+    [AvaloniaFact]
     public void MapRouteVertexLayerAndPointerSelectionMatchListedNumber()
     {
         var control = new Mapsui.UI.Avalonia.MapControl();
