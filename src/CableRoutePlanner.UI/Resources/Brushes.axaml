@@ -1,0 +1,29 @@
+<ResourceDictionary
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Preserve the existing light palette; theme variants can be added independently. -->
+    <SolidColorBrush x:Key="AppSurfaceBrush" Color="White" />
+    <SolidColorBrush x:Key="AppTransparentBrush" Color="Transparent" />
+    <SolidColorBrush x:Key="AppCanvasBrush" Color="#F5F7F5" />
+    <SolidColorBrush x:Key="AppBorderBrush" Color="#DFE5E0" />
+    <SolidColorBrush x:Key="AppAccentBrush" Color="#176B55" />
+    <SolidColorBrush x:Key="AppAccentCheckedBrush" Color="#DCEEE7" />
+    <SolidColorBrush x:Key="AppAccentCheckedTextBrush" Color="#155742" />
+    <SolidColorBrush x:Key="AppOverlayBrush" Color="#EEFFFFFF" />
+    <SolidColorBrush x:Key="AppMapFooterBrush" Color="#ECFFFFFF" />
+    <SolidColorBrush x:Key="AppCompassFaceBrush" Color="#F9FFFFFF" />
+    <SolidColorBrush x:Key="AppCompassNorthBrush" Color="#D64B43" />
+    <SolidColorBrush x:Key="AppCompassSouthBrush" Color="#52636A" />
+    <SolidColorBrush x:Key="AppMutedTextBrush" Color="#64726A" />
+    <SolidColorBrush x:Key="AppRouteDividerBrush" Color="#E5EAE5" />
+    <SolidColorBrush x:Key="AppStatusPanelBrush" Color="#EAF2ED" />
+    <SolidColorBrush x:Key="AppStatusTextBrush" Color="#244D3B" />
+    <SolidColorBrush x:Key="AppSelectionBrush" Color="#DBEAFB" />
+    <SolidColorBrush x:Key="AppSelectionBorderBrush" Color="#1A6FD2" />
+    <SolidColorBrush x:Key="AppWarningBrush" Color="#FFF1D6" />
+    <SolidColorBrush x:Key="AppCoordinateBrush" Color="#F1F5F2" />
+    <SolidColorBrush x:Key="AppCoordinateBorderBrush" Color="#DCE5DF" />
+    <SolidColorBrush x:Key="AppWaypointNumberBrush" Color="#6E7C73" />
+    <SolidColorBrush x:Key="AppDragGlyphBrush" Color="#738779" />
+    <SolidColorBrush x:Key="AppDestructiveBrush" Color="#C83D3D" />
+</ResourceDictionary>
