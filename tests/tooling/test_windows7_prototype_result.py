@@ -26,7 +26,8 @@ class Windows7PrototypeResultTests(unittest.TestCase):
             "schema": "maps.win7.prototype.v1",
             "status": "PASS",
             "commit": "abc123",
-            "guest_shutdown": True,
+            "result_flushed": True,
+            "shutdown_requested": True,
             "checks": {
                 "P-01-process-started": True,
                 "P-02-window-visible": True,
@@ -58,6 +59,20 @@ class Windows7PrototypeResultTests(unittest.TestCase):
         checks = value["checks"]
         assert isinstance(checks, dict)
         checks["P-07-gui-point-assertion"] = False
+        self.result.write_text(json.dumps(value), encoding="utf-8")
+        with self.assertRaises(ResultValidationError):
+            validate_prototype_result(self.result, self.screenshot, "abc123")
+
+    def test_rejects_unflushed_result(self) -> None:
+        value = self.valid()
+        value["result_flushed"] = False
+        self.result.write_text(json.dumps(value), encoding="utf-8")
+        with self.assertRaises(ResultValidationError):
+            validate_prototype_result(self.result, self.screenshot, "abc123")
+
+    def test_rejects_shutdown_without_host_result_contract(self) -> None:
+        value = self.valid()
+        value["shutdown_requested"] = False
         self.result.write_text(json.dumps(value), encoding="utf-8")
         with self.assertRaises(ResultValidationError):
             validate_prototype_result(self.result, self.screenshot, "abc123")

@@ -19,7 +19,7 @@ internal static class Program
 
     [DllImport("user32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static extern bool GetWindowRect(IntPtr window, out Rectangle rectangle);
+    private static extern bool GetWindowRect(IntPtr window, out Win32Rect rectangle);
 
     [DllImport("user32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
@@ -27,15 +27,16 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        AgentOptions options = AgentOptions.Parse(args);
-        Directory.CreateDirectory(options.ResultsDirectory);
-        string resultPath = Path.Combine(options.ResultsDirectory, "win7-prototype-result.json");
-        string screenshotPath = Path.Combine(options.ResultsDirectory, "win7-prototype-screenshot.png");
-        string diagnosticsPath = Path.Combine(options.ResultsDirectory, "win7-prototype-agent.log");
+        AgentOptions? options = null;
+        string? diagnosticsPath = null;
         Process? prototype = null;
-        bool shutdownRequested = false;
         try
         {
+            options = AgentOptions.Parse(args);
+            Directory.CreateDirectory(options.ResultsDirectory);
+            diagnosticsPath = Path.Combine(options.ResultsDirectory, "win7-prototype-agent.log");
+            string resultPath = Path.Combine(options.ResultsDirectory, "win7-prototype-result.json");
+            string screenshotPath = Path.Combine(options.ResultsDirectory, "win7-prototype-screenshot.png");
             string readinessPath = Path.Combine(options.ResultsDirectory, "prototype-ready.json");
             Environment.SetEnvironmentVariable("WIN7_PROTOTYPE_READY_PATH", readinessPath);
             prototype = Process.Start(new ProcessStartInfo
@@ -62,7 +63,7 @@ internal static class Program
             }
 
             IntPtr window = prototype.MainWindowHandle;
-            if (window == IntPtr.Zero || !IsWindowVisible(window) || !GetWindowRect(window, out Rectangle bounds))
+            if (window == IntPtr.Zero || !IsWindowVisible(window) || !GetWindowRect(window, out Win32Rect bounds))
             {
                 throw new InvalidOperationException("The Avalonia window was not visible.");
             }
@@ -76,25 +77,33 @@ internal static class Program
                 throw new InvalidOperationException("The window did not expose the expected SQLite map point.");
             }
 
-            if (bounds.Width < 640 || bounds.Height < 480)
+            if (!WindowGeometry.IsUsable(bounds))
             {
                 throw new InvalidOperationException("The prototype window is smaller than the smoke-test viewport.");
             }
 
-            using Bitmap screenshot = new(bounds.Width, bounds.Height, PixelFormat.Format32bppArgb);
-            using (Graphics graphics = Graphics.FromImage(screenshot))
-            {
-                graphics.CopyFromScreen(bounds.Left, bounds.Top, 0, 0, screenshot.Size);
-            }
-
-            screenshot.Save(screenshotPath, ImageFormat.Png);
-            if (!File.Exists(readinessPath)
-                || File.ReadAllText(readinessPath).IndexOf("\"mapLayer\":\"SQLite fixture\"", StringComparison.Ordinal) < 0)
+            string readiness = File.Exists(readinessPath) ? File.ReadAllText(readinessPath) : string.Empty;
+            if (readiness.IndexOf("\"mapLayer\":\"SQLite fixture\"", StringComparison.Ordinal) < 0
+                || readiness.IndexOf("\"viewport\":\"centered\"", StringComparison.Ordinal) < 0
+                || readiness.IndexOf("\"renderMarker\":\"#dc1e1e\"", StringComparison.Ordinal) < 0)
             {
                 throw new InvalidOperationException("The prototype did not report a rendered SQLite map layer.");
             }
 
-            WriteResult(resultPath, options.Commit, true, true, true, true, true, true, true, true, false);
+            bool markerVisible = false;
+            DateTime renderDeadline = DateTime.UtcNow.AddSeconds(Math.Min(options.TimeoutSeconds, 30));
+            while (DateTime.UtcNow < renderDeadline && !markerVisible)
+            {
+                using Bitmap screenshot = Capture(bounds);
+                markerVisible = RenderAssertions.ContainsRedMarker(screenshot);
+                if (!markerVisible)
+                    Thread.Sleep(100);
+                else
+                    screenshot.Save(screenshotPath, ImageFormat.Png);
+            }
+            if (!markerVisible)
+                throw new InvalidOperationException("The Mapsui marker was not observed in the rendered screenshot.");
+
             prototype.CloseMainWindow();
             if (!prototype.WaitForExit(5000))
             {
@@ -102,16 +111,20 @@ internal static class Program
                 prototype.WaitForExit();
             }
 
-            shutdownRequested = true;
+            WriteResult(resultPath, options.Commit, true, true, true, true, true, true, true, true, true, true);
+            File.WriteAllText(diagnosticsPath!, "Prototype GUI smoke test passed; result flushed before shutdown request.\r\n", Encoding.UTF8);
             Process.Start(new ProcessStartInfo("shutdown.exe", "/s /t 0 /f") { UseShellExecute = false });
-            WriteResult(resultPath, options.Commit, true, true, true, true, true, true, true, true, true);
-            File.WriteAllText(diagnosticsPath, "Prototype GUI smoke test passed; shutdown requested.\r\n", Encoding.UTF8);
             return 0;
         }
         catch (Exception exception)
         {
-            File.WriteAllText(diagnosticsPath, exception.ToString(), Encoding.UTF8);
-            WriteResult(resultPath, options.Commit, false, false, false, false, false, false, false, false, shutdownRequested);
+            if (diagnosticsPath is not null)
+                File.WriteAllText(diagnosticsPath, exception.ToString(), Encoding.UTF8);
+            if (options is not null)
+            {
+                string resultPath = Path.Combine(options.ResultsDirectory, "win7-prototype-result.json");
+                WriteResult(resultPath, options.Commit, false, false, false, false, false, false, false, false, false, false);
+            }
             return 1;
         }
         finally
@@ -131,12 +144,14 @@ internal static class Program
         bool screenshot,
         bool guiAssertion,
         bool noException,
-        bool guestShutdown)
+        bool resultFlushed,
+        bool shutdownRequested)
     {
         string status = processStarted && windowVisible && sqliteRead && mapLayer && nativeWindow
-            && screenshot && guiAssertion && noException && guestShutdown ? "PASS" : "FAIL";
+            && screenshot && guiAssertion && noException && resultFlushed && shutdownRequested ? "PASS" : "FAIL";
         string json = "{\"schema\":\"" + Schema + "\",\"status\":\"" + status
-            + "\",\"commit\":\"" + commit + "\",\"guest_shutdown\":" + JsonBool(guestShutdown)
+            + "\",\"commit\":\"" + commit + "\",\"result_flushed\":" + JsonBool(resultFlushed)
+            + ",\"shutdown_requested\":" + JsonBool(shutdownRequested)
             + ",\"checks\":{"
             + "\"P-01-process-started\":" + JsonBool(processStarted)
             + ",\"P-02-window-visible\":" + JsonBool(windowVisible)
@@ -147,6 +162,14 @@ internal static class Program
             + ",\"P-07-gui-point-assertion\":" + JsonBool(guiAssertion)
             + ",\"P-08-no-exception\":" + JsonBool(noException) + "}}\n";
         File.WriteAllText(path, json, Encoding.UTF8);
+    }
+
+    private static Bitmap Capture(Win32Rect bounds)
+    {
+        Bitmap screenshot = new(bounds.Width, bounds.Height, PixelFormat.Format32bppArgb);
+        using Graphics graphics = Graphics.FromImage(screenshot);
+        graphics.CopyFromScreen(bounds.Left, bounds.Top, 0, 0, screenshot.Size);
+        return screenshot;
     }
 
     private static string JsonBool(bool value) => value ? "true" : "false";

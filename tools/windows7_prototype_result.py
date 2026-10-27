@@ -34,8 +34,10 @@ def validate_prototype_result(
         raise ResultValidationError("unsupported prototype result schema")
     if result.get("status") != "PASS" or result.get("commit") != commit:
         raise ResultValidationError("prototype result is not a PASS for this commit")
-    if result.get("guest_shutdown") is not True:
-        raise ResultValidationError("prototype guest did not shut down cleanly")
+    if result.get("result_flushed") is not True:
+        raise ResultValidationError("prototype result was not flushed before shutdown")
+    if result.get("shutdown_requested") is not True:
+        raise ResultValidationError("prototype did not request guest shutdown")
     checks = result.get("checks")
     if not isinstance(checks, dict) or any(
         checks.get(name) is not True for name in REQUIRED_CHECKS
