@@ -1,0 +1,134 @@
+name: Windows 7 compatibility (experimental)
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout_minutes:
+        description: Maximum guest runtime before the smoke test is failed
+        required: false
+        default: "20"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  windows7:
+    name: Windows 7 SP1 x64 smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      WIN7_BASE_IMAGE_URL: ${{ secrets.WIN7_BASE_IMAGE_URL }}
+      WIN7_BASE_IMAGE_SHA256: ${{ secrets.WIN7_BASE_IMAGE_SHA256 }}
+      WIN7_PAYLOAD_IMAGE_URL: ${{ secrets.WIN7_PAYLOAD_IMAGE_URL }}
+      WIN7_PAYLOAD_IMAGE_SHA256: ${{ secrets.WIN7_PAYLOAD_IMAGE_SHA256 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install QEMU/KVM tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y qemu-system-x86 qemu-utils
+
+      - name: Collect host diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/windows7
+          qemu-system-x86_64 --version | head -n 1 | tee artifacts/windows7/qemu-version.txt
+          qemu-img --version | head -n 1 | tee -a artifacts/windows7/qemu-version.txt
+          uname -a | tee artifacts/windows7/host-kernel.txt
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          Path("artifacts/windows7/win7-environment.json").write_text(
+              json.dumps(
+                  {
+                      "runner": os.environ.get("RUNNER_NAME"),
+                      "image": os.environ.get("ImageOS"),
+                      "kvm": Path("/dev/kvm").exists(),
+                      "commit": os.environ.get("GITHUB_SHA"),
+                      "workflow": os.environ.get("GITHUB_RUN_ID"),
+                  },
+                  indent=2,
+              )
+              + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Require real KVM and private test inputs
+        id: preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          reason=""
+          if [[ ! -e /dev/kvm || ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            reason="KVM is unavailable: /dev/kvm is absent or not readable/writable on the GitHub-hosted runner. TCG is deliberately not used."
+          elif [[ -z "${WIN7_BASE_IMAGE_URL}" || -z "${WIN7_BASE_IMAGE_SHA256}" ]]; then
+            reason="The private Windows 7 SP1 x64 base image and its SHA-256 are not configured (WIN7_BASE_IMAGE_URL/WIN7_BASE_IMAGE_SHA256)."
+          elif [[ -z "${WIN7_PAYLOAD_IMAGE_URL}" || -z "${WIN7_PAYLOAD_IMAGE_SHA256}" ]]; then
+            reason="The private legacy Desktop payload/agent image and its SHA-256 are not configured (WIN7_PAYLOAD_IMAGE_URL/WIN7_PAYLOAD_IMAGE_SHA256)."
+          fi
+
+          if [[ -n "$reason" ]]; then
+            python3 - "$reason" <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          reason = sys.argv[1]
+          Path("artifacts/windows7/win7-smoke-result.json").write_text(
+              json.dumps({"status": "INFRA_ERROR", "reason": reason}, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as summary:
+              summary.write(f"## Windows 7 smoke test: INFRA_ERROR\\n\\n{reason}\\n")
+          PY
+            exit 1
+          fi
+
+      - name: Download and verify private images
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --silent --show-error "$WIN7_BASE_IMAGE_URL" -o artifacts/windows7/win7-base.qcow2
+          curl --fail --location --retry 3 --silent --show-error "$WIN7_PAYLOAD_IMAGE_URL" -o artifacts/windows7/win7-payload.iso
+          echo "$WIN7_BASE_IMAGE_SHA256  artifacts/windows7/win7-base.qcow2" | sha256sum --check --strict
+          echo "$WIN7_PAYLOAD_IMAGE_SHA256  artifacts/windows7/win7-payload.iso" | sha256sum --check --strict
+          qemu-img info artifacts/windows7/win7-base.qcow2
+          qemu-img create -f qcow2 -F qcow2 -b artifacts/windows7/win7-base.qcow2 artifacts/windows7/win7-overlay.qcow2
+
+      - name: Run isolated Windows 7 GUI smoke agent
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout "${{ inputs.timeout_minutes }}m" qemu-system-x86_64 \
+            -accel kvm -cpu host -m 4096 -smp 2 \
+            -drive file=artifacts/windows7/win7-overlay.qcow2,format=qcow2 \
+            -drive file=artifacts/windows7/win7-payload.iso,media=cdrom,readonly=on \
+            -nic none -display none \
+            -serial file:artifacts/windows7/qemu-serial.log \
+            -D artifacts/windows7/qemu.log \
+            -no-reboot
+          grep -q 'WIN7_SMOKE_PASS' artifacts/windows7/qemu-serial.log
+          printf '%s\n' '{"status":"PASS","checks":"guest agent reported WIN7_SMOKE_PASS"}' > artifacts/windows7/win7-smoke-result.json
+          {
+            echo "## Windows 7 smoke test: PASS"
+            echo
+            echo "The guest agent reported WIN7_SMOKE_PASS over the isolated serial channel."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows7-diagnostics-${{ github.run_id }}
+          path: artifacts/windows7
+          if-no-files-found: error
