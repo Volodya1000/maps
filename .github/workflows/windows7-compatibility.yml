@@ -13,11 +13,76 @@ permissions:
   contents: read
 
 jobs:
+  net48-prototype:
+    name: Build Avalonia 11 net48 prototype
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore and build prototype
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode false
+          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -warnaserror
+
+  kvm-feasibility:
+    name: KVM feasibility on GitHub-hosted Ubuntu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Install QEMU/KVM tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y qemu-system-x86 qemu-utils dosfstools mtools
+      - name: Enable KVM permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          if [[ -e /dev/kvm ]]; then sudo chmod 0666 /dev/kvm; fi
+      - name: Start a real KVM VM process
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/windows7-kvm
+          qemu-system-x86_64 --version | head -n 1 | tee artifacts/windows7-kvm/qemu-version.txt
+          uname -a | tee artifacts/windows7-kvm/host-kernel.txt
+          if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            printf '%s\n' '{"status":"INFRA_ERROR","reason":"/dev/kvm is unavailable after the documented permission setup"}' > artifacts/windows7-kvm/kvm-feasibility.json
+            cat artifacts/windows7-kvm/kvm-feasibility.json >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          set +e
+          timeout 5s qemu-system-x86_64 -accel kvm -cpu host -m 128 -nodefaults -display none -serial none -monitor none -S
+          status=$?
+          set -e
+          if [[ "$status" -ne 124 ]]; then
+            printf '%s\n' '{"status":"FAIL","reason":"QEMU did not remain running with -accel kvm","exit_code":'"$status"'}' > artifacts/windows7-kvm/kvm-feasibility.json
+            exit 1
+          fi
+          printf '%s\n' '{"status":"PASS","accelerator":"kvm","process_start":"verified"}' > artifacts/windows7-kvm/kvm-feasibility.json
+          cat artifacts/windows7-kvm/kvm-feasibility.json >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows7-kvm-feasibility-${{ github.run_id }}
+          path: artifacts/windows7-kvm
+          if-no-files-found: error
+
   windows7:
     name: Windows 7 SP1 x64 smoke test
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
+      WIN7_DIAGNOSTICS_DIR: ${{ github.workspace }}/artifacts/windows7
       WIN7_BASE_IMAGE_URL: ${{ secrets.WIN7_BASE_IMAGE_URL }}
       WIN7_BASE_IMAGE_SHA256: ${{ secrets.WIN7_BASE_IMAGE_SHA256 }}
       WIN7_PAYLOAD_IMAGE_URL: ${{ secrets.WIN7_PAYLOAD_IMAGE_URL }}
@@ -31,22 +96,32 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y qemu-system-x86 qemu-utils
+          sudo apt-get install --no-install-recommends -y qemu-system-x86 qemu-utils dosfstools mtools
+          echo "WIN7_PRIVATE_DIR=$RUNNER_TEMP/win7-private" >> "$GITHUB_ENV"
+
+      - name: Enable KVM permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          if [[ -e /dev/kvm ]]; then sudo chmod 0666 /dev/kvm; fi
 
       - name: Collect host diagnostics
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p artifacts/windows7
-          qemu-system-x86_64 --version | head -n 1 | tee artifacts/windows7/qemu-version.txt
-          qemu-img --version | head -n 1 | tee -a artifacts/windows7/qemu-version.txt
-          uname -a | tee artifacts/windows7/host-kernel.txt
+          mkdir -p "$WIN7_DIAGNOSTICS_DIR" "$WIN7_PRIVATE_DIR"
+          qemu-system-x86_64 --version | head -n 1 | tee "$WIN7_DIAGNOSTICS_DIR/qemu-version.txt"
+          qemu-img --version | head -n 1 | tee -a "$WIN7_DIAGNOSTICS_DIR/qemu-version.txt"
+          uname -a | tee "$WIN7_DIAGNOSTICS_DIR/host-kernel.txt"
           python3 - <<'PY'
           import json
           import os
           from pathlib import Path
 
-          Path("artifacts/windows7/win7-environment.json").write_text(
+          Path(os.environ["WIN7_DIAGNOSTICS_DIR"], "win7-environment.json").write_text(
               json.dumps(
                   {
                       "runner": os.environ.get("RUNNER_NAME"),
@@ -84,7 +159,7 @@ jobs:
           from pathlib import Path
 
           reason = sys.argv[1]
-          Path("artifacts/windows7/win7-smoke-result.json").write_text(
+          Path(os.environ["WIN7_DIAGNOSTICS_DIR"], "win7-smoke-result.json").write_text(
               json.dumps({"status": "INFRA_ERROR", "reason": reason}, indent=2) + "\n",
               encoding="utf-8",
           )
@@ -98,31 +173,58 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --silent --show-error "$WIN7_BASE_IMAGE_URL" -o artifacts/windows7/win7-base.qcow2
-          curl --fail --location --retry 3 --silent --show-error "$WIN7_PAYLOAD_IMAGE_URL" -o artifacts/windows7/win7-payload.iso
-          echo "$WIN7_BASE_IMAGE_SHA256  artifacts/windows7/win7-base.qcow2" | sha256sum --check --strict
-          echo "$WIN7_PAYLOAD_IMAGE_SHA256  artifacts/windows7/win7-payload.iso" | sha256sum --check --strict
-          qemu-img info artifacts/windows7/win7-base.qcow2
-          qemu-img create -f qcow2 -F qcow2 -b artifacts/windows7/win7-base.qcow2 artifacts/windows7/win7-overlay.qcow2
+          curl --fail --location --retry 3 --silent --show-error "$WIN7_BASE_IMAGE_URL" -o "$WIN7_PRIVATE_DIR/win7-base.qcow2"
+          curl --fail --location --retry 3 --silent --show-error "$WIN7_PAYLOAD_IMAGE_URL" -o "$WIN7_PRIVATE_DIR/win7-payload.iso"
+          echo "$WIN7_BASE_IMAGE_SHA256  $WIN7_PRIVATE_DIR/win7-base.qcow2" | sha256sum --check --strict
+          echo "$WIN7_PAYLOAD_IMAGE_SHA256  $WIN7_PRIVATE_DIR/win7-payload.iso" | sha256sum --check --strict
+          qemu-img info "$WIN7_PRIVATE_DIR/win7-base.qcow2" > "$WIN7_DIAGNOSTICS_DIR/base-image-info.txt"
+          qemu-img create -f qcow2 -F qcow2 -b "$WIN7_PRIVATE_DIR/win7-base.qcow2" "$WIN7_PRIVATE_DIR/win7-overlay.qcow2"
+          dd if=/dev/zero of="$WIN7_PRIVATE_DIR/win7-results.img" bs=1M count=64 status=none
+          mkfs.vfat -n WIN7RESULTS "$WIN7_PRIVATE_DIR/win7-results.img" >/dev/null
 
       - name: Run isolated Windows 7 GUI smoke agent
         shell: bash
         run: |
           set -euo pipefail
+          set +e
           timeout "${{ inputs.timeout_minutes }}m" qemu-system-x86_64 \
             -accel kvm -cpu host -m 4096 -smp 2 \
-            -drive file=artifacts/windows7/win7-overlay.qcow2,format=qcow2 \
-            -drive file=artifacts/windows7/win7-payload.iso,media=cdrom,readonly=on \
+            -drive file="$WIN7_PRIVATE_DIR/win7-overlay.qcow2",format=qcow2 \
+            -drive file="$WIN7_PRIVATE_DIR/win7-payload.iso",media=cdrom,readonly=on \
+            -drive file="$WIN7_PRIVATE_DIR/win7-results.img",format=raw,if=ide \
             -nic none -display none \
-            -serial file:artifacts/windows7/qemu-serial.log \
-            -D artifacts/windows7/qemu.log \
+            -serial file:"$WIN7_DIAGNOSTICS_DIR/qemu-serial.log" \
+            -D "$WIN7_DIAGNOSTICS_DIR/qemu.log" \
             -no-reboot
-          grep -q 'WIN7_SMOKE_PASS' artifacts/windows7/qemu-serial.log
-          printf '%s\n' '{"status":"PASS","checks":"guest agent reported WIN7_SMOKE_PASS"}' > artifacts/windows7/win7-smoke-result.json
+          qemu_status=$?
+          set -e
+          mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-smoke-result.json "$WIN7_DIAGNOSTICS_DIR/win7-smoke-result.json"
+          mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-screenshot.png "$WIN7_DIAGNOSTICS_DIR/win7-screenshot.png"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result_path = Path(os.environ["WIN7_DIAGNOSTICS_DIR"], "win7-smoke-result.json")
+          result = json.loads(result_path.read_text(encoding="utf-8"))
+          required = ["W7-01", "W7-02", "W7-03", "W7-04", "W7-05", "W7-06", "W7-07", "W7-08", "W7-09"]
+          if result.get("schema") != "maps.win7.smoke.v1" or result.get("status") != "PASS":
+              raise SystemExit("guest result is not a structured PASS")
+          if result.get("commit") != os.environ["GITHUB_SHA"]:
+              raise SystemExit("guest result commit does not match GITHUB_SHA")
+          if result.get("guest_shutdown") is not True or any(result.get("checks", {}).get(key) is not True for key in required):
+              raise SystemExit("guest result is incomplete")
+          if not Path(os.environ["WIN7_DIAGNOSTICS_DIR"], "win7-screenshot.png").is_file():
+              raise SystemExit("guest screenshot is missing")
+          PY
+          if [[ "$qemu_status" -ne 0 ]]; then
+            echo "QEMU exited with status $qemu_status" >&2
+            exit "$qemu_status"
+          fi
           {
             echo "## Windows 7 smoke test: PASS"
             echo
-            echo "The guest agent reported WIN7_SMOKE_PASS over the isolated serial channel."
+            echo "The guest agent returned a structured result matching this commit and shut down cleanly."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish diagnostics
