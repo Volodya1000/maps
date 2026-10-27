@@ -14,6 +14,29 @@
 - Храните ограничения и значимые технические пороги в одном месте; формируйте числовые диапазоны сообщений из этих значений. Именуйте алгоритмические допуски с единицами измерения.
 - Проверяйте согласованность модели целиком. Ошибка валидации должна указывать конкретное поле, фактическое значение и нарушенное правило; противоречивые данные не должны давать правдоподобный результат.
 - Обрабатывайте исключения и отмену фоновых операций, освобождайте их ресурсы. Не подавляйте ошибки пустыми обработчиками.
+
+## Error Testing Policy
+
+- Test exception types and structured error data, not localized exception messages.
+- Use typed error reasons when one exception type represents multiple meaningful failures.
+- Never parse exception messages to determine business behavior.
+- Preserve observable behavior and state invariants in failure tests.
+- Text assertions are permitted when the text itself is an explicit UI, formatting, accessibility, security, or serialization contract.
+- Do not weaken tests merely to eliminate string assertions.
+- Avoid unnecessary exception subclasses, error enums, and duplicate error hierarchies.
+
+## StructLayout Policy
+
+- Do not add `[StructLayout]` automatically to every `struct` or `record struct`.
+- Use it only when layout control is required for interop, a binary ABI, or another explicitly documented contract.
+- Account for the active `Meziantou.Analyzer`, including `MA0008`.
+- In the configured analyzer version, `MA0008` requires the attribute for structs with multiple instance fields when no field has a reference type.
+- If the analyzer requires it and sequential layout matches the purpose, use `[StructLayout(LayoutKind.Sequential)]`.
+- Do not add the attribute merely to suppress a warning that does not exist.
+- Never disable `MA0008`, suppress diagnostics, or weaken the quality gate.
+- Do not describe sequential layout as a binary-compatibility guarantee without checking the complete real ABI.
+
+For example, `ProjectedTransition` may require the attribute under `MA0008`; `ProjectedFeature`, `BridgeRiverMatch`, and `BridgeSplice` contain reference fields, so `MA0008` does not require it by itself.
 - В архитектурных проверках отличайте разрешённые зависимости от обязательных. Добавляйте абстракции только при практической необходимости.
 - При изменении AXAML, compiled bindings, ReactiveUI, стилей, шаблонов или особенностей Avalonia сначала используйте официальный Avalonia Docs MCP, если он доступен. Это не требуется для каждого изменения C#.
 

@@ -20,7 +20,8 @@ public sealed class PointPlacementTests
         PlanningException error = await Assert.ThrowsAsync<PlanningException>(
             () => ((IPlanningSession)session).AddAsync(TestData.P(50, 150), default));
 
-        Assert.Contains("Нельзя установить точку", error.Message);
+        Assert.Equal(PlanningErrorReason.BlockedTerrain, error.Reason);
+        Assert.Equal(kind, error.TerrainKind);
         Assert.Empty(session.Points);
         Assert.Equal(0, session.Revision);
     }
@@ -34,7 +35,8 @@ public sealed class PointPlacementTests
         PlanningException error = await Assert.ThrowsAsync<PlanningException>(
             () => validator.ValidateAsync(TestData.P(50, 150), default));
 
-        Assert.Contains("русла реки", error.Message);
+        Assert.Equal(PlanningErrorReason.BlockedTerrain, error.Reason);
+        Assert.Equal(TerrainKind.River, error.TerrainKind);
     }
 
     [Fact]
@@ -56,7 +58,8 @@ public sealed class PointPlacementTests
         PlanningException error = await Assert.ThrowsAsync<PlanningException>(
             () => validator.ValidateAsync(TestData.P(40, 150), default));
 
-        Assert.Contains("здания", error.Message);
+        Assert.Equal(PlanningErrorReason.BlockedTerrain, error.Reason);
+        Assert.Equal(TerrainKind.Building, error.TerrainKind);
     }
 
     [Fact]
@@ -84,6 +87,7 @@ public sealed class PointPlacementTests
         PlanningException error = await Assert.ThrowsAsync<PlanningException>(
             () => validator.ValidateAsync(new(55, 30), default));
 
-        Assert.Contains("нет данных", error.Message);
+        Assert.Equal(PlanningErrorReason.PointOutsidePackage, error.Reason);
+        Assert.Null(error.TerrainKind);
     }
 }
