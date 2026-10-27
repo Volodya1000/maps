@@ -14,6 +14,9 @@ public sealed class GridRoutePlanner(
     IGridPathfinder pathfinder,
     ILogger<GridRoutePlanner> logger) : IRoutePlanner
 {
+    private const double MinimumSearchMarginMetres = 1_000;
+    private const double MaximumSearchMarginMetres = 5_000;
+
     private readonly PreparedRoutingAreaCache _areas = new(data);
 
     private static readonly Action<ILogger, long, long, Exception?> PreparationLog =
@@ -51,7 +54,7 @@ public sealed class GridRoutePlanner(
                 "Для выбранной точки нет данных в офлайн-пакете.");
         }
 
-        GeoBounds requested = GeoBounds.Around(points);
+        GeoBounds requested = GeoBounds.Around(points, SearchMarginDegrees(points, options.CellSizeMetres));
         GeoBounds coverage = data.Info.Bounds;
         var bounds = new GeoBounds(
             Math.Max(requested.West, coverage.West),
@@ -67,6 +70,22 @@ public sealed class GridRoutePlanner(
             cancellationToken);
         RoutesCompletedLog(logger, routes.Count, points.Count, calculationTimer.ElapsedMilliseconds, null);
         return routes;
+    }
+
+    private static double SearchMarginDegrees(IReadOnlyList<GeoCoordinate> points, double cellSizeMetres)
+    {
+        double spanMetres = points
+            .Zip(points.Skip(1), (from, to) => from.DistanceTo(to))
+            .DefaultIfEmpty()
+            .Max();
+        double marginMetres = Math.Clamp(
+            Math.Max(MinimumSearchMarginMetres, Math.Max(cellSizeMetres * 4, spanMetres * 0.1)),
+            MinimumSearchMarginMetres,
+            MaximumSearchMarginMetres);
+        double latitude = points.Average(point => point.Latitude);
+        double latitudeDegrees = marginMetres / (GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180);
+        double longitudeDegrees = latitudeDegrees / Math.Max(0.2, Math.Cos(latitude * Math.PI / 180));
+        return Math.Max(latitudeDegrees, longitudeDegrees);
     }
 
     private ReadOnlyCollection<RouteAlternative> Calculate(
@@ -136,7 +155,7 @@ public sealed class GridRoutePlanner(
                         ct).ToList();
                 // Smooth the grid path first, then impose the surveyed bridge alignment.
                 // The latter remains part of the engineering geometry and is not collapsed.
-                part = evaluator.AlignBridgeCrossings(evaluator.SimplifyPath(part, profile));
+                part = evaluator.AlignBridgeCrossings(evaluator.SimplifyPath(part, profile), profile);
                 if (route.Count > 0)
                 {
                     part.RemoveAt(0);
