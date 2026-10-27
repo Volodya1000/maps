@@ -24,9 +24,9 @@ public sealed class MapCameraTests
         using var adapter = new MapsuiMapAdapter(control, new(23.17, 51.23, 32.77, 56.18));
         adapter.InitializeViewport();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var overview = control.Map.Navigator.Viewport;
+        Viewport overview = control.Map.Navigator.Viewport;
 
-        for (var index = 0; index < 20; index++)
+        for (int index = 0; index < 20; index++)
         {
             adapter.ZoomOut();
         }
@@ -53,15 +53,15 @@ public sealed class MapCameraTests
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         adapter.ZoomIn();
         adapter.ZoomIn();
-        var resolution = control.Map.Navigator.Viewport.Resolution;
-        var (left, bottom) = SphericalMercator.FromLonLat(23.17, 51.23);
-        var (right, top) = SphericalMercator.FromLonLat(32.77, 56.18);
+        double resolution = control.Map.Navigator.Viewport.Resolution;
+        (double left, double bottom) = SphericalMercator.FromLonLat(23.17, 51.23);
+        (double right, double top) = SphericalMercator.FromLonLat(32.77, 56.18);
         control.Map.Navigator.CenterOnAndZoomTo(new MPoint(horizontal * 100000000, vertical * 100000000), resolution);
-        var viewport = control.Map.Navigator.Viewport;
+        Viewport viewport = control.Map.Navigator.Viewport;
 
         Assert.Equal(resolution, viewport.Resolution);
-        var visibleHalfWidth = viewport.Width * resolution / 2;
-        var visibleHalfHeight = viewport.Height * resolution / 2;
+        double visibleHalfWidth = viewport.Width * resolution / 2;
+        double visibleHalfHeight = viewport.Height * resolution / 2;
         Assert.True(viewport.CenterX + visibleHalfWidth > left);
         Assert.True(viewport.CenterX - visibleHalfWidth < right);
         Assert.True(viewport.CenterY + visibleHalfHeight > bottom);
@@ -85,7 +85,7 @@ public sealed class MapCameraTests
         window.Show();
         var extent = new MRect(-500, -400, 500, 400);
         var limiter = new OfflineViewportLimiter(extent);
-        var requested = control.Map.Navigator.Viewport with
+        Viewport requested = control.Map.Navigator.Viewport with
         {
             CenterX = 100000,
             CenterY = -100000,
@@ -93,11 +93,11 @@ public sealed class MapCameraTests
             Rotation = angle
         };
 
-        var limited = limiter.Limit(requested, null, null);
-        var radians = angle * Math.PI / 180;
-        var halfWidth = (requested.Width * Math.Abs(Math.Cos(radians))
+        Viewport limited = limiter.Limit(requested, null, null);
+        double radians = angle * Math.PI / 180;
+        double halfWidth = (requested.Width * Math.Abs(Math.Cos(radians))
             + requested.Height * Math.Abs(Math.Sin(radians))) * limited.Resolution / 2;
-        var halfHeight = (requested.Width * Math.Abs(Math.Sin(radians))
+        double halfHeight = (requested.Width * Math.Abs(Math.Sin(radians))
             + requested.Height * Math.Abs(Math.Cos(radians))) * limited.Resolution / 2;
 
         Assert.True(limited.CenterX + halfWidth > extent.MinX);
@@ -121,19 +121,19 @@ public sealed class MapCameraTests
         adapter.ZoomIn();
         adapter.ZoomIn();
         adapter.ZoomIn();
-        var northAngle = double.NaN;
+        double northAngle = double.NaN;
         adapter.NorthIndicatorRotationChanged += angle => northAngle = angle;
-        var initial = control.Map.Navigator.Viewport;
+        Viewport initial = control.Map.Navigator.Viewport;
         control.Map.Navigator.SetViewport(
             new Viewport(initial.CenterX, initial.CenterY, initial.Resolution, 45, initial.Width, initial.Height),
             0,
             new Mapsui.Animations.Easing(progress => progress));
         Assert.Equal(45, northAngle, 1);
-        var before = control.Map.Navigator.Viewport;
+        Viewport before = control.Map.Navigator.Viewport;
 
         adapter.ResetNorth();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var after = control.Map.Navigator.Viewport;
+        Viewport after = control.Map.Navigator.Viewport;
 
         Assert.Equal(0, after.Rotation, 6);
         Assert.Equal(0, northAngle, 1);
@@ -152,9 +152,9 @@ public sealed class MapCameraTests
         using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
         adapter.InitializeViewport();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var mapDataEvents = 0;
+        int mapDataEvents = 0;
         adapter.ViewportChanged += (_, _) => mapDataEvents++;
-        var viewport = control.Map.Navigator.Viewport;
+        Viewport viewport = control.Map.Navigator.Viewport;
 
         control.Map.Navigator.SetViewport(
             new Viewport(viewport.CenterX, viewport.CenterY, viewport.Resolution, 45, viewport.Width, viewport.Height),
@@ -201,7 +201,7 @@ public sealed class MapCameraTests
             new RouteVertexRow(3, new GeoCoordinate(53.6, 27.6), RouteVertexKind.Turn)
         ]);
 
-        var layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+        Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
             candidate => candidate.Name == "Вершины маршрута");
         Assert.Single(layer.Features);
     }
@@ -217,10 +217,10 @@ public sealed class MapCameraTests
         adapter.SetRouteVertices([vertex]);
         adapter.InitializeViewport();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var selectedNumber = 0;
+        int selectedNumber = 0;
         adapter.RouteVertexSelected += number => selectedNumber = number;
-        var (worldX, worldY) = SphericalMercator.FromLonLat(vertex.Coordinate.Longitude, vertex.Coordinate.Latitude);
-        var screen = control.Map.Navigator.Viewport.WorldToScreen(worldX, worldY);
+        (double worldX, double worldY) = SphericalMercator.FromLonLat(vertex.Coordinate.Longitude, vertex.Coordinate.Latitude);
+        MPoint screen = control.Map.Navigator.Viewport.WorldToScreen(worldX, worldY);
 
         window.MouseDown(new Avalonia.Point(screen.X, screen.Y), Avalonia.Input.MouseButton.Left);
         window.MouseUp(new Avalonia.Point(screen.X, screen.Y), Avalonia.Input.MouseButton.Left);
@@ -230,11 +230,11 @@ public sealed class MapCameraTests
             layer => layer.Name == "Вершины маршрута");
         var waypoint = new WaypointRow(Guid.NewGuid(), 1, new GeoCoordinate(53.55, 27.55));
         adapter.SetPoints([waypoint]);
-        var selectedWaypoint = Guid.Empty;
+        Guid selectedWaypoint = Guid.Empty;
         adapter.WaypointSelected += id => selectedWaypoint = id;
-        var (waypointX, waypointY) = SphericalMercator.FromLonLat(
+        (double waypointX, double waypointY) = SphericalMercator.FromLonLat(
             waypoint.Coordinate.Longitude, waypoint.Coordinate.Latitude);
-        var waypointScreen = control.Map.Navigator.Viewport.WorldToScreen(waypointX, waypointY);
+        MPoint waypointScreen = control.Map.Navigator.Viewport.WorldToScreen(waypointX, waypointY);
         window.MouseDown(new Avalonia.Point(waypointScreen.X, waypointScreen.Y), Avalonia.Input.MouseButton.Left);
         window.MouseUp(new Avalonia.Point(waypointScreen.X, waypointScreen.Y), Avalonia.Input.MouseButton.Left);
         Assert.Equal(waypoint.Id, selectedWaypoint);

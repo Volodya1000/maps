@@ -16,22 +16,22 @@ internal static class RouteVertexProjection
     public static IReadOnlyList<RouteVertexRow> Project(RouteAlternative route, IReadOnlyList<GeoCoordinate> waypoints)
     {
         var rows = new List<RouteVertexRow>();
-        var expandedGeometry = ExpandWithTransitionPoints(route);
-        var coordinates = expandedGeometry
+        IReadOnlyList<GeoCoordinate> expandedGeometry = ExpandWithTransitionPoints(route);
+        GeoCoordinate[] coordinates = expandedGeometry
             .Where((coordinate, index) => index == 0 || coordinate != expandedGeometry[index - 1])
             .ToArray();
-        for (var index = 0; index < coordinates.Length; index++)
+        for (int index = 0; index < coordinates.Length; index++)
         {
-            var coordinate = coordinates[index];
-            var isEndpoint = index == 0 || index == coordinates.Length - 1;
-            var isWaypoint = waypoints.Any(point => point.DistanceTo(coordinate) <= WaypointCoincidenceToleranceMetres);
-            var isTransition = route.TransitionPoints?.Any(point => point.DistanceTo(coordinate) <= WaypointCoincidenceToleranceMetres) == true;
-            var isTurn = index > 0 && index < coordinates.Length - 1 && IsSignificantTurn(
+            GeoCoordinate coordinate = coordinates[index];
+            bool isEndpoint = index == 0 || index == coordinates.Length - 1;
+            bool isWaypoint = waypoints.Any(point => point.DistanceTo(coordinate) <= WaypointCoincidenceToleranceMetres);
+            bool isTransition = route.TransitionPoints?.Any(point => point.DistanceTo(coordinate) <= WaypointCoincidenceToleranceMetres) == true;
+            bool isTurn = index > 0 && index < coordinates.Length - 1 && IsSignificantTurn(
                 coordinates[index - 1], coordinate, coordinates[index + 1]);
             if ((isEndpoint || isWaypoint || isTransition || isTurn)
                 && (rows.Count == 0 || rows[^1].Coordinate != coordinate))
             {
-                var kind = isWaypoint ? RouteVertexKind.UserWaypoint
+                RouteVertexKind kind = isWaypoint ? RouteVertexKind.UserWaypoint
                     : isTransition ? RouteVertexKind.Transition
                     : isEndpoint ? RouteVertexKind.Endpoint
                     : RouteVertexKind.Turn;
@@ -50,11 +50,11 @@ internal static class RouteVertexProjection
         }
 
         var expanded = new List<GeoCoordinate> { route.Geometry[0] };
-        for (var index = 1; index < route.Geometry.Count; index++)
+        for (int index = 1; index < route.Geometry.Count; index++)
         {
-            var start = route.Geometry[index - 1];
-            var end = route.Geometry[index];
-            foreach (var transition in transitions
+            GeoCoordinate start = route.Geometry[index - 1];
+            GeoCoordinate end = route.Geometry[index];
+            foreach ((GeoCoordinate Point, (double Fraction, double DistanceMetres) Position) transition in transitions
                 .Select(point => (Point: point, Position: PositionOnSegment(start, end, point)))
                 .Where(item => item.Position.DistanceMetres <= TransitionOnSegmentToleranceMetres
                     && item.Position.Fraction > 0
@@ -81,27 +81,27 @@ internal static class RouteVertexProjection
         GeoCoordinate end,
         GeoCoordinate point)
     {
-        var latitudeScale = Math.Cos((start.Latitude + end.Latitude) / 2 * Math.PI / 180) * LongitudeMetresPerDegree;
-        var dx = (end.Longitude - start.Longitude) * latitudeScale;
-        var dy = (end.Latitude - start.Latitude) * LatitudeMetresPerDegree;
-        var px = (point.Longitude - start.Longitude) * latitudeScale;
-        var py = (point.Latitude - start.Latitude) * LatitudeMetresPerDegree;
-        var lengthSquared = dx * dx + dy * dy;
+        double latitudeScale = Math.Cos((start.Latitude + end.Latitude) / 2 * Math.PI / 180) * LongitudeMetresPerDegree;
+        double dx = (end.Longitude - start.Longitude) * latitudeScale;
+        double dy = (end.Latitude - start.Latitude) * LatitudeMetresPerDegree;
+        double px = (point.Longitude - start.Longitude) * latitudeScale;
+        double py = (point.Latitude - start.Latitude) * LatitudeMetresPerDegree;
+        double lengthSquared = dx * dx + dy * dy;
         if (lengthSquared == 0)
         {
             return (0, Math.Sqrt(px * px + py * py));
         }
 
-        var fraction = Math.Clamp((px * dx + py * dy) / lengthSquared, 0, 1);
-        var offsetX = px - fraction * dx;
-        var offsetY = py - fraction * dy;
+        double fraction = Math.Clamp((px * dx + py * dy) / lengthSquared, 0, 1);
+        double offsetX = px - fraction * dx;
+        double offsetY = py - fraction * dy;
         return (fraction, Math.Sqrt(offsetX * offsetX + offsetY * offsetY));
     }
 
     private static bool IsSignificantTurn(GeoCoordinate previous, GeoCoordinate current, GeoCoordinate next)
     {
-        var firstLength = previous.DistanceTo(current);
-        var secondLength = current.DistanceTo(next);
+        double firstLength = previous.DistanceTo(current);
+        double secondLength = current.DistanceTo(next);
         if (firstLength < MinimumTurnSegmentMetres || secondLength < MinimumTurnSegmentMetres)
         {
             return false;
@@ -109,16 +109,16 @@ internal static class RouteVertexProjection
 
         static double Bearing(GeoCoordinate from, GeoCoordinate to)
         {
-            var latitude1 = from.Latitude * Math.PI / 180;
-            var latitude2 = to.Latitude * Math.PI / 180;
-            var longitudeDelta = (to.Longitude - from.Longitude) * Math.PI / 180;
+            double latitude1 = from.Latitude * Math.PI / 180;
+            double latitude2 = to.Latitude * Math.PI / 180;
+            double longitudeDelta = (to.Longitude - from.Longitude) * Math.PI / 180;
             return Math.Atan2(
                 Math.Sin(longitudeDelta) * Math.Cos(latitude2),
                 Math.Cos(latitude1) * Math.Sin(latitude2)
                     - Math.Sin(latitude1) * Math.Cos(latitude2) * Math.Cos(longitudeDelta));
         }
 
-        var difference = Math.Abs(Bearing(previous, current) - Bearing(current, next));
+        double difference = Math.Abs(Bearing(previous, current) - Bearing(current, next));
         difference = Math.Min(difference, 2 * Math.PI - difference);
         return difference >= SignificantTurnDegrees * Math.PI / 180;
     }

@@ -10,10 +10,7 @@ namespace CableRoutePlanner.Tests;
 
 internal sealed class MemoryData(params MapFeature[] features) : IGeodataRepository
 {
-    public DataPackageInfo Info
-    {
-        get;
-    } = new(
+    public DataPackageInfo Info { get; } = new(
         "synthetic-test-only",
         new(27, 54, 27.006, 54.006),
         "Synthetic fixture",
@@ -51,22 +48,22 @@ internal static class TestData
     {
         static Coordinate C(double x, double y)
         {
-            var p = P(x, y);
+            GeoCoordinate p = P(x, y);
             return new(p.Longitude, p.Latitude);
         }
 
-        var geometry = new GeometryFactory().CreatePolygon([C(x1, y1), C(x2, y1), C(x2, y2), C(x1, y2), C(x1, y1)]);
+        Polygon geometry = new GeometryFactory().CreatePolygon([C(x1, y1), C(x2, y1), C(x2, y2), C(x1, y2), C(x1, y1)]);
         return new(id, kind, new WKBWriter().Write(geometry), "fixture", approval);
     }
 
     public static MapFeature Line(long id, TerrainKind kind, params (double X, double Y)[] points)
     {
-        var coordinates = points.Select(point =>
+        Coordinate[] coordinates = points.Select(point =>
         {
-            var geographic = P(point.X, point.Y);
+            GeoCoordinate geographic = P(point.X, point.Y);
             return new Coordinate(geographic.Longitude, geographic.Latitude);
         }).ToArray();
-        var geometry = new GeometryFactory().CreateLineString(coordinates);
+        LineString geometry = new GeometryFactory().CreateLineString(coordinates);
         return new(id, kind, new WKBWriter().Write(geometry), "fixture", null);
     }
 

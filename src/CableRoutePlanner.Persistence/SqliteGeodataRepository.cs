@@ -16,36 +16,33 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
 
     private readonly int _schemaVersion;
 
-    public DataPackageInfo Info
-    {
-        get;
-    }
+    public DataPackageInfo Info { get; }
 
     public SqliteGeodataRepository(string directory)
     {
-        var manifestPath = Path.Combine(directory, "manifest.json");
+        string manifestPath = Path.Combine(directory, "manifest.json");
         if (!File.Exists(manifestPath))
         {
             throw new PlanningException("Офлайн-пакет не найден. Укажите каталог с manifest.json.");
         }
 
-        using var json = JsonDocument.Parse(File.ReadAllText(manifestPath));
-        var root = json.RootElement;
+        using JsonDocument json = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        JsonElement root = json.RootElement;
         _schemaVersion = root.GetProperty("schema_version").GetInt32();
         if (_schemaVersion is not (1 or 2) || root.GetProperty("coordinate_system").GetString() != "EPSG:4326")
         {
             throw new PlanningException("Версия или система координат офлайн-пакета не поддерживается.");
         }
 
-        var db = Path.Combine(directory, "geodata.sqlite");
+        string db = Path.Combine(directory, "geodata.sqlite");
         if (!File.Exists(db))
         {
             throw new PlanningException("Отсутствует база геоданных.");
         }
 
-        using (var stream = File.OpenRead(db))
+        using (FileStream stream = File.OpenRead(db))
         {
-            var actual = Convert.ToHexString(SHA256.HashData(stream));
+            string actual = Convert.ToHexString(SHA256.HashData(stream));
             if (!actual.Equals(
                 root.GetProperty("database_sha256").GetString(),
                 StringComparison.OrdinalIgnoreCase))
@@ -54,7 +51,7 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
             }
         }
 
-        var b = root.GetProperty("bounds").EnumerateArray().Select(x => x.GetDouble()).ToArray();
+        double[] b = root.GetProperty("bounds").EnumerateArray().Select(x => x.GetDouble()).ToArray();
         Info = new(
             root.GetProperty("region_id").GetString()!,
             new(b[0], b[1], b[2], b[3]),
@@ -91,8 +88,8 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
     {
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
-        using var command = connection.CreateCommand();
-        var displayLimit = lod switch
+        using SqliteCommand command = connection.CreateCommand();
+        int displayLimit = lod switch
         {
             0 => 500,
             1 => 1_500,
@@ -132,12 +129,12 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         command.Parameters.AddWithValue("$west", bounds.West);
         command.Parameters.AddWithValue("$north", bounds.North);
         command.Parameters.AddWithValue("$south", bounds.South);
-        using var reader = command.ExecuteReader();
+        using SqliteDataReader reader = command.ExecuteReader();
         var result = new List<MapFeature>();
         while (reader.Read())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!Enum.TryParse<TerrainKind>(reader.GetString(1), out var kind))
+            if (!Enum.TryParse<TerrainKind>(reader.GetString(1), out TerrainKind kind))
             {
                 throw new PlanningException("Неизвестный тип геообъекта.");
             }

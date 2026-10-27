@@ -20,8 +20,8 @@ public sealed class CompositionTests
     public async Task CoreProviderResolvesPlanningWithoutLoadingUiAssemblies()
     {
         using var directory = new TemporaryDirectory();
-        using var provider = TestApplication.CreateCoreServices(TestData.RealData, Path.Combine(directory.DirectoryPath, "settings.json"));
-        var session = provider.GetRequiredService<IPlanningSession>();
+        using ServiceProvider provider = TestApplication.CreateCoreServices(TestData.RealData, Path.Combine(directory.DirectoryPath, "settings.json"));
+        IPlanningSession session = provider.GetRequiredService<IPlanningSession>();
         await session.AddAsync(new GeoCoordinate(53.9490, 27.5180), default);
         Assert.Single(session.Points);
         Assert.DoesNotContain(typeof(GridRoutePlanner).Assembly.GetReferencedAssemblies(),
@@ -40,9 +40,9 @@ public sealed class CompositionTests
         services.AddInfrastructure();
         services.AddSingleton<IGridGenerator>(generator);
         services.AddSingleton<IGridPathfinder>(pathfinder);
-        using var provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
 
-        var planner = provider.GetRequiredService<IRoutePlanner>();
+        IRoutePlanner planner = provider.GetRequiredService<IRoutePlanner>();
         await planner.PlanAsync([TestData.P(50, 150), TestData.P(250, 150)], TestData.Options, default);
 
         Assert.Same(generator, provider.GetRequiredService<IGridGenerator>());
@@ -55,10 +55,10 @@ public sealed class CompositionTests
     public void ConfiguredApplicationBuildsStartupContentAndOwnsServices()
     {
         using var directory = new TemporaryDirectory();
-        var services = TestApplication.CreateServices(TestData.RealData, Path.Combine(directory.DirectoryPath, "settings.json"));
+        ServiceProvider services = TestApplication.CreateServices(TestData.RealData, Path.Combine(directory.DirectoryPath, "settings.json"));
         var app = new PlannerApplication();
         PresentationServiceCollectionExtensions.ConfigureApplication(app, services, TestData.RealData);
-        using var lifetime = app.ServiceLifetime;
+        using IDisposable? lifetime = app.ServiceLifetime;
         Assert.IsType<StartupView>(app.CreateContent());
         Assert.Equal(TestData.RealData, app.DataDirectory);
         Assert.NotNull(lifetime);
@@ -74,7 +74,7 @@ public sealed class CompositionTests
         };
         var window = new Window { Content = app.CreateContent() };
         window.Show();
-        var texts = window.GetVisualDescendants().OfType<TextBlock>().Select(text => text.Text).ToArray();
+        string?[] texts = window.GetVisualDescendants().OfType<TextBlock>().Select(text => text.Text).ToArray();
         Assert.Contains("missing package", texts);
         Assert.Contains(texts, text => text?.Contains("test-offline-data", StringComparison.Ordinal) == true);
         window.Close();

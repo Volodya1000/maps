@@ -14,10 +14,7 @@ public sealed record DataPackageInfo(
 
 public interface IGeodataRepository
 {
-    DataPackageInfo Info
-    {
-        get;
-    }
+    DataPackageInfo Info { get; }
 
     Task<IReadOnlyList<MapFeature>> QueryAsync(GeoBounds bounds, CancellationToken cancellationToken);
 
@@ -66,15 +63,9 @@ public sealed class PlanningException : Exception
 
 public interface IPlanningSession
 {
-    IReadOnlyList<Waypoint> Points
-    {
-        get;
-    }
+    IReadOnlyList<Waypoint> Points { get; }
 
-    long Revision
-    {
-        get;
-    }
+    long Revision { get; }
 
     Task<Waypoint> AddAsync(GeoCoordinate coordinate, CancellationToken cancellationToken);
 

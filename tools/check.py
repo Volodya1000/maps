@@ -56,7 +56,8 @@ def desktop() -> None:
     run(dotnet, "restore", SOLUTION, "--locked-mode")
     run(dotnet, "tool", "restore")
     run(dotnet, "format", "whitespace", SOLUTION, "--no-restore", "--verify-no-changes")
-    run(dotnet, "format", "style", SOLUTION, "--no-restore", "--verify-no-changes", "--severity", "warn")
+    run(dotnet, "format", "style", SOLUTION, "--no-restore", "--verify-no-changes", "--severity", "warn",
+        "--diagnostics", "IDE0008")
     run(dotnet, "format", "analyzers", SOLUTION, "--no-restore", "--verify-no-changes", "--severity", "warn")
     run(dotnet, "build", SOLUTION, "--no-restore", "-c", "Release", "-warnaserror")
     run(dotnet, "test", SOLUTION, "--no-restore", "--no-build", "-c", "Release",
@@ -132,6 +133,8 @@ def android() -> None:
     if not sdk:
         raise ValueError("Set ANDROID_HOME to Android SDK with API/build-tools 34.0.0; install JDK 17 and the .NET Android workload.")
     run(dotnet, "restore", "src/CableRoutePlanner.Android", "--locked-mode")
+    run(dotnet, "format", "style", "src/CableRoutePlanner.Android", "--no-restore", "--verify-no-changes",
+        "--severity", "warn", "--diagnostics", "IDE0008")
     version_values = subprocess.check_output(
         [sys.executable, "tools/release_version.py"], cwd=ROOT, text=True)
     version = next(line.split("=", 1)[1] for line in version_values.splitlines() if line.startswith("RELEASE_VERSION="))

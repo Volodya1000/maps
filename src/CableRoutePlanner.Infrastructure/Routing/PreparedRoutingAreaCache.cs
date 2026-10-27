@@ -34,13 +34,13 @@ internal sealed class PreparedRoutingAreaCache(IGeodataRepository repository)
             }
         }
 
-        var timer = Stopwatch.StartNew();
-        var features = await repository.QueryAsync(bounds, ct);
-        var queryMilliseconds = timer.ElapsedMilliseconds;
+        Stopwatch timer = Stopwatch.StartNew();
+        IReadOnlyList<MapFeature> features = await repository.QueryAsync(bounds, ct);
+        long queryMilliseconds = timer.ElapsedMilliseconds;
         timer.Restart();
         var projection = new LocalProjection(
             new((bounds.South + bounds.North) / 2, (bounds.West + bounds.East) / 2));
-        var evaluator = await Task.Run(() => new TerrainEvaluator(features, projection, cellSize), ct);
+        TerrainEvaluator evaluator = await Task.Run(() => new TerrainEvaluator(features, projection, cellSize), ct);
         ct.ThrowIfCancellationRequested();
         var prepared = new PreparedRoutingArea(
             bounds, cellSize, projection, evaluator, queryMilliseconds, timer.ElapsedMilliseconds);

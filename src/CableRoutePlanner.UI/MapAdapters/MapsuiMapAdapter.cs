@@ -91,11 +91,11 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         control.Map.Layers.Add(_routes);
         control.Map.Layers.Add(_routeVertices);
         control.Map.Layers.Add(_points);
-        var (x, y) = SphericalMercator.FromLonLat(
+        (double x, double y) = SphericalMercator.FromLonLat(
             (bounds.West + bounds.East) / 2,
             (bounds.South + bounds.North) / 2);
-        var bottomLeft = Project(new GeoCoordinate(bounds.South, bounds.West));
-        var topRight = Project(new GeoCoordinate(bounds.North, bounds.East));
+        Coordinate bottomLeft = Project(new GeoCoordinate(bounds.South, bounds.West));
+        Coordinate topRight = Project(new GeoCoordinate(bounds.North, bounds.East));
         _extent = new MRect(bottomLeft.X, bottomLeft.Y, topRight.X, topRight.Y);
         control.Map.Navigator.Limiter = new OfflineViewportLimiter(_extent);
         control.Map.Navigator.RotationLock = false;
@@ -156,7 +156,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 return;
             }
 
-            var viewport = _control.Map.Navigator.Viewport;
+            Viewport viewport = _control.Map.Navigator.Viewport;
             if (viewport.Width > 0 && viewport.Height > 0)
             {
                 _control.Map.Navigator.ZoomToBox(_extent);
@@ -169,7 +169,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     internal static Coordinate Project(GeoCoordinate p)
     {
-        var (x, y) = SphericalMercator.FromLonLat(p.Longitude, p.Latitude);
+        (double x, double y) = SphericalMercator.FromLonLat(p.Longitude, p.Latitude);
         return new(x, y);
     }
 
@@ -216,10 +216,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             return false;
         }
 
-        for (var index = 0; index < previous.Count; index++)
+        for (int index = 0; index < previous.Count; index++)
         {
-            var left = previous[index];
-            var right = current[index];
+            MapFeature left = previous[index];
+            MapFeature right = current[index];
             if (left.Id != right.Id || left.Kind != right.Kind || !left.Wkb.AsSpan().SequenceEqual(right.Wkb))
             {
                 return false;
@@ -302,7 +302,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     {
         // The active alternative is the only solid route. Rendering all alternatives as solid
         // overlapping polylines made a selection look unchanged on a small phone screen.
-        var selected = routes.FirstOrDefault(route => route.Id == selectedId);
+        RouteAlternative? selected = routes.FirstOrDefault(route => route.Id == selectedId);
         if (selected is null)
         {
             _routes.Features = Array.Empty<IFeature>();
@@ -323,13 +323,13 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         if (selected is not null && !_routeExtentShown)
         {
             // Fit all alternatives once per calculation; keep a stable camera while comparing them.
-            var coordinates = routes.SelectMany(route => route.Geometry).Select(Project).ToArray();
-            var west = coordinates.Min(point => point.X);
-            var east = coordinates.Max(point => point.X);
-            var south = coordinates.Min(point => point.Y);
-            var north = coordinates.Max(point => point.Y);
+            Coordinate[] coordinates = routes.SelectMany(route => route.Geometry).Select(Project).ToArray();
+            double west = coordinates.Min(point => point.X);
+            double east = coordinates.Max(point => point.X);
+            double south = coordinates.Min(point => point.Y);
+            double north = coordinates.Max(point => point.Y);
             // 15% padding, at least 100 projected metres, keeps short routes away from the edge.
-            var padding = Math.Max(100, Math.Max(east - west, north - south) * 0.15);
+            double padding = Math.Max(100, Math.Max(east - west, north - south) * 0.15);
             _routeExtentShown = true;
             _cameraWasUsed = true;
             _control.Map.Navigator.ZoomToBox(new MRect(west - padding, south - padding, east + padding, north + padding));
@@ -358,7 +358,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private void SetRotation(double rotation)
     {
-        var current = _control.Map.Navigator.Viewport;
+        Viewport current = _control.Map.Navigator.Viewport;
         _control.Map.Navigator.SetViewport(
             new Viewport(current.CenterX, current.CenterY, current.Resolution, rotation, current.Width, current.Height),
             0,
@@ -367,31 +367,31 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private Avalonia.Point ToScreen(GeoCoordinate coordinate)
     {
-        var world = Project(coordinate);
-        var screen = _control.Map.Navigator.Viewport.WorldToScreen(world.X, world.Y);
+        Coordinate world = Project(coordinate);
+        MPoint screen = _control.Map.Navigator.Viewport.WorldToScreen(world.X, world.Y);
         return new Avalonia.Point(screen.X, screen.Y);
     }
 
     private GeoCoordinate ToGeo(Avalonia.Point p)
     {
-        var world = _control.Map.Navigator.Viewport.ScreenToWorld(p.X, p.Y);
-        var (lon, lat) = SphericalMercator.ToLonLat(world.X, world.Y);
+        MPoint world = _control.Map.Navigator.Viewport.ScreenToWorld(p.X, p.Y);
+        (double lon, double lat) = SphericalMercator.ToLonLat(world.X, world.Y);
         return new(lat, lon);
     }
 
     private void OnViewportChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        var viewport = _control.Map.Navigator.Viewport;
+        Viewport viewport = _control.Map.Navigator.Viewport;
         if (!_initialized || viewport.Width <= 0 || viewport.Height <= 0)
         {
             return;
         }
 
-        var screenCenter = viewport.WorldToScreen(viewport.CenterX, viewport.CenterY);
-        var screenNorth = viewport.WorldToScreen(
+        MPoint screenCenter = viewport.WorldToScreen(viewport.CenterX, viewport.CenterY);
+        MPoint screenNorth = viewport.WorldToScreen(
             viewport.CenterX,
             viewport.CenterY + Math.Max(viewport.Resolution * 10, 0.01));
-        var northAngle = Math.Atan2(
+        double northAngle = Math.Atan2(
             screenNorth.Y - screenCenter.Y,
             screenNorth.X - screenCenter.X) * 180 / Math.PI + 90;
         NorthIndicatorRotationChanged?.Invoke(northAngle);
@@ -403,7 +403,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
         _lastMapDataViewport = viewport;
 
-        var corners = new[]
+        GeoCoordinate[] corners = new[]
         {
             ToGeo(new(0, 0)),
             ToGeo(new(viewport.Width, 0)),
@@ -426,7 +426,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             return true;
         }
 
-        var resolutionRatio = Math.Max(
+        double resolutionRatio = Math.Max(
             viewport.Resolution / previous.Resolution,
             previous.Resolution / viewport.Resolution);
         if (resolutionRatio >= MapReloadResolutionRatio
@@ -436,8 +436,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             return true;
         }
 
-        var horizontalThreshold = viewport.Width * viewport.Resolution * MapReloadDistanceViewportFraction;
-        var verticalThreshold = viewport.Height * viewport.Resolution * MapReloadDistanceViewportFraction;
+        double horizontalThreshold = viewport.Width * viewport.Resolution * MapReloadDistanceViewportFraction;
+        double verticalThreshold = viewport.Height * viewport.Resolution * MapReloadDistanceViewportFraction;
         return Math.Abs(viewport.CenterX - previous.CenterX) >= horizontalThreshold
             || Math.Abs(viewport.CenterY - previous.CenterY) >= verticalThreshold;
     }

@@ -10,7 +10,9 @@ indent_size = 2
 
 [*.cs]
 csharp_preserve_single_line_statements = false
-csharp_preserve_single_line_blocks = false
+# Keep trivial property accessors compact; this does not require collapsing
+# unrelated method, control-flow, or lambda blocks.
+csharp_preserve_single_line_blocks = true
 
 # Build-enforced correctness and maintainability rules. XML documentation is
 # intentionally not enabled: public API documentation is added when useful.
@@ -58,9 +60,10 @@ dotnet_diagnostic.S6966.severity = suggestion
 dotnet_diagnostic.S927.severity = suggestion
 dotnet_diagnostic.IDE0060.severity = suggestion
 
-csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_for_built_in_types = false:error
 csharp_style_var_when_type_is_apparent = true:suggestion
-csharp_style_var_elsewhere = false:suggestion
+csharp_style_var_elsewhere = false:error
+dotnet_diagnostic.IDE0008.severity = error
 csharp_prefer_static_local_function = true:warning
 csharp_prefer_readonly_struct = true:warning
 csharp_style_prefer_readonly_struct_member = true:warning

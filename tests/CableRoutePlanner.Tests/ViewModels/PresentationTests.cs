@@ -30,7 +30,7 @@ public sealed class PresentationTests : ReactiveTestScope
     public async Task PointChangesInvalidateRoutesAndRenumberList()
     {
         var data = new MemoryData();
-        using var vm = CreateVm(TestData.Planner(), data);
+        using MapViewModel vm = CreateVm(TestData.Planner(), data);
         await vm.AddPoint.Execute(TestData.P(50, 150));
         await vm.AddPoint.Execute(TestData.P(260, 150));
         await vm.BuildRoutes.Execute();
@@ -57,7 +57,7 @@ public sealed class PresentationTests : ReactiveTestScope
             clipboard);
         await vm.AddPoint.Execute(TestData.P(50, 150));
         await vm.AddPoint.Execute(TestData.P(260, 150));
-        var last = vm.Points[1];
+        WaypointRow last = vm.Points[1];
         vm.SelectedPoint = last;
         await vm.MoveUp.Execute();
         Assert.Equal(last.Id, vm.Points[0].Id);
@@ -72,7 +72,7 @@ public sealed class PresentationTests : ReactiveTestScope
         var session = new PlanningSession(new DeferredPlanner(pending.Task), TestData.AllowAllValidator);
         await session.AddAsync(TestData.P(50, 150), default);
         await session.AddAsync(TestData.P(260, 150), default);
-        var build = session.BuildAsync(TestData.Options, default);
+        Task<IReadOnlyList<RouteAlternative>> build = session.BuildAsync(TestData.Options, default);
         await session.MoveAsync(session.Points[0].Id, TestData.P(55, 155), default);
         pending.SetResult([]);
         await Assert.ThrowsAsync<PlanningException>(() => build);
@@ -82,12 +82,12 @@ public sealed class PresentationTests : ReactiveTestScope
     public async Task CancelledOldBuildCannotPublishAfterANewerBuildStarts()
     {
         var planner = new SequentialDeferredPlanner();
-        using var vm = CreateVm(planner, new MemoryData());
+        using MapViewModel vm = CreateVm(planner, new MemoryData());
         await vm.AddPoint.Execute(TestData.P(50, 150));
         await vm.AddPoint.Execute(TestData.P(260, 150));
 
-        var oldBuild = vm.BuildRoutes.Execute().ToTask();
-        var oldRequest = await planner.WaitForRequestAsync(0);
+        Task oldBuild = vm.BuildRoutes.Execute().ToTask();
+        TaskCompletionSource<IReadOnlyList<RouteAlternative>> oldRequest = await planner.WaitForRequestAsync(0);
         await vm.MovePointAsync(vm.Points[0].Id, TestData.P(55, 155));
         oldRequest.SetResult([Route("устаревший", TestData.P(50, 150), TestData.P(260, 150))]);
         await oldBuild;
@@ -95,9 +95,9 @@ public sealed class PresentationTests : ReactiveTestScope
         Assert.Empty(vm.Alternatives);
         Assert.False(vm.IsBusy);
 
-        var currentBuild = vm.BuildRoutes.Execute().ToTask();
-        var currentRequest = await planner.WaitForRequestAsync(1);
-        var currentGeometry = new[] { vm.Points[0].Coordinate, vm.Points[1].Coordinate };
+        Task currentBuild = vm.BuildRoutes.Execute().ToTask();
+        TaskCompletionSource<IReadOnlyList<RouteAlternative>> currentRequest = await planner.WaitForRequestAsync(1);
+        GeoCoordinate[] currentGeometry = new[] { vm.Points[0].Coordinate, vm.Points[1].Coordinate };
         currentRequest.SetResult([Route("актуальный", currentGeometry[0], currentGeometry[1])]);
         await currentBuild;
 
@@ -111,10 +111,10 @@ public sealed class PresentationTests : ReactiveTestScope
     {
         var screen = new NavigationHost();
         var data = new MemoryData();
-        using var map = CreateVm(TestData.Planner(), data, screen);
+        using MapViewModel map = CreateVm(TestData.Planner(), data, screen);
         using var settings = new SettingsViewModel(screen, new MemorySettings());
         using var shell = new ShellViewModel(screen, map, settings);
-        for (var i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++)
         {
             await shell.ShowSettings.Execute();
             await shell.ShowMap.Execute();
@@ -130,7 +130,7 @@ public sealed class PresentationTests : ReactiveTestScope
     [Fact]
     public async Task SingleResultIsPresentedAsARouteNotAsAProfileAlternative()
     {
-        using var vm = CreateVm(TestData.Planner(), new MemoryData());
+        using MapViewModel vm = CreateVm(TestData.Planner(), new MemoryData());
         await vm.AddPoint.Execute(TestData.P(50, 150));
         await vm.AddPoint.Execute(TestData.P(260, 150));
         await vm.BuildRoutes.Execute();
@@ -143,11 +143,11 @@ public sealed class PresentationTests : ReactiveTestScope
     [Fact]
     public async Task ReorderingRebuildsRouteAndDeletingByIdPreservesSlots()
     {
-        using var vm = CreateVm(TestData.Planner(), new MemoryData());
+        using MapViewModel vm = CreateVm(TestData.Planner(), new MemoryData());
         await vm.AddPoint.Execute(TestData.P(40, 150));
         await vm.AddPoint.Execute(TestData.P(200, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
-        var original = vm.Points.Select(point => point.Id).ToArray();
+        Guid[] original = vm.Points.Select(point => point.Id).ToArray();
         await vm.BuildRoutes.Execute();
         Assert.NotEmpty(vm.RouteChoices);
 
@@ -171,15 +171,15 @@ public sealed class PresentationTests : ReactiveTestScope
     [Fact]
     public async Task ChoosingAlternativeChangesGeometryMetricsAndSelectedChoice()
     {
-        var forest = TestData.Polygon(1, TerrainKind.Forest, 100, 60, 220, 240);
-        using var vm = CreateVm(TestData.Planner(forest), new MemoryData(forest));
+        MapFeature forest = TestData.Polygon(1, TerrainKind.Forest, 100, 60, 220, 240);
+        using MapViewModel vm = CreateVm(TestData.Planner(forest), new MemoryData(forest));
         await vm.AddPoint.Execute(TestData.P(30, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
         await vm.BuildRoutes.Execute();
         Assert.True(vm.Alternatives.Count > 1);
         Assert.True(vm.HasAlternatives);
-        var first = vm.SelectedRoute!;
-        var other = vm.Alternatives.First(route => route.Id != first.Id);
+        RouteAlternative first = vm.SelectedRoute!;
+        RouteAlternative other = vm.Alternatives.First(route => route.Id != first.Id);
         await vm.ChooseRoute.Execute(other.Id);
         Assert.Same(other, vm.SelectedRoute);
         Assert.NotEqual(first.Geometry, vm.SelectedRoute!.Geometry);
@@ -191,12 +191,12 @@ public sealed class PresentationTests : ReactiveTestScope
     public async Task ReorderingDuringCalculationCancelsAndBuildsLatestOrder()
     {
         var planner = new CancelFirstPlanner();
-        using var vm = CreateVm(planner, new MemoryData());
+        using MapViewModel vm = CreateVm(planner, new MemoryData());
         await vm.AddPoint.Execute(TestData.P(30, 150));
         await vm.AddPoint.Execute(TestData.P(200, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
-        var first = vm.Points[0].Id;
-        var build = vm.BuildRoutes.Execute().ToTask();
+        Guid first = vm.Points[0].Id;
+        Task build = vm.BuildRoutes.Execute().ToTask();
         await planner.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await vm.ReorderPoints.Execute(new WaypointReorder(first, 2)).ToTask().WaitAsync(TimeSpan.FromSeconds(5));
         await build.WaitAsync(TimeSpan.FromSeconds(5));
@@ -264,7 +264,7 @@ public sealed class PresentationTests : ReactiveTestScope
 
         public async Task<TaskCompletionSource<IReadOnlyList<RouteAlternative>>> WaitForRequestAsync(int index)
         {
-            var timeout = Stopwatch.StartNew();
+            Stopwatch timeout = Stopwatch.StartNew();
             while (timeout.Elapsed < TimeSpan.FromSeconds(2))
             {
                 lock (_requests)

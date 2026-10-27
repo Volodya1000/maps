@@ -12,7 +12,7 @@ public sealed class PersistenceTests
     public async Task SimplifiedDisplayCannotRemoveAnObstacleFromRouting()
     {
         using var fixture = new SqliteGeodataFixture(TestData.Polygon(1, TerrainKind.Marsh, 151, -20, 153, 700));
-        var repository = fixture.Repository;
+        Persistence.SqliteGeodataRepository repository = fixture.Repository;
         Assert.Empty(await repository.QueryMapAsync(repository.Info.Bounds, 1500, default));
         Assert.Equal(TerrainKind.Marsh, Assert.Single(await repository.QueryAsync(repository.Info.Bounds, default)).Kind);
 

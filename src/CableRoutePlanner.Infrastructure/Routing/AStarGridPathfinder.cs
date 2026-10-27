@@ -27,21 +27,21 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         Func<int, int, double?> gridEdgeCost,
         CancellationToken cancellationToken)
     {
-        var startId = mesh.Nodes.Length;
-        var endId = startId + 1;
+        int startId = mesh.Nodes.Length;
+        int endId = startId + 1;
         Coordinate Node(int id) => id == startId ? start : id == endId ? destination : mesh.Nodes[id];
 
         Dictionary<int, double> Connect(Coordinate point)
         {
-            var column = (int)Math.Round((point.X - mesh.Minimum.X) / mesh.CellSizeMetres);
-            var row = (int)Math.Round((point.Y - mesh.Minimum.Y) / mesh.CellSizeMetres);
+            int column = (int)Math.Round((point.X - mesh.Minimum.X) / mesh.CellSizeMetres);
+            int row = (int)Math.Round((point.Y - mesh.Minimum.Y) / mesh.CellSizeMetres);
             var connections = new Dictionary<int, double>();
-            for (var y = Math.Max(0, row - 1); y <= Math.Min(mesh.Rows - 1, row + 1); y++)
+            for (int y = Math.Max(0, row - 1); y <= Math.Min(mesh.Rows - 1, row + 1); y++)
             {
-                for (var x = Math.Max(0, column - 1); x <= Math.Min(mesh.Columns - 1, column + 1); x++)
+                for (int x = Math.Max(0, column - 1); x <= Math.Min(mesh.Columns - 1, column + 1); x++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var id = y * mesh.Columns + x;
+                    int id = y * mesh.Columns + x;
                     if (evaluate(point, mesh.Nodes[id]) is { } cost)
                     {
                         connections[id] = cost;
@@ -52,9 +52,9 @@ public sealed class AStarGridPathfinder : IGridPathfinder
             return connections;
         }
 
-        var fromStart = Connect(start);
-        var toEnd = Connect(destination);
-        var direct = start.Distance(destination) <= mesh.CellSizeMetres * 2 ? evaluate(start, destination) : null;
+        Dictionary<int, double> fromStart = Connect(start);
+        Dictionary<int, double> toEnd = Connect(destination);
+        double? direct = start.Distance(destination) <= mesh.CellSizeMetres * 2 ? evaluate(start, destination) : null;
         if ((fromStart.Count == 0 || toEnd.Count == 0) && direct is null)
         {
             throw new PlanningException(
@@ -66,7 +66,7 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         {
             if (id == startId)
             {
-                foreach (var connection in fromStart)
+                foreach (KeyValuePair<int, double> connection in fromStart)
                 {
                     yield return (connection.Key, connection.Value);
                 }
@@ -79,16 +79,16 @@ public sealed class AStarGridPathfinder : IGridPathfinder
                 yield break;
             }
 
-            if (toEnd.TryGetValue(id, out var finish))
+            if (toEnd.TryGetValue(id, out double finish))
             {
                 yield return (endId, finish);
             }
 
-            var x = id % mesh.Columns;
-            var y = id / mesh.Columns;
-            for (var dy = -1; dy <= 1; dy++)
+            int x = id % mesh.Columns;
+            int y = id / mesh.Columns;
+            for (int dy = -1; dy <= 1; dy++)
             {
-                for (var dx = -1; dx <= 1; dx++)
+                for (int dx = -1; dx <= 1; dx++)
                 {
                     if ((dx == 0 && dy == 0)
                         || x + dx < 0 || x + dx >= mesh.Columns
@@ -97,7 +97,7 @@ public sealed class AStarGridPathfinder : IGridPathfinder
                         continue;
                     }
 
-                    var next = (y + dy) * mesh.Columns + x + dx;
+                    int next = (y + dy) * mesh.Columns + x + dx;
                     if (gridEdgeCost(id, next) is { } cost)
                     {
                         yield return (next, cost);
@@ -107,11 +107,11 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         }
 
         var queue = new PriorityQueue<(int Id, double Cost), double>();
-        var distances = Enumerable.Repeat(double.PositiveInfinity, mesh.Nodes.Length + 2).ToArray();
-        var parents = Enumerable.Repeat(-1, distances.Length).ToArray();
+        double[] distances = Enumerable.Repeat(double.PositiveInfinity, mesh.Nodes.Length + 2).ToArray();
+        int[] parents = Enumerable.Repeat(-1, distances.Length).ToArray();
         distances[startId] = 0;
         queue.Enqueue((startId, 0), 0);
-        while (queue.TryDequeue(out var current, out _))
+        while (queue.TryDequeue(out (int Id, double Cost) current, out _))
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (current.Cost > distances[current.Id])
@@ -122,7 +122,7 @@ public sealed class AStarGridPathfinder : IGridPathfinder
             if (current.Id == endId)
             {
                 var path = new List<Coordinate>();
-                for (var id = endId; id != -1; id = parents[id])
+                for (int id = endId; id != -1; id = parents[id])
                 {
                     path.Add(Node(id));
                 }
@@ -131,9 +131,9 @@ public sealed class AStarGridPathfinder : IGridPathfinder
                 return path;
             }
 
-            foreach (var (next, edgeCost) in Neighbours(current.Id))
+            foreach ((int next, double edgeCost) in Neighbours(current.Id))
             {
-                var cost = current.Cost + edgeCost;
+                double cost = current.Cost + edgeCost;
                 if (cost >= distances[next])
                 {
                     continue;

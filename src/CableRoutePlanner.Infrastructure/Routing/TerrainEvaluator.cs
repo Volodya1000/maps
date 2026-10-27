@@ -61,23 +61,23 @@ internal sealed class TerrainEvaluator
         _projection = projection;
         _rules = rules ?? new TerrainRules();
         var reader = new WKBReader();
-        var projected = features.Select(
+        (MapFeature Feature, Geometry Geometry)[] projected = features.Select(
             f => (Feature: f, Geometry: projection.Forward(reader.Read(f.Wkb)))).ToArray();
-        var approvals = projected.Where(
+        Geometry[] approvals = projected.Where(
             f => f.Feature.Kind == TerrainKind.ApprovedCrossing
                 && !string.IsNullOrWhiteSpace(f.Feature.ApprovalId))
             .Select(f => f.Geometry)
             .ToArray();
         var riverIndex = new STRtree<Geometry>();
-        var rivers = projected.Where(f => f.Feature.Kind == TerrainKind.River).ToArray();
-        foreach (var river in rivers)
+        (MapFeature Feature, Geometry Geometry)[] rivers = projected.Where(f => f.Feature.Kind == TerrainKind.River).ToArray();
+        foreach ((MapFeature Feature, Geometry Geometry) river in rivers)
         {
             riverIndex.Insert(river.Geometry.EnvelopeInternal, river.Geometry);
         }
 
         riverIndex.Build();
         _bridgeCorridorMetres = Math.Max(cellSizeMetres * 0.45, 2);
-        var bridgeFeatures = projected
+        ((MapFeature Feature, Geometry Geometry) Feature, Geometry[] Rivers)[] bridgeFeatures = projected
             .Where(f => f.Feature.Kind == TerrainKind.BridgeCandidate)
             .Select(f => (
                 Feature: f,
@@ -89,30 +89,30 @@ internal sealed class TerrainEvaluator
         _bridgeGuides = bridgeFeatures
             .SelectMany(x => x.Rivers.Select(river =>
             {
-                var section = x.Feature.Geometry.Intersection(river);
+                Geometry section = x.Feature.Geometry.Intersection(river);
                 return new BridgeGuide(x.Feature.Geometry, river, section);
             }))
             .Where(x => !x.WaterSection.IsEmpty && x.WaterSection.Length > 0)
             .ToArray();
-        var bridgeOpenings = bridgeFeatures
+        Dictionary<long, Geometry> bridgeOpenings = bridgeFeatures
             .Select(f => (
                 Id: f.Feature.Feature.Id,
                 // Keep the water opening on the mapped bridge line. A cell-sized buffer let
                 // A* cut across the river beside a bridge while still counting that bridge.
                 Corridor: f.Feature.Geometry.Buffer(_bridgeCorridorMetres)))
             .ToDictionary(bridge => bridge.Id, bridge => bridge.Corridor);
-        foreach (var opening in approvals.Concat(bridgeOpenings.Values))
+        foreach (Geometry? opening in approvals.Concat(bridgeOpenings.Values))
         {
             _waterOpenings.Insert(opening.EnvelopeInternal, opening);
         }
 
         _waterOpenings.Build();
-        foreach (var (feature, original) in projected)
+        foreach ((MapFeature feature, Geometry original) in projected)
         {
-            var geometry = original;
+            Geometry geometry = original;
             if (feature.Kind == TerrainKind.River)
             {
-                foreach (var opening in _waterOpenings.Query(geometry.EnvelopeInternal))
+                foreach (Geometry opening in _waterOpenings.Query(geometry.EnvelopeInternal))
                 {
                     if (geometry.Intersects(opening))
                     {
@@ -123,7 +123,7 @@ internal sealed class TerrainEvaluator
 
             if (feature.Kind == TerrainKind.BridgeCandidate)
             {
-                if (!bridgeOpenings.TryGetValue(feature.Id, out var corridor))
+                if (!bridgeOpenings.TryGetValue(feature.Id, out Geometry? corridor))
                 {
                     continue;
                 }
@@ -143,20 +143,20 @@ internal sealed class TerrainEvaluator
 
     public List<Coordinate> AlignBridgeCrossings(IReadOnlyList<Coordinate> route)
     {
-        var aligned = route.ToList();
+        List<Coordinate> aligned = route.ToList();
         if (aligned.Count < 2)
         {
             return aligned;
         }
 
         var usedGuides = new HashSet<BridgeGuide>();
-        var i = 1;
+        int i = 1;
         while (i < aligned.Count)
         {
-            var previous = aligned[i - 1];
-            var current = aligned[i];
-            var segment = _factory.CreateLineString([previous, current]);
-            var guide = _bridgeGuides
+            Coordinate previous = aligned[i - 1];
+            Coordinate current = aligned[i];
+            LineString segment = _factory.CreateLineString([previous, current]);
+            BridgeGuide? guide = _bridgeGuides
                 .Where(candidate => candidate.River.Intersects(segment)
                     && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres)
                 .OrderBy(candidate => candidate.Bridge.Distance(segment))
@@ -172,7 +172,7 @@ internal sealed class TerrainEvaluator
 
                 // Replace nearby grid vertices with the actual bridge line. Appending bridge
                 // points while retaining those vertices makes a visible kink or short backtrack.
-                var points = guide.Bridge.Coordinates;
+                Coordinate[] points = guide.Bridge.Coordinates;
                 if (points.Length >= 2)
                 {
                     if (previous.Distance(points[^1]) + current.Distance(points[0])
@@ -182,18 +182,18 @@ internal sealed class TerrainEvaluator
                     }
 
                     var splices = new List<(List<Coordinate> Path, double Length, int BridgeEndIndex)>();
-                    var leftAnchors = Enumerable.Range(Math.Max(0, i - 3), i - Math.Max(0, i - 3))
+                    IEnumerable<int> leftAnchors = Enumerable.Range(Math.Max(0, i - 3), i - Math.Max(0, i - 3))
                         .Prepend(0)
                         .Distinct();
-                    var rightAnchors = Enumerable.Range(0, Math.Min(3, aligned.Count - i))
+                    IEnumerable<int> rightAnchors = Enumerable.Range(0, Math.Min(3, aligned.Count - i))
                         .Select(offset => i + offset)
                         .Append(aligned.Count - 1)
                         .Distinct();
-                    foreach (var left in leftAnchors)
+                    foreach (int left in leftAnchors)
                     {
-                        foreach (var right in rightAnchors)
+                        foreach (int right in rightAnchors)
                         {
-                            var candidate = aligned.Take(left + 1).ToList();
+                            List<Coordinate> candidate = aligned.Take(left + 1).ToList();
                             candidate.AddRange(points);
                             candidate.AddRange(aligned.Skip(right));
                             if (IsValidPath(candidate))
@@ -205,7 +205,7 @@ internal sealed class TerrainEvaluator
 
                     if (splices.Count > 0)
                     {
-                        var splice = splices.MinBy(candidate => candidate.Length);
+                        (List<Coordinate> Path, double Length, int BridgeEndIndex) splice = splices.MinBy(candidate => candidate.Length);
                         aligned = splice.Path;
                         i = splice.BridgeEndIndex;
                     }
@@ -221,20 +221,20 @@ internal sealed class TerrainEvaluator
     public IReadOnlyList<Coordinate> BridgeTransitionPoints(IReadOnlyList<Coordinate> route)
     {
         var points = new Dictionary<(double X, double Y), Coordinate>();
-        for (var index = 1; index < route.Count; index++)
+        for (int index = 1; index < route.Count; index++)
         {
-            var segment = _factory.CreateLineString([route[index - 1], route[index]]);
-            foreach (var guide in _bridgeGuides.Where(candidate =>
+            LineString segment = _factory.CreateLineString([route[index - 1], route[index]]);
+            foreach (BridgeGuide? guide in _bridgeGuides.Where(candidate =>
                 candidate.River.Intersects(segment)
                 && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres))
             {
-                var waterSection = guide.WaterSection.Coordinates;
+                Coordinate[] waterSection = guide.WaterSection.Coordinates;
                 if (waterSection.Length > 0)
                 {
                     // The entry and exit are the meaningful display transitions. The
                     // source geometry can contain many technical vertices along one bridge.
-                    var first = waterSection[0];
-                    var last = waterSection[^1];
+                    Coordinate first = waterSection[0];
+                    Coordinate last = waterSection[^1];
                     points.TryAdd((first.X, first.Y), first);
                     points.TryAdd((last.X, last.Y), last);
                 }
@@ -252,22 +252,22 @@ internal sealed class TerrainEvaluator
         }
 
         var simplified = new List<Coordinate> { path[0] };
-        var anchor = 0;
+        int anchor = 0;
         while (anchor < path.Count - 1)
         {
-            var best = anchor + 1;
-            var originalCost = 0d;
-            var lastCandidate = Math.Min(path.Count - 1, anchor + MaximumSimplificationLookahead);
-            for (var candidate = anchor + 1; candidate <= lastCandidate; candidate++)
+            int best = anchor + 1;
+            double originalCost = 0d;
+            int lastCandidate = Math.Min(path.Count - 1, anchor + MaximumSimplificationLookahead);
+            for (int candidate = anchor + 1; candidate <= lastCandidate; candidate++)
             {
-                var originalEdge = Evaluate(path[candidate - 1], path[candidate]);
+                EdgeEvaluation? originalEdge = Evaluate(path[candidate - 1], path[candidate]);
                 if (originalEdge is null)
                 {
                     break;
                 }
 
                 originalCost += originalEdge.Cost(profile);
-                var direct = Evaluate(path[anchor], path[candidate]);
+                EdgeEvaluation? direct = Evaluate(path[anchor], path[candidate]);
                 if (direct is not null && direct.Cost(profile) <= originalCost + CostComparisonTolerance)
                 {
                     best = candidate;
@@ -287,7 +287,7 @@ internal sealed class TerrainEvaluator
 
     private bool IsValidPath(IReadOnlyList<Coordinate> path)
     {
-        for (var i = 1; i < path.Count; i++)
+        for (int i = 1; i < path.Count; i++)
         {
             if (Evaluate(path[i - 1], path[i]) is null)
             {
@@ -300,17 +300,17 @@ internal sealed class TerrainEvaluator
 
     public EdgeEvaluation? Evaluate(Coordinate a, Coordinate b)
     {
-        var line = _factory.CreateLineString([a, b]);
+        LineString line = _factory.CreateLineString([a, b]);
         var contribution = new TerrainContribution();
-        foreach (var obstacle in _index.Query(line.EnvelopeInternal))
+        foreach (Obstacle obstacle in _index.Query(line.EnvelopeInternal))
         {
-            var geometry = obstacle.Geometry;
+            Geometry geometry = obstacle.Geometry;
             if (!geometry.Intersects(line))
             {
                 continue;
             }
 
-            if (!_rules.TryGet(obstacle.Kind, out var rule))
+            if (!_rules.TryGet(obstacle.Kind, out ITerrainRule? rule))
             {
                 continue;
             }
@@ -320,13 +320,13 @@ internal sealed class TerrainEvaluator
                 return null;
             }
 
-            var intersection = geometry.Intersection(line);
+            Geometry intersection = geometry.Intersection(line);
             rule.Apply(intersection, obstacle.Id, contribution);
         }
 
-        var projectedLength = line.Length;
-        var length = _projection.Inverse(a).DistanceTo(_projection.Inverse(b));
-        var scale = projectedLength > 0 ? length / projectedLength : 1;
+        double projectedLength = line.Length;
+        double length = _projection.Inverse(a).DistanceTo(_projection.Inverse(b));
+        double scale = projectedLength > 0 ? length / projectedLength : 1;
         return new(
             length,
             Math.Min(Math.Min(contribution.Forest, projectedLength) * scale, length),

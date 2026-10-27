@@ -37,7 +37,7 @@ public sealed class PlanningSession(
 
     public async Task MoveAsync(Guid id, GeoCoordinate coordinate, CancellationToken cancellationToken)
     {
-        var index = _points.FindIndex(p => p.Id == id);
+        int index = _points.FindIndex(p => p.Id == id);
         if (index < 0)
         {
             throw new PlanningException("Точка не найдена.");
@@ -67,7 +67,7 @@ public sealed class PlanningSession(
             throw new PlanningException("Некорректный порядок точек.");
         }
 
-        var point = _points[oldIndex];
+        Waypoint point = _points[oldIndex];
         _points.RemoveAt(oldIndex);
         _points.Insert(newIndex, point);
         Revision++;
@@ -90,9 +90,9 @@ public sealed class PlanningSession(
         }
 
         options.Validate();
-        var revision = Revision;
-        var coordinates = _points.Select(p => p.Coordinate).ToArray();
-        var result = await planner.PlanAsync(coordinates, options, cancellationToken).ConfigureAwait(false);
+        long revision = Revision;
+        GeoCoordinate[] coordinates = _points.Select(p => p.Coordinate).ToArray();
+        IReadOnlyList<RouteAlternative> result = await planner.PlanAsync(coordinates, options, cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         if (Revision != revision)
         {

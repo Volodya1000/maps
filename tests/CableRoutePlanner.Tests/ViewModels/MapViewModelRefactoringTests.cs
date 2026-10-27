@@ -14,11 +14,11 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     [Fact]
     public void UnexpectedErrorHasUserMessageAndDoesNotUpdateDisposedScreen()
     {
-        var vm = CreateVm(new MemoryData());
+        MapViewModel vm = CreateVm(new MemoryData());
         vm.ReportUnexpectedError(new InvalidOperationException("internal details"));
         Assert.Contains("внутренней ошибки", vm.Status);
         Assert.DoesNotContain("internal details", vm.Status);
-        var status = vm.Status;
+        string status = vm.Status;
         vm.Dispose();
         vm.ReportUnexpectedError(new InvalidOperationException("later"));
         Assert.Equal(status, vm.Status);
@@ -28,9 +28,9 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     public async Task LatestMapRequestWinsWhenOlderRequestFinishesLast()
     {
         var data = new DeferredMapData();
-        using var vm = CreateVm(data);
-        var oldRequest = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
-        var newRequest = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        using MapViewModel vm = CreateVm(data);
+        Task oldRequest = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        Task newRequest = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
 
         data.Complete(1, new MapFeature(2, TerrainKind.Field, [], "new"));
         await newRequest;
@@ -46,13 +46,13 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     public async Task ObsoleteMapFailureCannotOverwriteSuccessfulNewerRequest()
     {
         var data = new DeferredMapData();
-        using var vm = CreateVm(data);
-        var oldRequest = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
-        var newRequest = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        using MapViewModel vm = CreateVm(data);
+        Task oldRequest = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        Task newRequest = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
 
         data.Complete(1, new MapFeature(2, TerrainKind.Field, [], "new"));
         await newRequest;
-        var status = vm.MapStatus;
+        string status = vm.MapStatus;
         data.Fail(0, new InvalidOperationException("obsolete failure"));
         await oldRequest;
 
@@ -64,8 +64,8 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     public async Task DisposalPreventsPendingMapDataFromBeingPublished()
     {
         var data = new DeferredMapData();
-        var vm = CreateVm(data);
-        var load = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        MapViewModel vm = CreateVm(data);
+        Task load = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
         vm.Dispose();
 
         data.Complete(0, new MapFeature(1, TerrainKind.Field, [], "late"));
@@ -78,13 +78,13 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     public async Task CanceledMapRequestDoesNotReplaceDisplayedFeatures()
     {
         var data = new DeferredMapData();
-        using var vm = CreateVm(data);
+        using MapViewModel vm = CreateVm(data);
         using var cancellation = new CancellationTokenSource();
-        var initialLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        Task initialLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
         data.Complete(0, new MapFeature(1, TerrainKind.Field, [], "initial"));
         await initialLoad;
 
-        var load = vm.LoadMapAreaAsync(data.Info.Bounds, cancellation.Token);
+        Task load = vm.LoadMapAreaAsync(data.Info.Bounds, cancellation.Token);
         cancellation.Cancel();
         data.Complete(1, new MapFeature(2, TerrainKind.Field, [], "canceled"));
         await load;
@@ -96,8 +96,8 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     public async Task EmptySuccessfulMapRequestShowsMissingAreaWithoutError()
     {
         var data = new DeferredMapData();
-        using var vm = CreateVm(data);
-        var load = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        using MapViewModel vm = CreateVm(data);
+        Task load = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
 
         data.Complete(0);
         await load;
@@ -110,12 +110,12 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     public async Task FailedMapRequestKeepsPreviouslyLoadedFeatures()
     {
         var data = new DeferredMapData();
-        using var vm = CreateVm(data);
-        var initialLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        using MapViewModel vm = CreateVm(data);
+        Task initialLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
         data.Complete(0, new MapFeature(1, TerrainKind.Field, [], "initial"));
         await initialLoad;
 
-        var failedLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        Task failedLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
         data.Fail(1, new InvalidOperationException("repository unavailable"));
         await failedLoad;
 
@@ -126,11 +126,11 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     [Fact]
     public async Task PointProjectionKeepsSelectionAndRenumbersAfterReordering()
     {
-        using var vm = CreateVm(new MemoryData());
+        using MapViewModel vm = CreateVm(new MemoryData());
         await vm.AddPoint.Execute(TestData.P(50, 150)).ToTask();
         await vm.AddPoint.Execute(TestData.P(100, 150)).ToTask();
         await vm.AddPoint.Execute(TestData.P(150, 150)).ToTask();
-        var selectedId = vm.Points[0].Id;
+        Guid selectedId = vm.Points[0].Id;
         vm.SelectedPoint = vm.Points[0];
 
         await vm.ReorderPoints.Execute(new WaypointReorder(selectedId, 2)).ToTask();
@@ -144,7 +144,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     [Fact]
     public async Task ManualInputRejectsOutOfRangeCoordinateWithoutAddingWaypoint()
     {
-        using var vm = CreateVm(new MemoryData());
+        using MapViewModel vm = CreateVm(new MemoryData());
         vm.LatitudeText = "95";
         vm.LongitudeText = "27.5";
 
@@ -157,13 +157,13 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     [Fact]
     public async Task ManualInputAddsValidWaypointInsideOfflinePackage()
     {
-        using var vm = CreateVm(new MemoryData());
+        using MapViewModel vm = CreateVm(new MemoryData());
         vm.LatitudeText = "54.001";
         vm.LongitudeText = "27.001";
 
         await vm.AddManual.Execute().ToTask();
 
-        var point = Assert.Single(vm.Points);
+        WaypointRow point = Assert.Single(vm.Points);
         Assert.Equal(new GeoCoordinate(54.001, 27.001), point.Coordinate);
         Assert.Equal(1, vm.PointCount);
     }
@@ -171,7 +171,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     [Fact]
     public async Task ManualInputRejectsCoordinateOutsideOfflinePackage()
     {
-        using var vm = CreateVm(new MemoryData());
+        using MapViewModel vm = CreateVm(new MemoryData());
         vm.LatitudeText = "53.5";
         vm.LongitudeText = "27.001";
 
@@ -184,15 +184,15 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     [Fact]
     public async Task InvalidPointMoveKeepsSessionPointAndSelection()
     {
-        var building = TestData.Polygon(1, TerrainKind.Building, 90, 140, 110, 160);
+        MapFeature building = TestData.Polygon(1, TerrainKind.Building, 90, 140, 110, 160);
         var data = new MemoryData(building);
         var session = new PlanningSession(
             TestData.Planner(building), new GeodataPointPlacementValidator(data));
         using var vm = new MapViewModel(
             new NavigationHost(), session, data, new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(50, 150)).ToTask();
-        var original = Assert.Single(vm.Points);
-        var revision = session.Revision;
+        WaypointRow original = Assert.Single(vm.Points);
+        long revision = session.Revision;
 
         await vm.MovePointAsync(original.Id, TestData.P(100, 150));
 
@@ -210,7 +210,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
             "test",
             [],
             new RouteMetrics(100, 40, 60, 1, 2, 0, 130, null));
-        var result = RouteMetricsFormatter.Format(route, new RoutingOptions(ReserveFraction: 0.25));
+        string result = RouteMetricsFormatter.Format(route, new RoutingOptions(ReserveFraction: 0.25));
 
         Assert.Contains($"Кабель с запасом {0.25:P0}: {125:N0} м", result);
         Assert.Contains("Требуются обследование и согласование.", result);
@@ -227,10 +227,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     {
         private readonly List<TaskCompletionSource<IReadOnlyList<MapFeature>>> _requests = [];
 
-        public DataPackageInfo Info
-        {
-            get;
-        } = new(
+        public DataPackageInfo Info { get; } = new(
             "test", new GeoBounds(27, 54, 28, 55), "test", false, "test");
 
         public Task<IReadOnlyList<MapFeature>> QueryAsync(

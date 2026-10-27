@@ -23,7 +23,7 @@ internal sealed class HeadlessTouch(Window window) : IDisposable
     public void Send(RawPointerEventType type, Point position)
     {
         Present();
-        var input = Constructor.Invoke(new object[]
+        object input = Constructor.Invoke(new object[]
         {
             _device, ++_timestamp, window, type, position, RawInputModifiers.None, 1L
         });
@@ -42,7 +42,7 @@ internal sealed class HeadlessTouch(Window window) : IDisposable
 
     public static async Task UntilAsync(Func<bool> ready, string message)
     {
-        var timer = Stopwatch.StartNew();
+        Stopwatch timer = Stopwatch.StartNew();
         do
         {
             Present();
@@ -61,13 +61,13 @@ internal sealed class HeadlessTouch(Window window) : IDisposable
         Point position = default;
         await UntilAsync(() =>
         {
-            var point = control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window);
+            Point? point = control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window);
             if (point is null)
             {
                 return false;
             }
             position = point.Value;
-            var hit = window.InputHitTest(position);
+            IInputElement? hit = window.InputHitTest(position);
             return ReferenceEquals(hit, control) || (hit as Visual)?.GetVisualAncestors().Contains(control) == true;
         }, "The requested control did not become available for touch input.");
         return position;

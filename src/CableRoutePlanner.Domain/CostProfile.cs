@@ -13,10 +13,7 @@ public sealed record CostProfile(
     /// <summary>A lower bound on cost per physical metre, used by admissible search heuristics.</summary>
     public double MinimumCostPerMetre => Math.Min(1, Clearing);
 
-    public static IReadOnlyList<CostProfile> Defaults
-    {
-        get;
-    } = Array.AsReadOnly(new[]
+    public static IReadOnlyList<CostProfile> Defaults { get; } = Array.AsReadOnly(new[]
     {
         // The shortest alternative minimizes physical cable length. Terrain preferences
         // belong to the other profiles; crossing penalties must not hide a bridge detour.

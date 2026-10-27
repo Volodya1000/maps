@@ -29,10 +29,7 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
         get; private set;
     }
 
-    public RoutingState Router
-    {
-        get;
-    }
+    public RoutingState Router { get; }
 
     [Reactive]
     public bool IsMap
@@ -97,7 +94,7 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
 
     private IObservable<IRoutableViewModel> Discard()
     {
-        var navigate = _pendingNavigation;
+        Func<IObservable<IRoutableViewModel>>? navigate = _pendingNavigation;
         Stay();
         return navigate?.Invoke() ?? Observable.Return(Router.GetCurrentViewModel()!);
     }

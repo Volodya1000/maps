@@ -15,7 +15,7 @@ public sealed class JsonSettingsStore(string path) : ISettingsStore
 
         try
         {
-            var options = JsonSerializer.Deserialize<RoutingOptions>(File.ReadAllText(path)) ?? new();
+            RoutingOptions options = JsonSerializer.Deserialize<RoutingOptions>(File.ReadAllText(path)) ?? new();
             options.Validate();
             return options;
         }
@@ -29,7 +29,7 @@ public sealed class JsonSettingsStore(string path) : ISettingsStore
     {
         options.Validate();
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        var temp = path + ".tmp";
+        string temp = path + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(options));
         File.Move(temp, path, true);
     }

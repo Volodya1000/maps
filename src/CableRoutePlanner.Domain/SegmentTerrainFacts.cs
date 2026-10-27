@@ -63,7 +63,7 @@ public static class RouteCostCalculator
         ArgumentNullException.ThrowIfNull(profile);
         facts.Validate();
         profile.Validate();
-        var cost = facts.LengthMetres
+        double cost = facts.LengthMetres
             - facts.ClearingMetres * (1 - profile.Clearing)
             + facts.ForestMetres * profile.Forest
             + facts.FieldMetres * profile.Field

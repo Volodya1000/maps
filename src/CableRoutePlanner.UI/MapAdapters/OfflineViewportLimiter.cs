@@ -20,26 +20,26 @@ public sealed class OfflineViewportLimiter(MRect extent) : IViewportLimiter
         // the complete package fits. At closer zooms, overscroll is allowed until only a
         // small screen-space strip remains: this makes edge locations reachable while
         // never letting an entirely empty map replace the offline package.
-        var radians = viewport.Rotation * Math.PI / 180;
-        var cosine = Math.Abs(Math.Cos(radians));
-        var sine = Math.Abs(Math.Sin(radians));
-        var projectedWidth = extent.Width * cosine + extent.Height * sine;
-        var projectedHeight = extent.Width * sine + extent.Height * cosine;
-        var maximum = Math.Max(projectedWidth / viewport.Width, projectedHeight / viewport.Height);
-        var minimum = Math.Min(zoomBounds?.Min ?? 0, maximum);
-        var resolution = Math.Clamp(viewport.Resolution, minimum, maximum);
-        var visibleHalfWidth = (viewport.Width * cosine + viewport.Height * sine) * resolution / 2;
-        var visibleHalfHeight = (viewport.Width * sine + viewport.Height * cosine) * resolution / 2;
-        var requiredVisibleWidth = Math.Min(
+        double radians = viewport.Rotation * Math.PI / 180;
+        double cosine = Math.Abs(Math.Cos(radians));
+        double sine = Math.Abs(Math.Sin(radians));
+        double projectedWidth = extent.Width * cosine + extent.Height * sine;
+        double projectedHeight = extent.Width * sine + extent.Height * cosine;
+        double maximum = Math.Max(projectedWidth / viewport.Width, projectedHeight / viewport.Height);
+        double minimum = Math.Min(zoomBounds?.Min ?? 0, maximum);
+        double resolution = Math.Clamp(viewport.Resolution, minimum, maximum);
+        double visibleHalfWidth = (viewport.Width * cosine + viewport.Height * sine) * resolution / 2;
+        double visibleHalfHeight = (viewport.Width * sine + viewport.Height * cosine) * resolution / 2;
+        double requiredVisibleWidth = Math.Min(
             Math.Min(extent.Width, visibleHalfWidth * 2),
             resolution * MinimumVisibleMapPixels);
-        var requiredVisibleHeight = Math.Min(
+        double requiredVisibleHeight = Math.Min(
             Math.Min(extent.Height, visibleHalfHeight * 2),
             resolution * MinimumVisibleMapPixels);
-        var minimumCenterX = extent.MinX - visibleHalfWidth + requiredVisibleWidth / 2;
-        var maximumCenterX = extent.MaxX + visibleHalfWidth - requiredVisibleWidth / 2;
-        var minimumCenterY = extent.MinY - visibleHalfHeight + requiredVisibleHeight / 2;
-        var maximumCenterY = extent.MaxY + visibleHalfHeight - requiredVisibleHeight / 2;
+        double minimumCenterX = extent.MinX - visibleHalfWidth + requiredVisibleWidth / 2;
+        double maximumCenterX = extent.MaxX + visibleHalfWidth - requiredVisibleWidth / 2;
+        double minimumCenterY = extent.MinY - visibleHalfHeight + requiredVisibleHeight / 2;
+        double maximumCenterY = extent.MaxY + visibleHalfHeight - requiredVisibleHeight / 2;
         return viewport with
         {
             Resolution = resolution,

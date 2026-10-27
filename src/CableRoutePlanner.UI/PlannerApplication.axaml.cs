@@ -24,7 +24,7 @@ public sealed partial class PlannerApplication : Avalonia.Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        var content = CreateContent();
+        Control content = CreateContent();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new Window

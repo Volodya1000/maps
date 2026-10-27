@@ -12,19 +12,16 @@ internal sealed class SqliteGeodataFixture : IDisposable
     private static readonly double[] SyntheticBounds = [27.0, 54.0, 27.006, 54.006];
     private readonly TemporaryDirectory _directory = new();
     public string DirectoryPath => _directory.DirectoryPath;
-    public SqliteGeodataRepository Repository
-    {
-        get;
-    }
+    public SqliteGeodataRepository Repository { get; }
 
     public SqliteGeodataFixture(params MapFeature[] features)
     {
         try
         {
-            var database = Path.Combine(DirectoryPath, "geodata.sqlite");
+            string database = Path.Combine(DirectoryPath, "geodata.sqlite");
             CreateDatabase(database, features);
-            using var input = File.OpenRead(database);
-            var checksum = Convert.ToHexString(SHA256.HashData(input));
+            using FileStream input = File.OpenRead(database);
+            string checksum = Convert.ToHexString(SHA256.HashData(input));
             File.WriteAllText(Path.Combine(DirectoryPath, "manifest.json"), JsonSerializer.Serialize(new
             {
                 schema_version = 2,
@@ -52,7 +49,7 @@ internal sealed class SqliteGeodataFixture : IDisposable
             Pooling = false
         }.ToString());
         connection.Open();
-        using var command = connection.CreateCommand();
+        using SqliteCommand command = connection.CreateCommand();
         command.CommandText = """
             CREATE TABLE features(id INTEGER PRIMARY KEY, kind TEXT, wkb BLOB, name TEXT, approval_id TEXT);
             CREATE VIRTUAL TABLE feature_index USING rtree(id,minx,maxx,miny,maxy);
@@ -60,9 +57,9 @@ internal sealed class SqliteGeodataFixture : IDisposable
             CREATE VIRTUAL TABLE display_index USING rtree(id,minx,maxx,miny,maxy);
             """;
         command.ExecuteNonQuery();
-        foreach (var feature in features)
+        foreach (MapFeature feature in features)
         {
-            var envelope = new WKBReader().Read(feature.Wkb).EnvelopeInternal;
+            NetTopologySuite.Geometries.Envelope envelope = new WKBReader().Read(feature.Wkb).EnvelopeInternal;
             command.Parameters.Clear();
             command.CommandText = """
                 INSERT INTO features VALUES($id,$kind,$wkb,$name,$approval);
