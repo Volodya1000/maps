@@ -3,20 +3,20 @@ Python and osmium run only while preparing distributable data, never in the appl
 """
 
 import argparse
-import hashlib
 import gzip
-import shutil
+import hashlib
 import json
 import math
+import shutil
 import sqlite3
 from collections import Counter
 from pathlib import Path
 
 import osmium
-from shapely import from_wkb, to_wkb, make_valid
-from shapely.affinity import scale
-from shapely.geometry import Point, Polygon
 from prepare import METRES_PER_DEGREE, classify
+from shapely import from_wkb, make_valid, to_wkb
+from shapely.affinity import scale
+from shapely.geometry import Point
 
 
 def main():

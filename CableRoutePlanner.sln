@@ -8,7 +8,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Android",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Application", "src\CableRoutePlanner.Application\CableRoutePlanner.Application.csproj", "{DEED29AD-3141-4EED-BABB-68040D4559FE}"
 EndProject
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Desktop", "src\CableRoutePlanner.Desktop\CableRoutePlanner.Desktop.csproj", "{EAEEFB84-CAB5-45D9-904B-0CA78E47FEAC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Domain", "src\CableRoutePlanner.Domain\CableRoutePlanner.Domain.csproj", "{A37745D7-5C55-4725-B213-D1B65F242611}"
@@ -28,7 +27,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Verify", "tools\CableRoutePlanner.Verify\CableRoutePlanner.Verify.csproj", "{32E564A4-CB7E-43FF-ABDF-5E97787AD351}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CableRoutePlanner.Persistence", "src\CableRoutePlanner.Persistence\CableRoutePlanner.Persistence.csproj", "{59EDCC8A-CED6-4299-8B1B-D818EE4AD1FC}"
-EndProject
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

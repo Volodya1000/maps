@@ -3,9 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "test": "node check.cjs"
+    "test": "node check.cjs",
+    "lint:css": "stylelint style.css"
   },
   "devDependencies": {
-    "playwright": "1.55.1"
+    "playwright": "1.55.1",
+    "stylelint": "16.23.1"
   }
 }

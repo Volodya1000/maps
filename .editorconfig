@@ -58,8 +58,6 @@ dotnet_diagnostic.S3881.severity = suggestion
 dotnet_diagnostic.S6608.severity = suggestion
 dotnet_diagnostic.S6966.severity = suggestion
 dotnet_diagnostic.S927.severity = suggestion
-dotnet_diagnostic.IDE0060.severity = suggestion
-
 csharp_style_var_for_built_in_types = false:error
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_style_var_elsewhere = false:error

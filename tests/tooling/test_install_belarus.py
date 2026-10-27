@@ -4,12 +4,14 @@ import gzip
 import hashlib
 import importlib.util
 import json
-from pathlib import Path
 import tempfile
 import unittest
 import zipfile
+from pathlib import Path
 
-SPEC = importlib.util.spec_from_file_location("install_belarus", Path(__file__).resolve().parents[2] / "tools/install_belarus.py")
+SPEC = importlib.util.spec_from_file_location(
+    "install_belarus", Path(__file__).resolve().parents[2] / "tools/install_belarus.py"
+)
 installer = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(installer)
 
@@ -24,8 +26,13 @@ class CountryInstallation(unittest.TestCase):
         self.data = b"synthetic SQLite payload for installer integrity tests"
 
     def archive(self, *, database_checksum=None, region="belarus", licenses=True):
-        manifest = {"region_id": region, "schema_version": 2, "coordinate_system": "EPSG:4326",
-                    "database_sha256": database_checksum or hashlib.sha256(self.data).hexdigest()}
+        manifest = {
+            "region_id": region,
+            "schema_version": 2,
+            "coordinate_system": "EPSG:4326",
+            "database_sha256": database_checksum
+            or hashlib.sha256(self.data).hexdigest(),
+        }
         with zipfile.ZipFile(self.apk, "w") as archive:
             archive.writestr("assets/Data/manifest.json", json.dumps(manifest))
             archive.writestr("assets/Data/geodata.sqlite.gz", gzip.compress(self.data))
@@ -40,7 +47,9 @@ class CountryInstallation(unittest.TestCase):
         self.assertEqual(self.data, (self.destination / "geodata.sqlite").read_bytes())
         self.assertTrue((self.destination / "licenses/ODbL-1.0.html").is_file())
         self.assertFalse((self.root / "outside.txt").exists())
-        self.assertEqual(self.destination, installer.install(self.apk, self.destination, expected))
+        self.assertEqual(
+            self.destination, installer.install(self.apk, self.destination, expected)
+        )
 
     def test_apk_and_database_corruption_never_publish_partial_package(self):
         expected = self.archive(database_checksum="0" * 64)

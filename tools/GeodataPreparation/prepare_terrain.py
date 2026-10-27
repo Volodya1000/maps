@@ -8,11 +8,12 @@ import hashlib
 import json
 import math
 from pathlib import Path
+
 import numpy as np
-from PIL import Image
 import rasterio
+from PIL import Image
 from rasterio.transform import from_bounds
-from rasterio.warp import reproject, Resampling, transform_bounds
+from rasterio.warp import Resampling, reproject
 
 
 def main():
