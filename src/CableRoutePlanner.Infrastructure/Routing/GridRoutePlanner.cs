@@ -14,6 +14,12 @@ public sealed class GridRoutePlanner(
     IGridPathfinder pathfinder,
     ILogger<GridRoutePlanner> logger) : IRoutePlanner
 {
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private readonly record struct SearchMargins(double LatitudeDegrees, double LongitudeDegrees);
+
+    private const double MinimumSearchMarginMetres = 1_000;
+    private const double MaximumSearchMarginMetres = 5_000;
+
     private readonly PreparedRoutingAreaCache _areas = new(data);
 
     private static readonly Action<ILogger, long, long, Exception?> PreparationLog =
@@ -51,7 +57,12 @@ public sealed class GridRoutePlanner(
                 "Для выбранной точки нет данных в офлайн-пакете.");
         }
 
-        GeoBounds requested = GeoBounds.Around(points);
+        SearchMargins margins = SearchMarginDegrees(points);
+        GeoBounds requested = new(
+            points.Min(point => point.Longitude) - margins.LongitudeDegrees,
+            points.Min(point => point.Latitude) - margins.LatitudeDegrees,
+            points.Max(point => point.Longitude) + margins.LongitudeDegrees,
+            points.Max(point => point.Latitude) + margins.LatitudeDegrees);
         GeoBounds coverage = data.Info.Bounds;
         var bounds = new GeoBounds(
             Math.Max(requested.West, coverage.West),
@@ -67,6 +78,25 @@ public sealed class GridRoutePlanner(
             cancellationToken);
         RoutesCompletedLog(logger, routes.Count, points.Count, calculationTimer.ElapsedMilliseconds, null);
         return routes;
+    }
+
+    private static SearchMargins SearchMarginDegrees(IReadOnlyList<GeoCoordinate> points)
+    {
+        double spanMetres = points
+            .Zip(points.Skip(1), (from, to) => from.DistanceTo(to))
+            .DefaultIfEmpty()
+            .Max();
+        double marginMetres = Math.Clamp(
+            Math.Max(MinimumSearchMarginMetres, spanMetres * 0.1),
+            MinimumSearchMarginMetres,
+            MaximumSearchMarginMetres);
+        double latitude = points.Average(point => point.Latitude);
+        double latitudeDegrees = marginMetres / (GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180);
+        double longitudeScale = Math.Abs(Math.Cos(latitude * Math.PI / 180));
+        double longitudeDegrees = longitudeScale > double.Epsilon
+            ? Math.Min(180, latitudeDegrees / longitudeScale)
+            : 180;
+        return new(latitudeDegrees, longitudeDegrees);
     }
 
     private ReadOnlyCollection<RouteAlternative> Calculate(
@@ -136,7 +166,7 @@ public sealed class GridRoutePlanner(
                         ct).ToList();
                 // Smooth the grid path first, then impose the surveyed bridge alignment.
                 // The latter remains part of the engineering geometry and is not collapsed.
-                part = evaluator.AlignBridgeCrossings(evaluator.SimplifyPath(part, profile));
+                part = evaluator.AlignBridgeCrossings(evaluator.SimplifyPath(part, profile), profile);
                 if (route.Count > 0)
                 {
                     part.RemoveAt(0);

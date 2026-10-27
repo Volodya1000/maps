@@ -42,7 +42,11 @@ internal sealed class TerrainEvaluator
 
     private readonly record struct BridgeRiverMatch(ProjectedFeature Bridge, Geometry[] Rivers);
 
-    private readonly record struct BridgeSplice(List<Coordinate> Path, double Length, int BridgeEndIndex);
+    private readonly record struct BridgeSplice(
+        List<Coordinate> Path,
+        double Length,
+        double Cost,
+        int BridgeEndIndex);
 
     private readonly STRtree<Obstacle> _index = new();
 
@@ -150,7 +154,7 @@ internal sealed class TerrainEvaluator
         _index.Build();
     }
 
-    public List<Coordinate> AlignBridgeCrossings(IReadOnlyList<Coordinate> route)
+    public List<Coordinate> AlignBridgeCrossings(IReadOnlyList<Coordinate> route, CostProfile profile)
     {
         List<Coordinate> aligned = route.ToList();
         if (aligned.Count < 2)
@@ -205,16 +209,21 @@ internal sealed class TerrainEvaluator
                             List<Coordinate> candidate = aligned.Take(left + 1).ToList();
                             candidate.AddRange(points);
                             candidate.AddRange(aligned.Skip(right));
-                            if (IsValidPath(candidate))
+                            BridgeSplice? splice = TryCreateBridgeSplice(
+                                candidate,
+                                profile,
+                                left + points.Length - 1);
+                            if (splice is { } validSplice)
                             {
-                                splices.Add(new BridgeSplice(candidate, PathLength(candidate), left + points.Length - 1));
+                                splices.Add(validSplice);
                             }
                         }
                     }
 
                     if (splices.Count > 0)
                     {
-                        BridgeSplice splice = splices.MinBy(candidate => candidate.Length);
+                        BridgeSplice splice = splices
+                            .MinBy(candidate => (candidate.Cost, candidate.Length));
                         aligned = splice.Path;
                         i = splice.BridgeEndIndex;
                     }
@@ -290,21 +299,26 @@ internal sealed class TerrainEvaluator
         return simplified;
     }
 
-    private static double PathLength(IReadOnlyList<Coordinate> path) => path
-        .Zip(path.Skip(1), (a, b) => a.Distance(b))
-        .Sum();
-
-    private bool IsValidPath(IReadOnlyList<Coordinate> path)
+    private BridgeSplice? TryCreateBridgeSplice(
+        List<Coordinate> path,
+        CostProfile profile,
+        int bridgeEndIndex)
     {
+        double length = 0;
+        double cost = 0;
         for (int i = 1; i < path.Count; i++)
         {
-            if (Evaluate(path[i - 1], path[i]) is null)
+            EdgeEvaluation? edge = Evaluate(path[i - 1], path[i]);
+            if (edge is null)
             {
-                return false;
+                return null;
             }
+
+            length += edge.Length;
+            cost += edge.Cost(profile);
         }
 
-        return true;
+        return new BridgeSplice(path, length, cost, bridgeEndIndex);
     }
 
     public EdgeEvaluation? Evaluate(Coordinate a, Coordinate b)

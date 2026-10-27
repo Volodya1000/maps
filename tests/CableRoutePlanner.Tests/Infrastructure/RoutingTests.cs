@@ -4,6 +4,7 @@ using CableRoutePlanner.Infrastructure.Geography;
 using CableRoutePlanner.Infrastructure.Routing;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -11,6 +12,111 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class RoutingTests(ITestOutputHelper output)
 {
+    [Fact]
+    public async Task SearchMarginKeepsTheSameMetricReserveOnBothAxes()
+    {
+        BoundsRecordingData data = new();
+        GridRoutePlanner planner = new(data, new GridGenerator(), new DirectPathfinder(),
+            NullLogger<GridRoutePlanner>.Instance);
+        GeoCoordinate start = new(54, 27);
+        GeoCoordinate end = new(54, 27.01);
+
+        await planner.PlanAsync([start, end], new(200, 100_000), default);
+
+        Assert.NotNull(data.LastBounds);
+        GeoBounds bounds = data.LastBounds!.Value;
+        double latitudeReserve = (start.Latitude - bounds.South) * GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180;
+        double longitudeReserve = (start.Longitude - bounds.West)
+            * GeoCoordinate.MeanEarthRadiusMetres * Math.Cos(start.Latitude * Math.PI / 180) * Math.PI / 180;
+        Assert.InRange(latitudeReserve, 999, 1001);
+        Assert.InRange(longitudeReserve, 999, 1001);
+        Assert.True(data.Info.Bounds.Contains(bounds));
+    }
+
+    [Fact]
+    public async Task SearchMarginIsCappedAtFiveKilometresAndStaysInCoverage()
+    {
+        BoundsRecordingData data = new();
+        GridRoutePlanner planner = new(data, new GridGenerator(), new DirectPathfinder(),
+            NullLogger<GridRoutePlanner>.Instance);
+        GeoCoordinate start = new(54, 27);
+        GeoCoordinate end = new(54, 27.8);
+
+        await planner.PlanAsync([start, end], new(200, 100_000), default);
+
+        Assert.NotNull(data.LastBounds);
+        GeoBounds bounds = data.LastBounds!.Value;
+        double latitudeReserve = (start.Latitude - bounds.South) * GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180;
+        double longitudeReserve = (start.Longitude - bounds.West)
+            * GeoCoordinate.MeanEarthRadiusMetres * Math.Cos(start.Latitude * Math.PI / 180) * Math.PI / 180;
+        Assert.InRange(latitudeReserve, 4_999, 5_001);
+        Assert.InRange(longitudeReserve, 4_999, 5_001);
+        Assert.True(data.Info.Bounds.Contains(bounds));
+    }
+
+    [Fact]
+    public async Task SearchMarginIsClippedToCoverageBeforeQuery()
+    {
+        BoundsRecordingData data = new(new(26.999, 53.999, 27.03, 54.03));
+        GridRoutePlanner planner = new(data, new GridGenerator(), new DirectPathfinder(),
+            NullLogger<GridRoutePlanner>.Instance);
+        GeoCoordinate start = new(54.001, 27.001);
+        GeoCoordinate end = new(54.005, 27.005);
+
+        IReadOnlyList<RouteAlternative> routes = await planner.PlanAsync(
+            [start, end],
+            new(200, 100_000),
+            default);
+
+        Assert.NotEmpty(routes);
+        Assert.NotNull(data.LastBounds);
+        GeoBounds bounds = data.LastBounds!.Value;
+        Assert.Equal(data.Info.Bounds.West, bounds.West, 12);
+        Assert.Equal(data.Info.Bounds.South, bounds.South, 12);
+        Assert.True(bounds.East < data.Info.Bounds.East);
+        Assert.True(bounds.North < data.Info.Bounds.North);
+    }
+
+    [Fact]
+    public void BridgeAlignmentChoosesLongerSpliceWhenItsProfileCostIsLower()
+    {
+        MapFeature river = TestData.Polygon(1, TerrainKind.River, 99, -100, 101, 100);
+        MapFeature bridge = TestData.Line(2, TerrainKind.BridgeCandidate, (80, 0), (120, 0));
+        MapFeature road = TestData.Line(3, TerrainKind.Road, (20, 22), (20, 23));
+        LocalProjection projection = new(TestData.P(0, 0));
+        TerrainEvaluator evaluator = new(
+            [river, bridge, road],
+            projection,
+            20);
+        CostProfile profile = new("road-averse", 0, 0, 500, 1);
+        Coordinate[] route =
+        [
+            new(0, 30),
+            new(20, 30),
+            new(40, 5),
+            new(160, 5),
+            new(180, 30),
+            new(200, 30)
+        ];
+
+        List<Coordinate> aligned = evaluator.AlignBridgeCrossings(route, profile);
+
+        Assert.Contains(aligned, point => point.Distance(route[1]) < 0.5);
+        for (int index = 1; index < aligned.Count; index++)
+        {
+            Assert.NotNull(evaluator.Evaluate(aligned[index - 1], aligned[index]));
+        }
+
+        double cost = aligned
+            .Zip(aligned.Skip(1), (from, to) => evaluator.Evaluate(from, to)!.Cost(profile))
+            .Sum();
+        Coordinate[] shorterSplice = [route[0], new(80, 0), new(120, 0), route[^1]];
+        double shorterCost = shorterSplice
+            .Zip(shorterSplice.Skip(1), (from, to) => evaluator.Evaluate(from, to)!.Cost(profile))
+            .Sum();
+        Assert.True(cost < shorterCost);
+    }
+
     [Fact]
     public void ThirtyKilometreGridSearchRecordsCostAndResources()
     {
@@ -324,5 +430,40 @@ public sealed class RoutingTests(ITestOutputHelper output)
                 [TestData.P(50, 150), TestData.P(50, 150)],
                 TestData.Options,
                 default));
+    }
+
+    private sealed class BoundsRecordingData : IGeodataRepository
+    {
+        public DataPackageInfo Info { get; }
+
+        public BoundsRecordingData(GeoBounds? coverage = null)
+        {
+            Info = new(
+                "bounds-test",
+                coverage ?? new(20, 50, 35, 60),
+                "tests",
+                false,
+                "tests");
+        }
+
+        public GeoBounds? LastBounds { get; private set; }
+
+        public Task<IReadOnlyList<MapFeature>> QueryAsync(GeoBounds bounds, CancellationToken cancellationToken)
+        {
+            LastBounds = bounds;
+            return Task.FromResult<IReadOnlyList<MapFeature>>([]);
+        }
+    }
+
+    private sealed class DirectPathfinder : IGridPathfinder
+    {
+        public IReadOnlyList<Coordinate> FindPath(
+            Coordinate start,
+            Coordinate destination,
+            GridMesh mesh,
+            CostProfile profile,
+            Func<Coordinate, Coordinate, double?> evaluate,
+            Func<int, int, double?> gridEdgeCost,
+            CancellationToken cancellationToken) => [start, destination];
     }
 }
