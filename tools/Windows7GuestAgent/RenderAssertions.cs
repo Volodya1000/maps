@@ -12,7 +12,7 @@ internal static class RenderAssertions
             for (int x = 0; x < screenshot.Width; x++)
             {
                 Color pixel = screenshot.GetPixel(x, y);
-                if (IsMarkerPixel(pixel))
+                if (MarkerPixel.IsMatch(pixel.R, pixel.G, pixel.B))
                 {
                     matches++;
                 }
@@ -21,6 +21,4 @@ internal static class RenderAssertions
         return matches >= 25;
     }
 
-    internal static bool IsMarkerPixel(Color pixel)
-        => pixel.R >= 180 && pixel.G <= 90 && pixel.B <= 90;
 }

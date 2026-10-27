@@ -16,6 +16,6 @@
   <ItemGroup>
     <Content Include="../../samples/real-geodata-fixtures/minsk/**" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../tools/Windows7GuestAgent/WindowGeometry.cs" Link="Tooling/WindowGeometry.cs" />
-    <Compile Include="../../tools/Windows7GuestAgent/RenderAssertions.cs" Link="Tooling/RenderAssertions.cs" />
+    <Compile Include="../../tools/Windows7GuestAgent/MarkerPixel.cs" Link="Tooling/MarkerPixel.cs" />
   </ItemGroup>
 </Project>
