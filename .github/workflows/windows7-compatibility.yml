@@ -30,8 +30,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode
-          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:TreatWarningsAsErrors=true
+          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode -p:RuntimeIdentifier=win-x64
+          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:RuntimeIdentifier=win-x64 -p:TreatWarningsAsErrors=true
       - name: Test guest result validator
         run: python3 -m unittest tests/tooling/test_windows7_result.py -v
   kvm-feasibility:
@@ -92,18 +92,18 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode
-          dotnet restore tools/Windows7GuestAgent/Windows7GuestAgent.csproj --locked-mode
-          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:TreatWarningsAsErrors=true
-          dotnet build tools/Windows7GuestAgent/Windows7GuestAgent.csproj --no-restore -c Release --nologo -p:TreatWarningsAsErrors=true
+          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode -p:RuntimeIdentifier=win-x64
+          dotnet restore tools/Windows7GuestAgent/Windows7GuestAgent.csproj --locked-mode -p:RuntimeIdentifier=win-x64
+          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:RuntimeIdentifier=win-x64 -p:TreatWarningsAsErrors=true
+          dotnet build tools/Windows7GuestAgent/Windows7GuestAgent.csproj --no-restore -c Release --nologo -p:RuntimeIdentifier=win-x64 -p:TreatWarningsAsErrors=true
       - name: Assemble payload and manifest
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $payload = Join-Path $env:GITHUB_WORKSPACE 'artifacts/win7-payload'
           New-Item -ItemType Directory -Force -Path $payload | Out-Null
-          Copy-Item 'tools/Windows7Prototype/bin/Release/net48' (Join-Path $payload 'Windows7Prototype') -Recurse
-          Copy-Item 'tools/Windows7GuestAgent/bin/Release/net48' (Join-Path $payload 'Windows7GuestAgent') -Recurse
+          Copy-Item 'tools/Windows7Prototype/bin/Release/net48/win-x64' (Join-Path $payload 'Windows7Prototype') -Recurse
+          Copy-Item 'tools/Windows7GuestAgent/bin/Release/net48/win-x64' (Join-Path $payload 'Windows7GuestAgent') -Recurse
           @"
           @echo off
           setlocal
