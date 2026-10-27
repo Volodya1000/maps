@@ -1,0 +1,4 @@
+# Official Avalonia Build MCP; Codex clients that support project config load this
+# server without requiring a user-wide configuration change.
+[mcp_servers.avalonia-docs]
+url = "https://docs-mcp.avaloniaui.net/mcp"
