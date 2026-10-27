@@ -37,6 +37,14 @@
 - Do not describe sequential layout as a binary-compatibility guarantee without checking the complete real ABI.
 
 For example, `ProjectedTransition` may require the attribute under `MA0008`; `ProjectedFeature`, `BridgeRiverMatch`, and `BridgeSplice` contain reference fields, so `MA0008` does not require it by itself.
+
+## Code Quality Policy
+
+- Run the repository's existing linters and formatters locally; local and CI checks must use the same commands.
+- Fix the cause of a warning instead of suppressing diagnostics or changing configuration to bypass a check.
+- After changing AXAML styles, resources, or bindings, run the local-include validation and relevant Avalonia tests; Avalonia compilation remains authoritative for markup semantics.
+- After adding or removing projects, validate the solution, solution filter, project XML, references, and central package versions.
+- Add a new analyzer only when a concrete defect-prevention benefit is demonstrated and false positives remain manageable.
 - В архитектурных проверках отличайте разрешённые зависимости от обязательных. Добавляйте абстракции только при практической необходимости.
 - При изменении AXAML, compiled bindings, ReactiveUI, стилей, шаблонов или особенностей Avalonia сначала используйте официальный Avalonia Docs MCP, если он доступен. Это не требуется для каждого изменения C#.
 

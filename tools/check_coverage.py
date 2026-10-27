@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
-from collections import defaultdict
-from pathlib import Path
 import re
 import sys
 import xml.etree.ElementTree as ET
+from collections import defaultdict
+from pathlib import Path
 
 LINE_THRESHOLD = 85.0
 BRANCH_THRESHOLD = 80.0
@@ -27,7 +27,9 @@ class CoverageError(ValueError):
 
 
 def find_report(results: Path) -> Path:
-    reports = sorted(results.rglob("coverage.cobertura.xml"), key=lambda path: path.stat().st_mtime)
+    reports = sorted(
+        results.rglob("coverage.cobertura.xml"), key=lambda path: path.stat().st_mtime
+    )
     if not reports:
         raise CoverageError(f"No Cobertura report found below {results}")
     return reports[-1]
@@ -39,7 +41,9 @@ def _branch_counts(line: ET.Element) -> tuple[int, int]:
     coverage = line.get("condition-coverage", "")
     match = CONDITION_COVERAGE.search(coverage)
     if not match:
-        raise CoverageError(f"Branch line has no usable condition coverage: {ET.tostring(line, encoding='unicode')}")
+        raise CoverageError(
+            f"Branch line has no usable condition coverage: {ET.tostring(line, encoding='unicode')}"
+        )
     return int(match.group(1)), int(match.group(2))
 
 
@@ -49,7 +53,9 @@ def read_report(report: Path) -> dict[str, dict[str, int]]:
     except (ET.ParseError, OSError) as error:
         raise CoverageError(f"Cannot read Cobertura XML {report}: {error}") from error
 
-    projects: dict[str, dict[str, int]] = defaultdict(lambda: {"lines": 0, "covered_lines": 0, "branches": 0, "covered_branches": 0})
+    projects: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"lines": 0, "covered_lines": 0, "branches": 0, "covered_branches": 0}
+    )
     for package in root.findall(".//package"):
         project = package.get("name", "").strip()
         if project not in REQUIRED_PROJECTS:
@@ -90,7 +96,9 @@ def check(report: Path) -> bool:
     print(f"{'Branch coverage':<16}{branch_rate:>7.1f}%{BRANCH_THRESHOLD:>9.1f}%")
     print("\nProjects:")
     for project, stats in projects.items():
-        print(f"{project.removeprefix('CableRoutePlanner.'):20}{percent(stats['covered_lines'], stats['lines']):.1f}%")
+        print(
+            f"{project.removeprefix('CableRoutePlanner.'):20}{percent(stats['covered_lines'], stats['lines']):.1f}%"
+        )
     passed = line_rate >= LINE_THRESHOLD and branch_rate >= BRANCH_THRESHOLD
     print(f"\nResult: {'PASS' if passed else 'FAIL'}")
     return passed
@@ -98,7 +106,9 @@ def check(report: Path) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("results", type=Path, help="Directory containing test result folders")
+    parser.add_argument(
+        "results", type=Path, help="Directory containing test result folders"
+    )
     options = parser.parse_args(argv)
     try:
         report = find_report(options.results)

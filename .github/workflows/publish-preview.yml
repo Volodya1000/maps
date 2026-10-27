@@ -95,4 +95,4 @@ jobs:
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: |
           cd artifacts/release
-          gh release create "v${RELEASE_VERSION}-preview" --target "$SOURCE_SHA" --prerelease --title "${RELEASE_VERSION} — офлайн-карта Беларуси" --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" *.apk *.exe *.json *.txt
+          gh release create "v${RELEASE_VERSION}-preview" --target "$SOURCE_SHA" --prerelease --title "${RELEASE_VERSION} — офлайн-карта Беларуси" --notes-file "$GITHUB_WORKSPACE/tools/Packaging/release-notes.md" ./*.apk ./*.exe ./*.json ./*.txt

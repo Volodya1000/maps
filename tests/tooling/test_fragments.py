@@ -1,11 +1,11 @@
 """Exercise the hook against real isolated Git repositories and staged snapshots."""
 
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 SOURCE = Path(__file__).resolve().parents[2] / "tools/check_fragments.py"
 
@@ -26,14 +26,22 @@ class FragmentChecks(unittest.TestCase):
         self.git("branch", "base")
 
     def git(self, *args):
-        return subprocess.check_output(["git", *args], cwd=self.root, text=True, stderr=subprocess.STDOUT)
+        return subprocess.check_output(
+            ["git", *args], cwd=self.root, text=True, stderr=subprocess.STDOUT
+        )
 
     def check(self, *args):
-        return subprocess.run([sys.executable, "tools/check_fragments.py", "--base", "base", *args],
-                              cwd=self.root, text=True, capture_output=True)
+        return subprocess.run(
+            [sys.executable, "tools/check_fragments.py", "--base", "base", *args],
+            cwd=self.root,
+            text=True,
+            capture_output=True,
+        )
 
     def test_unstaged_fragment_cannot_satisfy_commit_check(self):
-        (self.root / "changes/5.bugfix.md").write_text("Fix visible behavior.\n", encoding="utf-8")
+        (self.root / "changes/5.bugfix.md").write_text(
+            "Fix visible behavior.\n", encoding="utf-8"
+        )
         self.assertNotEqual(0, self.check("--staged").returncode)
         self.git("add", "changes/5.bugfix.md")
         self.assertEqual(0, self.check("--staged").returncode)
@@ -46,11 +54,15 @@ class FragmentChecks(unittest.TestCase):
         self.assertNotEqual(0, self.check("--staged").returncode)
 
     def test_committed_fragment_satisfies_pr_check_and_bad_name_fails(self):
-        (self.root / "changes/5.feature.md").write_text("New behavior.\n", encoding="utf-8")
+        (self.root / "changes/5.feature.md").write_text(
+            "New behavior.\n", encoding="utf-8"
+        )
         self.git("add", ".")
         self.git("commit", "-m", "feature")
         self.assertEqual(0, self.check().returncode)
-        (self.root / "changes/unknown.txt").write_text("Wrong filename.\n", encoding="utf-8")
+        (self.root / "changes/unknown.txt").write_text(
+            "Wrong filename.\n", encoding="utf-8"
+        )
         self.assertNotEqual(0, self.check().returncode)
 
 

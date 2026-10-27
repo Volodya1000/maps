@@ -10,13 +10,13 @@ import json
 import math
 import sqlite3
 import urllib.request
-from collections import Counter
-from datetime import datetime, timezone
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from collections import Counter
+from pathlib import Path
+
 from shapely import make_valid, wkb
 from shapely.geometry import LineString, Polygon, box, shape
-from shapely.ops import polygonize, unary_union, transform
+from shapely.ops import polygonize, transform, unary_union
 
 # Mean meridional metres per degree = IUGG mean Earth radius (6_371_008.8 m) * pi / 180.
 # Rounded to the same value used by existing prepared fixtures; see Domain/Geography.cs.
@@ -125,7 +125,6 @@ def main():
 
     features = []
     consumed = set()
-    warnings = []
     for relation in root.findall("relation"):
         t = tags(relation)
         kind = classify(t)

@@ -1,16 +1,20 @@
 """Enforce project-reference boundaries for the CableRoutePlanner solution."""
 
-from pathlib import Path
 import sys
 import xml.etree.ElementTree as ElementTree
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = {
     "Domain": ROOT / "src/CableRoutePlanner.Domain/CableRoutePlanner.Domain.csproj",
-    "Application": ROOT / "src/CableRoutePlanner.Application/CableRoutePlanner.Application.csproj",
-    "Infrastructure": ROOT / "src/CableRoutePlanner.Infrastructure/CableRoutePlanner.Infrastructure.csproj",
-    "Persistence": ROOT / "src/CableRoutePlanner.Persistence/CableRoutePlanner.Persistence.csproj",
-    "ViewModels": ROOT / "src/CableRoutePlanner.ViewModels/CableRoutePlanner.ViewModels.csproj",
+    "Application": ROOT
+    / "src/CableRoutePlanner.Application/CableRoutePlanner.Application.csproj",
+    "Infrastructure": ROOT
+    / "src/CableRoutePlanner.Infrastructure/CableRoutePlanner.Infrastructure.csproj",
+    "Persistence": ROOT
+    / "src/CableRoutePlanner.Persistence/CableRoutePlanner.Persistence.csproj",
+    "ViewModels": ROOT
+    / "src/CableRoutePlanner.ViewModels/CableRoutePlanner.ViewModels.csproj",
     "UI": ROOT / "src/CableRoutePlanner.UI/CableRoutePlanner.UI.csproj",
     "Desktop": ROOT / "src/CableRoutePlanner.Desktop/CableRoutePlanner.Desktop.csproj",
     "Android": ROOT / "src/CableRoutePlanner.Android/CableRoutePlanner.Android.csproj",
@@ -60,10 +64,19 @@ def validate_graph(graph: dict[str, set[str]]) -> list[str]:
     for project, actual in graph.items():
         unexpected = actual - ALLOWED_REFERENCES[project]
         if unexpected:
-            errors.append(f"{project} has forbidden project references: {', '.join(sorted(unexpected))}")
-    if graph["Verify"] & {"UI", "ViewModels"} or transitive("Verify", graph) & {"UI", "ViewModels"}:
-        errors.append("Verify must not reference Avalonia/Mapsui presentation projects, directly or transitively")
-    if "Persistence" in transitive("Infrastructure", graph) or "Infrastructure" in transitive("Persistence", graph):
+            errors.append(
+                f"{project} has forbidden project references: {', '.join(sorted(unexpected))}"
+            )
+    if graph["Verify"] & {"UI", "ViewModels"} or transitive("Verify", graph) & {
+        "UI",
+        "ViewModels",
+    }:
+        errors.append(
+            "Verify must not reference Avalonia/Mapsui presentation projects, directly or transitively"
+        )
+    if "Persistence" in transitive(
+        "Infrastructure", graph
+    ) or "Infrastructure" in transitive("Persistence", graph):
         errors.append("Infrastructure and Persistence must remain independent")
     return errors
 

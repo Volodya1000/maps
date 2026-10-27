@@ -43,16 +43,18 @@ def main():
         apk = candidates[0]
     if not apk.is_file():
         parser.error("APK does not exist")
+
     def adb(*command, check=True, binary=False, timeout=90):
         result = subprocess.run(
             [args.adb, *command],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=not binary,
             timeout=timeout,
         )
         if check and result.returncode:
-            raise RuntimeError(f"adb {command}: stdout={result.stdout!r}; stderr={result.stderr!r}")
+            raise RuntimeError(
+                f"adb {command}: stdout={result.stdout!r}; stderr={result.stderr!r}"
+            )
         return result.stdout
 
     report = dict(

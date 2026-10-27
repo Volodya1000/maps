@@ -24,6 +24,8 @@ uv run --locked pre-commit run --all-files
 uv run --locked pre-commit run --all-files --hook-stage pre-push
 ```
 
+`lint` дополнительно проверяет локальные AXAML includes, запускает штатный `dotnet sln list`, actionlint, расширенный Ruff и `ruff format --check`. Полная XML/project validation выполняется SDK restore/build в `desktop`; CSS проверяется Stylelint в существующем `terrain`-проходе. Надёжный кроссплатформенный форматтер AXAML с подтверждённой совместимостью Avalonia 11 не подключён: форматирование отдельно не проверяется, а компиляция Avalonia и локальные include-инварианты остаются проверками разметки. Для actionlint используется зафиксированный pre-commit hook `rhysd/actionlint` в manual-stage, который запускается ровно один раз из `tools/check.py lint`; требуется Go 1.23.4+ (официальный архив с go.dev/dl на рабочих станциях, `actions/setup-go` в CI).
+
 `desktop` выполняет restore, `dotnet format` для whitespace/style/analyzers, Release build и единственный запуск xUnit-тестов с Coverlet. Покрытие собирается в Cobertura, проверяется `tools/check_coverage.py`, а HTML создаётся ReportGenerator в `artifacts/coverage-report`. Минимумы — 85% строк и 80% ветвей; проценты считаются по суммарному числу покрытых и всех строк/ветвей, а не как среднее проектов. В статистику входят Domain, Application, ViewModels, Infrastructure, Persistence и UI. Desktop/Android entry points и тестовая сборка не входят; Android анализируется отдельной Android-проверкой.
 
 [Ресурсы и стили Avalonia](ui-styling.md) описывают палитру, подключение StyleInclude и раздельные обязанности разметки и оформления.

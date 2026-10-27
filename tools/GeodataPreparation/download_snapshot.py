@@ -5,7 +5,8 @@ import gzip
 import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from prepare import classify, tags, fetch
+
+from prepare import classify, fetch, tags
 
 p = argparse.ArgumentParser()
 p.add_argument("--bounds", nargs=4, type=float, required=True)

@@ -1,11 +1,14 @@
 """Create bounded, independently compressed Android assets from a country package."""
+
 import argparse
 import gzip
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 
-def split_package(source: Path, destination: Path, chunk_bytes: int = 64 * 1024 * 1024) -> None:
+def split_package(
+    source: Path, destination: Path, chunk_bytes: int = 64 * 1024 * 1024
+) -> None:
     if chunk_bytes <= 0:
         raise ValueError("Chunk size must be positive")
     if destination.exists():
