@@ -41,6 +41,7 @@ Therefore no real Windows 7 boot or GUI result is claimed yet. Until the base im
 | GitHub-hosted Ubuntu exposes `/dev/kvm` and QEMU `-accel kvm` | VERIFIED | Commit `add301f`; [feasibility run](https://github.com/Volodya1000/maps/actions/runs/40513798831) |
 | Avalonia 11 + Mapsui + SQLite compile for `net48` with locked restore | VERIFIED | Commit `add301f`; [prototype job](https://github.com/Volodya1000/maps/actions/runs/40513798831/job/122222300242) |
 | JSON/PNG result validation | VERIFIED | Feasibility job and validator unit tests in the same run |
+| Guest agent and payload tree build on Windows | VERIFIED | [payload build job](https://github.com/Volodya1000/maps/actions/runs/40539236121/job/122312767317) |
 | Ordinary Ubuntu/Windows/data/terrain/Android CI | VERIFIED | [ordinary CI run](https://github.com/Volodya1000/maps/actions/runs/40513798856) |
 | Windows 7 boots in QEMU | BLOCKED | Licensed qcow2 and .NET 4.8-ready base image are not provided |
 | Avalonia GUI, SkiaSharp/SQLite/HarfBuzz native loading and Mapsui renderer on Windows 7 | NOT_TESTED | Requires the base image and guest run |
