@@ -57,7 +57,7 @@ public sealed class RoutingTests(ITestOutputHelper output)
     [Fact]
     public async Task SearchMarginIsClippedToCoverageBeforeQuery()
     {
-        BoundsRecordingData data = new(new(26.999, 53.999, 27.02, 54.02));
+        BoundsRecordingData data = new(new(26.999, 53.999, 27.03, 54.03));
         GridRoutePlanner planner = new(data, new GridGenerator(), new DirectPathfinder(),
             NullLogger<GridRoutePlanner>.Instance);
         GeoCoordinate start = new(54.001, 27.001);
@@ -110,7 +110,11 @@ public sealed class RoutingTests(ITestOutputHelper output)
         double cost = aligned
             .Zip(aligned.Skip(1), (from, to) => evaluator.Evaluate(from, to)!.Cost(profile))
             .Sum();
-        Assert.True(cost < 1_000);
+        Coordinate[] shorterSplice = [route[0], new(80, 0), new(120, 0), route[^1]];
+        double shorterCost = shorterSplice
+            .Zip(shorterSplice.Skip(1), (from, to) => evaluator.Evaluate(from, to)!.Cost(profile))
+            .Sum();
+        Assert.True(cost < shorterCost);
     }
 
     [Fact]
