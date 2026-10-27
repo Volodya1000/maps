@@ -15,13 +15,18 @@ public sealed class JsonSettingsStore(string path) : ISettingsStore
 
         try
         {
-            RoutingOptions options = JsonSerializer.Deserialize<RoutingOptions>(File.ReadAllText(path)) ?? new();
+            RoutingOptions options = JsonSerializer.Deserialize<RoutingOptions>(File.ReadAllText(path))
+                ?? throw new JsonException("Настройки имеют значение null.");
             options.Validate();
             return options;
         }
-        catch (Exception ex) when (ex is JsonException or ArgumentException)
+        catch (JsonException ex)
         {
-            return new();
+            throw new PlanningException("Файл настроек повреждён и не может быть прочитан.", ex);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new PlanningException("Файл настроек содержит недопустимые значения.", ex);
         }
     }
 

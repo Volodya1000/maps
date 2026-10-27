@@ -14,6 +14,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
     private readonly ISettingsStore _store;
     private readonly CompositeDisposable _lifetime = new();
     private RoutingOptions _saved = new();
+    private bool _loadFailed;
 
     public string UrlPathSegment => "Настройки";
     public IScreen HostScreen { get; }
@@ -35,9 +36,16 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         || ReservePercent != (decimal)(_saved.ReserveFraction * 100);
 
     public bool CanSave => HasChanges && CellSize is >= 5 and <= 200
-        && ReservePercent is >= 0 and <= 100;
+        && ReservePercent is >= 0 and <= 100 && !_loadFailed;
+
+    public bool CanReset => _loadFailed;
 
     public ReactiveCommand<Unit, Unit> Save
+    {
+        get; private set;
+    }
+
+    public ReactiveCommand<Unit, Unit> ResetDefaults
     {
         get; private set;
     }
@@ -55,10 +63,12 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         this.WhenAnyValue(x => x.CellSize, x => x.ReservePercent)
             .Subscribe(_ => NotifyChanges()).DisposeWith(_lifetime);
 
-    [MemberNotNull(nameof(Save))]
+    [MemberNotNull(nameof(Save), nameof(ResetDefaults))]
     private void InitializeCommands()
     {
         Save = ReactiveCommand.Create(SaveSettings, this.WhenAnyValue(x => x.CanSave))
+            .DisposeWith(_lifetime);
+        ResetDefaults = ReactiveCommand.Create(ResetSettings, this.WhenAnyValue(x => x.CanReset))
             .DisposeWith(_lifetime);
     }
 
@@ -69,12 +79,33 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
             _saved = _store.Load();
             CellSize = (decimal)_saved.CellSizeMetres;
             ReservePercent = (decimal)(_saved.ReserveFraction * 100);
+            _loadFailed = false;
             Status = "";
             NotifyChanges();
         }
         catch (Exception ex)
         {
+            _loadFailed = true;
+            RoutingOptions defaults = new();
+            _saved = defaults;
+            CellSize = (decimal)defaults.CellSizeMetres;
+            ReservePercent = (decimal)(defaults.ReserveFraction * 100);
             Status = $"Ошибка загрузки настроек: {ex.Message}";
+            NotifyChanges();
+        }
+    }
+
+    private void ResetSettings()
+    {
+        try
+        {
+            _store.Save(new RoutingOptions());
+            Reload();
+            Status = "Настройки сброшены к значениям по умолчанию.";
+        }
+        catch (Exception ex)
+        {
+            Status = $"Ошибка восстановления настроек: {ex.Message}";
         }
     }
 
@@ -103,6 +134,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
     {
         this.RaisePropertyChanged(nameof(HasChanges));
         this.RaisePropertyChanged(nameof(CanSave));
+        this.RaisePropertyChanged(nameof(CanReset));
     }
 
     public void Dispose() => _lifetime.Dispose();

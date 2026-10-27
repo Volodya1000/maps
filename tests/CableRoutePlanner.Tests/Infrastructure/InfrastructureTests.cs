@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.Persistence;
@@ -86,7 +87,7 @@ public sealed class InfrastructureTests
     }
 
     [Fact]
-    public void MissingAndMalformedSettingsLoadDefaultsAndMalformedValuesDoNotReplaceFile()
+    public void MissingSettingsLoadDefaultsButMalformedValuesAreReported()
     {
         // Arrange
         using var fixture = new TemporaryDirectory();
@@ -96,15 +97,18 @@ public sealed class InfrastructureTests
         // Act
         RoutingOptions missing = store.Load();
         File.WriteAllText(path, "not-json");
-        RoutingOptions malformed = store.Load();
+        PlanningException malformed = Assert.Throws<PlanningException>(() => store.Load());
+        File.WriteAllText(path, "null");
+        PlanningException nullSettings = Assert.Throws<PlanningException>(() => store.Load());
         File.WriteAllText(path, "{\"CellSizeMetres\":-1}");
-        RoutingOptions invalid = store.Load();
+        PlanningException invalid = Assert.Throws<PlanningException>(() => store.Load());
         string persisted = File.ReadAllText(path);
 
         // Assert
         Assert.Equal(new RoutingOptions().CellSizeMetres, missing.CellSizeMetres);
-        Assert.Equal(new RoutingOptions().CellSizeMetres, malformed.CellSizeMetres);
-        Assert.Equal(new RoutingOptions().CellSizeMetres, invalid.CellSizeMetres);
+        Assert.IsType<JsonException>(malformed.InnerException);
+        Assert.IsType<JsonException>(nullSettings.InnerException);
+        Assert.IsType<ArgumentOutOfRangeException>(invalid.InnerException);
         Assert.Equal("{\"CellSizeMetres\":-1}", persisted);
     }
 

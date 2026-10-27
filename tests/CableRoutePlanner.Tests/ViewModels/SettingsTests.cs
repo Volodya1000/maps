@@ -2,6 +2,8 @@ using ReactiveUI;
 using System.Reactive.Linq;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
+using CableRoutePlanner.Infrastructure.Routing;
+using CableRoutePlanner.Persistence;
 using CableRoutePlanner.ViewModels;
 using Xunit;
 
@@ -49,6 +51,45 @@ public sealed class SettingsTests : ReactiveTestScope
         Assert.Contains("Ошибка сохранения", vm.Status);
         vm.CellSize = 25;
         Assert.False(vm.HasChanges);
+    }
+
+    [Fact]
+    public void CorruptedSettingsAreShownInsteadOfSilentlyReplaced()
+    {
+        using var fixture = new TemporaryDirectory();
+        string path = Path.Combine(fixture.DirectoryPath, "settings.json");
+        File.WriteAllText(path, "not-json");
+
+        using var vm = new SettingsViewModel(new NavigationHost(), new JsonSettingsStore(path));
+
+        Assert.Contains("Ошибка загрузки настроек", vm.Status);
+        Assert.Contains("повреждён", vm.Status);
+        Assert.True(vm.CanReset);
+        Assert.False(vm.CanSave);
+    }
+
+    [Fact]
+    public async Task ExplicitResetRestoresSettingsAndAllowsRouting()
+    {
+        using var fixture = new TemporaryDirectory();
+        string path = Path.Combine(fixture.DirectoryPath, "settings.json");
+        File.WriteAllText(path, "null");
+        var store = new JsonSettingsStore(path);
+        using var vm = new SettingsViewModel(new NavigationHost(), store);
+
+        await vm.ResetDefaults.Execute();
+
+        Assert.False(vm.CanReset);
+        Assert.Equal(new RoutingOptions().CellSizeMetres, store.Load().CellSizeMetres);
+        Assert.Contains("сброшены", vm.Status);
+
+        vm.CellSize = 30;
+        await vm.Save.Execute();
+        Assert.Equal(30, store.Load().CellSizeMetres);
+        Assert.NotEmpty(await TestData.Planner().PlanAsync(
+            [TestData.P(50, 150), TestData.P(260, 150)],
+            store.Load(),
+            default));
     }
 
     [Theory]
