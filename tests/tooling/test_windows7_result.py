@@ -8,9 +8,9 @@ from pathlib import Path
 from tools.windows7_result import ResultValidationError, validate_result
 
 
-def png_1x1() -> bytes:
+def png_image(width: int = 640, height: int = 480) -> bytes:
     signature = b"\x89PNG\r\n\x1a\n"
-    header = struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0)
+    header = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
 
     def chunk(kind: bytes, value: bytes) -> bytes:
         return (
@@ -20,10 +20,11 @@ def png_1x1() -> bytes:
             + struct.pack(">I", zlib.crc32(kind + value) & 0xFFFFFFFF)
         )
 
+    pixels = b"".join(b"\x00" + bytes(width * 4) for _ in range(height))
     return (
         signature
         + chunk(b"IHDR", header)
-        + chunk(b"IDAT", zlib.compress(b"\x00\x00\x00\x00\x00"))
+        + chunk(b"IDAT", zlib.compress(pixels))
         + chunk(b"IEND", b"")
     )
 
@@ -34,7 +35,7 @@ class Windows7ResultTests(unittest.TestCase):
         self.root = Path(self.directory.name)
         self.result = self.root / "result.json"
         self.screenshot = self.root / "screen.png"
-        self.screenshot.write_bytes(png_1x1())
+        self.screenshot.write_bytes(png_image())
 
     def tearDown(self) -> None:
         self.directory.cleanup()
@@ -73,6 +74,28 @@ class Windows7ResultTests(unittest.TestCase):
         value["status"] = "PASS"
         self.result.write_text(json.dumps(value), encoding="utf-8")
         self.screenshot.write_bytes(b"WIN7_SMOKE_PASS")
+        with self.assertRaisesRegex(ResultValidationError, "PNG"):
+            validate_result(self.result, self.screenshot, "abc123")
+
+    def test_rejects_truncated_png(self) -> None:
+        self.result.write_text(json.dumps(self.valid()), encoding="utf-8")
+        self.screenshot.write_bytes(png_image()[:-10])
+        with self.assertRaisesRegex(ResultValidationError, "PNG"):
+            validate_result(self.result, self.screenshot, "abc123")
+
+    def test_rejects_png_below_minimum_dimensions(self) -> None:
+        self.result.write_text(json.dumps(self.valid()), encoding="utf-8")
+        self.screenshot.write_bytes(png_image(320, 200))
+        with self.assertRaisesRegex(ResultValidationError, "PNG"):
+            validate_result(self.result, self.screenshot, "abc123")
+
+    def test_rejects_png_without_image_data(self) -> None:
+        self.result.write_text(json.dumps(self.valid()), encoding="utf-8")
+        image = png_image()
+        idat_start = image.index(b"IDAT") - 4
+        idat_length = struct.unpack(">I", image[idat_start : idat_start + 4])[0]
+        idat_end = idat_start + idat_length + 12
+        self.screenshot.write_bytes(image[:idat_start] + image[idat_end:])
         with self.assertRaisesRegex(ResultValidationError, "PNG"):
             validate_result(self.result, self.screenshot, "abc123")
 

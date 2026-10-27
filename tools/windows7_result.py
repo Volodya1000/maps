@@ -17,14 +17,20 @@ class ResultValidationError(ValueError):
 
 
 def _valid_png(path: Path) -> bool:
-    data = path.read_bytes()
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return False
     signature = b"\x89PNG\r\n\x1a\n"
     if not data.startswith(signature):
         return False
 
     position = len(signature)
     saw_header = False
+    saw_data = False
     saw_end = False
+    width = height = bit_depth = color_type = interlace = 0
+    compressed = bytearray()
     while position + 12 <= len(data):
         length = struct.unpack(">I", data[position : position + 4])[0]
         end = position + 12 + length
@@ -38,13 +44,39 @@ def _valid_png(path: Path) -> bool:
         if chunk_type == b"IHDR":
             if saw_header or length != 13:
                 return False
-            width, height = struct.unpack(">II", chunk_data[:8])
-            saw_header = width > 0 and height > 0
+            width, height, bit_depth, color_type, _, _, interlace = struct.unpack(
+                ">IIBBBBB", chunk_data
+            )
+            saw_header = width >= 640 and height >= 480
+            if bit_depth not in (8, 16) or color_type not in (0, 2, 4, 6):
+                return False
+            if interlace != 0:
+                return False
+        elif chunk_type == b"IDAT":
+            if not saw_header or saw_end:
+                return False
+            saw_data = True
+            compressed.extend(chunk_data)
         elif chunk_type == b"IEND":
             saw_end = length == 0 and end == len(data)
             break
         position = end
-    return saw_header and saw_end
+    if not (saw_header and saw_data and saw_end):
+        return False
+    channels = {0: 1, 2: 3, 4: 2, 6: 4}[color_type]
+    bytes_per_pixel = channels * (bit_depth // 8)
+    row_size = (width * channels * bit_depth + 7) // 8
+    try:
+        decoded = zlib.decompress(bytes(compressed))
+    except zlib.error:
+        return False
+    expected_size = height * (row_size + 1)
+    if len(decoded) != expected_size:
+        return False
+    return (
+        all(decoded[offset] <= 4 for offset in range(0, expected_size, row_size + 1))
+        and bytes_per_pixel > 0
+    )
 
 
 def validate_result(

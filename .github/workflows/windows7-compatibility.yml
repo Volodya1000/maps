@@ -2,13 +2,13 @@ name: Windows 7 compatibility (experimental)
 
 on:
   pull_request:
-    types: [labeled]
+    types: [labeled, synchronize]
   workflow_dispatch:
     inputs:
       timeout_minutes:
         description: Maximum guest runtime before the smoke test is failed
         required: false
-        default: "20"
+        default: "15"
         type: string
 
 permissions:
@@ -17,7 +17,7 @@ permissions:
 jobs:
   # This label-triggered path intentionally has no access to Windows 7 secrets.
   net48-prototype:
-    if: github.event_name == 'pull_request' && github.event.label.name == 'test-win7-feasibility'
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'test-win7-feasibility')
     name: Build Avalonia 11 net48 prototype
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -35,7 +35,7 @@ jobs:
       - name: Test guest result validator
         run: python3 -m unittest tests/tooling/test_windows7_result.py -v
   kvm-feasibility:
-    if: github.event_name == 'pull_request' && github.event.label.name == 'test-win7-feasibility'
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'test-win7-feasibility')
     name: KVM feasibility on GitHub-hosted Ubuntu
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -190,8 +190,8 @@ jobs:
           WIN7_TIMEOUT_MINUTES: ${{ inputs.timeout_minutes }}
         run: |
           set -euo pipefail
-          if [[ ! "$WIN7_TIMEOUT_MINUTES" =~ ^[0-9]+$ ]] || (( WIN7_TIMEOUT_MINUTES < 5 || WIN7_TIMEOUT_MINUTES > 60 )); then
-            echo 'timeout_minutes must be an integer from 5 to 60' >&2
+          if [[ ! "$WIN7_TIMEOUT_MINUTES" =~ ^[0-9]+$ ]] || (( WIN7_TIMEOUT_MINUTES < 5 || WIN7_TIMEOUT_MINUTES > 15 )); then
+            echo 'timeout_minutes must be an integer from 5 to 15; the job timeout is 30 minutes' >&2
             exit 2
           fi
           set +e
@@ -206,13 +206,23 @@ jobs:
             -no-reboot
           qemu_status=$?
           set -e
-          mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-smoke-result.json "$WIN7_DIAGNOSTICS_DIR/win7-smoke-result.json"
-          mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-screenshot.png "$WIN7_DIAGNOSTICS_DIR/win7-screenshot.png"
-          python3 -c 'from pathlib import Path; from tools.windows7_result import validate_result; import os; validate_result(Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-smoke-result.json", Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-screenshot.png", os.environ["GITHUB_SHA"])'
+          if [[ "$qemu_status" -eq 124 ]]; then
+            echo 'QEMU timed out before the guest completed.' | tee "$WIN7_DIAGNOSTICS_DIR/timeout.txt" >&2
+            exit 124
+          fi
           if [[ "$qemu_status" -ne 0 ]]; then
-            echo "QEMU exited with status $qemu_status" >&2
+            echo "QEMU exited with status $qemu_status before a successful guest shutdown." | tee "$WIN7_DIAGNOSTICS_DIR/qemu-exit.txt" >&2
             exit "$qemu_status"
           fi
+          if ! mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-smoke-result.json "$WIN7_DIAGNOSTICS_DIR/win7-smoke-result.json"; then
+            echo 'The guest results disk did not contain win7-smoke-result.json.' | tee "$WIN7_DIAGNOSTICS_DIR/results-disk-error.txt" >&2
+            exit 1
+          fi
+          if ! mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-screenshot.png "$WIN7_DIAGNOSTICS_DIR/win7-screenshot.png"; then
+            echo 'The guest results disk did not contain win7-screenshot.png.' | tee "$WIN7_DIAGNOSTICS_DIR/results-disk-error.txt" >&2
+            exit 1
+          fi
+          python3 -c 'from pathlib import Path; from tools.windows7_result import validate_result; import os; validate_result(Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-smoke-result.json", Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-screenshot.png", os.environ["GITHUB_SHA"])'
           {
             echo "## Windows 7 smoke test: PASS"
             echo
