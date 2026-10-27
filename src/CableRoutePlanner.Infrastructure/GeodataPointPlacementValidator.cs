@@ -18,7 +18,9 @@ public sealed class GeodataPointPlacementValidator(IGeodataRepository geodata) :
         GeoBounds coverage = geodata.Info.Bounds;
         if (!coverage.Contains(coordinate))
         {
-            throw new PlanningException("Для этой точки нет данных в офлайн-пакете.");
+            throw new PlanningException(
+                "Для этой точки нет данных в офлайн-пакете.",
+                PlanningErrorReason.PointOutsidePackage);
         }
 
         GeoBounds queryBounds = QueryBounds(coordinate, coverage);
@@ -44,7 +46,10 @@ public sealed class GeodataPointPlacementValidator(IGeodataRepository geodata) :
 
             if (blocked)
             {
-                throw new PlanningException($"Нельзя установить точку внутри объекта типа «{TerrainName(feature.Kind)}».");
+                throw new PlanningException(
+                    $"Нельзя установить точку внутри объекта типа «{TerrainName(feature.Kind)}».",
+                    PlanningErrorReason.BlockedTerrain,
+                    feature.Kind);
             }
         }
     }

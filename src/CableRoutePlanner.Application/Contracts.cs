@@ -44,8 +44,19 @@ public interface ISettingsStore
     void Save(RoutingOptions options);
 }
 
+public enum PlanningErrorReason
+{
+    Unknown,
+    PointOutsidePackage,
+    BlockedTerrain
+}
+
 public sealed class PlanningException : Exception
 {
+    public PlanningErrorReason Reason { get; }
+
+    public TerrainKind? TerrainKind { get; }
+
     public PlanningException()
     {
     }
@@ -53,6 +64,13 @@ public sealed class PlanningException : Exception
     public PlanningException(string message)
         : base(message)
     {
+    }
+
+    public PlanningException(string message, PlanningErrorReason reason, TerrainKind? terrainKind = null)
+        : base(message)
+    {
+        Reason = reason;
+        TerrainKind = terrainKind;
     }
 
     public PlanningException(string message, Exception innerException)
