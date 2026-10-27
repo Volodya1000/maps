@@ -98,6 +98,8 @@ public sealed class InfrastructureTests
         RoutingOptions missing = store.Load();
         File.WriteAllText(path, "not-json");
         PlanningException malformed = Assert.Throws<PlanningException>(() => store.Load());
+        File.WriteAllText(path, "null");
+        PlanningException nullSettings = Assert.Throws<PlanningException>(() => store.Load());
         File.WriteAllText(path, "{\"CellSizeMetres\":-1}");
         PlanningException invalid = Assert.Throws<PlanningException>(() => store.Load());
         string persisted = File.ReadAllText(path);
@@ -105,6 +107,7 @@ public sealed class InfrastructureTests
         // Assert
         Assert.Equal(new RoutingOptions().CellSizeMetres, missing.CellSizeMetres);
         Assert.IsType<JsonException>(malformed.InnerException);
+        Assert.IsType<JsonException>(nullSettings.InnerException);
         Assert.IsType<ArgumentOutOfRangeException>(invalid.InnerException);
         Assert.Equal("{\"CellSizeMetres\":-1}", persisted);
     }

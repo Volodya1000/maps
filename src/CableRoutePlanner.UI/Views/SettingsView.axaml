@@ -35,6 +35,10 @@
                 Command="{Binding Save}"
                 Content="Сохранить"
                 IsVisible="{Binding CanSave}" />
+            <Button
+                Command="{Binding ResetDefaults}"
+                Content="Сбросить настройки"
+                IsVisible="{Binding CanReset}" />
             <TextBlock
                 Text="{Binding Status}"
                 TextWrapping="Wrap" />
