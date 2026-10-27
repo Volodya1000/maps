@@ -48,7 +48,7 @@ internal static class Program
                 throw new InvalidOperationException("SQLite fixture returned an unexpected point.");
             }
 
-            BuildAvaloniaApp(latitude, longitude).StartWithClassicDesktopLifetime(args);
+            BuildAvaloniaApp(name, latitude, longitude).StartWithClassicDesktopLifetime(args);
         }
         catch (Exception exception)
         {
@@ -65,9 +65,9 @@ internal static class Program
         }
     }
 
-    private static AppBuilder BuildAvaloniaApp(double latitude, double longitude)
+    private static AppBuilder BuildAvaloniaApp(string name, double latitude, double longitude)
     {
-        PrototypeApplication.Options = new PrototypeMapOptions(latitude, longitude);
+        PrototypeApplication.Options = new PrototypeMapOptions(name, latitude, longitude);
         return AppBuilder.Configure<PrototypeApplication>()
         .UsePlatformDetect()
         .LogToTrace();
@@ -76,11 +76,14 @@ internal static class Program
 
 internal sealed class PrototypeMapOptions
 {
-    internal PrototypeMapOptions(double latitude, double longitude)
+    internal PrototypeMapOptions(string name, double latitude, double longitude)
     {
+        Name = name;
         Latitude = latitude;
         Longitude = longitude;
     }
+
+    internal string Name { get; }
 
     internal double Latitude { get; }
 
@@ -89,7 +92,7 @@ internal sealed class PrototypeMapOptions
 
 internal sealed class PrototypeApplication : Application
 {
-    internal static PrototypeMapOptions Options { get; set; } = new(53.9, 27.56);
+    internal static PrototypeMapOptions Options { get; set; } = new("Minsk", 53.9, 27.56);
 
     public override void OnFrameworkInitializationCompleted()
     {
@@ -103,11 +106,17 @@ internal sealed class PrototypeApplication : Application
                 Name = "SQLite fixture",
                 Features = new[] { new PointFeature(new MPoint(x, y)) }
             });
+            string readinessPath = Environment.GetEnvironmentVariable("WIN7_PROTOTYPE_READY_PATH")
+                ?? Path.Combine(Path.GetTempPath(), "maps-win7-prototype-ready.json");
+            File.WriteAllText(
+                readinessPath,
+                $"{{\"schema\":\"maps.win7.prototype.ready.v1\",\"point\":\"{Options.Name}\",\"latitude\":{Options.Latitude.ToString(CultureInfo.InvariantCulture)},\"longitude\":{Options.Longitude.ToString(CultureInfo.InvariantCulture)},\"mapLayer\":\"SQLite fixture\"}}\n",
+                System.Text.Encoding.UTF8);
             desktop.MainWindow = new Window
             {
                 Width = 800,
                 Height = 600,
-                Title = "Windows 7 compatibility prototype",
+                Title = $"Windows7Prototype | SQLite={Options.Name} | MapPoint={Options.Latitude.ToString(CultureInfo.InvariantCulture)},{Options.Longitude.ToString(CultureInfo.InvariantCulture)}",
                 Content = map
             };
         }

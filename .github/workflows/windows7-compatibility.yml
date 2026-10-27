@@ -78,8 +78,56 @@ jobs:
           path: artifacts/windows7-kvm
           if-no-files-found: error
 
+  build-payload:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'test-win7-feasibility'))
+    name: Build Windows 7 prototype payload from this commit
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Restore and build prototype and guest agent
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode
+          dotnet restore tools/Windows7GuestAgent/Windows7GuestAgent.csproj --locked-mode
+          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:TreatWarningsAsErrors=true
+          dotnet build tools/Windows7GuestAgent/Windows7GuestAgent.csproj --no-restore -c Release --nologo -p:TreatWarningsAsErrors=true
+      - name: Assemble payload and manifest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $payload = Join-Path $env:GITHUB_WORKSPACE 'artifacts/win7-payload'
+          New-Item -ItemType Directory -Force -Path $payload | Out-Null
+          Copy-Item 'tools/Windows7Prototype/bin/Release/net48' (Join-Path $payload 'Windows7Prototype') -Recurse
+          Copy-Item 'tools/Windows7GuestAgent/bin/Release/net48' (Join-Path $payload 'Windows7GuestAgent') -Recurse
+          @"
+          @echo off
+          setlocal
+          set PAYLOAD=%~dp0
+          set RESULTS=
+          for %%D in (D E F G H I J K L M N O P Q R S T U V W X Y Z) do if exist "%%D:\WIN7RESULTS.marker" set RESULTS=%%D:
+          if not defined RESULTS exit /b 2
+          "%PAYLOAD%Windows7GuestAgent\Windows7GuestAgent.exe" --prototype "%PAYLOAD%Windows7Prototype\Windows7Prototype.exe" --results "%RESULTS%" --commit $env:GITHUB_SHA --timeout-seconds 300
+          exit /b %ERRORLEVEL%
+          "@ | Set-Content (Join-Path $payload 'run-agent.cmd') -Encoding ASCII
+          $files = Get-ChildItem $payload -File -Recurse | ForEach-Object {
+            [pscustomobject]@{ path = $_.FullName.Substring($payload.Length + 1).Replace('\', '/'); sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
+          }
+          [pscustomobject]@{ schema = 'maps.win7.payload.v1'; commit = $env:GITHUB_SHA; files = $files } |
+            ConvertTo-Json -Depth 5 | Set-Content (Join-Path $payload 'manifest.json') -Encoding UTF8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows7-payload-tree-${{ github.run_id }}
+          path: artifacts/win7-payload
+          if-no-files-found: error
+
   windows7:
     if: github.event_name == 'workflow_dispatch'
+    needs: build-payload
     name: Windows 7 SP1 x64 smoke test
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -87,8 +135,6 @@ jobs:
       WIN7_DIAGNOSTICS_DIR: ${{ github.workspace }}/artifacts/windows7
       WIN7_BASE_IMAGE_URL: ${{ secrets.WIN7_BASE_IMAGE_URL }}
       WIN7_BASE_IMAGE_SHA256: ${{ secrets.WIN7_BASE_IMAGE_SHA256 }}
-      WIN7_PAYLOAD_IMAGE_URL: ${{ secrets.WIN7_PAYLOAD_IMAGE_URL }}
-      WIN7_PAYLOAD_IMAGE_SHA256: ${{ secrets.WIN7_PAYLOAD_IMAGE_SHA256 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -98,8 +144,39 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y qemu-system-x86 qemu-utils dosfstools mtools
+          sudo apt-get install --no-install-recommends -y qemu-system-x86 qemu-utils dosfstools mtools genisoimage
+          mkdir -p "$WIN7_DIAGNOSTICS_DIR" "$RUNNER_TEMP/win7-private"
           echo "WIN7_PRIVATE_DIR=$RUNNER_TEMP/win7-private" >> "$GITHUB_ENV"
+
+      - name: Download payload generated from this commit
+        uses: actions/download-artifact@v4
+        with:
+          name: windows7-payload-tree-${{ github.run_id }}
+          path: payload
+
+      - name: Verify payload and create private ISO
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(Path("payload/manifest.json").read_text(encoding="utf-8-sig"))
+          if manifest.get("schema") != "maps.win7.payload.v1" or manifest.get("commit") != os.environ["GITHUB_SHA"]:
+              raise SystemExit("payload manifest does not match the checked commit")
+          for item in manifest.get("files", []):
+              path = Path("payload", item["path"])
+              if not path.is_file():
+                  raise SystemExit(f"payload file is missing: {path}")
+              import hashlib
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              if digest != item.get("sha256"):
+                  raise SystemExit(f"payload hash mismatch: {path}")
+          PY
+          genisoimage -quiet -J -R -V WIN7PAYLOAD -o "$WIN7_PRIVATE_DIR/win7-payload.iso" payload
+          sha256sum "$WIN7_PRIVATE_DIR/win7-payload.iso" | tee "$WIN7_DIAGNOSTICS_DIR/payload.iso.sha256"
 
       - name: Enable KVM permissions
         shell: bash
@@ -149,8 +226,6 @@ jobs:
             reason="KVM is unavailable: /dev/kvm is absent or not readable/writable on the GitHub-hosted runner. TCG is deliberately not used."
           elif [[ -z "${WIN7_BASE_IMAGE_URL}" || -z "${WIN7_BASE_IMAGE_SHA256}" ]]; then
             reason="The private Windows 7 SP1 x64 base image and its SHA-256 are not configured (WIN7_BASE_IMAGE_URL/WIN7_BASE_IMAGE_SHA256)."
-          elif [[ -z "${WIN7_PAYLOAD_IMAGE_URL}" || -z "${WIN7_PAYLOAD_IMAGE_SHA256}" ]]; then
-            reason="The private legacy Desktop payload/agent image and its SHA-256 are not configured (WIN7_PAYLOAD_IMAGE_URL/WIN7_PAYLOAD_IMAGE_SHA256)."
           fi
 
           if [[ -n "$reason" ]]; then
@@ -161,7 +236,7 @@ jobs:
           from pathlib import Path
 
           reason = sys.argv[1]
-          Path(os.environ["WIN7_DIAGNOSTICS_DIR"], "win7-smoke-result.json").write_text(
+          Path(os.environ["WIN7_DIAGNOSTICS_DIR"], "win7-prototype-result.json").write_text(
               json.dumps({"status": "INFRA_ERROR", "reason": reason}, indent=2) + "\n",
               encoding="utf-8",
           )
@@ -176,13 +251,13 @@ jobs:
         run: |
           set -euo pipefail
           curl --fail --location --retry 3 --silent --show-error "$WIN7_BASE_IMAGE_URL" -o "$WIN7_PRIVATE_DIR/win7-base.qcow2"
-          curl --fail --location --retry 3 --silent --show-error "$WIN7_PAYLOAD_IMAGE_URL" -o "$WIN7_PRIVATE_DIR/win7-payload.iso"
           echo "$WIN7_BASE_IMAGE_SHA256  $WIN7_PRIVATE_DIR/win7-base.qcow2" | sha256sum --check --strict
-          echo "$WIN7_PAYLOAD_IMAGE_SHA256  $WIN7_PRIVATE_DIR/win7-payload.iso" | sha256sum --check --strict
           qemu-img info "$WIN7_PRIVATE_DIR/win7-base.qcow2" > "$WIN7_DIAGNOSTICS_DIR/base-image-info.txt"
           qemu-img create -f qcow2 -F qcow2 -b "$WIN7_PRIVATE_DIR/win7-base.qcow2" "$WIN7_PRIVATE_DIR/win7-overlay.qcow2"
           dd if=/dev/zero of="$WIN7_PRIVATE_DIR/win7-results.img" bs=1M count=64 status=none
           mkfs.vfat -n WIN7RESULTS "$WIN7_PRIVATE_DIR/win7-results.img" >/dev/null
+          printf 'WIN7RESULTS\n' > "$RUNNER_TEMP/win7-results-marker.txt"
+          mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" "$RUNNER_TEMP/win7-results-marker.txt" ::WIN7RESULTS.marker
 
       - name: Run isolated Windows 7 GUI smoke agent
         shell: bash
@@ -214,19 +289,19 @@ jobs:
             echo "QEMU exited with status $qemu_status before a successful guest shutdown." | tee "$WIN7_DIAGNOSTICS_DIR/qemu-exit.txt" >&2
             exit "$qemu_status"
           fi
-          if ! mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-smoke-result.json "$WIN7_DIAGNOSTICS_DIR/win7-smoke-result.json"; then
-            echo 'The guest results disk did not contain win7-smoke-result.json.' | tee "$WIN7_DIAGNOSTICS_DIR/results-disk-error.txt" >&2
+          if ! mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-prototype-result.json "$WIN7_DIAGNOSTICS_DIR/win7-prototype-result.json"; then
+            echo 'The guest results disk did not contain win7-prototype-result.json.' | tee "$WIN7_DIAGNOSTICS_DIR/results-disk-error.txt" >&2
             exit 1
           fi
-          if ! mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-screenshot.png "$WIN7_DIAGNOSTICS_DIR/win7-screenshot.png"; then
-            echo 'The guest results disk did not contain win7-screenshot.png.' | tee "$WIN7_DIAGNOSTICS_DIR/results-disk-error.txt" >&2
+          if ! mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-prototype-screenshot.png "$WIN7_DIAGNOSTICS_DIR/win7-prototype-screenshot.png"; then
+            echo 'The guest results disk did not contain win7-prototype-screenshot.png.' | tee "$WIN7_DIAGNOSTICS_DIR/results-disk-error.txt" >&2
             exit 1
           fi
-          python3 -c 'from pathlib import Path; from tools.windows7_result import validate_result; import os; validate_result(Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-smoke-result.json", Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-screenshot.png", os.environ["GITHUB_SHA"])'
+          python3 -c 'from pathlib import Path; from tools.windows7_prototype_result import validate_prototype_result; import os; validate_prototype_result(Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-prototype-result.json", Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-prototype-screenshot.png", os.environ["GITHUB_SHA"])'
           {
-            echo "## Windows 7 smoke test: PASS"
+            echo "## Windows 7 prototype smoke test: PASS"
             echo
-            echo "The guest agent returned a structured result matching this commit and shut down cleanly."
+            echo "The guest agent returned a prototype-only result matching this commit and shut down cleanly. Production W7-01..W7-09 remain NOT_TESTED."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish diagnostics
