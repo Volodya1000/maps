@@ -26,7 +26,7 @@ public sealed class RoutingTests(ITestOutputHelper output)
         Assert.NotNull(data.LastBounds);
         GeoBounds bounds = data.LastBounds!.Value;
         double latitudeReserve = (start.Latitude - bounds.South) * GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180;
-        double longitudeReserve = (bounds.West - start.Longitude)
+        double longitudeReserve = (start.Longitude - bounds.West)
             * GeoCoordinate.MeanEarthRadiusMetres * Math.Cos(start.Latitude * Math.PI / 180) * Math.PI / 180;
         Assert.InRange(latitudeReserve, 999, 1001);
         Assert.InRange(longitudeReserve, 999, 1001);
@@ -47,7 +47,7 @@ public sealed class RoutingTests(ITestOutputHelper output)
         Assert.NotNull(data.LastBounds);
         GeoBounds bounds = data.LastBounds!.Value;
         double latitudeReserve = (start.Latitude - bounds.South) * GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180;
-        double longitudeReserve = (bounds.West - start.Longitude)
+        double longitudeReserve = (start.Longitude - bounds.West)
             * GeoCoordinate.MeanEarthRadiusMetres * Math.Cos(start.Latitude * Math.PI / 180) * Math.PI / 180;
         Assert.InRange(latitudeReserve, 4_999, 5_001);
         Assert.InRange(longitudeReserve, 4_999, 5_001);
