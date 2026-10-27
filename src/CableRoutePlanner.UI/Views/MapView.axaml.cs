@@ -159,7 +159,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         viewModel.WhenAnyValue(x => x.MapVersion)
             .Subscribe(_ =>
             {
-                adapter.SetFeatures(viewModel.Features.ToArray());
+                adapter.SetFeatures(viewModel.Features);
                 if (readyAnnounced || viewModel.MapVersion <= 0 || viewModel.Features.Count == 0)
                 {
                     return;

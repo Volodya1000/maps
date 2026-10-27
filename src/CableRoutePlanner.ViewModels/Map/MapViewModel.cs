@@ -73,7 +73,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public ObservableCollection<RouteVertexRow> RouteVertices { get; } = [];
 
-    public ObservableCollection<MapFeature> Features { get; } = [];
+    public IReadOnlyList<MapFeature> Features { get; private set; } = Array.Empty<MapFeature>();
 
     public DataPackageInfo DataInfo => _mapLoader.Info;
 
@@ -495,12 +495,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 break;
 
             case MapAreaLoadResult.Loaded loaded:
-                Features.Clear();
-                foreach (MapFeature feature in loaded.Features)
-                {
-                    Features.Add(feature);
-                }
-
+                Features = Array.AsReadOnly(loaded.Features.ToArray());
                 MapVersion++;
                 MapStatus = loaded.Features.Count > 0
                     ? ""

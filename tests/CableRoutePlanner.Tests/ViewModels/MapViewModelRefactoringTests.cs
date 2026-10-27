@@ -43,6 +43,28 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     }
 
     [Fact]
+    public async Task SuccessfulMapReloadPublishesCompleteSnapshotWithoutChangingPreviousOne()
+    {
+        var data = new DeferredMapData();
+        using MapViewModel vm = CreateVm(data);
+        Task firstLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        data.Complete(0,
+            new MapFeature(1, TerrainKind.Field, [], "first"),
+            new MapFeature(2, TerrainKind.Road, [], "second"));
+        await firstLoad;
+
+        IReadOnlyList<MapFeature> firstSnapshot = vm.Features;
+        int firstVersion = vm.MapVersion;
+        Task secondLoad = vm.LoadMapAreaAsync(data.Info.Bounds, CancellationToken.None);
+        data.Complete(1, new MapFeature(3, TerrainKind.River, [], "replacement"));
+        await secondLoad;
+
+        Assert.Equal(new long[] { 1, 2 }, firstSnapshot.Select(feature => feature.Id));
+        Assert.Equal(3L, Assert.Single(vm.Features).Id);
+        Assert.Equal(firstVersion + 1, vm.MapVersion);
+    }
+
+    [Fact]
     public async Task ObsoleteMapFailureCannotOverwriteSuccessfulNewerRequest()
     {
         var data = new DeferredMapData();
