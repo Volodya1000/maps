@@ -1,6 +1,8 @@
 name: Windows 7 compatibility (experimental)
 
 on:
+  pull_request:
+    types: [labeled]
   workflow_dispatch:
     inputs:
       timeout_minutes:
@@ -13,23 +15,27 @@ permissions:
   contents: read
 
 jobs:
+  # This label-triggered path intentionally has no access to Windows 7 secrets.
   net48-prototype:
+    if: github.event_name == 'pull_request' && github.event.label.name == 'test-win7-feasibility'
     name: Build Avalonia 11 net48 prototype
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
-      - name: Restore and build prototype
+          global-json-file: global.json
+      - name: Restore and build net48 prototype
         shell: bash
         run: |
           set -euo pipefail
-          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode false
-          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -warnaserror
-
+          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode
+          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:TreatWarningsAsErrors=true
+      - name: Test guest result validator
+        run: python3 -m unittest tests/tooling/test_windows7_result.py -v
   kvm-feasibility:
+    if: github.event_name == 'pull_request' && github.event.label.name == 'test-win7-feasibility'
     name: KVM feasibility on GitHub-hosted Ubuntu
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -39,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y qemu-system-x86 qemu-utils dosfstools mtools
+          sudo apt-get install --no-install-recommends -y qemu-system-x86 qemu-utils
       - name: Enable KVM permissions
         shell: bash
         run: |
@@ -53,13 +59,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/windows7-kvm
-          qemu-system-x86_64 --version | head -n 1 | tee artifacts/windows7-kvm/qemu-version.txt
+          qemu-system-x86_64 --version | tee artifacts/windows7-kvm/qemu-version.txt
           uname -a | tee artifacts/windows7-kvm/host-kernel.txt
-          if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
-            printf '%s\n' '{"status":"INFRA_ERROR","reason":"/dev/kvm is unavailable after the documented permission setup"}' > artifacts/windows7-kvm/kvm-feasibility.json
-            cat artifacts/windows7-kvm/kvm-feasibility.json >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          test -r /dev/kvm -a -w /dev/kvm
           set +e
           timeout 5s qemu-system-x86_64 -accel kvm -cpu host -m 128 -nodefaults -display none -serial none -monitor none -S
           status=$?
@@ -69,7 +71,6 @@ jobs:
             exit 1
           fi
           printf '%s\n' '{"status":"PASS","accelerator":"kvm","process_start":"verified"}' > artifacts/windows7-kvm/kvm-feasibility.json
-          cat artifacts/windows7-kvm/kvm-feasibility.json >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -78,6 +79,7 @@ jobs:
           if-no-files-found: error
 
   windows7:
+    if: github.event_name == 'workflow_dispatch'
     name: Windows 7 SP1 x64 smoke test
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -184,10 +186,16 @@ jobs:
 
       - name: Run isolated Windows 7 GUI smoke agent
         shell: bash
+        env:
+          WIN7_TIMEOUT_MINUTES: ${{ inputs.timeout_minutes }}
         run: |
           set -euo pipefail
+          if [[ ! "$WIN7_TIMEOUT_MINUTES" =~ ^[0-9]+$ ]] || (( WIN7_TIMEOUT_MINUTES < 5 || WIN7_TIMEOUT_MINUTES > 60 )); then
+            echo 'timeout_minutes must be an integer from 5 to 60' >&2
+            exit 2
+          fi
           set +e
-          timeout "${{ inputs.timeout_minutes }}m" qemu-system-x86_64 \
+          timeout "${WIN7_TIMEOUT_MINUTES}m" qemu-system-x86_64 \
             -accel kvm -cpu host -m 4096 -smp 2 \
             -drive file="$WIN7_PRIVATE_DIR/win7-overlay.qcow2",format=qcow2 \
             -drive file="$WIN7_PRIVATE_DIR/win7-payload.iso",media=cdrom,readonly=on \
@@ -200,23 +208,7 @@ jobs:
           set -e
           mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-smoke-result.json "$WIN7_DIAGNOSTICS_DIR/win7-smoke-result.json"
           mcopy -i "$WIN7_PRIVATE_DIR/win7-results.img" ::win7-screenshot.png "$WIN7_DIAGNOSTICS_DIR/win7-screenshot.png"
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          result_path = Path(os.environ["WIN7_DIAGNOSTICS_DIR"], "win7-smoke-result.json")
-          result = json.loads(result_path.read_text(encoding="utf-8"))
-          required = ["W7-01", "W7-02", "W7-03", "W7-04", "W7-05", "W7-06", "W7-07", "W7-08", "W7-09"]
-          if result.get("schema") != "maps.win7.smoke.v1" or result.get("status") != "PASS":
-              raise SystemExit("guest result is not a structured PASS")
-          if result.get("commit") != os.environ["GITHUB_SHA"]:
-              raise SystemExit("guest result commit does not match GITHUB_SHA")
-          if result.get("guest_shutdown") is not True or any(result.get("checks", {}).get(key) is not True for key in required):
-              raise SystemExit("guest result is incomplete")
-          if not Path(os.environ["WIN7_DIAGNOSTICS_DIR"], "win7-screenshot.png").is_file():
-              raise SystemExit("guest screenshot is missing")
-          PY
+          python3 -c 'from pathlib import Path; from tools.windows7_result import validate_result; import os; validate_result(Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-smoke-result.json", Path(os.environ["WIN7_DIAGNOSTICS_DIR"]) / "win7-screenshot.png", os.environ["GITHUB_SHA"])'
           if [[ "$qemu_status" -ne 0 ]]; then
             echo "QEMU exited with status $qemu_status" >&2
             exit "$qemu_status"
