@@ -133,7 +133,7 @@ internal sealed class PrototypeApplication : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static IFeature CreateMarker(double x, double y)
+    private static PointFeature CreateMarker(double x, double y)
     {
         PointFeature feature = new(new MPoint(x, y));
         feature.Styles.Add(new SymbolStyle
