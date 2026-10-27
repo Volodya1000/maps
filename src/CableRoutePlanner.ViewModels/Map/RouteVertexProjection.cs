@@ -5,6 +5,9 @@ namespace CableRoutePlanner.ViewModels;
 /// <summary>Projects route geometry into a compact numbered presentation list.</summary>
 internal static class RouteVertexProjection
 {
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private readonly record struct ProjectedTransition(GeoCoordinate Point, double Fraction, double DistanceMetres);
+
     private const double WaypointCoincidenceToleranceMetres = 1;
     private const double TransitionOnSegmentToleranceMetres = 2;
     private const double MinimumTurnSegmentMetres = 15;
@@ -54,12 +57,16 @@ internal static class RouteVertexProjection
         {
             GeoCoordinate start = route.Geometry[index - 1];
             GeoCoordinate end = route.Geometry[index];
-            foreach ((GeoCoordinate Point, (double Fraction, double DistanceMetres) Position) transition in transitions
-                .Select(point => (Point: point, Position: PositionOnSegment(start, end, point)))
-                .Where(item => item.Position.DistanceMetres <= TransitionOnSegmentToleranceMetres
-                    && item.Position.Fraction > 0
-                    && item.Position.Fraction < 1)
-                .OrderBy(item => item.Position.Fraction))
+            foreach (ProjectedTransition transition in transitions
+                .Select(point =>
+                {
+                    (double Fraction, double DistanceMetres) position = PositionOnSegment(start, end, point);
+                    return new ProjectedTransition(point, position.Fraction, position.DistanceMetres);
+                })
+                .Where(item => item.DistanceMetres <= TransitionOnSegmentToleranceMetres
+                    && item.Fraction > 0
+                    && item.Fraction < 1)
+                .OrderBy(item => item.Fraction))
             {
                 if (expanded[^1] != transition.Point)
                 {

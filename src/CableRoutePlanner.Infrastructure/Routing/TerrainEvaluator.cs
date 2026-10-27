@@ -38,6 +38,12 @@ internal sealed class TerrainEvaluator
 
     private sealed record BridgeGuide(Geometry Bridge, Geometry River, Geometry WaterSection);
 
+    private readonly record struct ProjectedFeature(MapFeature Feature, Geometry Geometry);
+
+    private readonly record struct BridgeRiverMatch(ProjectedFeature Bridge, Geometry[] Rivers);
+
+    private readonly record struct BridgeSplice(List<Coordinate> Path, double Length, int BridgeEndIndex);
+
     private readonly STRtree<Obstacle> _index = new();
 
     private readonly STRtree<Geometry> _waterOpenings = new();
@@ -61,27 +67,29 @@ internal sealed class TerrainEvaluator
         _projection = projection;
         _rules = rules ?? new TerrainRules();
         var reader = new WKBReader();
-        (MapFeature Feature, Geometry Geometry)[] projected = features.Select(
-            f => (Feature: f, Geometry: projection.Forward(reader.Read(f.Wkb)))).ToArray();
+        ProjectedFeature[] projected = features.Select(
+            f => new ProjectedFeature(f, projection.Forward(reader.Read(f.Wkb)))).ToArray();
         Geometry[] approvals = projected.Where(
             f => f.Feature.Kind == TerrainKind.ApprovedCrossing
                 && !string.IsNullOrWhiteSpace(f.Feature.ApprovalId))
             .Select(f => f.Geometry)
             .ToArray();
         var riverIndex = new STRtree<Geometry>();
-        (MapFeature Feature, Geometry Geometry)[] rivers = projected.Where(f => f.Feature.Kind == TerrainKind.River).ToArray();
-        foreach ((MapFeature Feature, Geometry Geometry) river in rivers)
+        Geometry[] rivers = projected.Where(f => f.Feature.Kind == TerrainKind.River)
+            .Select(f => f.Geometry)
+            .ToArray();
+        foreach (Geometry river in rivers)
         {
-            riverIndex.Insert(river.Geometry.EnvelopeInternal, river.Geometry);
+            riverIndex.Insert(river.EnvelopeInternal, river);
         }
 
         riverIndex.Build();
         _bridgeCorridorMetres = Math.Max(cellSizeMetres * 0.45, 2);
-        ((MapFeature Feature, Geometry Geometry) Feature, Geometry[] Rivers)[] bridgeFeatures = projected
+        BridgeRiverMatch[] bridgeFeatures = projected
             .Where(f => f.Feature.Kind == TerrainKind.BridgeCandidate)
-            .Select(f => (
-                Feature: f,
-                Rivers: riverIndex.Query(f.Geometry.EnvelopeInternal)
+            .Select(f => new BridgeRiverMatch(
+                f,
+                riverIndex.Query(f.Geometry.EnvelopeInternal)
                     .Where(river => river.Intersects(f.Geometry))
                     .ToArray()))
             .Where(x => x.Rivers.Length > 0)
@@ -89,17 +97,17 @@ internal sealed class TerrainEvaluator
         _bridgeGuides = bridgeFeatures
             .SelectMany(x => x.Rivers.Select(river =>
             {
-                Geometry section = x.Feature.Geometry.Intersection(river);
-                return new BridgeGuide(x.Feature.Geometry, river, section);
+                Geometry section = x.Bridge.Geometry.Intersection(river);
+                return new BridgeGuide(x.Bridge.Geometry, river, section);
             }))
             .Where(x => !x.WaterSection.IsEmpty && x.WaterSection.Length > 0)
             .ToArray();
         Dictionary<long, Geometry> bridgeOpenings = bridgeFeatures
             .Select(f => (
-                Id: f.Feature.Feature.Id,
+                Id: f.Bridge.Feature.Id,
                 // Keep the water opening on the mapped bridge line. A cell-sized buffer let
                 // A* cut across the river beside a bridge while still counting that bridge.
-                Corridor: f.Feature.Geometry.Buffer(_bridgeCorridorMetres)))
+                Corridor: f.Bridge.Geometry.Buffer(_bridgeCorridorMetres)))
             .ToDictionary(bridge => bridge.Id, bridge => bridge.Corridor);
         foreach (Geometry? opening in approvals.Concat(bridgeOpenings.Values))
         {
@@ -107,9 +115,10 @@ internal sealed class TerrainEvaluator
         }
 
         _waterOpenings.Build();
-        foreach ((MapFeature feature, Geometry original) in projected)
+        foreach (ProjectedFeature projectedFeature in projected)
         {
-            Geometry geometry = original;
+            MapFeature feature = projectedFeature.Feature;
+            Geometry geometry = projectedFeature.Geometry;
             if (feature.Kind == TerrainKind.River)
             {
                 foreach (Geometry opening in _waterOpenings.Query(geometry.EnvelopeInternal))
@@ -181,7 +190,7 @@ internal sealed class TerrainEvaluator
                         Array.Reverse(points);
                     }
 
-                    var splices = new List<(List<Coordinate> Path, double Length, int BridgeEndIndex)>();
+                    List<BridgeSplice> splices = new();
                     IEnumerable<int> leftAnchors = Enumerable.Range(Math.Max(0, i - 3), i - Math.Max(0, i - 3))
                         .Prepend(0)
                         .Distinct();
@@ -198,14 +207,14 @@ internal sealed class TerrainEvaluator
                             candidate.AddRange(aligned.Skip(right));
                             if (IsValidPath(candidate))
                             {
-                                splices.Add((candidate, PathLength(candidate), left + points.Length - 1));
+                                splices.Add(new BridgeSplice(candidate, PathLength(candidate), left + points.Length - 1));
                             }
                         }
                     }
 
                     if (splices.Count > 0)
                     {
-                        (List<Coordinate> Path, double Length, int BridgeEndIndex) splice = splices.MinBy(candidate => candidate.Length);
+                        BridgeSplice splice = splices.MinBy(candidate => candidate.Length);
                         aligned = splice.Path;
                         i = splice.BridgeEndIndex;
                     }
