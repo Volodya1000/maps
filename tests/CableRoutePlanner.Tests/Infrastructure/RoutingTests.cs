@@ -55,6 +55,65 @@ public sealed class RoutingTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task SearchMarginIsClippedToCoverageBeforeQuery()
+    {
+        BoundsRecordingData data = new(new(26.999, 53.999, 27.02, 54.02));
+        GridRoutePlanner planner = new(data, new GridGenerator(), new DirectPathfinder(),
+            NullLogger<GridRoutePlanner>.Instance);
+        GeoCoordinate start = new(54.001, 27.001);
+        GeoCoordinate end = new(54.005, 27.005);
+
+        IReadOnlyList<RouteAlternative> routes = await planner.PlanAsync(
+            [start, end],
+            new(200, 100_000),
+            default);
+
+        Assert.NotEmpty(routes);
+        Assert.NotNull(data.LastBounds);
+        GeoBounds bounds = data.LastBounds!.Value;
+        Assert.Equal(data.Info.Bounds.West, bounds.West, 12);
+        Assert.Equal(data.Info.Bounds.South, bounds.South, 12);
+        Assert.True(bounds.East < data.Info.Bounds.East);
+        Assert.True(bounds.North < data.Info.Bounds.North);
+    }
+
+    [Fact]
+    public void BridgeAlignmentChoosesLongerSpliceWhenItsProfileCostIsLower()
+    {
+        MapFeature river = TestData.Polygon(1, TerrainKind.River, 99, -100, 101, 100);
+        MapFeature bridge = TestData.Line(2, TerrainKind.BridgeCandidate, (80, 0), (120, 0));
+        MapFeature road = TestData.Line(3, TerrainKind.Road, (20, 22), (20, 23));
+        LocalProjection projection = new(TestData.P(0, 0));
+        TerrainEvaluator evaluator = new(
+            [river, bridge, road],
+            projection,
+            20);
+        CostProfile profile = new("road-averse", 0, 0, 500, 1);
+        Coordinate[] route =
+        [
+            new(0, 30),
+            new(20, 30),
+            new(40, 5),
+            new(160, 5),
+            new(180, 30),
+            new(200, 30)
+        ];
+
+        List<Coordinate> aligned = evaluator.AlignBridgeCrossings(route, profile);
+
+        Assert.Contains(aligned, point => point.Distance(route[1]) < 0.5);
+        for (int index = 1; index < aligned.Count; index++)
+        {
+            Assert.NotNull(evaluator.Evaluate(aligned[index - 1], aligned[index]));
+        }
+
+        double cost = aligned
+            .Zip(aligned.Skip(1), (from, to) => evaluator.Evaluate(from, to)!.Cost(profile))
+            .Sum();
+        Assert.True(cost < 1_000);
+    }
+
+    [Fact]
     public void ThirtyKilometreGridSearchRecordsCostAndResources()
     {
         var origin = new GeoCoordinate(54, 27);
@@ -371,12 +430,17 @@ public sealed class RoutingTests(ITestOutputHelper output)
 
     private sealed class BoundsRecordingData : IGeodataRepository
     {
-        public DataPackageInfo Info { get; } = new(
-            "bounds-test",
-            new(20, 50, 35, 60),
-            "tests",
-            false,
-            "tests");
+        public DataPackageInfo Info { get; }
+
+        public BoundsRecordingData(GeoBounds? coverage = null)
+        {
+            Info = new(
+                "bounds-test",
+                coverage ?? new(20, 50, 35, 60),
+                "tests",
+                false,
+                "tests");
+        }
 
         public GeoBounds? LastBounds { get; private set; }
 
