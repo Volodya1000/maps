@@ -15,12 +15,8 @@ public sealed class JsonSettingsStore(string path) : ISettingsStore
 
         try
         {
-            RoutingOptions? options = JsonSerializer.Deserialize<RoutingOptions>(File.ReadAllText(path));
-            if (options is null)
-            {
-                throw new JsonException("Настройки имеют значение null.");
-            }
-
+            RoutingOptions options = JsonSerializer.Deserialize<RoutingOptions>(File.ReadAllText(path))
+                ?? throw new JsonException("Настройки имеют значение null.");
             options.Validate();
             return options;
         }
