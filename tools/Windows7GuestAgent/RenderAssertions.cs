@@ -13,7 +13,9 @@ internal static class RenderAssertions
             {
                 Color pixel = screenshot.GetPixel(x, y);
                 if (IsMarkerPixel(pixel))
+                {
                     matches++;
+                }
             }
         }
         return matches >= 25;
