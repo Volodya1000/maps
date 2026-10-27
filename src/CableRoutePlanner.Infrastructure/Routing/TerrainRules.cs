@@ -5,15 +5,9 @@ namespace CableRoutePlanner.Infrastructure.Routing;
 
 internal interface ITerrainRule
 {
-    TerrainKind Kind
-    {
-        get;
-    }
+    TerrainKind Kind { get; }
 
-    bool Blocks
-    {
-        get;
-    }
+    bool Blocks { get; }
 
     void Apply(Geometry intersection, long featureId, TerrainContribution contribution);
 }

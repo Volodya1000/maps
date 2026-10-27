@@ -8,8 +8,8 @@ public sealed class AvaloniaClipboardService : IClipboardService
 {
     public async Task SetTextAsync(string text)
     {
-        var lifetime = Avalonia.Application.Current?.ApplicationLifetime;
-        var topLevel = lifetime switch
+        IApplicationLifetime? lifetime = Avalonia.Application.Current?.ApplicationLifetime;
+        Avalonia.Controls.TopLevel? topLevel = lifetime switch
         {
             IClassicDesktopStyleApplicationLifetime desktop => desktop.MainWindow,
             ISingleViewApplicationLifetime single => Avalonia.Controls.TopLevel.GetTopLevel(single.MainView!),

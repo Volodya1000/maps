@@ -8,7 +8,7 @@ internal static class MapsuiStyleFactory
 {
     public static VectorStyle ForTerrain(TerrainKind kind)
     {
-        var color = kind switch
+        Color color = kind switch
         {
             TerrainKind.Forest => new Color(188, 214, 176),
             TerrainKind.Field => new Color(231, 224, 179),

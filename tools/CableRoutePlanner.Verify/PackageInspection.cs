@@ -21,8 +21,8 @@ internal static class PackageInspection
             ("Могилёв", new(53.9006, 30.3317))
         };
         var probes = new List<object>();
-        var timer = Stopwatch.StartNew();
-        var overview = await repository.QueryMapAsync(repository.Info.Bounds, 1500, default);
+        Stopwatch timer = Stopwatch.StartNew();
+        IReadOnlyList<MapFeature> overview = await repository.QueryMapAsync(repository.Info.Bounds, 1500, default);
         if (overview.Count == 0 || !overview.Any(feature => feature.Kind == TerrainKind.Road))
         {
             throw new PlanningException("Country overview has no roads.");
@@ -34,11 +34,11 @@ internal static class PackageInspection
             count = overview.Count,
             elapsed_ms = timer.ElapsedMilliseconds
         });
-        foreach (var (name, coordinate) in cities)
+        foreach ((string name, GeoCoordinate coordinate) in cities)
         {
             timer.Restart();
-            var area = GeoBounds.Around(new[] { coordinate }, 0.004);
-            var features = await repository.QueryAsync(area, default);
+            GeoBounds area = GeoBounds.Around(new[] { coordinate }, 0.004);
+            IReadOnlyList<MapFeature> features = await repository.QueryAsync(area, default);
             if (features.Count == 0 || !features.Any(feature => feature.Kind == TerrainKind.Road))
             {
                 throw new PlanningException($"No local road data near {name}.");

@@ -64,7 +64,7 @@ public sealed class SettingsTests : ReactiveTestScope
         vm.ReservePercent = reservePercent;
 
         // Act
-        var canSave = vm.CanSave;
+        bool canSave = vm.CanSave;
 
         // Assert
         Assert.False(canSave);

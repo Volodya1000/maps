@@ -7,7 +7,7 @@ public static class RouteMetricsFormatter
 {
     public static string Format(RouteAlternative route, RoutingOptions options)
     {
-        var metrics = route.Metrics;
+        RouteMetrics metrics = route.Metrics;
         return string.Join(
             Environment.NewLine,
             $"Длина: {metrics.LengthMetres:N0} м",

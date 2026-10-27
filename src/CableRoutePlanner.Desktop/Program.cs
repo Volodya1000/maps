@@ -16,8 +16,8 @@ internal static class Program
 
     public static AppBuilder BuildAvaloniaApp()
     {
-        var data = Environment.GetEnvironmentVariable("CABLEROUTE_DATA") ?? Path.Combine(AppContext.BaseDirectory, "Data");
-        var settings = Path.Combine(
+        string data = Environment.GetEnvironmentVariable("CABLEROUTE_DATA") ?? Path.Combine(AppContext.BaseDirectory, "Data");
+        string settings = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "CableRoutePlanner",
             "settings.json");
@@ -29,7 +29,7 @@ internal static class Program
             services.AddPersistence(data, settings);
             services.AddSingleton<IPlanningSession, PlanningSession>();
             services.AddPresentation();
-            var provider = services.BuildServiceProvider(
+            ServiceProvider provider = services.BuildServiceProvider(
                 new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
             var app = new PlannerApplication();
             PresentationServiceCollectionExtensions.ConfigureApplication(app, provider, data);

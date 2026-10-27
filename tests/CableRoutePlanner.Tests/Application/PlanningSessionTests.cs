@@ -14,8 +14,8 @@ public sealed class PlanningSessionTests
     public async Task PointMutationsValidateIdsAndIndexes()
     {
         var session = new PlanningSession(new Planner(), TestData.AllowAllValidator);
-        var first = await session.AddAsync(new(53, 27), default);
-        var second = await session.AddAsync(new(53.1, 27.1), default);
+        Waypoint first = await session.AddAsync(new(53, 27), default);
+        Waypoint second = await session.AddAsync(new(53.1, 27.1), default);
 
         await session.MoveAsync(first.Id, new(53.2, 27.2), default);
         session.Remove(Guid.NewGuid());
@@ -46,7 +46,7 @@ public sealed class PlanningSessionTests
     public async Task PointLimitIsEnforced()
     {
         var session = new PlanningSession(new Planner(), TestData.AllowAllValidator);
-        for (var index = 0; index < 100; index++)
+        for (int index = 0; index < 100; index++)
         {
             await session.AddAsync(new(53, 27), default);
         }
@@ -59,10 +59,10 @@ public sealed class PlanningSessionTests
     {
         var validator = new BlockingPlacementValidator();
         var session = new PlanningSession(new Planner(), validator);
-        var first = await session.AddAsync(new(53, 27), default);
-        var revision = session.Revision;
+        Waypoint first = await session.AddAsync(new(53, 27), default);
+        long revision = session.Revision;
         using var cancellation = new CancellationTokenSource();
-        var move = ((IPlanningSession)session).MoveAsync(first.Id, new(53.1, 27.1), cancellation.Token);
+        Task move = ((IPlanningSession)session).MoveAsync(first.Id, new(53.1, 27.1), cancellation.Token);
         cancellation.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => move);

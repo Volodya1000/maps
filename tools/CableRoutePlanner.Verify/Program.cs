@@ -20,7 +20,7 @@ static ServiceProvider CreateServices(string dataDirectory, string settingsPath)
 
 if (args.Length == 3 && args[0] == "--inspect")
 {
-    using var provider = CreateServices(args[1], Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+    using ServiceProvider provider = CreateServices(args[1], Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
     await CableRoutePlanner.Verify.PackageInspection.RunAsync(
         provider.GetRequiredService<IGeodataRepository>(), args[2]);
     return 0;
@@ -35,9 +35,9 @@ if (args.Length < 3)
 
 try
 {
-    var points = args.Skip(2).Select(value =>
+    GeoCoordinate[] points = args.Skip(2).Select(value =>
     {
-        var parts = value.Split(',');
+        string[] parts = value.Split(',');
         if (parts.Length != 2)
         {
             throw new ArgumentException("Coordinate format: latitude,longitude");
@@ -47,11 +47,11 @@ try
             double.Parse(parts[0], CultureInfo.InvariantCulture),
             double.Parse(parts[1], CultureInfo.InvariantCulture));
     }).ToArray();
-    using var services = CreateServices(
+    using ServiceProvider services = CreateServices(
         args[0],
         Path.Combine(Path.GetTempPath(), "CableRoutePlanner.Verify.settings.json"));
-    var session = services.GetRequiredService<IPlanningSession>();
-    foreach (var point in points)
+    IPlanningSession session = services.GetRequiredService<IPlanningSession>();
+    foreach (GeoCoordinate point in points)
     {
         await session.AddAsync(point, default);
     }
@@ -62,11 +62,11 @@ try
         e.Cancel = true;
         cancel.Cancel();
     };
-    using var process = Process.GetCurrentProcess();
+    using Process process = Process.GetCurrentProcess();
     process.Refresh();
-    var initialPeakWorkingSet = process.PeakWorkingSet64;
-    var stopwatch = Stopwatch.StartNew();
-    var routes = await session.BuildAsync(new RoutingOptions(), cancel.Token);
+    long initialPeakWorkingSet = process.PeakWorkingSet64;
+    Stopwatch stopwatch = Stopwatch.StartNew();
+    IReadOnlyList<RouteAlternative> routes = await session.BuildAsync(new RoutingOptions(), cancel.Token);
     stopwatch.Stop();
     process.Refresh();
     var features = routes.Select(
@@ -80,7 +80,7 @@ try
                 features
             },
             CableRoutePlanner.Verify.VerifyJson.Options));
-    foreach (var route in routes)
+    foreach (RouteAlternative route in routes)
     {
         Console.WriteLine(
             string.Create(

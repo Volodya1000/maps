@@ -51,18 +51,18 @@ public sealed class GridRoutePlanner(
                 "Для выбранной точки нет данных в офлайн-пакете.");
         }
 
-        var requested = GeoBounds.Around(points);
-        var coverage = data.Info.Bounds;
+        GeoBounds requested = GeoBounds.Around(points);
+        GeoBounds coverage = data.Info.Bounds;
         var bounds = new GeoBounds(
             Math.Max(requested.West, coverage.West),
             Math.Max(requested.South, coverage.South),
             Math.Min(requested.East, coverage.East),
             Math.Min(requested.North, coverage.North));
-        var area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken);
+        PreparedRoutingArea area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken);
         PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds, null);
 
-        var calculationTimer = Stopwatch.StartNew();
-        var routes = await Task.Run<IReadOnlyList<RouteAlternative>>(
+        Stopwatch calculationTimer = Stopwatch.StartNew();
+        IReadOnlyList<RouteAlternative> routes = await Task.Run<IReadOnlyList<RouteAlternative>>(
             () => Calculate(points, bounds, area, options, cancellationToken),
             cancellationToken);
         RoutesCompletedLog(logger, routes.Count, points.Count, calculationTimer.ElapsedMilliseconds, null);
@@ -76,16 +76,16 @@ public sealed class GridRoutePlanner(
         RoutingOptions options,
         CancellationToken ct)
     {
-        var projection = area.Projection;
-        var mesh = gridGenerator.Generate(bounds, options, projection);
+        LocalProjection projection = area.Projection;
+        GridMesh mesh = gridGenerator.Generate(bounds, options, projection);
 
-        var evaluator = area.Evaluator;
+        TerrainEvaluator evaluator = area.Evaluator;
         var cache = new Dictionary<(int, int), EdgeEvaluation?>();
-        var gridEdgeEvaluations = 0;
+        int gridEdgeEvaluations = 0;
         EdgeEvaluation? GridEdge(int a, int b)
         {
-            var key = a < b ? (a, b) : (b, a);
-            if (!cache.TryGetValue(key, out var edge))
+            (int, int) key = a < b ? (a, b) : (b, a);
+            if (!cache.TryGetValue(key, out EdgeEvaluation? edge))
             {
                 gridEdgeEvaluations++;
                 cache[key] = edge = evaluator.Evaluate(mesh.Nodes[a], mesh.Nodes[b]);
@@ -95,15 +95,15 @@ public sealed class GridRoutePlanner(
         }
 
         var result = new List<RouteAlternative>();
-        foreach (var profile in CostProfile.Defaults)
+        foreach (CostProfile profile in CostProfile.Defaults)
         {
             ct.ThrowIfCancellationRequested();
             profile.Validate();
             var route = new List<Coordinate>();
-            for (var leg = 0; leg < points.Count - 1; leg++)
+            for (int leg = 0; leg < points.Count - 1; leg++)
             {
-                var start = projection.Forward(points[leg]);
-                var end = projection.Forward(points[leg + 1]);
+                Coordinate start = projection.Forward(points[leg]);
+                Coordinate end = projection.Forward(points[leg + 1]);
                 if (start.Equals2D(end))
                 {
                     if (route.Count == 0)
@@ -114,17 +114,17 @@ public sealed class GridRoutePlanner(
                     continue;
                 }
 
-                var direct = evaluator.Evaluate(start, end);
+                EdgeEvaluation? direct = evaluator.Evaluate(start, end);
                 // The direct segment is globally optimal only for a pure length
                 // profile: Euclidean distance is a lower bound, and every terrain
                 // contribution is nonnegative. Other profiles must search because
                 // a longer clearing route can cost less, even when the direct leg
                 // contains no obstacle.
-                var lengthOnlyProfile = profile.Clearing == 1
+                bool lengthOnlyProfile = profile.Clearing == 1
                     && profile.Forest == 0
                     && profile.Field == 0
                     && profile.RoadCrossingMetres == 0;
-                var part = lengthOnlyProfile && direct is not null
+                List<Coordinate> part = lengthOnlyProfile && direct is not null
                     ? new List<Coordinate> { start, end }
                     : pathfinder.FindPath(
                         start,
@@ -160,9 +160,9 @@ public sealed class GridRoutePlanner(
             var roads = new HashSet<long>();
             var crossings = new HashSet<long>();
             var bridgeCandidates = new HashSet<long>();
-            for (var i = 1; i < route.Count; i++)
+            for (int i = 1; i < route.Count; i++)
             {
-                var edge = evaluator.Evaluate(route[i - 1], route[i])
+                EdgeEvaluation edge = evaluator.Evaluate(route[i - 1], route[i])
                     ?? throw new PlanningException("Маршрут не прошёл проверку препятствий.");
                 length += edge.Length;
                 forest += edge.Forest;
@@ -205,7 +205,7 @@ public sealed class GridRoutePlanner(
         // not exact floating-point equality of vertices. 90% overlap suppresses near-duplicates.
         var reference = new LineString(existing.Select(projection.Forward).ToArray());
         var proposed = new LineString(candidate.ToArray());
-        var corridor = reference.Buffer(cellSize * 0.75);
+        Geometry corridor = reference.Buffer(cellSize * 0.75);
         if (proposed.Length == 0)
         {
             return true;

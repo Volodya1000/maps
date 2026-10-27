@@ -13,11 +13,11 @@ public sealed class PointPlacementTests
     [InlineData(TerrainKind.Marsh)]
     public async Task AreaObstaclesRejectNewPointsWithoutChangingSession(TerrainKind kind)
     {
-        var obstacle = TestData.Polygon(1, kind, 40, 140, 60, 160);
+        MapFeature obstacle = TestData.Polygon(1, kind, 40, 140, 60, 160);
         var validator = new GeodataPointPlacementValidator(new MemoryData(obstacle));
         var session = new PlanningSession(TestData.Planner(), validator);
 
-        var error = await Assert.ThrowsAsync<PlanningException>(
+        PlanningException error = await Assert.ThrowsAsync<PlanningException>(
             () => ((IPlanningSession)session).AddAsync(TestData.P(50, 150), default));
 
         Assert.Contains("Нельзя установить точку", error.Message);
@@ -28,10 +28,10 @@ public sealed class PointPlacementTests
     [Fact]
     public async Task RiverLineRejectsPointOnItsSourceGeometry()
     {
-        var river = TestData.Line(1, TerrainKind.River, (40, 150), (60, 150));
+        MapFeature river = TestData.Line(1, TerrainKind.River, (40, 150), (60, 150));
         var validator = new GeodataPointPlacementValidator(new MemoryData(river));
 
-        var error = await Assert.ThrowsAsync<PlanningException>(
+        PlanningException error = await Assert.ThrowsAsync<PlanningException>(
             () => validator.ValidateAsync(TestData.P(50, 150), default));
 
         Assert.Contains("русла реки", error.Message);
@@ -40,7 +40,7 @@ public sealed class PointPlacementTests
     [Fact]
     public async Task LinearRiverUsesDocumentedCoordinateUncertaintyOnly()
     {
-        var river = TestData.Line(1, TerrainKind.River, (40, 150), (60, 150));
+        MapFeature river = TestData.Line(1, TerrainKind.River, (40, 150), (60, 150));
         var validator = new GeodataPointPlacementValidator(new MemoryData(river));
         await Assert.ThrowsAsync<PlanningException>(
             () => validator.ValidateAsync(TestData.P(50, 150.5), default));
@@ -50,10 +50,10 @@ public sealed class PointPlacementTests
     [Fact]
     public async Task BoundaryOfBlockedAreaIsRejected()
     {
-        var building = TestData.Polygon(1, TerrainKind.Building, 40, 140, 60, 160);
+        MapFeature building = TestData.Polygon(1, TerrainKind.Building, 40, 140, 60, 160);
         var validator = new GeodataPointPlacementValidator(new MemoryData(building));
 
-        var error = await Assert.ThrowsAsync<PlanningException>(
+        PlanningException error = await Assert.ThrowsAsync<PlanningException>(
             () => validator.ValidateAsync(TestData.P(40, 150), default));
 
         Assert.Contains("здания", error.Message);
@@ -62,12 +62,12 @@ public sealed class PointPlacementTests
     [Fact]
     public async Task InvalidMoveKeepsExistingPointAndRevision()
     {
-        var obstacle = TestData.Polygon(1, TerrainKind.Building, 90, 140, 110, 160);
+        MapFeature obstacle = TestData.Polygon(1, TerrainKind.Building, 90, 140, 110, 160);
         var session = new PlanningSession(
             TestData.Planner(),
             new GeodataPointPlacementValidator(new MemoryData(obstacle)));
-        var point = await session.AddAsync(TestData.P(50, 150), default);
-        var revision = session.Revision;
+        Waypoint point = await session.AddAsync(TestData.P(50, 150), default);
+        long revision = session.Revision;
 
         await Assert.ThrowsAsync<PlanningException>(
             () => session.MoveAsync(point.Id, TestData.P(100, 150), default));
@@ -81,7 +81,7 @@ public sealed class PointPlacementTests
     {
         var validator = new GeodataPointPlacementValidator(new MemoryData());
 
-        var error = await Assert.ThrowsAsync<PlanningException>(
+        PlanningException error = await Assert.ThrowsAsync<PlanningException>(
             () => validator.ValidateAsync(new(55, 30), default));
 
         Assert.Contains("нет данных", error.Message);

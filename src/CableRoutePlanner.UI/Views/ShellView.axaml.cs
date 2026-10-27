@@ -18,7 +18,7 @@ public partial class ShellView : ReactiveUserControl<ShellViewModel>
         ViewModel = vm;
         this.WhenActivated(lifetime =>
         {
-            var topLevel = TopLevel.GetTopLevel(this);
+            TopLevel? topLevel = TopLevel.GetTopLevel(this);
             if (topLevel is null)
             {
                 return;

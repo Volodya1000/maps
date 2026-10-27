@@ -46,7 +46,7 @@ public sealed class DomainTests
             parameter == nameof(CostProfile.RoadCrossingMetres) ? value : 0,
             parameter == nameof(CostProfile.Clearing) ? value : 1);
 
-        var error = Assert.Throws<ArgumentOutOfRangeException>(profile.Validate);
+        ArgumentOutOfRangeException error = Assert.Throws<ArgumentOutOfRangeException>(profile.Validate);
 
         Assert.Equal(parameter, error.ParamName);
         Assert.Equal(value, error.ActualValue);
@@ -86,9 +86,9 @@ public sealed class DomainTests
     public void SegmentCostMatchesEachConfiguredProfile()
     {
         var facts = new SegmentTerrainFacts(100, 20, 10, 5, 2, 1, 1);
-        foreach (var profile in CostProfile.Defaults)
+        foreach (CostProfile profile in CostProfile.Defaults)
         {
-            var expected = 100 - 5 * (1 - profile.Clearing)
+            double expected = 100 - 5 * (1 - profile.Clearing)
                 + 20 * profile.Forest + 10 * profile.Field
                 + 3 * profile.RoadCrossingMetres;
             Assert.Equal(expected, RouteCostCalculator.Calculate(facts, profile), 8);
@@ -105,7 +105,7 @@ public sealed class DomainTests
     [InlineData(nameof(SegmentTerrainFacts.ClearingMetres), double.PositiveInfinity)]
     public void SegmentFactsReportInvalidDistanceParameterAndValue(string parameter, double value)
     {
-        var facts = parameter switch
+        SegmentTerrainFacts facts = parameter switch
         {
             nameof(SegmentTerrainFacts.LengthMetres) => new SegmentTerrainFacts(value, 0, 0, 0, 0, 0, 0),
             nameof(SegmentTerrainFacts.ForestMetres) => new SegmentTerrainFacts(0, value, 0, 0, 0, 0, 0),
@@ -113,7 +113,7 @@ public sealed class DomainTests
             _ => new SegmentTerrainFacts(0, 0, 0, value, 0, 0, 0)
         };
 
-        var error = Assert.Throws<ArgumentOutOfRangeException>(facts.Validate);
+        ArgumentOutOfRangeException error = Assert.Throws<ArgumentOutOfRangeException>(facts.Validate);
 
         Assert.Equal(parameter, error.ParamName);
         Assert.Equal(value, error.ActualValue);
@@ -126,14 +126,14 @@ public sealed class DomainTests
     [InlineData(nameof(SegmentTerrainFacts.ApprovedCrossings))]
     public void SegmentFactsReportInvalidCountParameterAndValue(string parameter)
     {
-        var facts = parameter switch
+        SegmentTerrainFacts facts = parameter switch
         {
             nameof(SegmentTerrainFacts.RoadCrossings) => new SegmentTerrainFacts(0, 0, 0, 0, -2, 0, 0),
             nameof(SegmentTerrainFacts.BridgeCandidates) => new SegmentTerrainFacts(0, 0, 0, 0, 0, -2, 0),
             _ => new SegmentTerrainFacts(0, 0, 0, 0, 0, 0, -2)
         };
 
-        var error = Assert.Throws<ArgumentOutOfRangeException>(facts.Validate);
+        ArgumentOutOfRangeException error = Assert.Throws<ArgumentOutOfRangeException>(facts.Validate);
 
         Assert.Equal(parameter, error.ParamName);
         Assert.Equal(-2, error.ActualValue);
@@ -154,7 +154,7 @@ public sealed class DomainTests
     public void TerrainContributionCannotExceedSegment(double forest, double field, double clearing, string parameter)
     {
         var facts = new SegmentTerrainFacts(10, forest, field, clearing, 0, 0, 0);
-        var error = Assert.Throws<ArgumentOutOfRangeException>(facts.Validate);
+        ArgumentOutOfRangeException error = Assert.Throws<ArgumentOutOfRangeException>(facts.Validate);
         Assert.Equal(parameter, error.ParamName);
         Assert.Equal(11d, error.ActualValue);
     }
@@ -181,11 +181,11 @@ public sealed class DomainTests
         var outside = new GeoCoordinate(15.1, 30);
 
         // Act
-        var pointInside = bounds.Contains(inside);
-        var pointOnEdge = bounds.Contains(edge);
-        var pointOutside = bounds.Contains(outside);
-        var nested = bounds.Contains(new GeoBounds(21, 11, 29, 14));
-        var overlapping = bounds.Contains(new GeoBounds(19, 11, 29, 14));
+        bool pointInside = bounds.Contains(inside);
+        bool pointOnEdge = bounds.Contains(edge);
+        bool pointOutside = bounds.Contains(outside);
+        bool nested = bounds.Contains(new GeoBounds(21, 11, 29, 14));
+        bool overlapping = bounds.Contains(new GeoBounds(19, 11, 29, 14));
 
         // Assert
         Assert.True(pointInside);
@@ -208,7 +208,7 @@ public sealed class DomainTests
         var options = new RoutingOptions(cellSize, maxNodes, reserve);
 
         // Act
-        var error = Record.Exception(options.Validate);
+        Exception error = Record.Exception(options.Validate);
 
         // Assert
         Assert.IsType<ArgumentOutOfRangeException>(error);

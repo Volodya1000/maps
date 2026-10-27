@@ -8,14 +8,8 @@ public readonly record struct GeoCoordinate
 {
     public const double MeanEarthRadiusMetres = 6_371_008.8;
 
-    public double Latitude
-    {
-        get;
-    }
-    public double Longitude
-    {
-        get;
-    }
+    public double Latitude { get; }
+    public double Longitude { get; }
 
     public GeoCoordinate(double latitude, double longitude)
     {
@@ -32,9 +26,9 @@ public readonly record struct GeoCoordinate
     public double DistanceTo(GeoCoordinate other)
     {
         const double radians = Math.PI / 180;
-        var dLat = (other.Latitude - Latitude) * radians;
-        var dLon = (other.Longitude - Longitude) * radians;
-        var a = Math.Pow(Math.Sin(dLat / 2), 2)
+        double dLat = (other.Latitude - Latitude) * radians;
+        double dLon = (other.Longitude - Longitude) * radians;
+        double a = Math.Pow(Math.Sin(dLat / 2), 2)
             + Math.Cos(Latitude * radians) * Math.Cos(other.Latitude * radians)
             * Math.Pow(Math.Sin(dLon / 2), 2);
         return MeanEarthRadiusMetres * 2 * Math.Asin(Math.Sqrt(Math.Clamp(a, 0, 1)));

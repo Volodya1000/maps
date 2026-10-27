@@ -16,10 +16,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
     private RoutingOptions _saved = new();
 
     public string UrlPathSegment => "Настройки";
-    public IScreen HostScreen
-    {
-        get;
-    }
+    public IScreen HostScreen { get; }
 
     // NumericUpDown.Value is decimal?; keep the same type, including an empty input.
     [Reactive]
@@ -86,7 +83,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         try
         {
             // Preserve settings which are not edited by this screen.
-            var options = _store.Load() with
+            RoutingOptions options = _store.Load() with
             {
                 CellSizeMetres = (double)CellSize!.Value,
                 ReserveFraction = (double)ReservePercent!.Value / 100

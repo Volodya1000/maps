@@ -16,7 +16,7 @@ public sealed class StartupTests : ReactiveTestScope
             new MemoryData(), new MemorySettings(), new MemoryClipboard());
         using var settings = new SettingsViewModel(screen, new MemorySettings());
         using var shell = new ShellViewModel(screen, map, settings);
-        var failedOnce = false;
+        bool failedOnce = false;
         using var startup = new StartupViewModel((_, _) =>
         {
             if (!failedOnce)
@@ -48,7 +48,7 @@ public sealed class StartupTests : ReactiveTestScope
             await Task.Delay(Timeout.Infinite, ct);
             throw new InvalidOperationException("Cancelled preparation must not reach screen creation.");
         });
-        var load = startup.Load.Execute().ToTask();
+        Task load = startup.Load.Execute().ToTask();
         try
         {
             await started.Task.WaitAsync(TimeSpan.FromSeconds(5));

@@ -17,7 +17,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
         await vm.AddPoint.Execute(TestData.P(50, 150));
         await vm.AddPoint.Execute(TestData.P(260, 150));
         Assert.Equal(vm.SelectedPoint?.Id, Assert.Single(vm.Points, row => row.IsSelected).Id);
-        var first = vm.Points[0];
+        WaypointRow first = vm.Points[0];
         await vm.SelectPoint.Execute(first.Id);
         Assert.Equal(first.Id, Assert.Single(vm.Points, row => row.IsSelected).Id);
         Assert.Contains("1", vm.CopyPointText);
@@ -58,7 +58,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
         public Task<IReadOnlyList<RouteAlternative>> PlanAsync(IReadOnlyList<GeoCoordinate> points,
             RoutingOptions options, CancellationToken cancellationToken)
         {
-            var turn = TestData.P(120, 200);
+            GeoCoordinate turn = TestData.P(120, 200);
             var metrics = new RouteMetrics(100, 40, 60, 1, 2, 0, 110, null);
             return Task.FromResult<IReadOnlyList<RouteAlternative>>([
                 new(Guid.NewGuid(), "Первый", [points[0], turn, turn, points[1]], metrics, [turn]),

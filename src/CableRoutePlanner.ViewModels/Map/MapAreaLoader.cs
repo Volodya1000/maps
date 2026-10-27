@@ -28,10 +28,10 @@ internal sealed class MapAreaLoader(IGeodataRepository repository)
         double metresPerPixel,
         CancellationToken cancellationToken)
     {
-        var request = Interlocked.Increment(ref _requestId);
+        long request = Interlocked.Increment(ref _requestId);
         try
         {
-            var features = await repository.QueryMapAsync(bounds, metresPerPixel, cancellationToken);
+            IReadOnlyList<MapFeature> features = await repository.QueryMapAsync(bounds, metresPerPixel, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             return request == Interlocked.Read(ref _requestId)
                 ? new MapAreaLoadResult.Loaded(request, features)

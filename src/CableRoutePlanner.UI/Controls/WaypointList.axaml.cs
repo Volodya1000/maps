@@ -128,7 +128,7 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
             return;
         }
 
-        var point = e.GetPosition(this);
+        Point point = e.GetPosition(this);
         if (_scroll is not null)
         {
             _lastInScroll = e.GetPosition(_scroll);
@@ -164,21 +164,21 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
             return;
         }
 
-        var nearest = double.PositiveInfinity;
-        for (var index = 0; index < ViewModel.Points.Count; index++)
+        double nearest = double.PositiveInfinity;
+        for (int index = 0; index < ViewModel.Points.Count; index++)
         {
             if (Rows.ContainerFromIndex(index) is not Control row)
             {
                 continue;
             }
 
-            var origin = row.TranslatePoint(default, this);
+            Point? origin = row.TranslatePoint(default, this);
             if (origin is null)
             {
                 continue;
             }
 
-            var distance = Math.Abs(point.Y - origin.Value.Y - row.Bounds.Height / 2);
+            double distance = Math.Abs(point.Y - origin.Value.Y - row.Bounds.Height / 2);
             if (distance >= nearest)
             {
                 continue;
@@ -206,7 +206,7 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
             return;
         }
 
-        var direction = _lastInScroll.Y < AutoScrollEdge ? -1
+        int direction = _lastInScroll.Y < AutoScrollEdge ? -1
             : _lastInScroll.Y > _scroll.Bounds.Height - AutoScrollEdge ? 1
             : 0;
         if (direction == 0)
@@ -215,7 +215,7 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
         }
 
         _scroll.Offset = new Vector(_scroll.Offset.X, Math.Max(0, _scroll.Offset.Y + direction * AutoScrollStep));
-        var translated = _scroll.TranslatePoint(_lastInScroll, this);
+        Point? translated = _scroll.TranslatePoint(_lastInScroll, this);
         if (translated is { } point)
         {
             UpdateTarget(point);
@@ -241,8 +241,8 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
             return;
         }
 
-        var request = _dragging ? new WaypointReorder(_pointId, _targetIndex) : null;
-        var selectedId = _pointId;
+        WaypointReorder? request = _dragging ? new WaypointReorder(_pointId, _targetIndex) : null;
+        Guid selectedId = _pointId;
         EndGesture();
         e.Handled = true;
         if (request is not null)
@@ -279,7 +279,7 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
 
     private void EndGesture()
     {
-        var pointer = _pointer;
+        IPointer? pointer = _pointer;
         _pointer = null;
         _scrollTimer.Stop();
         _holdTimer.Stop();
@@ -302,7 +302,7 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
         _targetCard = null;
         _scroll = null;
         _dragging = false;
-        var releaseCapture = _ownsCapture;
+        bool releaseCapture = _ownsCapture;
         _ownsCapture = false;
         if (releaseCapture)
         {

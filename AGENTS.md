@@ -29,3 +29,35 @@
 - `pr-preflight` — перед PR для анализа diff, выбора существующих проверок, changelog и отчёта `PASS`/`NOT VERIFIED`.
 
 Для простой документации, форматирования или локального C#-изменения без соответствующего риска skills не навязываются.
+
+## C# Type Declaration and Readability Policy
+
+- Prefer explicit local variable types.
+- Avoid `var` when the type is not apparent from the right-hand side; prefer target-typed `new()` when the explicit declaration already gives the type.
+- Use interfaces when they accurately express the required contract, but never replace concrete types mechanically.
+- Keep `var` where the language requires it, especially for anonymous types, and where the right-hand side makes the type apparent.
+- Do not use `dynamic`, `object`, casts, or diagnostic suppressions to bypass this policy.
+- Preserve runtime behavior, overload resolution, and LINQ execution semantics when choosing a type.
+- Treat `.editorconfig` as the authoritative source for enforceable style rules. Run the relevant code-style checks locally before pushing.
+- Never disable analyzers or weaken CI quality gates to make a change pass.
+
+Preferred:
+
+```csharp
+ExecutionResult result = await service.ExecuteAsync();
+User user = new();
+var anonymous = new { Name = "Test" };
+IReadOnlyList<Waypoint> Points { get; }
+```
+
+Avoid:
+
+```csharp
+var result = await service.ExecuteAsync();
+var user = new User();
+```
+
+For property accessors, keep trivial getter/setter declarations on one line
+(`IReadOnlyList<Waypoint> Points { get; }`). This is a readability convention
+for accessors only; it does not require unrelated blocks or statements to be
+collapsed.

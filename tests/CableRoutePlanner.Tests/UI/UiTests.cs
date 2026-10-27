@@ -66,24 +66,24 @@ public sealed class UiTests
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-        var compass = view.GetVisualDescendants().OfType<Button>()
+        Button compass = view.GetVisualDescendants().OfType<Button>()
             .Single(button => button.Name == "NorthButton");
         Assert.Equal(46d, compass.Width);
         Assert.Equal(46d, compass.Height);
         Assert.Equal(Avalonia.Media.Colors.Transparent,
             Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(compass.Background).Color);
-        var face = view.GetVisualDescendants().OfType<Border>()
+        Border face = view.GetVisualDescendants().OfType<Border>()
             .Single(border => border.Classes.Contains("compass-face", StringComparer.Ordinal));
         Assert.Equal(new CornerRadius(23), face.CornerRadius);
         Assert.Equal(Avalonia.Media.Color.Parse("#F9FFFFFF"),
             Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(face.Background).Color);
 
-        var waypoints = view.GetVisualDescendants().OfType<Border>()
+        Border[] waypoints = view.GetVisualDescendants().OfType<Border>()
             .Where(border => border.Name == "CoordinateCard").ToArray();
         Assert.Equal(2, waypoints.Length);
-        var selected = Assert.Single(waypoints,
+        Border selected = Assert.Single(waypoints,
             border => border.DataContext is WaypointRow { IsSelected: true });
-        var unselected = Assert.Single(waypoints,
+        Border unselected = Assert.Single(waypoints,
             border => border.DataContext is WaypointRow { IsSelected: false });
 
         Assert.Equal(new CornerRadius(8), selected.CornerRadius);
@@ -108,8 +108,8 @@ public sealed class UiTests
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(
             control,
             new CableRoutePlanner.Domain.GeoBounds(27, 53, 28, 54));
-        var kinds = Enum.GetValues<CableRoutePlanner.Domain.TerrainKind>();
-        var features = kinds.Select((kind, index) => TestData.Polygon(
+        Domain.TerrainKind[] kinds = Enum.GetValues<CableRoutePlanner.Domain.TerrainKind>();
+        MapFeature[] features = kinds.Select((kind, index) => TestData.Polygon(
             index + 1,
             kind,
             10 + index * 3,
@@ -121,7 +121,7 @@ public sealed class UiTests
         adapter.SetFeatures(features);
 
         // Assert
-        var rendered = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+        Mapsui.Layers.MemoryLayer rendered = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
             layer => layer.Name == "Офлайн OSM");
         Assert.Equal(kinds.Length, rendered.Features!.Count());
         Assert.All(rendered.Features, feature => Assert.NotEmpty(feature.Styles));
@@ -130,11 +130,11 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task SystemBackAndWindowCloseWarnAboutUnsavedSettings()
     {
-        using var provider = TestApplication.CreateServices(TestData.RealData,
+        using ServiceProvider provider = TestApplication.CreateServices(TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), new MemoryClipboard());
-        var shell = provider.GetRequiredService<ShellView>();
-        var vm = shell.ViewModel!;
-        var settings = provider.GetRequiredService<SettingsViewModel>();
+        ShellView shell = provider.GetRequiredService<ShellView>();
+        ShellViewModel vm = shell.ViewModel!;
+        SettingsViewModel settings = provider.GetRequiredService<SettingsViewModel>();
         var window = new Window { Content = shell, Width = 900, Height = 700 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -165,12 +165,12 @@ public sealed class UiTests
         var window = new Window { Content = view, Width = 600, Height = 700 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var inputs = view.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
+        NumericUpDown[] inputs = view.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
         Assert.Equal(20m, inputs[0].Value);
         Assert.Equal(10m, inputs[1].Value);
         Assert.NotEmpty(inputs[0].GetVisualDescendants().OfType<TextBox>().Single().Text!);
         Assert.NotEmpty(inputs[1].GetVisualDescendants().OfType<TextBox>().Single().Text!);
-        var save = view.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, "Сохранить"));
+        Button save = view.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, "Сохранить"));
         Assert.False(save.IsEffectivelyEnabled);
         inputs[0].Value = 40;
         Assert.Equal(40m, vm.CellSize);
@@ -186,19 +186,19 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task NavigatingBetweenSettingsAndMapKeepsSettingsValuesVisible()
     {
-        var settingsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
-        using var provider = TestApplication.CreateServices(TestData.RealData, settingsPath, new MemoryClipboard());
-        var shell = provider.GetRequiredService<ShellView>();
-        var settings = provider.GetRequiredService<SettingsViewModel>();
+        string settingsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
+        using ServiceProvider provider = TestApplication.CreateServices(TestData.RealData, settingsPath, new MemoryClipboard());
+        ShellView shell = provider.GetRequiredService<ShellView>();
+        SettingsViewModel settings = provider.GetRequiredService<SettingsViewModel>();
         var window = new Window { Content = shell, Width = 900, Height = 700 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
         await shell.ViewModel!.ShowSettings.Execute();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var inputs = shell.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
-        var cellSize = inputs[0].Value;
-        var reservePercent = inputs[1].Value;
+        NumericUpDown[] inputs = shell.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
+        decimal? cellSize = inputs[0].Value;
+        decimal? reservePercent = inputs[1].Value;
         Assert.NotNull(cellSize);
         Assert.NotNull(reservePercent);
 
@@ -229,18 +229,18 @@ public sealed class UiTests
         var window = new Window { Content = view, Width = 1100, Height = 900 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var choices = view.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "RouteChoices");
-        var section = choices.GetVisualAncestors().OfType<StackPanel>().First();
+        ItemsControl choices = view.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "RouteChoices");
+        StackPanel section = choices.GetVisualAncestors().OfType<StackPanel>().First();
         Assert.False(section.IsVisible);
         Assert.DoesNotContain(view.GetVisualDescendants().OfType<Button>(), b => Equals(b.Content, "3D"));
-        var attribution = view.GetVisualDescendants().OfType<TextBlock>()
+        TextBlock attribution = view.GetVisualDescendants().OfType<TextBlock>()
             .Single(text => text.Name == "AttributionCredit");
         Assert.Contains("OpenStreetMap contributors", attribution.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)!.ToString());
         await vm.AddPoint.Execute(TestData.P(30, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
         Assert.False(section.IsVisible);
         await vm.BuildRoutes.Execute();
-        var routeVertexHeader = view.GetVisualDescendants().OfType<Expander>()
+        TextBlock routeVertexHeader = view.GetVisualDescendants().OfType<Expander>()
             .Select(expander => expander.Header)
             .OfType<TextBlock>()
             .Single(item => item.Text == "Точки прокладки кабеля");
@@ -268,27 +268,27 @@ public sealed class UiTests
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-        var button = view.GetVisualDescendants().OfType<Button>()
+        Button button = view.GetVisualDescendants().OfType<Button>()
             .Single(candidate => candidate.Name == "NorthButton");
-        var needle = view.GetVisualDescendants().OfType<Canvas>()
+        Canvas needle = view.GetVisualDescendants().OfType<Canvas>()
             .Single(candidate => candidate.Name == "NorthArrow");
-        var map = view.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
-        var buttonPosition = button.TranslatePoint(new Point(0, 0), window)!.Value;
-        var needleCenter = needle.TranslatePoint(new Point(23, 23), button)!.Value;
+        Mapsui.UI.Avalonia.MapControl map = view.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
+        Point buttonPosition = button.TranslatePoint(new Point(0, 0), window)!.Value;
+        Point needleCenter = needle.TranslatePoint(new Point(23, 23), button)!.Value;
         Assert.Equal(46, needle.Bounds.Width);
         Assert.Equal(46, needle.Bounds.Height);
 
-        foreach (var angle in new[] { 0d, 45d, 90d, 180d, 270d })
+        foreach (double angle in new[] { 0d, 45d, 90d, 180d, 270d })
         {
-            var viewport = map.Map.Navigator.Viewport;
+            Mapsui.Viewport viewport = map.Map.Navigator.Viewport;
             map.Map.Navigator.SetViewport(
                 new Mapsui.Viewport(viewport.CenterX, viewport.CenterY, viewport.Resolution,
                     angle, viewport.Width, viewport.Height),
                 0, new Mapsui.Animations.Easing(progress => progress));
             Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-            var currentCenter = needle.TranslatePoint(new Point(23, 23), button)!.Value;
-            var currentButtonPosition = button.TranslatePoint(new Point(0, 0), window)!.Value;
+            Point currentCenter = needle.TranslatePoint(new Point(23, 23), button)!.Value;
+            Point currentButtonPosition = button.TranslatePoint(new Point(0, 0), window)!.Value;
             Assert.Equal(needleCenter.X, currentCenter.X, 2);
             Assert.Equal(needleCenter.Y, currentCenter.Y, 2);
             Assert.Equal(buttonPosition.X, currentButtonPosition.X, 2);
@@ -301,14 +301,14 @@ public sealed class UiTests
     [AvaloniaFact]
     public void CompiledXamlAndTypedViewLocatorResolveAllRegisteredScreens()
     {
-        using var provider = TestApplication.CreateServices(
+        using ServiceProvider provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());
-        var locator = provider.GetRequiredService<TypedViewLocator>();
+        TypedViewLocator locator = provider.GetRequiredService<TypedViewLocator>();
         Assert.IsType<MapView>(locator.ResolveView(provider.GetRequiredService<MapViewModel>()));
         Assert.IsType<SettingsView>(locator.ResolveView(provider.GetRequiredService<SettingsViewModel>()));
-        var shell = provider.GetRequiredService<ShellView>();
+        ShellView shell = provider.GetRequiredService<ShellView>();
         var window = new Window
         {
             Content = shell
@@ -321,12 +321,12 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task MapMouseInputAddsAndMovesViewModelPoints()
     {
-        using var provider = TestApplication.CreateServices(
+        using ServiceProvider provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());
-        var vm = provider.GetRequiredService<MapViewModel>();
-        var session = provider.GetRequiredService<CableRoutePlanner.Application.IPlanningSession>();
+        MapViewModel vm = provider.GetRequiredService<MapViewModel>();
+        IPlanningSession session = provider.GetRequiredService<CableRoutePlanner.Application.IPlanningSession>();
         var view = (MapView)provider.GetRequiredService<TypedViewLocator>().ResolveView(vm)!;
         var window = new Window
         {
@@ -340,8 +340,8 @@ public sealed class UiTests
         window.MouseUp(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
         await WaitForRevisionAsync(session, 1, () => vm.Points.Count == 1);
         Assert.Single(vm.Points);
-        var before = vm.Points[0].Coordinate;
-        var revision = session.Revision;
+        Domain.GeoCoordinate before = vm.Points[0].Coordinate;
+        long revision = session.Revision;
         window.MouseDown(new Avalonia.Point(360, 360), Avalonia.Input.MouseButton.Left);
         window.MouseMove(new Avalonia.Point(390, 380));
         window.MouseUp(new Avalonia.Point(390, 380), Avalonia.Input.MouseButton.Left);
@@ -358,7 +358,7 @@ public sealed class UiTests
         long expectedRevision,
         Func<bool>? presentationReady = null)
     {
-        var timeout = Stopwatch.StartNew();
+        Stopwatch timeout = Stopwatch.StartNew();
         while ((session.Revision < expectedRevision || presentationReady?.Invoke() == false)
             && timeout.Elapsed < TimeSpan.FromSeconds(2))
         {
@@ -373,7 +373,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task AlternativeButtonChangesRenderedPolyline()
     {
-        var forest = TestData.Polygon(1, CableRoutePlanner.Domain.TerrainKind.Forest, 100, 60, 220, 240);
+        MapFeature forest = TestData.Polygon(1, CableRoutePlanner.Domain.TerrainKind.Forest, 100, 60, 220, 240);
         using var vm = new MapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(forest), TestData.AllowAllValidator),
             new MemoryData(forest), new MemorySettings(), new MemoryClipboard());
@@ -387,15 +387,15 @@ public sealed class UiTests
         var window = new Window { Content = view, Width = 1100, Height = 1100 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var target = vm.RouteChoices.Last();
-        var button = view.GetVisualDescendants().OfType<Button>()
+        RouteChoice target = vm.RouteChoices.Last();
+        Button button = view.GetVisualDescendants().OfType<Button>()
             .Single(candidate => candidate.DataContext is RouteChoice choice && choice.Id == target.Id);
         button.BringIntoView();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var position = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
-        var map = view.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
+        Point position = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
+        Mapsui.UI.Avalonia.MapControl map = view.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         var layer = (Mapsui.Layers.MemoryLayer)map.Map.Layers.Single(candidate => candidate.Name == "Маршруты");
-        var before = ((Mapsui.Nts.GeometryFeature)Assert.Single(layer.Features)).Geometry!.Copy();
+        NetTopologySuite.Geometries.Geometry before = ((Mapsui.Nts.GeometryFeature)Assert.Single(layer.Features)).Geometry!.Copy();
         window.MouseDown(position, Avalonia.Input.MouseButton.Left);
         window.MouseUp(position, Avalonia.Input.MouseButton.Left);
         Assert.Equal(target.Id, vm.SelectedRoute?.Id);
@@ -408,14 +408,14 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task StartupOpensShellAfterBackgroundDataPreparation()
     {
-        var prepared = false;
-        using var provider = TestApplication.CreateServices(TestData.RealData,
+        bool prepared = false;
+        using ServiceProvider provider = TestApplication.CreateServices(TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"), new MemoryClipboard(),
             async (_, ct) => { await Task.Delay(10, ct); prepared = true; });
-        var view = provider.GetRequiredService<StartupView>();
+        StartupView view = provider.GetRequiredService<StartupView>();
         var window = new Window { Content = view, Width = 900, Height = 700 };
         window.Show();
-        for (var attempt = 0; attempt < 100 && view.ViewModel!.Shell is null; attempt++)
+        for (int attempt = 0; attempt < 100 && view.ViewModel!.Shell is null; attempt++)
         {
             await Task.Delay(10);
             Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -439,13 +439,13 @@ public sealed class UiTests
         };
         var window = new Window { Content = view, Width = 412, Height = 860 };
         window.Show();
-        for (var attempt = 0; attempt < 100 && repository.LastBounds is null; attempt++)
+        for (int attempt = 0; attempt < 100 && repository.LastBounds is null; attempt++)
         {
             await Task.Delay(20);
             Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         }
         Assert.NotNull(repository.LastBounds);
-        var bounds = repository.LastBounds!.Value;
+        Domain.GeoBounds bounds = repository.LastBounds!.Value;
         Assert.True(bounds.East - bounds.West >= 9.5);
         Assert.True(repository.Resolution > 250);
         window.Close();
@@ -465,9 +465,9 @@ public sealed class UiTests
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-        var panel = view.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "SidePanel");
-        var handle = view.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "SheetHandleButton");
-        var content = view.GetVisualDescendants().OfType<ScrollViewer>().Single(scroll => scroll.Name == "SidePanelContent");
+        Border panel = view.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "SidePanel");
+        Border handle = view.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "SheetHandleButton");
+        ScrollViewer content = view.GetVisualDescendants().OfType<ScrollViewer>().Single(scroll => scroll.Name == "SidePanelContent");
         using var touch = new HeadlessTouch(window);
         Assert.True(content.IsVisible);
 
@@ -485,8 +485,8 @@ public sealed class UiTests
 
     private static async Task SwipeHandle(HeadlessTouch touch, Border handle, double distance)
     {
-        var start = await touch.TargetAsync(handle);
-        var end = start + new Point(0, distance);
+        Point start = await touch.TargetAsync(handle);
+        Point end = start + new Point(0, distance);
         touch.Send(RawPointerEventType.TouchBegin, start);
         touch.Send(RawPointerEventType.TouchUpdate, end);
         touch.Send(RawPointerEventType.TouchEnd, end);
@@ -502,12 +502,12 @@ public sealed class UiTests
             map, new(23.17, 51.23, 32.77, 56.18));
         adapter.InitializeViewport();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        var provisional = map.Map.Navigator.Viewport.Resolution;
+        double provisional = map.Map.Navigator.Viewport.Resolution;
         window.Width = 412;
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Assert.True(map.Map.Navigator.Viewport.Resolution < provisional / 2);
         adapter.ZoomIn();
-        var zoom = map.Map.Navigator.Viewport.Resolution;
+        double zoom = map.Map.Navigator.Viewport.Resolution;
         window.Width = 800;
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Assert.Equal(zoom, map.Map.Navigator.Viewport.Resolution);
@@ -516,10 +516,7 @@ public sealed class UiTests
 
     private sealed class ViewportRepository : CableRoutePlanner.Application.IGeodataRepository
     {
-        public CableRoutePlanner.Application.DataPackageInfo Info
-        {
-            get;
-        } = new(
+        public CableRoutePlanner.Application.DataPackageInfo Info { get; } = new(
             "synthetic-viewport-test", new(23.17, 51.23, 32.77, 56.18), "test", false, "test");
 
         public CableRoutePlanner.Domain.GeoBounds? LastBounds
@@ -548,7 +545,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public void UnknownViewModelCannotFallBackToReflection()
     {
-        using var provider = TestApplication.CreateServices(
+        using ServiceProvider provider = TestApplication.CreateServices(
             TestData.RealData,
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());

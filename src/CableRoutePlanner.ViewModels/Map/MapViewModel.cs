@@ -63,10 +63,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public string UrlPathSegment => "Карта";
 
-    public IScreen HostScreen
-    {
-        get;
-    }
+    public IScreen HostScreen { get; }
 
     public ObservableCollection<WaypointRow> Points => _pointRows.Points;
 
@@ -90,10 +87,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 SelectedRouteVertex = null;
             }
 
-            for (var index = 0; index < Points.Count; index++)
+            for (int index = 0; index < Points.Count; index++)
             {
-                var row = Points[index];
-                var selected = row.Id == value?.Id;
+                WaypointRow row = Points[index];
+                bool selected = row.Id == value?.Id;
                 if (row.IsSelected != selected)
                 {
                     Points[index] = row with
@@ -115,10 +112,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         get => _selectedRouteVertex;
         set
         {
-            for (var index = 0; index < RouteVertices.Count; index++)
+            for (int index = 0; index < RouteVertices.Count; index++)
             {
-                var row = RouteVertices[index];
-                var selected = row.Number == value?.Number;
+                RouteVertexRow row = RouteVertices[index];
+                bool selected = row.Number == value?.Number;
                 if (row.IsSelected != selected)
                 {
                     RouteVertices[index] = row with
@@ -143,10 +140,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         ? $"Копировать вершину {vertex.Number}"
         : "Выберите вершину";
 
-    public ReactiveCommand<Unit, Unit> CopyRouteVertex
-    {
-        get;
-    }
+    public ReactiveCommand<Unit, Unit> CopyRouteVertex { get; }
 
     [Reactive]
     public RouteAlternative? SelectedRoute
@@ -357,12 +351,12 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 LatitudeText,
                 System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture,
-                out var latitude)
+                out double latitude)
             || !double.TryParse(
                 LongitudeText,
                 System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture,
-                out var longitude))
+                out double longitude))
         {
             Status = "Введите широту и долготу с десятичной точкой.";
             return;
@@ -396,12 +390,12 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private async Task ReorderByIdAsync(WaypointReorder request)
     {
-        var source = _pointRows.IndexOf(request.PointId);
+        int source = _pointRows.IndexOf(request.PointId);
         if (source >= 0 && source != request.TargetIndex
             && request.TargetIndex >= 0 && request.TargetIndex < Points.Count)
         {
-            var rebuild = SelectedRoute is not null || IsBusy;
-            var previousCalculation = _calculationFinished;
+            bool rebuild = SelectedRoute is not null || IsBusy;
+            Task previousCalculation = _calculationFinished;
             Change(() => _session.Reorder(source, request.TargetIndex));
             if (rebuild)
             {
@@ -453,8 +447,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         RouteChoices.Clear();
         RouteVertices.Clear();
         SelectedRouteVertex = null;
-        var hasAlternatives = Alternatives.Count > 1;
-        foreach (var alternative in Alternatives)
+        bool hasAlternatives = Alternatives.Count > 1;
+        foreach (RouteAlternative alternative in Alternatives)
         {
             RouteChoices.Add(new RouteChoice(
                 alternative.Id,
@@ -465,7 +459,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
         if (route is not null)
         {
-            foreach (var vertex in RouteVertexProjection.Project(route, Points.Select(point => point.Coordinate).ToArray()))
+            foreach (RouteVertexRow vertex in RouteVertexProjection.Project(route, Points.Select(point => point.Coordinate).ToArray()))
             {
                 RouteVertices.Add(vertex);
             }
@@ -488,7 +482,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public async Task LoadMapAreaAsync(GeoBounds bounds, CancellationToken ct, double metresPerPixel = 0)
     {
-        var result = await _mapLoader.LoadLatestAsync(bounds, metresPerPixel, ct);
+        MapAreaLoadResult? result = await _mapLoader.LoadLatestAsync(bounds, metresPerPixel, ct);
         if (_disposed || result is null || !_mapLoader.IsCurrent(result))
         {
             return;
@@ -502,7 +496,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
             case MapAreaLoadResult.Loaded loaded:
                 Features.Clear();
-                foreach (var feature in loaded.Features)
+                foreach (MapFeature feature in loaded.Features)
                 {
                     Features.Add(feature);
                 }
@@ -526,12 +520,12 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         }
 
         var current = new CancellationTokenSource();
-        var previous = _pointMove;
+        CancellationTokenSource? previous = _pointMove;
         _pointMove = current;
         previous?.Cancel();
         try
         {
-            var selected = SelectedPoint?.Id;
+            Guid? selected = SelectedPoint?.Id;
             EnsureInBounds(coordinate, "Для этой точки нет данных в офлайн-пакете.");
             await _session.MoveAsync(id, coordinate, current.Token);
             current.Token.ThrowIfCancellationRequested();
@@ -574,8 +568,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             return;
         }
 
-        var oldIndex = _pointRows.IndexOf(p.Id);
-        var newIndex = oldIndex + direction;
+        int oldIndex = _pointRows.IndexOf(p.Id);
+        int newIndex = oldIndex + direction;
         if (newIndex >= 0 && newIndex < Points.Count)
         {
             Change(() => _session.Reorder(oldIndex, newIndex));
@@ -586,7 +580,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     {
         try
         {
-            var selected = SelectedPoint?.Id;
+            Guid? selected = SelectedPoint?.Id;
             operation();
             RefreshAfterChange(selected);
         }
@@ -619,18 +613,18 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         Status = "Анализ местности и поиск маршрутов…";
         using var cts = new CancellationTokenSource();
         _calculation = cts;
-        var inputRevision = _session.Revision;
+        long inputRevision = _session.Revision;
         try
         {
             _resultOptions = _settings.Load();
-            var routes = await _session.BuildAsync(_resultOptions, cts.Token);
+            IReadOnlyList<RouteAlternative> routes = await _session.BuildAsync(_resultOptions, cts.Token);
             cts.Token.ThrowIfCancellationRequested();
             if (!ReferenceEquals(_calculation, cts) || inputRevision != _session.Revision)
             {
                 return;
             }
 
-            foreach (var route in routes)
+            foreach (RouteAlternative route in routes)
             {
                 Alternatives.Add(route);
             }

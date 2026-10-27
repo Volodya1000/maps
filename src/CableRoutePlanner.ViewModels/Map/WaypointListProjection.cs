@@ -9,7 +9,7 @@ internal sealed class WaypointListProjection
 
     public int IndexOf(Guid pointId)
     {
-        for (var index = 0; index < Points.Count; index++)
+        for (int index = 0; index < Points.Count; index++)
         {
             if (Points[index].Id == pointId)
             {
@@ -25,9 +25,9 @@ internal sealed class WaypointListProjection
         selectedId = waypoints.FirstOrDefault(point => point.Id == selectedId)?.Id
             ?? (waypoints.Count > 0 ? waypoints[^1].Id : null);
         Points.Clear();
-        for (var index = 0; index < waypoints.Count; index++)
+        for (int index = 0; index < waypoints.Count; index++)
         {
-            var waypoint = waypoints[index];
+            Waypoint waypoint = waypoints[index];
             Points.Add(new WaypointRow(waypoint.Id, index + 1, waypoint.Coordinate, waypoint.Id == selectedId));
         }
 

@@ -37,8 +37,8 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
     private void Activate(CompositeDisposable lifetime)
     {
-        var viewModel = ViewModel!;
-        var adapter = _adapterFactory(MapControl, viewModel.DataInfo.Bounds)
+        MapViewModel viewModel = ViewModel!;
+        IMapAdapter adapter = _adapterFactory(MapControl, viewModel.DataInfo.Bounds)
             .DisposeWith(lifetime);
         _activeAdapter = adapter;
 
@@ -65,7 +65,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         IMapAdapter adapter,
         CompositeDisposable lifetime)
     {
-        var active = true;
+        bool active = true;
         void PointAdded(GeoCoordinate point) =>
             viewModel.AddPoint.Execute(point)
                 .Subscribe(_ => { }, viewModel.ReportUnexpectedError)
@@ -155,7 +155,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             .Subscribe(adapter.SetAddMode)
             .DisposeWith(lifetime);
 
-        var readyAnnounced = false;
+        bool readyAnnounced = false;
         viewModel.WhenAnyValue(x => x.MapVersion)
             .Subscribe(_ =>
             {
@@ -179,14 +179,14 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         IMapAdapter adapter,
         CompositeDisposable lifetime)
     {
-        var changes = new System.Reactive.Subjects.Subject<(GeoBounds Bounds, double Resolution)>()
+        System.Reactive.Subjects.Subject<(GeoBounds Bounds, double Resolution)> changes = new System.Reactive.Subjects.Subject<(GeoBounds Bounds, double Resolution)>()
             .DisposeWith(lifetime);
         void ViewportChanged(GeoBounds bounds, double resolution) => changes.OnNext((bounds, resolution));
 
         adapter.ViewportChanged += ViewportChanged;
         var cancellation = new CancellationTokenSource();
         CancellationTokenSource? latestMapLoad = null;
-        var token = cancellation.Token;
+        CancellationToken token = cancellation.Token;
         changes
             .Throttle(TimeSpan.FromMilliseconds(200), RxApp.MainThreadScheduler)
             .Subscribe(viewport =>
@@ -290,7 +290,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             return;
         }
 
-        var distance = args.GetPosition(this).Y - _panelPointerStart.Y;
+        double distance = args.GetPosition(this).Y - _panelPointerStart.Y;
         _panelPointer = null;
         args.Pointer.Capture(null);
         args.Handled = true;
@@ -330,8 +330,8 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
     private void AdaptLayout()
     {
-        var layout = BottomSheetLayout.Create(Bounds.Width, Bounds.Height, _panelExpanded);
-        var narrow = layout.IsNarrow;
+        BottomSheetLayout layout = BottomSheetLayout.Create(Bounds.Width, Bounds.Height, _panelExpanded);
+        bool narrow = layout.IsNarrow;
         Layout.ColumnDefinitions = new(narrow ? "*" : "*,350");
         Layout.RowDefinitions = new("*");
         Grid.SetColumn(MapArea, 0);

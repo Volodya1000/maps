@@ -23,17 +23,17 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
 {
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
     {
-        var directory = Path.Combine(FilesDir!.AbsolutePath, "Data");
+        string directory = Path.Combine(FilesDir!.AbsolutePath, "Data");
         Directory.CreateDirectory(directory);
         return builder.AfterSetup(b =>
         {
-            var services = new ServiceCollection();
+            ServiceCollection services = new();
             services.AddLogging(logging => logging.AddConsole());
             services.AddInfrastructure();
             services.AddPersistence(directory, Path.Combine(FilesDir!.AbsolutePath, "settings.json"));
             services.AddSingleton<IPlanningSession, PlanningSession>();
             services.AddPresentation((progress, ct) => PrepareDataAsync(directory, progress, ct));
-            var provider = services.BuildServiceProvider(
+            IServiceProvider provider = services.BuildServiceProvider(
                 new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
             PresentationServiceCollectionExtensions.ConfigureApplication(
                 (PlannerApplication)b.Instance!, provider, directory);
@@ -42,11 +42,11 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
 
     private async Task PrepareDataAsync(string directory, IProgress<string> progress, CancellationToken ct)
     {
-        var sourceManifest = Assets!.Open("Data/manifest.json");
-        using var reader = new StreamReader(sourceManifest);
-        var manifest = await reader.ReadToEndAsync(ct);
-        var localManifest = Path.Combine(directory, "manifest.json");
-        var database = Path.Combine(directory, "geodata.sqlite");
+        Stream sourceManifest = Assets!.Open("Data/manifest.json");
+        using StreamReader reader = new(sourceManifest);
+        string manifest = await reader.ReadToEndAsync(ct);
+        string localManifest = Path.Combine(directory, "manifest.json");
+        string database = Path.Combine(directory, "geodata.sqlite");
         if (File.Exists(database)
             && File.Exists(localManifest)
             && await File.ReadAllTextAsync(localManifest, ct) == manifest)
@@ -57,21 +57,21 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
         await Task.Run(async () =>
         {
             progress.Report("Распаковка карты. Первый запуск может занять некоторое время…");
-            var names = Assets.List("Data")!;
-            var chunks = names.Where(name => name.StartsWith("geodata.", StringComparison.Ordinal)
+            string[] names = Assets.List("Data")!;
+            string[] chunks = names.Where(name => name.StartsWith("geodata.", StringComparison.Ordinal)
                     && name.EndsWith(".gz", StringComparison.Ordinal)
                     && name != "geodata.sqlite.gz")
                 .Order(StringComparer.Ordinal).ToArray();
-            var files = chunks.Length > 0 ? chunks
+            string[] files = chunks.Length > 0 ? chunks
                 : new[] { names.Contains("geodata.sqlite.gz", StringComparer.Ordinal)
                     ? "geodata.sqlite.gz"
                     : "geodata.sqlite" };
-            await using var output = File.Create(database + ".tmp");
-            var buffer = new byte[1024 * 1024];
+            await using FileStream output = File.Create(database + ".tmp");
+            byte[] buffer = new byte[1024 * 1024];
             long copied = 0;
-            foreach (var file in files)
+            foreach (string file in files)
             {
-                using var asset = Assets.Open("Data/" + file);
+                using Stream asset = Assets.Open("Data/" + file);
                 using Stream input = file.EndsWith(".gz", StringComparison.Ordinal)
                     ? new GZipStream(asset, CompressionMode.Decompress) : asset;
                 int count;

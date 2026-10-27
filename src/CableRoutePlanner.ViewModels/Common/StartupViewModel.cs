@@ -25,10 +25,7 @@ public sealed class StartupViewModel : ReactiveObject, IDisposable
         get; private set;
     }
 
-    public ReactiveCommand<Unit, Unit> Load
-    {
-        get;
-    }
+    public ReactiveCommand<Unit, Unit> Load { get; }
 
     public StartupViewModel(Func<IProgress<string>, CancellationToken, Task<ShellViewModel>> loader)
     {
@@ -41,7 +38,7 @@ public sealed class StartupViewModel : ReactiveObject, IDisposable
         IsLoading = true;
         try
         {
-            var progress = new Progress<string>(message => Message = message);
+            Progress<string> progress = new(message => Message = message);
             Shell = await _loader(progress, _cancellation.Token);
         }
         catch (OperationCanceledException)

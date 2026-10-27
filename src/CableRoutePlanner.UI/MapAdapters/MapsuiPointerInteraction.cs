@@ -71,8 +71,8 @@ internal sealed class MapsuiPointerInteraction
         if (e.Pointer.Type == PointerType.Mouse
             && e.GetCurrentPoint(_control).Properties.IsRightButtonPressed)
         {
-            var viewport = _control.Map.Navigator.Viewport;
-            var position = e.GetPosition(_control);
+            Mapsui.Viewport viewport = _control.Map.Navigator.Viewport;
+            Point position = e.GetPosition(_control);
             _rotationCenter = new(viewport.Width / 2, viewport.Height / 2);
             _rotationStartAngle = PointerAngle(position);
             _rotationStart = viewport.Rotation;
@@ -129,7 +129,7 @@ internal sealed class MapsuiPointerInteraction
     {
         if (_rotatingPointer == e.Pointer.Id)
         {
-            var delta = PointerAngle(e.GetPosition(_control)) - _rotationStartAngle;
+            double delta = PointerAngle(e.GetPosition(_control)) - _rotationStartAngle;
             _rotate(_rotationStart + delta * 180 / Math.PI);
             e.Handled = true;
             return;
@@ -146,7 +146,7 @@ internal sealed class MapsuiPointerInteraction
             return;
         }
 
-        var coordinate = _toGeo(e.GetPosition(_control));
+        GeoCoordinate coordinate = _toGeo(e.GetPosition(_control));
         _lastDragCoordinate = coordinate;
         _previewChanged(_waypoints().Select(p => p.Id == dragged ? p with { Coordinate = coordinate } : p).ToArray());
         e.Handled = true;
@@ -159,7 +159,7 @@ internal sealed class MapsuiPointerInteraction
             return;
         }
 
-        var position = e.GetPosition(_control);
+        Point position = e.GetPosition(_control);
         if (_rotatingPointer == e.Pointer.Id)
         {
             _rotatingPointer = null;
@@ -224,24 +224,24 @@ internal sealed class MapsuiPointerInteraction
 
     private bool IsMarkerHit(WaypointRow point, Avalonia.Point position)
     {
-        var screen = _toScreen(point.Coordinate);
-        var dx = screen.X - position.X;
-        var dy = screen.Y - position.Y;
+        Point screen = _toScreen(point.Coordinate);
+        double dx = screen.X - position.X;
+        double dy = screen.Y - position.Y;
         return dx * dx + dy * dy <= MarkerHitRadius * MarkerHitRadius;
     }
 
     private bool IsRouteVertexHit(RouteVertexRow vertex, Avalonia.Point position)
     {
-        var screen = _toScreen(vertex.Coordinate);
-        var dx = screen.X - position.X;
-        var dy = screen.Y - position.Y;
+        Point screen = _toScreen(vertex.Coordinate);
+        double dx = screen.X - position.X;
+        double dy = screen.Y - position.Y;
         return dx * dx + dy * dy <= MarkerHitRadius * MarkerHitRadius;
     }
 
     private bool IsClick(Avalonia.Point position)
     {
-        var dx = position.X - _pressed.X;
-        var dy = position.Y - _pressed.Y;
+        double dx = position.X - _pressed.X;
+        double dy = position.Y - _pressed.Y;
         return dx * dx + dy * dy < ClickMovementRadius * ClickMovementRadius;
     }
 }
