@@ -14,6 +14,7 @@ public sealed class GridRoutePlanner(
     IGridPathfinder pathfinder,
     ILogger<GridRoutePlanner> logger) : IRoutePlanner
 {
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     private readonly record struct SearchMargins(double LatitudeDegrees, double LongitudeDegrees);
 
     private const double MinimumSearchMarginMetres = 1_000;
