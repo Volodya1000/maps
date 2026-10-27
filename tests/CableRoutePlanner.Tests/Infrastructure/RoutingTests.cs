@@ -4,6 +4,7 @@ using CableRoutePlanner.Infrastructure.Geography;
 using CableRoutePlanner.Infrastructure.Routing;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -11,6 +12,48 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class RoutingTests(ITestOutputHelper output)
 {
+    [Fact]
+    public async Task SearchMarginKeepsTheSameMetricReserveOnBothAxes()
+    {
+        BoundsRecordingData data = new();
+        GridRoutePlanner planner = new(data, new GridGenerator(), new DirectPathfinder(),
+            NullLogger<GridRoutePlanner>.Instance);
+        GeoCoordinate start = new(54, 27);
+        GeoCoordinate end = new(54, 27.01);
+
+        await planner.PlanAsync([start, end], new(200, 100_000), default);
+
+        Assert.NotNull(data.LastBounds);
+        GeoBounds bounds = data.LastBounds!.Value;
+        double latitudeReserve = (start.Latitude - bounds.South) * GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180;
+        double longitudeReserve = (bounds.West - start.Longitude)
+            * GeoCoordinate.MeanEarthRadiusMetres * Math.Cos(start.Latitude * Math.PI / 180) * Math.PI / 180;
+        Assert.InRange(latitudeReserve, 999, 1001);
+        Assert.InRange(longitudeReserve, 999, 1001);
+        Assert.True(data.Info.Bounds.Contains(bounds));
+    }
+
+    [Fact]
+    public async Task SearchMarginIsCappedAtFiveKilometresAndStaysInCoverage()
+    {
+        BoundsRecordingData data = new();
+        GridRoutePlanner planner = new(data, new GridGenerator(), new DirectPathfinder(),
+            NullLogger<GridRoutePlanner>.Instance);
+        GeoCoordinate start = new(54, 27);
+        GeoCoordinate end = new(54, 27.8);
+
+        await planner.PlanAsync([start, end], new(200, 100_000), default);
+
+        Assert.NotNull(data.LastBounds);
+        GeoBounds bounds = data.LastBounds!.Value;
+        double latitudeReserve = (start.Latitude - bounds.South) * GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180;
+        double longitudeReserve = (bounds.West - start.Longitude)
+            * GeoCoordinate.MeanEarthRadiusMetres * Math.Cos(start.Latitude * Math.PI / 180) * Math.PI / 180;
+        Assert.InRange(latitudeReserve, 4_999, 5_001);
+        Assert.InRange(longitudeReserve, 4_999, 5_001);
+        Assert.True(data.Info.Bounds.Contains(bounds));
+    }
+
     [Fact]
     public void ThirtyKilometreGridSearchRecordsCostAndResources()
     {
@@ -324,5 +367,35 @@ public sealed class RoutingTests(ITestOutputHelper output)
                 [TestData.P(50, 150), TestData.P(50, 150)],
                 TestData.Options,
                 default));
+    }
+
+    private sealed class BoundsRecordingData : IGeodataRepository
+    {
+        public DataPackageInfo Info { get; } = new(
+            "bounds-test",
+            new(20, 50, 35, 60),
+            "tests",
+            false,
+            "tests");
+
+        public GeoBounds? LastBounds { get; private set; }
+
+        public Task<IReadOnlyList<MapFeature>> QueryAsync(GeoBounds bounds, CancellationToken cancellationToken)
+        {
+            LastBounds = bounds;
+            return Task.FromResult<IReadOnlyList<MapFeature>>([]);
+        }
+    }
+
+    private sealed class DirectPathfinder : IGridPathfinder
+    {
+        public IReadOnlyList<Coordinate> FindPath(
+            Coordinate start,
+            Coordinate destination,
+            GridMesh mesh,
+            CostProfile profile,
+            Func<Coordinate, Coordinate, double?> evaluate,
+            Func<int, int, double?> gridEdgeCost,
+            CancellationToken cancellationToken) => [start, destination];
     }
 }

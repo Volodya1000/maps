@@ -209,14 +209,13 @@ internal sealed class TerrainEvaluator
                             List<Coordinate> candidate = aligned.Take(left + 1).ToList();
                             candidate.AddRange(points);
                             candidate.AddRange(aligned.Skip(right));
-                            if (IsValidPath(candidate))
+                            BridgeSplice? splice = TryCreateBridgeSplice(
+                                candidate,
+                                profile,
+                                left + points.Length - 1);
+                            if (splice is { } validSplice)
                             {
-                                splices.Add(
-                                    new BridgeSplice(
-                                        candidate,
-                                        PathLength(candidate),
-                                        PathCost(candidate, profile),
-                                        left + points.Length - 1));
+                                splices.Add(validSplice);
                             }
                         }
                     }
@@ -300,26 +299,26 @@ internal sealed class TerrainEvaluator
         return simplified;
     }
 
-    private static double PathLength(IReadOnlyList<Coordinate> path) => path
-        .Zip(path.Skip(1), (a, b) => a.Distance(b))
-        .Sum();
-
-    private double PathCost(IReadOnlyList<Coordinate> path, CostProfile profile) => path
-        .Zip(path.Skip(1), (a, b) => Evaluate(a, b)?.Cost(profile)
-            ?? throw new InvalidOperationException("Bridge splice contains an invalid segment."))
-        .Sum();
-
-    private bool IsValidPath(IReadOnlyList<Coordinate> path)
+    private BridgeSplice? TryCreateBridgeSplice(
+        List<Coordinate> path,
+        CostProfile profile,
+        int bridgeEndIndex)
     {
+        double length = 0;
+        double cost = 0;
         for (int i = 1; i < path.Count; i++)
         {
-            if (Evaluate(path[i - 1], path[i]) is null)
+            EdgeEvaluation? edge = Evaluate(path[i - 1], path[i]);
+            if (edge is null)
             {
-                return false;
+                return null;
             }
+
+            length += edge.Length;
+            cost += edge.Cost(profile);
         }
 
-        return true;
+        return new BridgeSplice(path, length, cost, bridgeEndIndex);
     }
 
     public EdgeEvaluation? Evaluate(Coordinate a, Coordinate b)
