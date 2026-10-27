@@ -125,6 +125,50 @@ jobs:
           path: artifacts/win7-payload
           if-no-files-found: error
 
+  payload-iso-check:
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'test-win7-feasibility')
+    needs: build-payload
+    name: Create and verify payload ISO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ISO tooling
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y genisoimage
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows7-payload-tree-${{ github.run_id }}
+          path: payload
+      - name: Verify manifest and create ISO
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(Path("payload/manifest.json").read_text(encoding="utf-8-sig"))
+          if manifest.get("schema") != "maps.win7.payload.v1" or manifest.get("commit") != os.environ["GITHUB_SHA"]:
+              raise SystemExit("payload manifest does not match the checked commit")
+          for item in manifest.get("files", []):
+              path = Path("payload", item["path"])
+              if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != item.get("sha256"):
+                  raise SystemExit(f"payload file missing or hash mismatch: {path}")
+          PY
+          mkdir -p artifacts/windows7-payload
+          genisoimage -quiet -J -R -V WIN7PAYLOAD -o artifacts/windows7-payload/win7-payload.iso payload
+          sha256sum artifacts/windows7-payload/win7-payload.iso | tee artifacts/windows7-payload/win7-payload.iso.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows7-payload-iso-check-${{ github.run_id }}
+          path: artifacts/windows7-payload
+          if-no-files-found: error
+
   windows7:
     if: github.event_name == 'workflow_dispatch'
     needs: build-payload
