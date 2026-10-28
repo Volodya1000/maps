@@ -196,10 +196,14 @@
                                     <DataTemplate x:DataType="vm:RouteVertexRow">
                                         <Border
                                             Classes="route-vertex-row"
+                                            Classes.child="{Binding IsChild}"
                                             Classes.selected="{Binding IsSelected}">
-                                            <Grid ColumnDefinitions="32,*">
-                                                <TextBlock Text="{Binding Number}" />
-                                                <TextBlock Grid.Column="1" Text="{Binding Display}" />
+                                            <Grid ColumnDefinitions="64,*">
+                                                <TextBlock Text="{Binding DisplayLabel}" />
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="{Binding Display}" />
+                                                    <TextBlock Classes="view-hint" Text="{Binding KindText}" />
+                                                </StackPanel>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>

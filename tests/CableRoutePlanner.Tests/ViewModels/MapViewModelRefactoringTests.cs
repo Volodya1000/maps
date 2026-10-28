@@ -211,7 +211,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         var session = new PlanningSession(
             TestData.Planner(building), new GeodataPointPlacementValidator(data));
         using var vm = new MapViewModel(
-            new NavigationHost(), session, data, new MemorySettings(), new MemoryClipboard());
+            new NavigationHost(), session, new MapAreaLoader(data), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(50, 150)).ToTask();
         WaypointRow original = Assert.Single(vm.Points);
         long revision = session.Revision;
@@ -241,7 +241,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     private static MapViewModel CreateVm(IGeodataRepository data) => new(
         new NavigationHost(),
         new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
-        data,
+        new MapAreaLoader(data),
         new MemorySettings(),
         new MemoryClipboard());
 

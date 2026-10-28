@@ -112,9 +112,12 @@ internal sealed class MapsuiPointerInteraction
             return;
         }
 
+        // Labels are staggered, so two route markers may share a touch radius.
+        // Pick the nearest numbered vertex, not the first row in the list.
         _pressedRouteVertex = _routeVertices()
-            .Where(vertex => vertex.Kind != RouteVertexKind.UserWaypoint)
-            .FirstOrDefault(vertex => IsRouteVertexHit(vertex, _pressed))?.Number;
+            .Where(vertex => vertex.Kind != RouteVertexKind.UserWaypoint
+                && RouteVertexDistanceSquared(vertex, _pressed) <= MarkerHitRadius * MarkerHitRadius)
+            .MinBy(vertex => RouteVertexDistanceSquared(vertex, _pressed))?.Number;
         if (_pressedRouteVertex is not null)
         {
             _control.Map.Navigator.PanLock = true;
@@ -230,12 +233,12 @@ internal sealed class MapsuiPointerInteraction
         return dx * dx + dy * dy <= MarkerHitRadius * MarkerHitRadius;
     }
 
-    private bool IsRouteVertexHit(RouteVertexRow vertex, Avalonia.Point position)
+    private double RouteVertexDistanceSquared(RouteVertexRow vertex, Avalonia.Point position)
     {
         Point screen = _toScreen(vertex.Coordinate);
         double dx = screen.X - position.X;
         double dy = screen.Y - position.Y;
-        return dx * dx + dy * dy <= MarkerHitRadius * MarkerHitRadius;
+        return dx * dx + dy * dy;
     }
 
     private bool IsClick(Avalonia.Point position)

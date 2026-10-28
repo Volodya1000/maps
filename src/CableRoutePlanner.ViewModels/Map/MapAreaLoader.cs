@@ -3,16 +3,21 @@ using CableRoutePlanner.Domain;
 
 namespace CableRoutePlanner.ViewModels;
 
-internal abstract record MapAreaLoadResult(long RequestId)
-{
-    internal sealed record Loaded(long RequestId, IReadOnlyList<MapFeature> Features)
-        : MapAreaLoadResult(RequestId);
+public abstract record MapAreaLoadResult(long RequestId);
 
-    internal sealed record Failed(long RequestId, string Message)
-        : MapAreaLoadResult(RequestId);
+public sealed record MapAreaLoaded(long RequestId, IReadOnlyList<MapFeature> Features) : MapAreaLoadResult(RequestId);
+
+public sealed record MapAreaFailed(long RequestId, string Message) : MapAreaLoadResult(RequestId);
+
+public interface IMapAreaLoader
+{
+    DataPackageInfo Info { get; }
+    bool IsCurrent(MapAreaLoadResult result);
+    void Invalidate();
+    Task<MapAreaLoadResult?> LoadLatestAsync(GeoBounds bounds, double metresPerPixel, CancellationToken cancellationToken);
 }
 
-internal sealed class MapAreaLoader(IGeodataRepository repository)
+public sealed class MapAreaLoader(IGeodataRepository repository) : IMapAreaLoader
 {
     private long _requestId;
 
@@ -34,7 +39,7 @@ internal sealed class MapAreaLoader(IGeodataRepository repository)
             IReadOnlyList<MapFeature> features = await repository.QueryMapAsync(bounds, metresPerPixel, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             return request == Interlocked.Read(ref _requestId)
-                ? new MapAreaLoadResult.Loaded(request, features)
+                ? new MapAreaLoaded(request, features)
                 : null;
         }
         catch (OperationCanceledException)
@@ -44,7 +49,7 @@ internal sealed class MapAreaLoader(IGeodataRepository repository)
         catch (Exception ex)
         {
             return request == Interlocked.Read(ref _requestId)
-                ? new MapAreaLoadResult.Failed(request, ex.Message)
+                ? new MapAreaFailed(request, ex.Message)
                 : null;
         }
     }

@@ -96,6 +96,9 @@
     <Style Selector="Border.route-vertex-row">
         <Setter Property="Padding" Value="5" />
     </Style>
+    <Style Selector="Border.route-vertex-row.child">
+        <Setter Property="Margin" Value="20,0,0,0" />
+    </Style>
     <Style Selector="TextBlock.route-metrics">
         <Setter Property="FontSize" Value="13" />
         <Setter Property="LineHeight" Value="21" />

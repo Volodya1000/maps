@@ -52,7 +52,7 @@ public sealed class PresentationTests : ReactiveTestScope
         using var vm = new MapViewModel(
             new NavigationHost(),
             session,
-            new MemoryData(),
+            new MapAreaLoader(new MemoryData()),
             new MemorySettings(),
             clipboard);
         await vm.AddPoint.Execute(TestData.P(50, 150));
@@ -228,7 +228,7 @@ public sealed class PresentationTests : ReactiveTestScope
         IScreen? screen = null) => new(
         screen ?? new NavigationHost(),
         new PlanningSession(planner, TestData.AllowAllValidator),
-        data,
+        new MapAreaLoader(data),
         new MemorySettings(),
         new MemoryClipboard());
 

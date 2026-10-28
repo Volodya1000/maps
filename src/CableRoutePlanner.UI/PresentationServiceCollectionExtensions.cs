@@ -24,6 +24,7 @@ public static class PresentationServiceCollectionExtensions
             services.AddSingleton(clipboard);
         }
         services.AddSingleton<IScreen, NavigationHost>();
+        services.AddSingleton<IMapAreaLoader, MapAreaLoader>();
         services.AddSingleton<MapViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<ShellViewModel>();
