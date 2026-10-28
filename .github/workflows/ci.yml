@@ -131,6 +131,7 @@ jobs:
         run: |
           mkdir -p artifacts/pr-preview-base
           cp artifacts/CableRoutePlanner-CI-Minsk.apk artifacts/pr-preview-base/Minsk.apk
+          cp artifacts/CableRoutePlanner-CI-Minsk.apk "artifacts/CableRoutePlanner-PR-${{ github.event.pull_request.number }}-Minsk.apk"
           cp "$ANDROID_SIGNING_KEYSTORE" artifacts/pr-preview-base/preview.keystore
       - uses: actions/upload-artifact@v7
         if: >-
@@ -166,9 +167,9 @@ jobs:
           name: android-startup-evidence
           path: artifacts/android-smoke/
       - uses: actions/upload-artifact@v7
-        if: always() && needs.quality.outputs.full_maps != 'true'
+        if: always()
         with:
-          path: artifacts/CableRoutePlanner-CI-Minsk.apk
+          path: ${{ github.event_name == 'pull_request' && format('artifacts/CableRoutePlanner-PR-{0}-Minsk.apk', github.event.pull_request.number) || 'artifacts/CableRoutePlanner-CI-Minsk.apk' }}
           archive: false
           if-no-files-found: error
   terrain-spike:

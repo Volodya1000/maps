@@ -165,11 +165,6 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
-          path: artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Minsk.apk
-          archive: false
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v7
-        with:
           path: artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk
           archive: false
           if-no-files-found: error
