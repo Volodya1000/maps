@@ -28,6 +28,7 @@ def main():
     parser.add_argument("--apk-dir", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--adb", default="adb")
+    parser.add_argument("--package", default=PACKAGE)
     parser.add_argument("--launches", type=int, default=3)
     parser.add_argument("--settle-seconds", type=int, default=10)
     parser.add_argument("--wait-map-ready", action="store_true")
@@ -58,7 +59,7 @@ def main():
         return result.stdout
 
     report = dict(
-        package=PACKAGE,
+        package=args.package,
         sha256=file_digest(apk),
         launches=[],
         success=False,
@@ -80,13 +81,13 @@ def main():
             "android.intent.action.MAIN",
             "-c",
             "android.intent.category.LAUNCHER",
-            PACKAGE,
+            args.package,
         )
         component = next(
             (
                 line.strip()
                 for line in resolved.splitlines()
-                if line.strip().startswith(PACKAGE + "/")
+                if line.strip().startswith(args.package + "/")
             ),
             None,
         )
@@ -94,7 +95,7 @@ def main():
             raise RuntimeError("Launcher Activity was not resolved: " + resolved)
         report["activity"] = component
         for index in range(args.launches):
-            adb("shell", "am", "force-stop", PACKAGE)
+            adb("shell", "am", "force-stop", args.package)
             adb("logcat", "-c")
             start = adb("shell", "am", "start", "-W", "-n", component, timeout=180)
             if "Error:" in start or "Exception" in start:
@@ -106,7 +107,7 @@ def main():
             )
             for _ in range(observation_seconds):
                 time.sleep(1)
-                pid = adb("shell", "pidof", PACKAGE, check=False).strip()
+                pid = adb("shell", "pidof", args.package, check=False).strip()
                 if not pid:
                     raise RuntimeError("Application died after launching Activity")
                 if args.wait_map_ready:
@@ -136,7 +137,7 @@ def main():
                     r"(mResumedActivity|topResumedActivity|ResumedActivity:)", line
                 )
             ]
-            if not any(PACKAGE in line for line in resumed):
+            if not any(args.package in line for line in resumed):
                 raise RuntimeError(
                     "Application Activity is not resumed: " + "\n".join(resumed)
                 )
@@ -144,7 +145,7 @@ def main():
             (args.output / f"launch-{index + 1}.logcat.txt").write_text(logs)
             # The crash buffer avoids false positives from unrelated system services.
             crashes = adb("logcat", "-b", "crash", "-d")
-            if PACKAGE in crashes:
+            if args.package in crashes:
                 raise RuntimeError("Application crash buffer is not empty: " + crashes)
             (args.output / f"launch-{index + 1}.png").write_bytes(
                 adb("exec-out", "screencap", "-p", binary=True)

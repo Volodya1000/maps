@@ -165,6 +165,63 @@ public sealed class RoutingTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void BridgePortalConnectsAValidCrossingThatFallsBetweenGridRows()
+    {
+        Coordinate portalStart = new(90, 50);
+        Coordinate portalEnd = new(110, 50);
+        Coordinate[] nodes =
+        [
+            new(0, 0), new(100, 0), new(200, 0),
+            new(0, 100), new(100, 100), new(200, 100)
+        ];
+        var mesh = new GridMesh(
+            nodes,
+            3,
+            2,
+            new Coordinate(0, 0),
+            100,
+            [new GridPortal([portalStart, portalEnd])]);
+        Coordinate start = new(0, 50);
+        Coordinate finish = new(200, 50);
+
+        double? Evaluate(Coordinate from, Coordinate to)
+        {
+            bool mappedBridge = from.Equals2D(portalStart) && to.Equals2D(portalEnd)
+                || from.Equals2D(portalEnd) && to.Equals2D(portalStart);
+            bool crossesBarrier = from.X < 95 && to.X >= 95
+                || to.X < 95 && from.X >= 95
+                || from.X > 105 && to.X <= 105
+                || to.X > 105 && from.X <= 105;
+            return !crossesBarrier || mappedBridge ? from.Distance(to) : null;
+        }
+
+        double? GridEdge(int from, int to) => Evaluate(nodes[from], nodes[to]);
+
+        var pathfinder = new AStarGridPathfinder();
+        GridMesh meshWithoutPortal = mesh with { Portals = null };
+        Assert.Throws<PlanningException>(() => pathfinder.FindPath(
+            start,
+            finish,
+            meshWithoutPortal,
+            CostProfile.Defaults[0],
+            Evaluate,
+            GridEdge,
+            default));
+
+        IReadOnlyList<Coordinate> path = pathfinder.FindPath(
+            start,
+            finish,
+            mesh,
+            CostProfile.Defaults[0],
+            Evaluate,
+            GridEdge,
+            default);
+
+        Assert.Contains(portalStart, path);
+        Assert.Contains(portalEnd, path);
+    }
+
+    [Fact]
     public void GridGeneratorBuildsExpectedMeshAndHonoursNodeLimit()
     {
         // Arrange
@@ -268,6 +325,29 @@ public sealed class RoutingTests(ITestOutputHelper output)
                 [TestData.P(50, 150), TestData.P(260, 150)],
                 TestData.Options,
                 default);
+
+        Assert.NotEmpty(routes);
+        Assert.All(routes, route =>
+        {
+            Assert.Equal(0, route.Metrics.ApprovedWaterCrossings);
+            Assert.Equal(1, route.Metrics.PotentialBridgeCrossings);
+        });
+    }
+
+    [Fact]
+    public async Task MappedBridgeOpensALakeCrossing()
+    {
+        MapFeature lake = TestData.Polygon(1, TerrainKind.Lake, 151, -20, 153, 700);
+        MapFeature bridge = TestData.Line(
+            2,
+            TerrainKind.BridgeCandidate,
+            (140, 170),
+            (165, 170));
+
+        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(lake, bridge).PlanAsync(
+            [TestData.P(50, 170), TestData.P(260, 170)],
+            TestData.Options,
+            default);
 
         Assert.NotEmpty(routes);
         Assert.All(routes, route =>

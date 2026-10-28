@@ -13,6 +13,7 @@ from collections import Counter
 from pathlib import Path
 
 import osmium
+from display_lod import include_in_display_lod
 from prepare import METRES_PER_DEGREE, classify
 from shapely import from_wkb, make_valid, to_wkb
 from shapely.affinity import scale
@@ -86,26 +87,8 @@ def main():
         )
         counts[kind] += 1
         area = geometry.area
-        road = tags.get("highway", "")
         for lod, tolerance in ((0, 0.003), (1, 0.0005), (2, 0.00005)):
-            if lod == 0 and not (
-                kind == "Settlement"
-                and tags.get("place") in ("city", "town")
-                or kind == "Road"
-                and road in ("motorway", "trunk", "primary")
-                or kind in ("Lake", "Forest")
-                and area > 0.005
-            ):
-                continue
-            if lod == 1 and not (
-                kind == "Settlement"
-                or kind == "Road"
-                and road in ("motorway", "trunk", "primary", "secondary", "tertiary")
-                or kind in ("River", "Lake", "Marsh", "Forest", "Field")
-                and area > 0.00001
-            ):
-                continue
-            if lod == 2 and kind == "Building":
+            if not include_in_display_lod(kind, tags, area, lod):
                 continue
             display = geometry.simplify(tolerance, preserve_topology=True)
             if display.is_empty:

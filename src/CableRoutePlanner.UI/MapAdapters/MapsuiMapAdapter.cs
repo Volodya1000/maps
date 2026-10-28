@@ -413,6 +413,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             new Viewport(current.CenterX, current.CenterY, current.Resolution, rotation, current.Width, current.Height),
             0,
             new Mapsui.Animations.Easing(progress => progress));
+        // Navigator updates its state immediately, but Avalonia may retain the previous
+        // raster frame until the next pointer event unless graphics are invalidated.
+        _control.RefreshGraphics();
+        _control.ForceUpdate();
     }
 
     private Avalonia.Point ToScreen(GeoCoordinate coordinate)

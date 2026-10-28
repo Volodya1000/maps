@@ -5,12 +5,15 @@ using NetTopologySuite.Geometries;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
 
+public sealed record GridPortal(Coordinate[] Coordinates);
+
 public sealed record GridMesh(
     Coordinate[] Nodes,
     int Columns,
     int Rows,
     Coordinate Minimum,
-    double CellSizeMetres);
+    double CellSizeMetres,
+    IReadOnlyList<GridPortal>? Portals = null);
 
 public interface IGridGenerator
 {
