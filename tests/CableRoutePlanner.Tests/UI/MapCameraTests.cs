@@ -230,8 +230,7 @@ public sealed class MapCameraTests
         (double worldX, double worldY) = SphericalMercator.FromLonLat(vertex.Coordinate.Longitude, vertex.Coordinate.Latitude);
         MPoint screen = control.Map.Navigator.Viewport.WorldToScreen(worldX, worldY);
 
-        window.MouseDown(new Avalonia.Point(screen.X, screen.Y), Avalonia.Input.MouseButton.Left);
-        window.MouseUp(new Avalonia.Point(screen.X, screen.Y), Avalonia.Input.MouseButton.Left);
+        Click(window, new Avalonia.Point(screen.X, screen.Y));
 
         Assert.Equal(7, selectedNumber);
         Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
@@ -243,9 +242,19 @@ public sealed class MapCameraTests
         (double waypointX, double waypointY) = SphericalMercator.FromLonLat(
             waypoint.Coordinate.Longitude, waypoint.Coordinate.Latitude);
         MPoint waypointScreen = control.Map.Navigator.Viewport.WorldToScreen(waypointX, waypointY);
-        window.MouseDown(new Avalonia.Point(waypointScreen.X, waypointScreen.Y), Avalonia.Input.MouseButton.Left);
-        window.MouseUp(new Avalonia.Point(waypointScreen.X, waypointScreen.Y), Avalonia.Input.MouseButton.Left);
+        Click(window, new Avalonia.Point(waypointScreen.X, waypointScreen.Y));
         Assert.Equal(waypoint.Id, selectedWaypoint);
         window.Close();
+    }
+
+    private static void Click(Window window, Avalonia.Point position)
+    {
+        // Headless hit testing is updated by pointer movement. Without it a click can
+        // occasionally retain the target from the preceding test window on Linux CI.
+        window.MouseMove(position);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        window.MouseDown(position, Avalonia.Input.MouseButton.Left);
+        window.MouseUp(position, Avalonia.Input.MouseButton.Left);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
     }
 }
