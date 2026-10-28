@@ -155,23 +155,29 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             .Subscribe(adapter.SetAddMode)
             .DisposeWith(lifetime);
 
-        bool readyAnnounced = false;
+        bool active = true;
+        Disposable.Create(() => active = false).DisposeWith(lifetime);
         viewModel.WhenAnyValue(x => x.MapVersion)
-            .Subscribe(_ =>
+            .Subscribe(version =>
             {
-                adapter.SetFeatures(viewModel.Features);
-                if (readyAnnounced || viewModel.MapVersion <= 0 || viewModel.Features.Count == 0)
-                {
-                    return;
-                }
-
-                // Android routes stdout to logcat for the offline-map startup smoke test.
-                Console.WriteLine(
-                    $"CRP_OFFLINE_MAP_READY region={viewModel.DataInfo.RegionId} "
-                    + $"features={viewModel.Features.Count}");
-                readyAnnounced = true;
+                _ = RenderFeaturesAsync(version);
             })
             .DisposeWith(lifetime);
+
+        async Task RenderFeaturesAsync(int version)
+        {
+            try
+            {
+                await adapter.SetFeaturesAsync(viewModel.Features);
+            }
+            catch (Exception error)
+            {
+                if (active)
+                {
+                    viewModel.ReportUnexpectedError(error);
+                }
+            }
+        }
     }
 
     private void BindViewport(

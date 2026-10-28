@@ -6,7 +6,19 @@ namespace CableRoutePlanner.UI.MapAdapters;
 
 internal static class MapsuiStyleFactory
 {
-    public static VectorStyle ForTerrain(TerrainKind kind)
+    public static int DrawingOrder(TerrainKind kind) => kind switch
+    {
+        TerrainKind.Forest or TerrainKind.Field or TerrainKind.Marsh => 0,
+        TerrainKind.Lake or TerrainKind.River => 1,
+        TerrainKind.Building => 2,
+        TerrainKind.Clearing => 3,
+        TerrainKind.Road => 4,
+        TerrainKind.BridgeCandidate or TerrainKind.ApprovedCrossing => 5,
+        TerrainKind.Settlement => 6,
+        _ => 3
+    };
+
+    public static IReadOnlyList<IStyle> ForTerrain(TerrainKind kind)
     {
         Color color = kind switch
         {
@@ -20,7 +32,7 @@ internal static class MapsuiStyleFactory
             _ => Color.White
         };
 
-        return new VectorStyle
+        var main = new VectorStyle
         {
             Fill = new Brush(color),
             Outline = new Pen(new Color(182, 187, 174), 0.5),
@@ -28,5 +40,22 @@ internal static class MapsuiStyleFactory
                 kind == TerrainKind.Road ? new Color(195, 182, 155) : color,
                 kind == TerrainKind.Road ? 2 : 3)
         };
+
+        if (kind is not (TerrainKind.Road or TerrainKind.BridgeCandidate or TerrainKind.ApprovedCrossing))
+        {
+            return [main];
+        }
+
+        Color casing = kind == TerrainKind.Road
+            ? new Color(150, 139, 120)
+            : new Color(91, 81, 69);
+        return
+        [
+            new VectorStyle
+            {
+                Line = new Pen(casing, kind == TerrainKind.Road ? 4 : 5)
+            },
+            main
+        ];
     }
 }

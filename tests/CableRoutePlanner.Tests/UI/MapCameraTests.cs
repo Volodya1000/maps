@@ -43,7 +43,7 @@ public sealed class MapCameraTests
     [InlineData(-1, 1)]
     [InlineData(1, -1)]
     [InlineData(1, 1)]
-    public void PanningRetainsVisibleMapStripAndLetsAnEdgeReachScreenCentre(int horizontal, int vertical)
+    public void PanningKeepsHalfOfMapViewportVisibleAndLetsAnEdgeReachScreenCentre(int horizontal, int vertical)
     {
         var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
@@ -62,10 +62,14 @@ public sealed class MapCameraTests
         Assert.Equal(resolution, viewport.Resolution);
         double visibleHalfWidth = viewport.Width * resolution / 2;
         double visibleHalfHeight = viewport.Height * resolution / 2;
-        Assert.True(viewport.CenterX + visibleHalfWidth > left);
-        Assert.True(viewport.CenterX - visibleHalfWidth < right);
-        Assert.True(viewport.CenterY + visibleHalfHeight > bottom);
-        Assert.True(viewport.CenterY - visibleHalfHeight < top);
+        double horizontalOverlap = Math.Min(right, viewport.CenterX + visibleHalfWidth)
+            - Math.Max(left, viewport.CenterX - visibleHalfWidth);
+        double verticalOverlap = Math.Min(top, viewport.CenterY + visibleHalfHeight)
+            - Math.Max(bottom, viewport.CenterY - visibleHalfHeight);
+        Assert.True(horizontalOverlap >= Math.Min(right - left, visibleHalfWidth) - 0.001);
+        Assert.True(verticalOverlap >= Math.Min(top - bottom, visibleHalfHeight) - 0.001);
+        Assert.InRange(viewport.CenterX, left, right);
+        Assert.InRange(viewport.CenterY, bottom, top);
         Assert.True(Math.Abs(viewport.CenterX - (horizontal < 0 ? left : right)) < visibleHalfWidth);
         Assert.True(Math.Abs(viewport.CenterY - (vertical < 0 ? bottom : top)) < visibleHalfHeight);
         window.Close();
@@ -78,7 +82,7 @@ public sealed class MapCameraTests
     [InlineData(90)]
     [InlineData(180)]
     [InlineData(270)]
-    public void RotatedViewportRetainsOfflineExtentAtEveryAngle(double angle)
+    public void RotatedViewportKeepsHalfOfMapViewportVisibleAtEveryAngle(double angle)
     {
         var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
@@ -100,10 +104,14 @@ public sealed class MapCameraTests
         double halfHeight = (requested.Width * Math.Abs(Math.Sin(radians))
             + requested.Height * Math.Abs(Math.Cos(radians))) * limited.Resolution / 2;
 
-        Assert.True(limited.CenterX + halfWidth > extent.MinX);
-        Assert.True(limited.CenterX - halfWidth < extent.MaxX);
-        Assert.True(limited.CenterY + halfHeight > extent.MinY);
-        Assert.True(limited.CenterY - halfHeight < extent.MaxY);
+        double horizontalOverlap = Math.Min(extent.MaxX, limited.CenterX + halfWidth)
+            - Math.Max(extent.MinX, limited.CenterX - halfWidth);
+        double verticalOverlap = Math.Min(extent.MaxY, limited.CenterY + halfHeight)
+            - Math.Max(extent.MinY, limited.CenterY - halfHeight);
+        Assert.True(horizontalOverlap >= Math.Min(extent.Width, halfWidth) - 0.001);
+        Assert.True(verticalOverlap >= Math.Min(extent.Height, halfHeight) - 0.001);
+        Assert.InRange(limited.CenterX, extent.MinX, extent.MaxX);
+        Assert.InRange(limited.CenterY, extent.MinY, extent.MaxY);
         Assert.Equal(angle, limited.Rotation);
         Assert.Equal(requested.Resolution, limited.Resolution);
         window.Close();
