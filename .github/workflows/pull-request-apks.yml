@@ -51,7 +51,7 @@ jobs:
         id: data-cache
         with:
           path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/prepare.py') }}
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py') }}
       - if: steps.data-cache.outputs.cache-hit != 'true'
         name: Download verified OSM snapshot
         run: |
@@ -67,7 +67,8 @@ jobs:
         run: |
           cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
           cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
-      - uses: actions/upload-artifact@v7
+      - if: steps.data-cache.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v7
         with:
           name: pull-request-belarus-data
           path: artifacts/belarus/
@@ -86,7 +87,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tested_sha }}
-      - uses: actions/download-artifact@v8
+      - uses: actions/cache/restore@v6
+        id: data-cache
+        with:
+          path: artifacts/belarus
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py') }}
+      - if: steps.data-cache.outputs.cache-hit != 'true'
+        uses: actions/download-artifact@v8
         with:
           name: pull-request-belarus-data
           path: artifacts/belarus
@@ -102,22 +109,19 @@ jobs:
           packages: platform-tools
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
       - run: dotnet workload install android --skip-manifest-update
-      - name: Prepare preview signing key
+      - uses: actions/download-artifact@v8
+        with:
+          name: pull-request-preview-base
+          path: ${{ runner.temp }}/preview-base
+      - name: Reuse the tested Minsk preview
         run: |
-          keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/preview.keystore" -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=CableRoutePlanner Preview,O=Test,C=BY'
-      - name: Build lightweight Minsk APK
-        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:AndroidVersionCode="$ANDROID_VERSION_CODE" -p:ApplicationId="$PREVIEW_PACKAGE_ID" -p:GeodataDirectory="$GITHUB_WORKSPACE/samples/real-geodata-fixtures/minsk" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
-      - run: |
           mkdir -p artifacts/apk
-          publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish
-          mapfile -t signed_apks < <(find "$publish_dir" -maxdepth 1 -type f -name '*-Signed.apk')
-          test "${#signed_apks[@]}" -eq 1
-          cp "${signed_apks[0]}" "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Minsk.apk"
-      - run: dotnet clean src/CableRoutePlanner.Android -c Release
+          cp "$RUNNER_TEMP/preview-base/Minsk.apk" "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Minsk.apk"
+          test -s "$RUNNER_TEMP/preview-base/preview.keystore"
       - name: Split country map into bounded Android assets
         run: python3 tools/split_android_map.py artifacts/belarus artifacts/android-belarus
       - name: Build full Belarus APK
-        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:AndroidVersionCode="$ANDROID_VERSION_CODE" -p:ApplicationId="$PREVIEW_PACKAGE_ID" -p:GeodataDirectory="$GITHUB_WORKSPACE/artifacts/android-belarus" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
+        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:AndroidVersionCode="$ANDROID_VERSION_CODE" -p:ApplicationId="$PREVIEW_PACKAGE_ID" -p:GeodataDirectory="$GITHUB_WORKSPACE/artifacts/android-belarus" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview-base/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
       - run: |
           publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish
           mapfile -t signed_apks < <(find "$publish_dir" -maxdepth 1 -type f -name '*-Signed.apk')
@@ -148,23 +152,6 @@ jobs:
             signer="$actual_signer"
           done
 
-      - name: Enable KVM for Android 15 emulator
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - name: Install the exact published Minsk APK on Android 15
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: |
-            set -e
-            adb install -r "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Minsk.apk"
-            adb shell pm path "$PREVIEW_PACKAGE_ID" | grep -F 'package:'
       - name: Explain preview installation behavior
         run: |
           {
@@ -174,7 +161,7 @@ jobs:
             echo
             echo "Each run/attempt uses a separate test app ID and temporary signing key."
             echo "Previews can be installed alongside the main application; they do not update older preview runs."
-            echo "The exact downloadable Minsk APK was installed on an Android 15 emulator."
+            echo "The exact downloadable Minsk APK passed the parent Android build and emulator startup gate."
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:

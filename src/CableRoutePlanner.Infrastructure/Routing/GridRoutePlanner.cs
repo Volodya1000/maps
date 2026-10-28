@@ -107,9 +107,11 @@ public sealed class GridRoutePlanner(
         CancellationToken ct)
     {
         LocalProjection projection = area.Projection;
-        GridMesh mesh = gridGenerator.Generate(bounds, options, projection);
-
         TerrainEvaluator evaluator = area.Evaluator;
+        GridMesh mesh = gridGenerator.Generate(bounds, options, projection) with
+        {
+            Portals = evaluator.BridgePortals
+        };
         var cache = new Dictionary<(int, int), EdgeEvaluation?>();
         int gridEdgeEvaluations = 0;
         EdgeEvaluation? GridEdge(int a, int b)
@@ -118,7 +120,7 @@ public sealed class GridRoutePlanner(
             if (!cache.TryGetValue(key, out EdgeEvaluation? edge))
             {
                 gridEdgeEvaluations++;
-                cache[key] = edge = evaluator.Evaluate(mesh.Nodes[a], mesh.Nodes[b]);
+                cache[key] = edge = evaluator.EvaluateForSearch(mesh.Nodes[a], mesh.Nodes[b]);
             }
 
             return edge;
@@ -161,7 +163,7 @@ public sealed class GridRoutePlanner(
                         end,
                         mesh,
                         profile,
-                        (from, to) => evaluator.Evaluate(from, to)?.Cost(profile),
+                        (from, to) => evaluator.EvaluateForSearch(from, to)?.Cost(profile),
                         (from, to) => GridEdge(from, to)?.Cost(profile),
                         ct).ToList();
                 // Smooth the grid path first, then impose the surveyed bridge alignment.

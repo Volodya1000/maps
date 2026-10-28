@@ -4,6 +4,7 @@ using CableRoutePlanner.Infrastructure.Geography;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Index.Strtree;
 using NetTopologySuite.IO;
+using NetTopologySuite.Geometries.Prepared;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
 
@@ -34,13 +35,17 @@ internal sealed class TerrainEvaluator
 
     private const int MaximumSimplificationLookahead = 64;
 
-    private sealed record Obstacle(long Id, TerrainKind Kind, Geometry Geometry);
+    private sealed record Obstacle(
+        long Id,
+        TerrainKind Kind,
+        Geometry Geometry,
+        IPreparedGeometry PreparedGeometry);
 
-    private sealed record BridgeGuide(Geometry Bridge, Geometry River, Geometry WaterSection);
+    private sealed record BridgeGuide(Geometry Bridge, Geometry Water, Geometry WaterSection);
 
     private readonly record struct ProjectedFeature(MapFeature Feature, Geometry Geometry);
 
-    private readonly record struct BridgeRiverMatch(ProjectedFeature Bridge, Geometry[] Rivers);
+    private readonly record struct BridgeWaterMatch(ProjectedFeature Bridge, Geometry[] WaterObstacles);
 
     private readonly record struct BridgeSplice(
         List<Coordinate> Path,
@@ -55,6 +60,8 @@ internal sealed class TerrainEvaluator
     private readonly LocalProjection _projection;
 
     private readonly BridgeGuide[] _bridgeGuides;
+
+    private readonly GridPortal[] _bridgePortals;
 
     private readonly double _bridgeCorridorMetres;
 
@@ -78,33 +85,38 @@ internal sealed class TerrainEvaluator
                 && !string.IsNullOrWhiteSpace(f.Feature.ApprovalId))
             .Select(f => f.Geometry)
             .ToArray();
-        var riverIndex = new STRtree<Geometry>();
-        Geometry[] rivers = projected.Where(f => f.Feature.Kind == TerrainKind.River)
+        var waterIndex = new STRtree<Geometry>();
+        Geometry[] waterObstacles = projected
+            .Where(f => f.Feature.Kind is TerrainKind.River or TerrainKind.Lake)
             .Select(f => f.Geometry)
             .ToArray();
-        foreach (Geometry river in rivers)
+        foreach (Geometry water in waterObstacles)
         {
-            riverIndex.Insert(river.EnvelopeInternal, river);
+            waterIndex.Insert(water.EnvelopeInternal, water);
         }
 
-        riverIndex.Build();
+        waterIndex.Build();
         _bridgeCorridorMetres = Math.Max(cellSizeMetres * 0.45, 2);
-        BridgeRiverMatch[] bridgeFeatures = projected
+        BridgeWaterMatch[] bridgeFeatures = projected
             .Where(f => f.Feature.Kind == TerrainKind.BridgeCandidate)
-            .Select(f => new BridgeRiverMatch(
+            .Select(f => new BridgeWaterMatch(
                 f,
-                riverIndex.Query(f.Geometry.EnvelopeInternal)
-                    .Where(river => river.Intersects(f.Geometry))
+                waterIndex.Query(f.Geometry.EnvelopeInternal)
+                    .Where(water => water.Intersects(f.Geometry))
                     .ToArray()))
-            .Where(x => x.Rivers.Length > 0)
+            .Where(x => x.WaterObstacles.Length > 0)
             .ToArray();
         _bridgeGuides = bridgeFeatures
-            .SelectMany(x => x.Rivers.Select(river =>
+            .SelectMany(x => x.WaterObstacles.Select(water =>
             {
-                Geometry section = x.Bridge.Geometry.Intersection(river);
-                return new BridgeGuide(x.Bridge.Geometry, river, section);
+                Geometry section = x.Bridge.Geometry.Intersection(water);
+                return new BridgeGuide(x.Bridge.Geometry, water, section);
             }))
             .Where(x => !x.WaterSection.IsEmpty && x.WaterSection.Length > 0)
+            .ToArray();
+        _bridgePortals = bridgeFeatures
+            .Select(feature => new GridPortal(feature.Bridge.Geometry.Coordinates))
+            .Where(portal => portal.Coordinates.Length >= 2)
             .ToArray();
         Dictionary<long, Geometry> bridgeOpenings = bridgeFeatures
             .Select(f => (
@@ -123,7 +135,7 @@ internal sealed class TerrainEvaluator
         {
             MapFeature feature = projectedFeature.Feature;
             Geometry geometry = projectedFeature.Geometry;
-            if (feature.Kind == TerrainKind.River)
+            if (feature.Kind is TerrainKind.River or TerrainKind.Lake)
             {
                 foreach (Geometry opening in _waterOpenings.Query(geometry.EnvelopeInternal))
                 {
@@ -141,18 +153,28 @@ internal sealed class TerrainEvaluator
                     continue;
                 }
 
-                _index.Insert(corridor.EnvelopeInternal, new(feature.Id, feature.Kind, corridor));
+                _index.Insert(corridor.EnvelopeInternal, new(
+                    feature.Id,
+                    feature.Kind,
+                    corridor,
+                    PreparedGeometryFactory.Prepare(corridor)));
                 continue;
             }
 
             if (!geometry.IsEmpty)
             {
-                _index.Insert(geometry.EnvelopeInternal, new(feature.Id, feature.Kind, geometry));
+                _index.Insert(geometry.EnvelopeInternal, new(
+                    feature.Id,
+                    feature.Kind,
+                    geometry,
+                    PreparedGeometryFactory.Prepare(geometry)));
             }
         }
 
         _index.Build();
     }
+
+    public IReadOnlyList<GridPortal> BridgePortals => _bridgePortals;
 
     public List<Coordinate> AlignBridgeCrossings(IReadOnlyList<Coordinate> route, CostProfile profile)
     {
@@ -170,7 +192,7 @@ internal sealed class TerrainEvaluator
             Coordinate current = aligned[i];
             LineString segment = _factory.CreateLineString([previous, current]);
             BridgeGuide? guide = _bridgeGuides
-                .Where(candidate => candidate.River.Intersects(segment)
+                .Where(candidate => candidate.Water.Intersects(segment)
                     && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres)
                 .OrderBy(candidate => candidate.Bridge.Distance(segment))
                 .FirstOrDefault();
@@ -243,7 +265,7 @@ internal sealed class TerrainEvaluator
         {
             LineString segment = _factory.CreateLineString([route[index - 1], route[index]]);
             foreach (BridgeGuide? guide in _bridgeGuides.Where(candidate =>
-                candidate.River.Intersects(segment)
+                candidate.Water.Intersects(segment)
                 && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres))
             {
                 Coordinate[] waterSection = guide.WaterSection.Coordinates;
@@ -322,13 +344,19 @@ internal sealed class TerrainEvaluator
     }
 
     public EdgeEvaluation? Evaluate(Coordinate a, Coordinate b)
+        => Evaluate(a, b, useProjectedLength: false);
+
+    public EdgeEvaluation? EvaluateForSearch(Coordinate a, Coordinate b)
+        => Evaluate(a, b, useProjectedLength: true);
+
+    private EdgeEvaluation? Evaluate(Coordinate a, Coordinate b, bool useProjectedLength)
     {
         LineString line = _factory.CreateLineString([a, b]);
         var contribution = new TerrainContribution();
         foreach (Obstacle obstacle in _index.Query(line.EnvelopeInternal))
         {
             Geometry geometry = obstacle.Geometry;
-            if (!geometry.Intersects(line))
+            if (!obstacle.PreparedGeometry.Intersects(line))
             {
                 continue;
             }
@@ -343,12 +371,16 @@ internal sealed class TerrainEvaluator
                 return null;
             }
 
-            Geometry intersection = geometry.Intersection(line);
+            Geometry intersection = obstacle.PreparedGeometry.Covers(line)
+                ? line
+                : geometry.Intersection(line);
             rule.Apply(intersection, obstacle.Id, contribution);
         }
 
         double projectedLength = line.Length;
-        double length = _projection.Inverse(a).DistanceTo(_projection.Inverse(b));
+        double length = useProjectedLength
+            ? projectedLength
+            : _projection.Inverse(a).DistanceTo(_projection.Inverse(b));
         double scale = projectedLength > 0 ? length / projectedLength : 1;
         return new(
             length,

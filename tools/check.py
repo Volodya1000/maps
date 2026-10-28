@@ -304,6 +304,9 @@ def android() -> None:
         f"-p:AndroidSdkDirectory={sdk}",
         f"-p:AndroidVersionCode={version_code}",
     ]
+    application_id = os.environ.get("ANDROID_APPLICATION_ID")
+    if application_id:
+        publish.append(f"-p:ApplicationId={application_id}")
     keystore = os.environ.get("ANDROID_SIGNING_KEYSTORE")
     if keystore:
         publish.extend(
@@ -349,7 +352,7 @@ def android() -> None:
         (line for line in badging.splitlines() if line.startswith("package:")), ""
     )
     for expected in (
-        "name='by.cablerouteplanner.app'",
+        f"name='{application_id or 'by.cablerouteplanner.app'}'",
         f"versionCode='{version_code}'",
         f"versionName='{version}'",
     ):

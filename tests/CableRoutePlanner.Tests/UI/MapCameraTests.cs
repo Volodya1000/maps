@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using CableRoutePlanner.UI.MapAdapters;
@@ -13,6 +14,17 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class MapCameraTests
 {
+    private sealed class RenderCountingMapControl : Mapsui.UI.Avalonia.MapControl
+    {
+        public int RenderCount { get; private set; }
+
+        public override void Render(DrawingContext context)
+        {
+            RenderCount++;
+            base.Render(context);
+        }
+    }
+
     [AvaloniaTheory]
     [InlineData(900, 600)]
     [InlineData(412, 860)]
@@ -148,6 +160,33 @@ public sealed class MapCameraTests
         Assert.Equal(before.CenterX, after.CenterX, 6);
         Assert.Equal(before.CenterY, after.CenterY, 6);
         Assert.Equal(before.Resolution, after.Resolution, 6);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task CompassResetRequestsARenderWithoutAnotherPointerEvent()
+    {
+        var control = new RenderCountingMapControl();
+        var window = new Window { Content = control, Width = 900, Height = 600 };
+        window.Show();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        adapter.InitializeViewport();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Viewport initial = control.Map.Navigator.Viewport;
+        control.Map.Navigator.SetViewport(
+            initial with { Rotation = 45 },
+            0,
+            new Mapsui.Animations.Easing(progress => progress));
+        await Task.Delay(control.UpdateInterval * 2);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        int rendersBeforeReset = control.RenderCount;
+
+        adapter.ResetNorth();
+        await Task.Delay(control.UpdateInterval * 2);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.True(control.RenderCount > rendersBeforeReset);
+        Assert.Equal(0, control.Map.Navigator.Viewport.Rotation, 6);
         window.Close();
     }
 

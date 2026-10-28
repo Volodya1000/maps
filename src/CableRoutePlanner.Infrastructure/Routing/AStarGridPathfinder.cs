@@ -27,9 +27,16 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         Func<int, int, double?> gridEdgeCost,
         CancellationToken cancellationToken)
     {
-        int startId = mesh.Nodes.Length;
+        IReadOnlyList<GridPortal> portals = mesh.Portals ?? [];
+        Coordinate[] portalNodes = portals.SelectMany(portal => portal.Coordinates).ToArray();
+        int portalStartId = mesh.Nodes.Length;
+        int startId = portalStartId + portalNodes.Length;
         int endId = startId + 1;
-        Coordinate Node(int id) => id == startId ? start : id == endId ? destination : mesh.Nodes[id];
+        Coordinate Node(int id) => id == startId
+            ? start
+            : id == endId
+                ? destination
+                : id < portalStartId ? mesh.Nodes[id] : portalNodes[id - portalStartId];
 
         Dictionary<int, double> Connect(Coordinate point)
         {
@@ -54,6 +61,54 @@ public sealed class AStarGridPathfinder : IGridPathfinder
 
         Dictionary<int, double> fromStart = Connect(start);
         Dictionary<int, double> toEnd = Connect(destination);
+        var portalConnections = new Dictionary<int, List<(int Id, double Cost)>>();
+        var gridToPortals = new Dictionary<int, List<(int Id, double Cost)>>();
+        void AddPortalConnection(int from, int to, double cost)
+        {
+            if (!portalConnections.TryGetValue(from, out List<(int Id, double Cost)>? connections))
+            {
+                connections = [];
+                portalConnections[from] = connections;
+            }
+
+            connections.Add((to, cost));
+        }
+
+        void ConnectPortalEnd(int portalId)
+        {
+            foreach (KeyValuePair<int, double> connection in Connect(Node(portalId)))
+            {
+                AddPortalConnection(portalId, connection.Key, connection.Value);
+                if (!gridToPortals.TryGetValue(connection.Key, out List<(int Id, double Cost)>? reverse))
+                {
+                    reverse = [];
+                    gridToPortals[connection.Key] = reverse;
+                }
+
+                reverse.Add((portalId, connection.Value));
+            }
+        }
+
+        int portalOffset = 0;
+        foreach (GridPortal portal in portals)
+        {
+            int firstId = portalStartId + portalOffset;
+            for (int index = 1; index < portal.Coordinates.Length; index++)
+            {
+                int previousId = firstId + index - 1;
+                int currentId = firstId + index;
+                if (evaluate(Node(previousId), Node(currentId)) is { } cost)
+                {
+                    AddPortalConnection(previousId, currentId, cost);
+                    AddPortalConnection(currentId, previousId, cost);
+                }
+            }
+
+            ConnectPortalEnd(firstId);
+            ConnectPortalEnd(firstId + portal.Coordinates.Length - 1);
+            portalOffset += portal.Coordinates.Length;
+        }
+
         double? direct = start.Distance(destination) <= mesh.CellSizeMetres * 2 ? evaluate(start, destination) : null;
         if ((fromStart.Count == 0 || toEnd.Count == 0) && direct is null)
         {
@@ -84,6 +139,27 @@ public sealed class AStarGridPathfinder : IGridPathfinder
                 yield return (endId, finish);
             }
 
+            if (id >= portalStartId)
+            {
+                if (portalConnections.TryGetValue(id, out List<(int Id, double Cost)>? connections))
+                {
+                    foreach ((int portalNeighbour, double portalCost) in connections)
+                    {
+                        yield return (portalNeighbour, portalCost);
+                    }
+                }
+
+                yield break;
+            }
+
+            if (gridToPortals.TryGetValue(id, out List<(int Id, double Cost)>? portalLinks))
+            {
+                foreach ((int portalId, double portalCost) in portalLinks)
+                {
+                    yield return (portalId, portalCost);
+                }
+            }
+
             int x = id % mesh.Columns;
             int y = id / mesh.Columns;
             for (int dy = -1; dy <= 1; dy++)
@@ -107,7 +183,7 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         }
 
         var queue = new PriorityQueue<(int Id, double Cost), double>();
-        double[] distances = Enumerable.Repeat(double.PositiveInfinity, mesh.Nodes.Length + 2).ToArray();
+        double[] distances = Enumerable.Repeat(double.PositiveInfinity, mesh.Nodes.Length + portalNodes.Length + 2).ToArray();
         int[] parents = Enumerable.Repeat(-1, distances.Length).ToArray();
         distances[startId] = 0;
         queue.Enqueue((startId, 0), 0);
