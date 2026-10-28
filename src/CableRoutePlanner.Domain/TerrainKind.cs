@@ -12,5 +12,7 @@ public enum TerrainKind
     Building,
     BridgeCandidate,
     ApprovedCrossing,
-    Settlement
+    Settlement,
+    OverheadGasPipeline,
+    GasPipelineCrossingCandidate
 }

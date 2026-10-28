@@ -3,6 +3,8 @@
 
 def include_in_display_lod(kind, tags, area, lod):
     """Keep overview layers readable while retaining local settlement detail."""
+    if kind == "OverheadGasPipeline":
+        return False
     road = tags.get("highway", "")
     if lod == 0:
         return (

@@ -52,6 +52,22 @@ public static class TestApplication
 public sealed class UiTests
 {
     [AvaloniaFact]
+    public async Task GasPipelineCandidateRendersCrossingSpanAndLabelWithoutTheWholePipeline()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
+        await adapter.SetFeaturesAsync([
+            TestData.Line(1, TerrainKind.OverheadGasPipeline, (100, 0), (100, 500)),
+            TestData.Line(2, TerrainKind.GasPipelineCrossingCandidate, (100, 138), (100, 150), (100, 162))]);
+        Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            item => item.Name == "Офлайн OSM");
+        Mapsui.Nts.GeometryFeature feature = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features));
+        Assert.IsType<NetTopologySuite.Geometries.LineString>(feature.Geometry);
+        Assert.Equal("ГАЗ", Assert.Single(feature.Styles.OfType<Mapsui.Styles.LabelStyle>()).GetLabelText(feature));
+        Assert.Equal(3, feature.Geometry!.Coordinates.Length);
+    }
+
+    [AvaloniaFact]
     public async Task RoadContactToggleShowsSelectedAlternativeAndClearsOnDisableOrRouteRemoval()
     {
         using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
@@ -168,7 +184,8 @@ public sealed class UiTests
         // Assert
         Mapsui.Layers.MemoryLayer rendered = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
             layer => layer.Name == "Офлайн OSM");
-        Assert.Equal(kinds.Length, rendered.Features!.Count());
+        // Source pipelines are calculation data; only their derived road spans are displayed.
+        Assert.Equal(kinds.Count(kind => kind != TerrainKind.OverheadGasPipeline), rendered.Features!.Count());
         Assert.All(rendered.Features, feature => Assert.NotEmpty(feature.Styles));
     }
 

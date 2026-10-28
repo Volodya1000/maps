@@ -18,7 +18,7 @@ public static class TerrainTraversalPolicy
         TerrainKind.Marsh or TerrainKind.Lake or TerrainKind.River or TerrainKind.Building => TerrainTraversalRule.Blocked,
         TerrainKind.Forest or TerrainKind.Field or TerrainKind.Clearing => TerrainTraversalRule.Costed,
         TerrainKind.Road => TerrainTraversalRule.CrossingPenalty,
-        TerrainKind.BridgeCandidate => TerrainTraversalRule.ConditionalTransition,
+        TerrainKind.BridgeCandidate or TerrainKind.GasPipelineCrossingCandidate => TerrainTraversalRule.ConditionalTransition,
         TerrainKind.ApprovedCrossing => TerrainTraversalRule.ApprovedTransition,
         _ => TerrainTraversalRule.Neutral
     };

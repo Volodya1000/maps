@@ -17,6 +17,7 @@ public static class RouteMetricsFormatter
             $"Пересечённых дорог: {metrics.RoadCrossings}",
             $"Разрешённых водных переходов: {metrics.ApprovedWaterCrossings}",
             $"Переходов по мостам: {metrics.PotentialBridgeCrossings}",
+            $"Кандидатов по газопроводам: {metrics.PotentialGasPipelineCrossings}",
             $"Взвешенная стоимость: {metrics.WeightedCost:N0} усл. м");
     }
 }

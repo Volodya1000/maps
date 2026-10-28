@@ -30,6 +30,10 @@
             <TextBlock
                 Text="Мелкая сетка увеличивает время и расход памяти. Для дальних маршрутов шаг автоматически укрупняется в пределах лимита узлов, а затем маршрут проверяется по исходным геометриям. Высоты и уклоны не учитываются без DEM."
                 TextWrapping="Wrap" />
+            <CheckBox IsChecked="{Binding PreferOverheadGasCrossings}">
+                <TextBlock Text="Предпочитать воздушные переходы газопроводов (кандидаты)" TextWrapping="Wrap" />
+            </CheckBox>
+            <TextBlock Text="Только по размеченной оси перехода. Пригодность крепления и разрешение владельца не подтверждены." TextWrapping="Wrap" />
             <Button
                 Classes="primary"
                 Command="{Binding Save}"

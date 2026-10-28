@@ -29,4 +29,5 @@
     <SolidColorBrush x:Key="AppForestBadgeBrush" Color="#DDECDD" />
     <SolidColorBrush x:Key="AppFieldBadgeBrush" Color="#F3EDC8" />
     <SolidColorBrush x:Key="AppBridgeBadgeBrush" Color="#E7DFF2" />
+    <SolidColorBrush x:Key="AppGasBadgeBrush" Color="#CCE9EC" />
 </ResourceDictionary>

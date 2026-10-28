@@ -173,6 +173,7 @@
                                             <Border Classes="metric-badge forest"><TextBlock Text="{Binding ForestText}" /></Border>
                                             <Border Classes="metric-badge field"><TextBlock Text="{Binding FieldText}" /></Border>
                                             <Border Classes="metric-badge bridge"><TextBlock Text="{Binding BridgesText}" /></Border>
+                                            <Border Classes="metric-badge pipeline" IsVisible="{Binding HasGas}" ToolTip.Tip="Кандидаты воздушных переходов; согласование не подтверждено"><TextBlock Text="{Binding GasText}" /></Border>
                                         </WrapPanel>
                                         </StackPanel>
                                     </Button>

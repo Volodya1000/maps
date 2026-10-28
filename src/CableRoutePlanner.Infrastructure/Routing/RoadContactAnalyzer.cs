@@ -15,26 +15,42 @@ internal sealed class RoadContactAnalyzer
     private readonly LocalProjection _projection;
 
     public RoadContactAnalyzer(IReadOnlyList<MapFeature> features, LocalProjection projection)
+        : this(ProjectRoads(features, projection), projection) { }
+
+    public RoadContactAnalyzer(IEnumerable<(long Id, Geometry Geometry)> roads, LocalProjection projection)
     {
         _projection = projection;
-        var reader = new WKBReader();
-        foreach (MapFeature feature in features.Where(feature =>
-            feature.Kind is TerrainKind.Road or TerrainKind.BridgeCandidate))
+        foreach ((long id, Geometry geometry) in roads)
         {
-            Geometry geometry = projection.Forward(reader.Read(feature.Wkb));
-            _index.Insert(geometry.EnvelopeInternal, new Road(feature.Id, geometry));
+            _index.Insert(geometry.EnvelopeInternal, new Road(id, geometry));
         }
         _index.Build();
     }
 
-    public IReadOnlyList<RouteRoadContact> Analyze(IReadOnlyList<Coordinate> route)
+    private static IEnumerable<(long Id, Geometry Geometry)> ProjectRoads(IReadOnlyList<MapFeature> features, LocalProjection projection)
+    {
+        var reader = new WKBReader();
+        return features.Where(feature => feature.Kind is TerrainKind.Road or TerrainKind.BridgeCandidate)
+            .Select(feature => (feature.Id, projection.Forward(reader.Read(feature.Wkb))));
+    }
+
+    public IReadOnlyList<RouteRoadContact> Analyze(IReadOnlyList<Coordinate> route, CancellationToken cancellationToken = default)
     {
         if (route.Count < 2)
         { return []; }
         LineString line = new(route.ToArray());
         List<RouteRoadContact> contacts = [];
-        foreach (Road road in _index.Query(line.EnvelopeInternal).OrderBy(road => road.Id))
+        Dictionary<long, Road> candidates = [];
+        for (int i = 1; i < route.Count; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            Envelope segmentBounds = new(route[i - 1], route[i]);
+            foreach (Road road in _index.Query(segmentBounds))
+            { candidates.TryAdd(road.Id, road); }
+        }
+        foreach (Road road in candidates.Values.OrderBy(road => road.Id))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             Append(road.Geometry.Intersection(line), road.Id);
         }
         return contacts.AsReadOnly();

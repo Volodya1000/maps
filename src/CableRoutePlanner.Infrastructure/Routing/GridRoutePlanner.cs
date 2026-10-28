@@ -69,7 +69,7 @@ public sealed class GridRoutePlanner(
             Math.Max(requested.South, coverage.South),
             Math.Min(requested.East, coverage.East),
             Math.Min(requested.North, coverage.North));
-        PreparedRoutingArea area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken);
+        PreparedRoutingArea area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken, options.PreferOverheadGasCrossings);
         PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds, null);
 
         Stopwatch calculationTimer = Stopwatch.StartNew();
@@ -108,9 +108,14 @@ public sealed class GridRoutePlanner(
     {
         LocalProjection projection = area.Projection;
         TerrainEvaluator evaluator = area.Evaluator;
-        GridMesh mesh = gridGenerator.Generate(bounds, options, projection) with
+        GridMesh mesh = gridGenerator.Generate(bounds, options, projection);
+        Coordinate maximum = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
+        mesh = mesh with
         {
-            Portals = evaluator.BridgePortals
+            // A portal outside the queried area could bypass obstacles we never loaded.
+            Portals = evaluator.GetTransitionPortals().Where(portal => portal.Coordinates.All(point =>
+                point.X >= mesh.Minimum.X && point.Y >= mesh.Minimum.Y
+                && point.X <= maximum.X && point.Y <= maximum.Y)).ToArray()
         };
         var cache = new Dictionary<(int, int), EdgeEvaluation?>();
         int gridEdgeEvaluations = 0;
@@ -182,16 +187,11 @@ public sealed class GridRoutePlanner(
                 throw new PlanningException("Все точки совпадают. Установите разные точки.");
             }
 
-            // Alternatives must represent different geometry; profiles alone do not create an alternative.
-            if (result.Any(r => Similar(r.Geometry, route, projection, options.CellSizeMetres)))
-            {
-                continue;
-            }
-
             double length = 0, forest = 0, field = 0, cost = 0;
             var roads = new HashSet<long>();
             var crossings = new HashSet<long>();
             var bridgeCandidates = new HashSet<long>();
+            HashSet<long> gasCandidates = [];
             for (int i = 1; i < route.Count; i++)
             {
                 EdgeEvaluation edge = evaluator.Evaluate(route[i - 1], route[i])
@@ -203,6 +203,16 @@ public sealed class GridRoutePlanner(
                 roads.UnionWith(edge.Roads);
                 crossings.UnionWith(edge.Crossings);
                 bridgeCandidates.UnionWith(edge.BridgeCandidates);
+                gasCandidates.UnionWith(edge.GasCandidates);
+            }
+
+            // A nearby aerial candidate and a ground crossing are meaningful choices,
+            // even when their lines occupy almost the same map corridor.
+            if (result.Any(existing => (existing.GasPipelineCandidateIds ?? [])
+                .SequenceEqual(gasCandidates.Order())
+                && Similar(existing.Geometry, route, projection, options.CellSizeMetres)))
+            {
+                continue;
             }
 
             result.Add(
@@ -218,10 +228,12 @@ public sealed class GridRoutePlanner(
                         crossings.Count,
                         bridgeCandidates.Count,
                         cost,
-                        null),
+                        null,
+                        gasCandidates.Count),
                     Array.AsReadOnly(evaluator.BridgeTransitionPoints(route)
                         .Select(projection.Inverse).ToArray()),
-                    evaluator.RoadContacts(route)));
+                    evaluator.RoadContacts(route, ct),
+                    Array.AsReadOnly(gasCandidates.Order().ToArray())));
         }
 
         SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);

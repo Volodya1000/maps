@@ -8,7 +8,8 @@ public sealed record SegmentTerrainFacts(
     double ClearingMetres,
     int RoadCrossings,
     int BridgeCandidates,
-    int ApprovedCrossings)
+    int ApprovedCrossings,
+    int OverheadGasCandidates = 0)
 {
     public void Validate()
     {
@@ -34,6 +35,12 @@ public sealed record SegmentTerrainFacts(
         ValidateCount(RoadCrossings, nameof(RoadCrossings), "Количество пересечений дорог");
         ValidateCount(BridgeCandidates, nameof(BridgeCandidates), "Количество потенциальных мостовых переходов");
         ValidateCount(ApprovedCrossings, nameof(ApprovedCrossings), "Количество одобренных переходов");
+        ValidateCount(OverheadGasCandidates, nameof(OverheadGasCandidates), "Количество воздушных кандидатов");
+        if (OverheadGasCandidates > RoadCrossings)
+        {
+            throw new ArgumentOutOfRangeException(nameof(OverheadGasCandidates), OverheadGasCandidates,
+                "Число воздушных кандидатов не может превышать число пересечений дорог.");
+        }
     }
 
     private static void ValidateDistance(double value, string parameterName, string label)
@@ -67,7 +74,7 @@ public static class RouteCostCalculator
             - facts.ClearingMetres * (1 - profile.Clearing)
             + facts.ForestMetres * profile.Forest
             + facts.FieldMetres * profile.Field
-            + ((double)facts.RoadCrossings + facts.BridgeCandidates) * profile.RoadCrossingMetres;
+            + ((double)facts.RoadCrossings - facts.OverheadGasCandidates + facts.BridgeCandidates) * profile.RoadCrossingMetres;
         if (!double.IsFinite(cost) || cost < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(facts), facts,

@@ -10,6 +10,17 @@ namespace CableRoutePlanner.Tests;
 public sealed class RoadContactTests
 {
     [Fact]
+    public void CancelledContactReviewDoesNotPublishPartialContacts()
+    {
+        LocalProjection projection = new(TestData.P(0, 0));
+        var analyzer = new RoadContactAnalyzer([TestData.Line(1, TerrainKind.Road, (50, -20), (50, 20))], projection);
+        using CancellationTokenSource cancellation = new();
+        cancellation.Cancel();
+        Assert.Throws<OperationCanceledException>(() => analyzer.Analyze(
+            [new Coordinate(0, 0), new Coordinate(100, 0)], cancellation.Token));
+    }
+
+    [Fact]
     public void DistinguishesPointCrossingFromSharedRoadSectionAndKeepsBothForSameRoad()
     {
         MapFeature road = TestData.Line(12, TerrainKind.Road, (0, 0), (100, 0), (100, 100), (200, 100));

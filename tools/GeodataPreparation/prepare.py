@@ -14,6 +14,8 @@ import xml.etree.ElementTree as ET
 from collections import Counter
 from pathlib import Path
 
+from feature_classification import classify
+from pipeline_crossings import pipeline_road_candidates
 from shapely import make_valid, wkb
 from shapely.geometry import LineString, Polygon, box, shape
 from shapely.ops import polygonize, transform, unary_union
@@ -25,34 +27,6 @@ METRES_PER_DEGREE = 111195.0802335
 
 def tags(element):
     return {t.attrib["k"]: t.attrib["v"] for t in element.findall("tag")}
-
-
-def classify(t):
-    if t.get("natural") == "wetland":
-        return "Marsh"
-    if t.get("natural") == "water" or t.get("landuse") == "reservoir":
-        return "River" if t.get("water") in ("river", "stream", "canal") else "Lake"
-    if t.get("waterway") in ("river", "stream", "canal", "ditch", "drain"):
-        return "River"
-    if "building" in t and t["building"] != "no":
-        return "Building"
-    if t.get("natural") == "wood" or t.get("landuse") == "forest":
-        return "Forest"
-    if t.get("landuse") in ("farmland", "meadow") or t.get("natural") == "grassland":
-        return "Field"
-    if t.get("man_made") == "cutline":
-        return "Clearing"
-    if t.get("bridge") not in (None, "no") and "highway" in t:
-        return "BridgeCandidate"
-    if "highway" in t and t["highway"] not in (
-        "footway",
-        "path",
-        "steps",
-        "cycleway",
-        "pedestrian",
-    ):
-        return "Road"
-    return None
 
 
 def fetch(url):
@@ -237,6 +211,18 @@ def main():
             (cur.lastrowid, west, east, south, north),
         )
         counts[kind] += 1
+    for geometry, source in pipeline_road_candidates(con):
+        raw = wkb.dumps(geometry)
+        row = con.execute(
+            "INSERT INTO features(kind,wkb,name,source_id) VALUES(?,?,?,?)",
+            ("GasPipelineCrossingCandidate", raw, "Газопровод над дорогой", source),
+        ).lastrowid
+        west, south, east, north = geometry.bounds
+        con.execute(
+            "INSERT INTO feature_index VALUES(?,?,?,?,?)",
+            (row, west, east, south, north),
+        )
+        counts["GasPipelineCrossingCandidate"] += 1
     con.commit()
     con.execute("VACUUM")
     con.close()

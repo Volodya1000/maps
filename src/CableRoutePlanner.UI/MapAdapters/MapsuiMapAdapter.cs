@@ -260,7 +260,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     {
         var reader = new WKBReader();
         var transform = new MercatorTransformer();
-        return features.OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind)).Select(f =>
+        return features.Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline).OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind)).Select(f =>
         {
             cancellationToken.ThrowIfCancellationRequested();
             var feature = new GeometryFeature(transform.Transform(reader.Read(f.Wkb)));

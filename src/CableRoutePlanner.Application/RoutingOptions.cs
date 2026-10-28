@@ -3,7 +3,8 @@ namespace CableRoutePlanner.Application;
 public sealed record RoutingOptions(
     double CellSizeMetres = 25,
     int MaxNodes = 100000,
-    double ReserveFraction = 0.10)
+    double ReserveFraction = 0.10,
+    bool PreferOverheadGasCrossings = false)
 {
     public const double MinCellSizeMetres = 5;
     public const double MaxCellSizeMetres = 200;
