@@ -376,7 +376,7 @@ public sealed class MapCameraTests
     }
 
     [AvaloniaFact]
-    public void NearestIntermediateMarkerWinsWhenTouchTargetsOverlap()
+    public void CloselySpacedIntermediateMarkersAppearAfterZoomingIn()
     {
         GeoCoordinate first = TestData.P(100, 150);
         GeoCoordinate second = TestData.P(108, 150);
@@ -400,8 +400,39 @@ public sealed class MapCameraTests
 
         Click(window, new Avalonia.Point(screen.X, screen.Y));
 
+        Assert.Equal(0, selected);
+        control.Map.Navigator.CenterOnAndZoomTo(new MPoint(x, y), 0.1);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        screen = control.Map.Navigator.Viewport.WorldToScreen(x, y);
+        Click(window, new Avalonia.Point(screen.X, screen.Y));
         Assert.Equal(2, selected);
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void PrimaryListSelectionHighlightsWaypointAndUsesDifferentColourForGeneratedVertices()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
+        var point = new WaypointRow(Guid.NewGuid(), 1, TestData.P(100, 150));
+        adapter.SetPoints([point]);
+        RouteVertexRow primary = new(1, point.Coordinate, RouteVertexKind.UserWaypoint, LegIndex: 1);
+        RouteVertexRow child = new(2, TestData.P(110, 150), LegIndex: 1, LegSubIndex: 1);
+        adapter.SetRouteVertices([primary, child]);
+        Mapsui.Layers.MemoryLayer points = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            layer => layer.Name == "Точки");
+        Mapsui.Layers.MemoryLayer vertices = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            layer => layer.Name == "Вершины маршрута");
+        static Mapsui.Styles.Color Colour(Mapsui.Layers.MemoryLayer layer) =>
+            Assert.IsType<Mapsui.Styles.Color>(Assert.Single(Assert.Single(layer.Features).Styles.OfType<Mapsui.Styles.SymbolStyle>()).Fill!.Color);
+        Mapsui.Styles.Color normal = Colour(points);
+        Assert.NotEqual(normal, Colour(vertices));
+        adapter.SetRouteVertices([primary with { IsSelected = true }, child]);
+        Assert.NotEqual(normal, Colour(points));
+        adapter.SetRouteVertices([primary, child with { IsSelected = true }]);
+        Assert.Equal(normal, Colour(points));
+        Assert.Equal(double.MaxValue,
+            Assert.Single(Assert.Single(vertices.Features).Styles.OfType<Mapsui.Styles.SymbolStyle>()).MaxVisible);
     }
 
     private sealed class BridgeBendPlanner(GeoCoordinate bend) : IRoutePlanner

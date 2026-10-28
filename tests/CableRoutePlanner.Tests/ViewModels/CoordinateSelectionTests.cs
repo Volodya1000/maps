@@ -132,6 +132,42 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
         Assert.Equal(vm.RouteVertices[5].Coordinate.ToString(), clipboard.Text);
     }
 
+    [Fact]
+    public async Task RouteLegsStartCollapsedAndExpandIndependentlyWithoutChangingMapVertices()
+    {
+        using var vm = new MapViewModel(new NavigationHost(),
+            new PlanningSession(new ClusteredBridgePlanner(), TestData.AllowAllValidator),
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
+        await vm.AddPoint.Execute(TestData.P(0, 0));
+        await vm.AddPoint.Execute(TestData.P(160, 0));
+        await vm.AddPoint.Execute(TestData.P(320, 0));
+        await vm.BuildRoutes.Execute();
+        RouteVertexRow[] fullVertices = vm.RouteVertices.ToArray();
+        Assert.Equal(3, vm.VisibleRouteVertices.Count);
+        Assert.All(vm.VisibleRouteVertices, vertex => Assert.False(vertex.IsChild));
+        Assert.True(vm.VisibleRouteVertices[1].HasChildren);
+        await vm.ToggleRouteLeg.Execute(2);
+        Assert.Contains(vm.VisibleRouteVertices, vertex => vertex.DisplayLabel == "2.1");
+        Assert.DoesNotContain(vm.VisibleRouteVertices, vertex => vertex.DisplayLabel == "1.1");
+        await vm.ToggleRouteLeg.Execute(2);
+        Assert.Equal(3, vm.VisibleRouteVertices.Count);
+        Assert.Equal(fullVertices, vm.RouteVertices);
+        RouteVertexRow child = vm.RouteVertices.First(vertex => vertex.DisplayLabel == "2.1");
+        await vm.SelectRouteVertex.Execute(child.Number);
+        Assert.Contains(vm.VisibleRouteVertices, vertex => vertex.Number == child.Number && vertex.IsSelected);
+        Assert.DoesNotContain(vm.VisibleRouteVertices, vertex => vertex.DisplayLabel == "1.1");
+        RouteVertexRow primary = vm.RouteVertices.First(vertex => vertex.Kind == RouteVertexKind.UserWaypoint);
+        await vm.SelectRouteVertex.Execute(primary.Number);
+        Assert.Equal(primary.Number, Assert.Single(vm.RouteVertices, vertex => vertex.IsSelected).Number);
+        Assert.Contains(vm.VisibleRouteVertices, vertex => vertex.Number == primary.Number && vertex.IsSelected);
+        RouteChoice choice = Assert.Single(vm.RouteChoices);
+        Assert.Equal($"Лес {vm.SelectedRoute!.Metrics.ForestMetres:N0} м", choice.ForestText);
+        Assert.Equal($"Поле {vm.SelectedRoute.Metrics.FieldMetres:N0} м", choice.FieldText);
+        Assert.Equal($"Мосты {vm.SelectedRoute.Metrics.PotentialBridgeCrossings}", choice.BridgesText);
+        await vm.ClearPoints.Execute();
+        Assert.Empty(vm.VisibleRouteVertices);
+    }
+
     private sealed class ClusteredBridgePlanner : IRoutePlanner
     {
         public Task<IReadOnlyList<RouteAlternative>> PlanAsync(

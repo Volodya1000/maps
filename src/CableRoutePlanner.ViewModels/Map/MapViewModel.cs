@@ -29,13 +29,17 @@ public sealed record RouteVertexRow(
     RouteVertexKind Kind = RouteVertexKind.Turn,
     bool IsSelected = false,
     int LegIndex = 0,
-    int LegSubIndex = 0)
+    int LegSubIndex = 0,
+    bool HasChildren = false,
+    bool IsExpanded = false)
 {
     public string Display => Coordinate.ToString();
 
     public bool IsChild => LegSubIndex > 0;
 
-    public string KindText => Kind == RouteVertexKind.Transition ? "Мост OSM — требует проверки" : "";
+    public string ExpansionText => IsExpanded ? "▾" : "▸";
+
+    public string KindText => Kind == RouteVertexKind.Transition ? "Мост" : "";
 
     // Number stays an internal, unique selection key; DisplayLabel is the
     // stable, human-readable position between user waypoints.
@@ -48,7 +52,8 @@ public sealed record RouteVertexRow(
 
 public sealed record WaypointReorder(Guid PointId, int TargetIndex);
 
-public sealed record RouteChoice(Guid Id, string Name, string LengthText, bool IsSelected);
+public sealed record RouteChoice(Guid Id, string Name, string LengthText, bool IsSelected,
+    string ForestText = "", string FieldText = "", string BridgesText = "");
 
 public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposable
 {
@@ -57,6 +62,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private readonly IMapAreaLoader _mapLoader;
 
     private readonly WaypointListProjection _pointRows = new();
+
+    private readonly HashSet<int> _expandedLegs = [];
 
     private readonly ISettingsStore _settings;
 
@@ -90,6 +97,12 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public ObservableCollection<RouteChoice> RouteChoices { get; } = [];
 
     public ObservableCollection<RouteVertexRow> RouteVertices { get; } = [];
+
+    public ObservableCollection<RouteVertexRow> VisibleRouteVertices { get; } = [];
+
+    public ReactiveCommand<int, Unit> ToggleRouteLeg { get; }
+
+    public ReactiveCommand<int, Unit> SelectRouteVertex { get; }
 
     public IReadOnlyList<MapFeature> Features { get; private set; } = Array.Empty<MapFeature>();
 
@@ -129,6 +142,12 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
             this.RaiseAndSetIfChanged(ref _selectedRouteVertex,
                 selected);
+            if (selected is { IsChild: true })
+            {
+                _expandedLegs.Add(selected.LegIndex);
+            }
+
+            RefreshVisibleRouteVertices();
             this.RaisePropertyChanged(nameof(CopyRouteVertexText));
         }
     }
@@ -279,6 +298,17 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 await CopyCoordinateAsync(vertex.Coordinate, vertex.DisplayLabel);
             }
         }, this.WhenAnyValue(x => x.SelectedRouteVertex).Select(vertex => vertex is not null)).DisposeWith(_lifetime);
+        ToggleRouteLeg = ReactiveCommand.Create<int>(leg =>
+        {
+            if (!_expandedLegs.Add(leg))
+            {
+                _expandedLegs.Remove(leg);
+            }
+
+            RefreshVisibleRouteVertices();
+        }).DisposeWith(_lifetime);
+        SelectRouteVertex = ReactiveCommand.Create<int>(number =>
+            SelectedRouteVertex = RouteVertices.FirstOrDefault(vertex => vertex.Number == number)).DisposeWith(_lifetime);
         SetupSubscriptions();
     }
 
@@ -427,6 +457,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     {
         RouteChoices.Clear();
         RouteVertices.Clear();
+        _expandedLegs.Clear();
         SelectedRouteVertex = null;
         bool hasAlternatives = Alternatives.Count > 1;
         foreach (RouteAlternative alternative in Alternatives)
@@ -435,7 +466,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 alternative.Id,
                 hasAlternatives ? alternative.Name : "Маршрут",
                 $"{alternative.Metrics.LengthMetres:N0} м",
-                alternative.Id == route?.Id));
+                alternative.Id == route?.Id,
+                $"Лес {alternative.Metrics.ForestMetres:N0} м",
+                $"Поле {alternative.Metrics.FieldMetres:N0} м",
+                $"Мосты {alternative.Metrics.PotentialBridgeCrossings}"));
         }
 
         if (route is not null)
@@ -446,6 +480,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             }
         }
 
+        RefreshVisibleRouteVertices();
         this.RaisePropertyChanged(nameof(HasAlternatives));
 
         MetricsText = route is null
@@ -485,6 +520,24 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
             default:
                 throw new InvalidOperationException("Неизвестный результат загрузки карты.");
+        }
+    }
+
+    private void RefreshVisibleRouteVertices()
+    {
+        VisibleRouteVertices.Clear();
+        HashSet<int> legsWithChildren = RouteVertices.Where(vertex => vertex.IsChild)
+            .Select(vertex => vertex.LegIndex).ToHashSet();
+        foreach (RouteVertexRow vertex in RouteVertices)
+        {
+            if (!vertex.IsChild || _expandedLegs.Contains(vertex.LegIndex))
+            {
+                VisibleRouteVertices.Add(vertex with
+                {
+                    HasChildren = !vertex.IsChild && legsWithChildren.Contains(vertex.LegIndex),
+                    IsExpanded = _expandedLegs.Contains(vertex.LegIndex)
+                });
+            }
         }
     }
 

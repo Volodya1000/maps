@@ -118,4 +118,30 @@
         <Setter Property="Foreground" Value="{DynamicResource AppStatusTextBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
+    <Style Selector="TextBlock.vertex-coordinate">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Button.vertex-select">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Background" Value="{DynamicResource AppTransparentBrush}" />
+    </Style>
+    <Style Selector="Button.vertex-select.selected">
+        <Setter Property="Background" Value="{DynamicResource AppSelectionBrush}" />
+    </Style>
+    <Style Selector="Border.metric-badge">
+        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="Margin" Value="0,0,4,4" />
+        <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Border.metric-badge.forest">
+        <Setter Property="Background" Value="{DynamicResource AppForestBadgeBrush}" />
+    </Style>
+    <Style Selector="Border.metric-badge.field">
+        <Setter Property="Background" Value="{DynamicResource AppFieldBadgeBrush}" />
+    </Style>
+    <Style Selector="Border.metric-badge.bridge">
+        <Setter Property="Background" Value="{DynamicResource AppBridgeBadgeBrush}" />
+    </Style>
 </Styles>

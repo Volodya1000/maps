@@ -49,6 +49,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private IReadOnlyList<RouteVertexRow> _vertices = [];
 
+    private const double ChildMarkerSpacingPixels = 48;
+
+    private readonly Dictionary<int, double> _vertexVisibility = [];
+
     private CancellationTokenSource _featurePreparation = new();
 
     private bool _fitQueued;
@@ -129,7 +133,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _pointerInteraction = new MapsuiPointerInteraction(
             control,
             () => _waypoints,
-            () => _vertices,
+            () => _vertices.Where(vertex => vertex.IsSelected
+                || _control.Map.Navigator.Viewport.Resolution <= _vertexVisibility[vertex.Number]).ToArray(),
             ToScreen,
             ToGeo,
             coordinate => PointAdded?.Invoke(coordinate),
@@ -289,24 +294,45 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     {
         // Every numbered route vertex must be represented on the map, including
         // straight bridge entry/exit points. Only user waypoints are drawn separately.
+        RouteVertexRow? primarySelection = vertices.FirstOrDefault(vertex =>
+            vertex.IsSelected && vertex.Kind == RouteVertexKind.UserWaypoint);
+        RenderPoints(_waypoints.Select(point => point with
+        {
+            IsSelected = primarySelection is null ? point.IsSelected
+                : primarySelection.LegIndex > 0 ? point.Number == primarySelection.LegIndex
+                : point.Coordinate.DistanceTo(primarySelection.Coordinate) < 1
+        }).ToArray());
         _vertices = vertices.Where(vertex => vertex.Kind != RouteVertexKind.UserWaypoint).ToArray();
+        _vertexVisibility.Clear();
+        Dictionary<int, Coordinate> positions = vertices.ToDictionary(vertex => vertex.Number, vertex => Project(vertex.Coordinate));
+        foreach (RouteVertexRow vertex in _vertices)
+        {
+            Coordinate position = positions[vertex.Number];
+            double nearestDistance = positions.Where(other => other.Key != vertex.Number)
+                .Select(other => position.Distance(other.Value))
+                .DefaultIfEmpty(double.MaxValue).Min();
+            _vertexVisibility[vertex.Number] = vertex.IsSelected || !vertex.IsChild ? double.MaxValue
+                : nearestDistance / ChildMarkerSpacingPixels;
+        }
         _routeVertices.Features = _vertices.OrderBy(vertex => vertex.IsSelected ? 1 : 0).Select(vertex =>
         {
             var feature = new GeometryFeature(new Point(Project(vertex.Coordinate)));
             // The label is a feature attribute: tests and all Mapsui renderers read
             // the same user-visible text instead of the internal selection number.
             feature["vertex_label"] = vertex.DisplayLabel;
-            Color markerColor = vertex.IsSelected ? new Color(26, 111, 210) : new Color(21, 109, 85);
+            Color markerColor = vertex.IsSelected ? new Color(26, 111, 210) : new Color(112, 74, 161);
             feature.Styles.Add(new SymbolStyle
             {
                 Fill = new Brush(markerColor),
                 Outline = new Pen(Color.White, vertex.IsSelected ? 3 : 2),
+                MaxVisible = _vertexVisibility[vertex.Number],
                 SymbolScale = Math.Max(1.1, vertex.DisplayLabel.Length * 0.25),
                 SymbolType = SymbolType.Ellipse
             });
             feature.Styles.Add(new LabelStyle
             {
                 LabelColumn = "vertex_label",
+                MaxVisible = _vertexVisibility[vertex.Number],
                 Font = new Mapsui.Styles.Font { Size = 12 },
                 ForeColor = Color.White,
                 BackColor = null,
