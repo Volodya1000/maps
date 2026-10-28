@@ -43,3 +43,14 @@ Compiled bindings включены глобально; Views и DataTemplate и�
 - [ReactiveUI PR 1503](https://github.com/reactiveui/ReactiveUI/pull/1503): историческое включение Fody в проект; не доказательство совместимости текущих пакетов, поэтому добавлен тест реального weaving.
 
 Презентационная проекция `RouteVertexProjection` выбирает для списка и карты значимые повороты, пользовательские точки и переходы. Она не изменяет расчётную геометрию или стоимость. `MapViewModel` хранит выделение и координирует обновление проекции.
+
+### Background calculation lifecycle
+
+`IRouteCalculationService` owns cancellation and replacement of route calculations
+and point moves. It validates move bounds, captures the session revision and
+settings for each calculation, and returns a result only for the current request.
+`Completion` lets reordering await the previous calculation before rebuilding.
+`MapViewModel` presents these results and invalidates them after session edits;
+it owns neither cancellation sources nor calculation completion sources.
+Disposing the screen disposes this service and cancels both operations. Geometry
+and search continue to run through `IPlanningSession` / `IRoutePlanner`.

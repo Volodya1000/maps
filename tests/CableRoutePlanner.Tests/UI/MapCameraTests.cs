@@ -308,7 +308,7 @@ public sealed class MapCameraTests
         GeoCoordinate start = TestData.P(50, 150);
         GeoCoordinate bend = TestData.P(120, 200);
         GeoCoordinate end = TestData.P(260, 150);
-        using MapViewModel vm = new(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new PlanningSession(new BridgeBendPlanner(bend), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(start);

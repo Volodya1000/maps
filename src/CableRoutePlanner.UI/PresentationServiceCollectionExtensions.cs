@@ -25,6 +25,10 @@ public static class PresentationServiceCollectionExtensions
         }
         services.AddSingleton<IScreen, NavigationHost>();
         services.AddSingleton<IMapAreaLoader, MapAreaLoader>();
+        services.AddSingleton<IRouteCalculationService>(provider => new RouteCalculationService(
+            provider.GetRequiredService<IPlanningSession>(),
+            provider.GetRequiredService<ISettingsStore>(),
+            provider.GetRequiredService<IGeodataRepository>().Info.Bounds));
         services.AddSingleton<MapViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<ShellViewModel>();

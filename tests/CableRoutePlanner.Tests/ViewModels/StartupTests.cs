@@ -12,7 +12,7 @@ public sealed class StartupTests : ReactiveTestScope
     public async Task FailedStartupShowsErrorAndRetryOpensTheApplication()
     {
         var screen = new NavigationHost();
-        using var map = new MapViewModel(screen, new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+        using MapViewModel map = TestData.CreateMapViewModel(screen, new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         using var settings = new SettingsViewModel(screen, new MemorySettings());
         using var shell = new ShellViewModel(screen, map, settings);

@@ -65,17 +65,11 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private readonly HashSet<int> _expandedLegs = [];
 
-    private readonly ISettingsStore _settings;
+    private readonly IRouteCalculationService _calculations;
 
     private readonly IClipboardService _clipboard;
 
     private readonly CompositeDisposable _lifetime = new();
-
-    private CancellationTokenSource? _calculation;
-
-    private CancellationTokenSource? _pointMove;
-
-    private Task _calculationFinished = Task.CompletedTask;
 
     private readonly ObservableAsPropertyHelper<bool> _canBuild;
 
@@ -277,13 +271,13 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         IScreen screen,
         IPlanningSession session,
         IMapAreaLoader mapLoader,
-        ISettingsStore settings,
+        IRouteCalculationService calculations,
         IClipboardService clipboard)
     {
         HostScreen = screen;
         _session = session;
         _mapLoader = mapLoader;
-        _settings = settings;
+        _calculations = calculations;
         _clipboard = clipboard;
 
         _canBuild = this.WhenAnyValue(
@@ -341,7 +335,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         CopyCoordinates = ReactiveCommand.CreateFromTask(CopySelectedCoordinatesAsync,
             this.WhenAnyValue(x => x.SelectedPoint).Select(point => point is not null)).DisposeWith(_lifetime);
         BuildRoutes = ReactiveCommand.CreateFromTask(BuildAsync, this.WhenAnyValue(x => x.CanBuild)).DisposeWith(_lifetime);
-        Cancel = ReactiveCommand.Create(() => _calculation?.Cancel()).DisposeWith(_lifetime);
+        Cancel = ReactiveCommand.Create(() => _calculations.Cancel()).DisposeWith(_lifetime);
     }
 
     private void SetupSubscriptions()
@@ -406,13 +400,14 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             && request.TargetIndex >= 0 && request.TargetIndex < Points.Count)
         {
             bool rebuild = SelectedRoute is not null || IsBusy;
-            Task previousCalculation = _calculationFinished;
+            Task previousCalculation = _calculations.Completion;
             Change(() => _session.Reorder(source, request.TargetIndex));
             if (rebuild)
             {
                 // An in-flight calculation must finish cancelling before its replacement
                 // starts; otherwise a second drop could leave the route empty.
                 await previousCalculation;
+                IsBusy = _calculations.IsBusy;
                 if (!_disposed && CanBuild)
                 {
                     await BuildAsync();
@@ -548,34 +543,15 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             return;
         }
 
-        var current = new CancellationTokenSource();
-        CancellationTokenSource? previous = _pointMove;
-        _pointMove = current;
-        previous?.Cancel();
-        try
+        Guid? selected = SelectedPoint?.Id;
+        PointMoveResult? result = await _calculations.MovePointAsync(id, coordinate);
+        if (result is { Success: true })
         {
-            Guid? selected = SelectedPoint?.Id;
-            EnsureInBounds(coordinate, "Для этой точки нет данных в офлайн-пакете.");
-            await _session.MoveAsync(id, coordinate, current.Token);
-            current.Token.ThrowIfCancellationRequested();
             RefreshAfterChange(selected ?? id);
         }
-        catch (OperationCanceledException) when (current.IsCancellationRequested)
+        else if (result?.Error is { } error)
         {
-            System.Diagnostics.Debug.WriteLine("Устаревшее перемещение точки отменено.");
-        }
-        catch (PlanningException ex)
-        {
-            Status = ex.Message;
-        }
-        finally
-        {
-            if (ReferenceEquals(_pointMove, current))
-            {
-                _pointMove = null;
-            }
-
-            current.Dispose();
+            Status = error.Message;
         }
     }
 
@@ -621,8 +597,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private void RefreshAfterChange(Guid? selected = null)
     {
-        _calculation?.Cancel();
-        _pointMove?.Cancel();
+        _calculations.Invalidate();
         Alternatives.Clear();
         RouteChoices.Clear();
         SelectedRoute = null;
@@ -633,57 +608,42 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private async Task BuildAsync()
     {
-        var finished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _calculationFinished = finished.Task;
         IsBusy = true;
         Alternatives.Clear();
         RouteChoices.Clear();
         SelectedRoute = null;
         Status = "Анализ местности и поиск маршрутов…";
-        using var cts = new CancellationTokenSource();
-        _calculation = cts;
-        long inputRevision = _session.Revision;
         try
         {
-            _resultOptions = _settings.Load();
-            IReadOnlyList<RouteAlternative> routes = await _session.BuildAsync(_resultOptions, cts.Token);
-            cts.Token.ThrowIfCancellationRequested();
-            if (!ReferenceEquals(_calculation, cts) || inputRevision != _session.Revision)
+            RouteCalculationResult? result = await _calculations.BuildAsync();
+            if (result is null || !_calculations.IsCurrent(result))
             {
                 return;
             }
 
-            foreach (RouteAlternative route in routes)
+            if (result is { Outcome: RouteCalculationOutcome.Completed, Options: { } options })
             {
-                Alternatives.Add(route);
-            }
+                _resultOptions = options;
+                foreach (RouteAlternative route in result.Routes)
+                {
+                    Alternatives.Add(route);
+                }
 
-            SelectedRoute = Alternatives.FirstOrDefault();
-            Status = routes.Count > 0 ? $"Найдено различных маршрутов: {routes.Count}. Разрешённость строительства не подтверждена." : "Допустимые маршруты не найдены.";
-        }
-        catch (OperationCanceledException)
-        {
-            if (ReferenceEquals(_calculation, cts) && inputRevision == _session.Revision)
-            {
-                Status = "Расчёт отменён. Актуальных маршрутов нет.";
+                SelectedRoute = Alternatives.FirstOrDefault();
+                Status = result.Routes.Count > 0
+                    ? $"Найдено различных маршрутов: {result.Routes.Count}. Разрешённость строительства не подтверждена."
+                    : "Допустимые маршруты не найдены.";
             }
-        }
-        catch (Exception ex)
-        {
-            if (ReferenceEquals(_calculation, cts) && inputRevision == _session.Revision)
+            else
             {
-                Status = $"Не удалось построить маршрут: {ex.Message}";
+                Status = result.Outcome == RouteCalculationOutcome.Cancelled
+                    ? "Расчёт отменён. Актуальных маршрутов нет."
+                    : $"Не удалось построить маршрут: {result.Error}";
             }
         }
         finally
         {
-            if (ReferenceEquals(_calculation, cts))
-            {
-                _calculation = null;
-                IsBusy = false;
-            }
-
-            finished.TrySetResult();
+            IsBusy = _calculations.IsBusy;
         }
     }
 
@@ -695,7 +655,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         }
 
         _disposed = true;
-        _calculation?.Cancel();
+        _calculations.Dispose();
         _mapLoader.Invalidate();
         _lifetime.Dispose();
     }

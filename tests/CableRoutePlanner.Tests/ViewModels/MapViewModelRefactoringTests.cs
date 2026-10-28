@@ -210,7 +210,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         var data = new MemoryData(building);
         var session = new PlanningSession(
             TestData.Planner(building), new GeodataPointPlacementValidator(data));
-        using var vm = new MapViewModel(
+        using MapViewModel vm = TestData.CreateMapViewModel(
             new NavigationHost(), session, new MapAreaLoader(data), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(50, 150)).ToTask();
         WaypointRow original = Assert.Single(vm.Points);
@@ -241,7 +241,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         Assert.DoesNotContain("Требуются обследование и согласование.", result);
     }
 
-    private static MapViewModel CreateVm(IGeodataRepository data) => new(
+    private static MapViewModel CreateVm(IGeodataRepository data) => TestData.CreateMapViewModel(
         new NavigationHost(),
         new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
         new MapAreaLoader(data),
