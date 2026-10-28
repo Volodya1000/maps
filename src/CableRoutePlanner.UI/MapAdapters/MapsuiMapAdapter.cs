@@ -35,6 +35,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         Style = null
     };
 
+    private readonly MemoryLayer _roadContacts = new("Пересечения с дорогами") { Style = null };
+
     private readonly MemoryLayer _points = new("Точки")
     {
         Style = null
@@ -120,6 +122,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             control.Map.Layers.Add(_tiledBase);
         }
         control.Map.Layers.Add(_routes);
+        control.Map.Layers.Add(_roadContacts);
         control.Map.Layers.Add(_routeVertices);
         control.Map.Layers.Add(_points);
         (double x, double y) = SphericalMercator.FromLonLat(
@@ -290,7 +293,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         RenderPoints(_waypoints);
     }
 
-    public void SetRouteVertices(IReadOnlyList<RouteVertexRow> vertices)
+    public void SetRouteVertices(IReadOnlyList<RouteVertexRow> vertices, bool showAll = false)
     {
         // Every numbered route vertex must be represented on the map, including
         // straight bridge entry/exit points. Only user waypoints are drawn separately.
@@ -305,14 +308,17 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _vertices = vertices.Where(vertex => vertex.Kind != RouteVertexKind.UserWaypoint).ToArray();
         _vertexVisibility.Clear();
         Dictionary<int, Coordinate> positions = vertices.ToDictionary(vertex => vertex.Number, vertex => Project(vertex.Coordinate));
-        foreach (RouteVertexRow vertex in _vertices)
+        foreach (IGrouping<int, RouteVertexRow> leg in _vertices.GroupBy(vertex => vertex.LegIndex))
         {
-            Coordinate position = positions[vertex.Number];
-            double nearestDistance = positions.Where(other => other.Key != vertex.Number)
-                .Select(other => position.Distance(other.Value))
-                .DefaultIfEmpty(double.MaxValue).Min();
-            _vertexVisibility[vertex.Number] = vertex.IsSelected || !vertex.IsChild ? double.MaxValue
-                : nearestDistance / ChildMarkerSpacingPixels;
+            double threshold = showAll || leg.Any(vertex => vertex.IsSelected)
+                ? double.MaxValue
+                : leg.Select(vertex => positions.Where(other => other.Key != vertex.Number)
+                    .Select(other => positions[vertex.Number].Distance(other.Value))
+                    .DefaultIfEmpty(double.MaxValue).Min() / ChildMarkerSpacingPixels).Min();
+            foreach (RouteVertexRow vertex in leg)
+            {
+                _vertexVisibility[vertex.Number] = !vertex.IsChild ? double.MaxValue : threshold;
+            }
         }
         _routeVertices.Features = _vertices.OrderBy(vertex => vertex.IsSelected ? 1 : 0).Select(vertex =>
         {
@@ -410,6 +416,38 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             _cameraWasUsed = true;
             _control.Map.Navigator.ZoomToBox(new MRect(west - padding, south - padding, east + padding, north + padding));
         }
+        _control.RefreshGraphics();
+    }
+
+    public void SetRoadContacts(IReadOnlyList<RouteRoadContact> contacts)
+    {
+        List<IFeature> features = [];
+        foreach (RouteRoadContact contact in contacts)
+        {
+            Geometry geometry = contact.Kind == RoadContactKind.Crossing
+                ? new Point(Project(contact.Geometry[0]))
+                : new LineString(contact.Geometry.Select(Project).ToArray());
+            var feature = new GeometryFeature(geometry);
+            feature["road_id"] = contact.RoadId;
+            feature["contact_kind"] = contact.Kind.ToString();
+            if (contact.Kind == RoadContactKind.Crossing)
+            {
+                feature.Styles.Add(new SymbolStyle
+                {
+                    Fill = new Brush(new Color(224, 122, 27)),
+                    Outline = new Pen(Color.White, 2),
+                    SymbolScale = 0.8
+                });
+            }
+            else
+            {
+                feature.Styles.Add(new VectorStyle { Line = new Pen(Color.White, 12) });
+                feature.Styles.Add(new VectorStyle { Line = new Pen(new Color(155, 64, 145), 8) });
+            }
+            features.Add(feature);
+        }
+        _roadContacts.Features = features;
+        _roadContacts.DataHasChanged();
         _control.RefreshGraphics();
     }
 

@@ -59,11 +59,16 @@ internal sealed class TerrainEvaluator
 
     private readonly LocalProjection _projection;
 
+    private readonly RoadContactAnalyzer _roadContacts;
+
     private readonly BridgeGuide[] _bridgeGuides;
 
     private readonly GridPortal[] _bridgePortals;
 
-    private readonly double _bridgeCorridorMetres;
+    // Bridge portals preserve reachability independently of the search grid size.
+    private const double BridgeCorridorToleranceMetres = 2;
+
+    private const double BridgeAlignmentSearchDistanceMetres = 15;
 
     private readonly GeometryFactory _factory = new();
 
@@ -72,10 +77,10 @@ internal sealed class TerrainEvaluator
     public TerrainEvaluator(
         IReadOnlyList<MapFeature> features,
         LocalProjection projection,
-        double cellSizeMetres,
         TerrainRules? rules = null)
     {
         _projection = projection;
+        _roadContacts = new RoadContactAnalyzer(features, projection);
         _rules = rules ?? new TerrainRules();
         var reader = new WKBReader();
         ProjectedFeature[] projected = features.Select(
@@ -96,7 +101,6 @@ internal sealed class TerrainEvaluator
         }
 
         waterIndex.Build();
-        _bridgeCorridorMetres = Math.Max(cellSizeMetres * 0.45, 2);
         BridgeWaterMatch[] bridgeFeatures = projected
             .Where(f => f.Feature.Kind == TerrainKind.BridgeCandidate)
             .Select(f => new BridgeWaterMatch(
@@ -123,7 +127,7 @@ internal sealed class TerrainEvaluator
                 Id: f.Bridge.Feature.Id,
                 // Keep the water opening on the mapped bridge line. A cell-sized buffer let
                 // A* cut across the river beside a bridge while still counting that bridge.
-                Corridor: f.Bridge.Geometry.Buffer(_bridgeCorridorMetres)))
+                Corridor: f.Bridge.Geometry.Buffer(BridgeCorridorToleranceMetres)))
             .ToDictionary(bridge => bridge.Id, bridge => bridge.Corridor);
         foreach (Geometry? opening in approvals.Concat(bridgeOpenings.Values))
         {
@@ -174,6 +178,8 @@ internal sealed class TerrainEvaluator
         _index.Build();
     }
 
+    public IReadOnlyList<RouteRoadContact> RoadContacts(IReadOnlyList<Coordinate> route) => _roadContacts.Analyze(route);
+
     public IReadOnlyList<GridPortal> BridgePortals => _bridgePortals;
 
     public List<Coordinate> AlignBridgeCrossings(IReadOnlyList<Coordinate> route, CostProfile profile)
@@ -193,7 +199,7 @@ internal sealed class TerrainEvaluator
             LineString segment = _factory.CreateLineString([previous, current]);
             BridgeGuide? guide = _bridgeGuides
                 .Where(candidate => candidate.Water.Intersects(segment)
-                    && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres)
+                    && candidate.Bridge.Distance(segment) <= BridgeAlignmentSearchDistanceMetres)
                 .OrderBy(candidate => candidate.Bridge.Distance(segment))
                 .FirstOrDefault();
             if (guide is not null && usedGuides.Add(guide))
@@ -266,7 +272,7 @@ internal sealed class TerrainEvaluator
             LineString segment = _factory.CreateLineString([route[index - 1], route[index]]);
             foreach (BridgeGuide? guide in _bridgeGuides.Where(candidate =>
                 candidate.Water.Intersects(segment)
-                && candidate.Bridge.Distance(segment) <= _bridgeCorridorMetres))
+                && candidate.Bridge.Distance(segment) <= BridgeCorridorToleranceMetres))
             {
                 Coordinate[] waterSection = guide.WaterSection.Coordinates;
                 if (waterSection.Length > 0)
@@ -326,6 +332,13 @@ internal sealed class TerrainEvaluator
         CostProfile profile,
         int bridgeEndIndex)
     {
+        // A valid segment-by-segment detour can still form a loop or a folded
+        // bridge spur. Reject the entire splice before considering its cost.
+        if (!_factory.CreateLineString(path.ToArray()).IsSimple)
+        {
+            return null;
+        }
+
         double length = 0;
         double cost = 0;
         for (int i = 1; i < path.Count; i++)

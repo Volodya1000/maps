@@ -40,7 +40,7 @@ internal sealed class PreparedRoutingAreaCache(IGeodataRepository repository)
         timer.Restart();
         var projection = new LocalProjection(
             new((bounds.South + bounds.North) / 2, (bounds.West + bounds.East) / 2));
-        TerrainEvaluator evaluator = await Task.Run(() => new TerrainEvaluator(features, projection, cellSize), ct);
+        TerrainEvaluator evaluator = await Task.Run(() => new TerrainEvaluator(features, projection), ct);
         ct.ThrowIfCancellationRequested();
         var prepared = new PreparedRoutingArea(
             bounds, cellSize, projection, evaluator, queryMilliseconds, timer.ElapsedMilliseconds);

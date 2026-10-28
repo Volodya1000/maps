@@ -196,6 +196,12 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public bool CanBuild => _canBuild.Value;
 
+    [Reactive]
+    public bool ShowRoadContacts { get; set; }
+
+    [Reactive]
+    public bool ShowAllRouteVertices { get; set; }
+
     public bool HasRoute => SelectedRoute is not null;
 
     public bool HasAlternatives => Alternatives.Count > 1;

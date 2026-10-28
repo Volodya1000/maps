@@ -5,4 +5,5 @@ public sealed record RouteAlternative(
     string Name,
     IReadOnlyList<GeoCoordinate> Geometry,
     RouteMetrics Metrics,
-    IReadOnlyList<GeoCoordinate>? TransitionPoints = null);
+    IReadOnlyList<GeoCoordinate>? TransitionPoints = null,
+    IReadOnlyList<RouteRoadContact>? RoadContacts = null);

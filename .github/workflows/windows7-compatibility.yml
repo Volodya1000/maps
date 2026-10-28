@@ -2,7 +2,7 @@ name: Windows 7 compatibility (experimental)
 
 on:
   pull_request:
-    types: [opened, reopened, labeled, synchronize]
+    types: [opened, reopened, labeled, unlabeled, synchronize]
   workflow_dispatch:
     inputs:
       timeout_minutes:
@@ -79,7 +79,7 @@ jobs:
           if-no-files-found: error
 
   build-payload:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'ci:windows7') || contains(github.event.pull_request.labels.*.name, 'test-win7-feasibility')))
     name: Build Windows 7 prototype payload from this commit
     runs-on: windows-2022
     timeout-minutes: 20

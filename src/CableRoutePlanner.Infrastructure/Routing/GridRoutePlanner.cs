@@ -220,7 +220,8 @@ public sealed class GridRoutePlanner(
                         cost,
                         null),
                     Array.AsReadOnly(evaluator.BridgeTransitionPoints(route)
-                        .Select(projection.Inverse).ToArray())));
+                        .Select(projection.Inverse).ToArray()),
+                    evaluator.RoadContacts(route)));
         }
 
         SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);

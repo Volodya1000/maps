@@ -52,6 +52,50 @@ public static class TestApplication
 public sealed class UiTests
 {
     [AvaloniaFact]
+    public async Task RoadContactToggleShowsSelectedAlternativeAndClearsOnDisableOrRouteRemoval()
+    {
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        { ViewModel = vm };
+        var window = new Window { Content = view, Width = 420, Height = 850 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var point = new RouteRoadContact(1, RoadContactKind.Crossing, [TestData.P(100, 100)]);
+        var shared = new RouteRoadContact(2, RoadContactKind.SharedSection, [TestData.P(150, 100), TestData.P(200, 100)]);
+        var first = new RouteAlternative(Guid.NewGuid(), "first", [TestData.P(20, 100), TestData.P(280, 100)],
+            new RouteMetrics(260, 0, 0, 1, 0, 0, 260, null), RoadContacts: [point]);
+        RouteAlternative second = first with { Id = Guid.NewGuid(), Name = "second", RoadContacts = [shared] };
+        vm.Alternatives.Add(first);
+        vm.Alternatives.Add(second);
+        vm.SelectedRoute = first;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Mapsui.UI.Avalonia.MapControl map = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
+        var layer = (Mapsui.Layers.MemoryLayer)map.Map.Layers.Single(candidate => candidate.Name == "Пересечения с дорогами");
+        CheckBox toggle = view.FindControl<CheckBox>("RoadContactsToggle")!;
+        Assert.False(vm.ShowRoadContacts);
+        Assert.Empty(layer.Features);
+        toggle.IsChecked = true;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.True(vm.ShowRoadContacts);
+        Mapsui.Nts.GeometryFeature feature = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features));
+        Assert.IsType<NetTopologySuite.Geometries.Point>(feature.Geometry);
+        Assert.Equal(1L, feature["road_id"]);
+        await vm.ChooseRoute.Execute(second.Id);
+        feature = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features));
+        Assert.IsType<NetTopologySuite.Geometries.LineString>(feature.Geometry);
+        Assert.Equal(2L, feature["road_id"]);
+        toggle.IsChecked = false;
+        Assert.Empty(layer.Features);
+        toggle.IsChecked = true;
+        Assert.Single(layer.Features);
+        vm.SelectedRoute = null;
+        Assert.Empty(layer.Features);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task ExtractedStylesKeepMapAndWaypointAppearance()
     {
         using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),

@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,6 +15,8 @@ env:
   DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
 jobs:
   quality:
+    outputs:
+      full_maps: ${{ steps.preview-policy.outputs.full_maps }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
@@ -31,6 +33,12 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: '1.23.4'
+      - name: Select optional preview artifacts
+        id: preview-policy
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: python3 tools/ci_policy.py >> "$GITHUB_OUTPUT"
       - run: uv sync --locked
       - run: uv run --locked python tools/check.py lint
       - if: github.event_name == 'pull_request'
@@ -158,7 +166,7 @@ jobs:
           name: android-startup-evidence
           path: artifacts/android-smoke/
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: always() && needs.quality.outputs.full_maps != 'true'
         with:
           path: artifacts/CableRoutePlanner-CI-Minsk.apk
           archive: false
@@ -188,6 +196,7 @@ jobs:
     if: >-
       github.event_name == 'pull_request'
       && github.event.pull_request.number != ''
+      && needs.quality.outputs.full_maps == 'true'
     needs: [quality, tests, data, terrain-spike, android]
     uses: ./.github/workflows/pull-request-apks.yml
     with:
