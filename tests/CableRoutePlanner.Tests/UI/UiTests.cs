@@ -56,7 +56,7 @@ public sealed class UiTests
     {
         using var vm = new MapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
-            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(30, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
@@ -325,7 +325,7 @@ public sealed class UiTests
     {
         using var vm = new MapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
-            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
             ViewModel = vm
@@ -362,7 +362,7 @@ public sealed class UiTests
     {
         using var vm = new MapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
-            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) =>
             new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
@@ -480,10 +480,11 @@ public sealed class UiTests
         MapFeature forest = TestData.Polygon(1, CableRoutePlanner.Domain.TerrainKind.Forest, 100, 60, 220, 240);
         using var vm = new MapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(forest), TestData.AllowAllValidator),
-            new MemoryData(forest), new MemorySettings(), new MemoryClipboard());
+            new MapAreaLoader(new MemoryData(forest)), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(30, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
         await vm.BuildRoutes.Execute();
+        await vm.ChooseRoute.Execute(vm.Alternatives.First(route => route.Geometry.Count > 2).Id);
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
             ViewModel = vm
@@ -491,9 +492,29 @@ public sealed class UiTests
         var window = new Window { Content = view, Width = 1100, Height = 1100 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        RouteChoice target = vm.RouteChoices.Last();
+        RouteChoice target = vm.RouteChoices.First(choice => choice.Id != vm.SelectedRoute!.Id);
         Button button = view.GetVisualDescendants().OfType<Button>()
             .Single(candidate => candidate.DataContext is RouteChoice choice && choice.Id == target.Id);
+        Assert.Contains(button.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == target.ForestText);
+        Assert.Contains(button.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == target.FieldText);
+        Assert.Contains(button.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == target.BridgesText);
+        Expander verticesPanel = view.GetVisualDescendants().OfType<Expander>()
+            .Single(expander => expander.Header is TextBlock text && text.Text == "Точки прокладки кабеля");
+        verticesPanel.IsExpanded = true;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Button toggle = view.GetVisualDescendants().OfType<Button>()
+            .First(candidate => ReferenceEquals(candidate.Command, vm.ToggleRouteLeg) && candidate.IsVisible);
+        toggle.Command!.Execute(toggle.CommandParameter);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Button primaryRow = view.GetVisualDescendants().OfType<Button>()
+            .First(candidate => ReferenceEquals(candidate.Command, vm.SelectRouteVertex)
+                && candidate.DataContext is RouteVertexRow { IsChild: false });
+        Button childRow = view.GetVisualDescendants().OfType<Button>()
+            .First(candidate => ReferenceEquals(candidate.Command, vm.SelectRouteVertex)
+                && candidate.DataContext is RouteVertexRow { IsChild: true });
+        Assert.True(childRow.TranslatePoint(new Point(0, 0), window)!.Value.X
+            > primaryRow.TranslatePoint(new Point(0, 0), window)!.Value.X);
+        verticesPanel.IsExpanded = false;
         button.BringIntoView();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Point position = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
@@ -536,7 +557,7 @@ public sealed class UiTests
         var repository = new ViewportRepository();
         using var vm = new MapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
-            repository, new MemorySettings(), new MemoryClipboard());
+            new MapAreaLoader(repository), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
             ViewModel = vm
@@ -560,7 +581,7 @@ public sealed class UiTests
     {
         using var vm = new MapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
-            new MemoryData(), new MemorySettings(), new MemoryClipboard());
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         {
             ViewModel = vm

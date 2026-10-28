@@ -23,22 +23,47 @@ public enum RouteVertexKind
     Turn
 }
 
-public sealed record RouteVertexRow(int Number, GeoCoordinate Coordinate, RouteVertexKind Kind = RouteVertexKind.Turn, bool IsSelected = false)
+public sealed record RouteVertexRow(
+    int Number,
+    GeoCoordinate Coordinate,
+    RouteVertexKind Kind = RouteVertexKind.Turn,
+    bool IsSelected = false,
+    int LegIndex = 0,
+    int LegSubIndex = 0,
+    bool HasChildren = false,
+    bool IsExpanded = false)
 {
     public string Display => Coordinate.ToString();
+
+    public bool IsChild => LegSubIndex > 0;
+
+    public string ExpansionText => IsExpanded ? "▾" : "▸";
+
+    public string KindText => Kind == RouteVertexKind.Transition ? "Мост" : "";
+
+    // Number stays an internal, unique selection key; DisplayLabel is the
+    // stable, human-readable position between user waypoints.
+    public string DisplayLabel => LegIndex == 0
+        ? Number.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        : LegSubIndex == 0
+            ? LegIndex.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{LegIndex}.{LegSubIndex}");
 }
 
 public sealed record WaypointReorder(Guid PointId, int TargetIndex);
 
-public sealed record RouteChoice(Guid Id, string Name, string LengthText, bool IsSelected);
+public sealed record RouteChoice(Guid Id, string Name, string LengthText, bool IsSelected,
+    string ForestText = "", string FieldText = "", string BridgesText = "");
 
 public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposable
 {
     private readonly IPlanningSession _session;
 
-    private readonly MapAreaLoader _mapLoader;
+    private readonly IMapAreaLoader _mapLoader;
 
     private readonly WaypointListProjection _pointRows = new();
+
+    private readonly HashSet<int> _expandedLegs = [];
 
     private readonly ISettingsStore _settings;
 
@@ -73,6 +98,12 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public ObservableCollection<RouteVertexRow> RouteVertices { get; } = [];
 
+    public ObservableCollection<RouteVertexRow> VisibleRouteVertices { get; } = [];
+
+    public ReactiveCommand<int, Unit> ToggleRouteLeg { get; }
+
+    public ReactiveCommand<int, Unit> SelectRouteVertex { get; }
+
     public IReadOnlyList<MapFeature> Features { get; private set; } = Array.Empty<MapFeature>();
 
     public DataPackageInfo DataInfo => _mapLoader.Info;
@@ -87,20 +118,9 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 SelectedRouteVertex = null;
             }
 
-            for (int index = 0; index < Points.Count; index++)
-            {
-                WaypointRow row = Points[index];
-                bool selected = row.Id == value?.Id;
-                if (row.IsSelected != selected)
-                {
-                    Points[index] = row with
-                    {
-                        IsSelected = selected
-                    };
-                }
-            }
-
-            this.RaiseAndSetIfChanged(ref _selectedPoint, Points.FirstOrDefault(row => row.Id == value?.Id));
+            WaypointRow? selected = RowSelection.Apply(Points, value,
+                row => row.Id, row => row.IsSelected, (row, isSelected) => row with { IsSelected = isSelected });
+            this.RaiseAndSetIfChanged(ref _selectedPoint, selected);
             this.RaisePropertyChanged(nameof(CopyPointText));
         }
     }
@@ -112,18 +132,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         get => _selectedRouteVertex;
         set
         {
-            for (int index = 0; index < RouteVertices.Count; index++)
-            {
-                RouteVertexRow row = RouteVertices[index];
-                bool selected = row.Number == value?.Number;
-                if (row.IsSelected != selected)
-                {
-                    RouteVertices[index] = row with
-                    {
-                        IsSelected = selected
-                    };
-                }
-            }
+            RouteVertexRow? selected = RowSelection.Apply(RouteVertices, value,
+                row => row.Number, row => row.IsSelected, (row, isSelected) => row with { IsSelected = isSelected });
 
             if (value is not null)
             {
@@ -131,13 +141,19 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             }
 
             this.RaiseAndSetIfChanged(ref _selectedRouteVertex,
-                RouteVertices.FirstOrDefault(row => row.Number == value?.Number));
+                selected);
+            if (selected is { IsChild: true })
+            {
+                _expandedLegs.Add(selected.LegIndex);
+            }
+
+            RefreshVisibleRouteVertices();
             this.RaisePropertyChanged(nameof(CopyRouteVertexText));
         }
     }
 
     public string CopyRouteVertexText => SelectedRouteVertex is { } vertex
-        ? $"Копировать вершину {vertex.Number}"
+        ? $"Копировать вершину {vertex.DisplayLabel}"
         : "Выберите вершину";
 
     public ReactiveCommand<Unit, Unit> CopyRouteVertex { get; }
@@ -260,13 +276,13 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public MapViewModel(
         IScreen screen,
         IPlanningSession session,
-        IGeodataRepository data,
+        IMapAreaLoader mapLoader,
         ISettingsStore settings,
         IClipboardService clipboard)
     {
         HostScreen = screen;
         _session = session;
-        _mapLoader = new MapAreaLoader(data);
+        _mapLoader = mapLoader;
         _settings = settings;
         _clipboard = clipboard;
 
@@ -279,9 +295,20 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         {
             if (SelectedRouteVertex is { } vertex)
             {
-                await CopyCoordinateAsync(vertex.Coordinate, vertex.Number);
+                await CopyCoordinateAsync(vertex.Coordinate, vertex.DisplayLabel);
             }
         }, this.WhenAnyValue(x => x.SelectedRouteVertex).Select(vertex => vertex is not null)).DisposeWith(_lifetime);
+        ToggleRouteLeg = ReactiveCommand.Create<int>(leg =>
+        {
+            if (!_expandedLegs.Add(leg))
+            {
+                _expandedLegs.Remove(leg);
+            }
+
+            RefreshVisibleRouteVertices();
+        }).DisposeWith(_lifetime);
+        SelectRouteVertex = ReactiveCommand.Create<int>(number =>
+            SelectedRouteVertex = RouteVertices.FirstOrDefault(vertex => vertex.Number == number)).DisposeWith(_lifetime);
         SetupSubscriptions();
     }
 
@@ -347,29 +374,13 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private async Task AddManuallyAsync()
     {
-        if (!double.TryParse(
-                LatitudeText,
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out double latitude)
-            || !double.TryParse(
-                LongitudeText,
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out double longitude))
+        if (!GeoCoordinateParser.TryParse(LatitudeText, LongitudeText, out GeoCoordinate coordinate, out string error))
         {
-            Status = "Введите широту и долготу с десятичной точкой.";
+            Status = error;
             return;
         }
 
-        try
-        {
-            await AddAtAsync(new GeoCoordinate(latitude, longitude));
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            Status = "Некорректные координаты.";
-        }
+        await AddAtAsync(coordinate);
     }
 
     private void DeleteSelectedPoint()
@@ -426,10 +437,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             return;
         }
 
-        await CopyCoordinateAsync(point.Coordinate, point.Number);
+        await CopyCoordinateAsync(point.Coordinate, point.Number.ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 
-    private async Task CopyCoordinateAsync(GeoCoordinate coordinate, int number)
+    private async Task CopyCoordinateAsync(GeoCoordinate coordinate, string number)
     {
         try
         {
@@ -446,6 +457,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     {
         RouteChoices.Clear();
         RouteVertices.Clear();
+        _expandedLegs.Clear();
         SelectedRouteVertex = null;
         bool hasAlternatives = Alternatives.Count > 1;
         foreach (RouteAlternative alternative in Alternatives)
@@ -454,7 +466,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 alternative.Id,
                 hasAlternatives ? alternative.Name : "Маршрут",
                 $"{alternative.Metrics.LengthMetres:N0} м",
-                alternative.Id == route?.Id));
+                alternative.Id == route?.Id,
+                $"Лес {alternative.Metrics.ForestMetres:N0} м",
+                $"Поле {alternative.Metrics.FieldMetres:N0} м",
+                $"Мосты {alternative.Metrics.PotentialBridgeCrossings}"));
         }
 
         if (route is not null)
@@ -465,6 +480,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             }
         }
 
+        RefreshVisibleRouteVertices();
         this.RaisePropertyChanged(nameof(HasAlternatives));
 
         MetricsText = route is null
@@ -490,11 +506,11 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
         switch (result)
         {
-            case MapAreaLoadResult.Failed failed:
+            case MapAreaFailed failed:
                 MapStatus = $"Ошибка загрузки карты: {failed.Message}";
                 break;
 
-            case MapAreaLoadResult.Loaded loaded:
+            case MapAreaLoaded loaded:
                 Features = Array.AsReadOnly(loaded.Features.ToArray());
                 MapVersion++;
                 MapStatus = loaded.Features.Count > 0
@@ -504,6 +520,24 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
             default:
                 throw new InvalidOperationException("Неизвестный результат загрузки карты.");
+        }
+    }
+
+    private void RefreshVisibleRouteVertices()
+    {
+        VisibleRouteVertices.Clear();
+        HashSet<int> legsWithChildren = RouteVertices.Where(vertex => vertex.IsChild)
+            .Select(vertex => vertex.LegIndex).ToHashSet();
+        foreach (RouteVertexRow vertex in RouteVertices)
+        {
+            if (!vertex.IsChild || _expandedLegs.Contains(vertex.LegIndex))
+            {
+                VisibleRouteVertices.Add(vertex with
+                {
+                    HasChildren = !vertex.IsChild && legsWithChildren.Contains(vertex.LegIndex),
+                    IsExpanded = _expandedLegs.Contains(vertex.LegIndex)
+                });
+            }
         }
     }
 

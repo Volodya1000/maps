@@ -26,4 +26,7 @@
     <SolidColorBrush x:Key="AppWaypointNumberBrush" Color="#6E7C73" />
     <SolidColorBrush x:Key="AppDragGlyphBrush" Color="#738779" />
     <SolidColorBrush x:Key="AppDestructiveBrush" Color="#C83D3D" />
+    <SolidColorBrush x:Key="AppForestBadgeBrush" Color="#DDECDD" />
+    <SolidColorBrush x:Key="AppFieldBadgeBrush" Color="#F3EDC8" />
+    <SolidColorBrush x:Key="AppBridgeBadgeBrush" Color="#E7DFF2" />
 </ResourceDictionary>

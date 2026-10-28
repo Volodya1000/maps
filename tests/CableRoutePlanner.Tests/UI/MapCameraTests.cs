@@ -1,7 +1,9 @@
 using Avalonia.Controls;
+using System.Reactive.Linq;
 using Avalonia.Media;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using CableRoutePlanner.Application;
 using CableRoutePlanner.UI.MapAdapters;
 using Mapsui;
 using Mapsui.Extensions;
@@ -237,7 +239,7 @@ public sealed class MapCameraTests
     }
 
     [AvaloniaFact]
-    public void BridgeTransitionsAndUserWaypointsDoNotDuplicateMapMarkers()
+    public void ListedBridgeTransitionsAndTurnsRenderWithoutDuplicatingUserWaypoints()
     {
         var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
@@ -250,7 +252,94 @@ public sealed class MapCameraTests
 
         Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
             candidate => candidate.Name == "Вершины маршрута");
+        Assert.Collection(layer.Features,
+            feature => Assert.Equal("1", feature["vertex_label"]),
+            feature => Assert.Equal("3", feature["vertex_label"]));
+        Assert.All(layer.Features, feature =>
+        {
+            Mapsui.Styles.LabelStyle label = Assert.Single(
+                Assert.IsType<Mapsui.Nts.GeometryFeature>(feature)
+                    .Styles.OfType<Mapsui.Styles.LabelStyle>());
+            Assert.Equal(feature["vertex_label"]?.ToString(), label.GetLabelText(feature));
+            Assert.Equal(Mapsui.Styles.Color.White, label.ForeColor);
+            Assert.Null(label.BackColor);
+            Assert.False(label.CollisionDetection);
+            Assert.Equal(0, label.Offset.X);
+            Assert.Equal(0, label.Offset.Y);
+            Mapsui.Styles.SymbolStyle circle = Assert.Single(feature.Styles.OfType<Mapsui.Styles.SymbolStyle>());
+            Assert.Equal(Mapsui.Styles.SymbolType.Ellipse, circle.SymbolType);
+            Assert.NotNull(circle.Fill);
+            Assert.NotEqual(label.ForeColor, circle.Fill.Color);
+        });
+    }
+
+    [AvaloniaFact]
+    public void ListedStraightBridgeTransitionCanBeSelectedOnMap()
+    {
+        GeoCoordinate coordinate = TestData.P(100, 150);
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        var window = new Window { Content = control, Width = 900, Height = 600 };
+        window.Show();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
+        adapter.SetRouteVertices(
+            [new RouteVertexRow(12, coordinate, RouteVertexKind.Transition)]);
+        adapter.InitializeViewport();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            candidate => candidate.Name == "Вершины маршрута");
+        Mapsui.IFeature feature = Assert.Single(layer.Features);
+        Assert.Equal("12", feature["vertex_label"]);
+        int selected = 0;
+        adapter.RouteVertexSelected += number => selected = number;
+        (double worldX, double worldY) = SphericalMercator.FromLonLat(
+            coordinate.Longitude, coordinate.Latitude);
+        MPoint screen = control.Map.Navigator.Viewport.WorldToScreen(worldX, worldY);
+
+        Click(window, new Avalonia.Point(screen.X, screen.Y));
+
+        Assert.Equal(12, selected);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task BridgeTransitionAtCableBendIsVisibleAndSelectableWithItsListNumber()
+    {
+        GeoCoordinate start = TestData.P(50, 150);
+        GeoCoordinate bend = TestData.P(120, 200);
+        GeoCoordinate end = TestData.P(260, 150);
+        using MapViewModel vm = new(new NavigationHost(),
+            new PlanningSession(new BridgeBendPlanner(bend), TestData.AllowAllValidator),
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
+        await vm.AddPoint.Execute(start);
+        await vm.AddPoint.Execute(end);
+        await vm.BuildRoutes.Execute();
+
+        RouteVertexRow listedTurn = Assert.Single(vm.RouteVertices,
+            vertex => vertex.Kind == RouteVertexKind.Turn);
+        Assert.Equal(bend, listedTurn.Coordinate);
+
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        var window = new Window { Content = control, Width = 900, Height = 600 };
+        window.Show();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
+        adapter.SetPoints(vm.Points.ToArray());
+        adapter.SetRouteVertices(vm.RouteVertices.ToArray());
+        adapter.InitializeViewport();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            candidate => candidate.Name == "Вершины маршрута");
         Assert.Single(layer.Features);
+        int selectedNumber = 0;
+        adapter.RouteVertexSelected += number => selectedNumber = number;
+        (double worldX, double worldY) = SphericalMercator.FromLonLat(bend.Longitude, bend.Latitude);
+        MPoint screen = control.Map.Navigator.Viewport.WorldToScreen(worldX, worldY);
+
+        Click(window, new Avalonia.Point(screen.X, screen.Y));
+
+        Assert.Equal(listedTurn.Number, selectedNumber);
+        window.Close();
     }
 
     [AvaloniaFact]
@@ -284,6 +373,80 @@ public sealed class MapCameraTests
         Click(window, new Avalonia.Point(waypointScreen.X, waypointScreen.Y));
         Assert.Equal(waypoint.Id, selectedWaypoint);
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void CloselySpacedIntermediateMarkersAppearAfterZoomingIn()
+    {
+        GeoCoordinate first = TestData.P(100, 150);
+        GeoCoordinate second = TestData.P(108, 150);
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        var window = new Window { Content = control, Width = 900, Height = 600 };
+        window.Show();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
+        adapter.SetRouteVertices(
+        [
+            new RouteVertexRow(1, first, RouteVertexKind.Turn, LegIndex: 1, LegSubIndex: 1),
+            new RouteVertexRow(2, second, RouteVertexKind.Turn, LegIndex: 1, LegSubIndex: 2)
+        ]);
+        adapter.InitializeViewport();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        (double x, double y) = SphericalMercator.FromLonLat(second.Longitude, second.Latitude);
+        control.Map.Navigator.CenterOnAndZoomTo(new MPoint(x, y), 1);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        int selected = 0;
+        adapter.RouteVertexSelected += number => selected = number;
+        MPoint screen = control.Map.Navigator.Viewport.WorldToScreen(x, y);
+
+        Click(window, new Avalonia.Point(screen.X, screen.Y));
+
+        Assert.Equal(0, selected);
+        control.Map.Navigator.CenterOnAndZoomTo(new MPoint(x, y), 0.1);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        screen = control.Map.Navigator.Viewport.WorldToScreen(x, y);
+        Click(window, new Avalonia.Point(screen.X, screen.Y));
+        Assert.Equal(2, selected);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void PrimaryListSelectionHighlightsWaypointAndUsesDifferentColourForGeneratedVertices()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
+        var point = new WaypointRow(Guid.NewGuid(), 1, TestData.P(100, 150));
+        adapter.SetPoints([point]);
+        RouteVertexRow primary = new(1, point.Coordinate, RouteVertexKind.UserWaypoint, LegIndex: 1);
+        RouteVertexRow child = new(2, TestData.P(110, 150), LegIndex: 1, LegSubIndex: 1);
+        adapter.SetRouteVertices([primary, child]);
+        Mapsui.Layers.MemoryLayer points = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            layer => layer.Name == "Точки");
+        Mapsui.Layers.MemoryLayer vertices = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            layer => layer.Name == "Вершины маршрута");
+        static Mapsui.Styles.Color Colour(Mapsui.Layers.MemoryLayer layer) =>
+            Assert.IsType<Mapsui.Styles.Color>(Assert.Single(Assert.Single(layer.Features).Styles.OfType<Mapsui.Styles.SymbolStyle>()).Fill!.Color);
+        Mapsui.Styles.Color normal = Colour(points);
+        Assert.NotEqual(normal, Colour(vertices));
+        adapter.SetRouteVertices([primary with { IsSelected = true }, child]);
+        Assert.NotEqual(normal, Colour(points));
+        adapter.SetRouteVertices([primary, child with { IsSelected = true }]);
+        Assert.Equal(normal, Colour(points));
+        Assert.Equal(double.MaxValue,
+            Assert.Single(Assert.Single(vertices.Features).Styles.OfType<Mapsui.Styles.SymbolStyle>()).MaxVisible);
+    }
+
+    private sealed class BridgeBendPlanner(GeoCoordinate bend) : IRoutePlanner
+    {
+        public Task<IReadOnlyList<RouteAlternative>> PlanAsync(
+            IReadOnlyList<GeoCoordinate> points, RoutingOptions options, CancellationToken cancellationToken)
+        {
+            var metrics = new RouteMetrics(250, 0, 250, 0, 0, 0, 250, null);
+            return Task.FromResult<IReadOnlyList<RouteAlternative>>(
+            [
+                new(Guid.NewGuid(), "Через поворот моста",
+                    [points[0], bend, points[1]], metrics, [bend])
+            ]);
+        }
     }
 
     private static void Click(Window window, Avalonia.Point position)

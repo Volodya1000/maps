@@ -211,7 +211,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         var session = new PlanningSession(
             TestData.Planner(building), new GeodataPointPlacementValidator(data));
         using var vm = new MapViewModel(
-            new NavigationHost(), session, data, new MemorySettings(), new MemoryClipboard());
+            new NavigationHost(), session, new MapAreaLoader(data), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(50, 150)).ToTask();
         WaypointRow original = Assert.Single(vm.Points);
         long revision = session.Revision;
@@ -235,13 +235,16 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         string result = RouteMetricsFormatter.Format(route, new RoutingOptions(ReserveFraction: 0.25));
 
         Assert.Contains($"Кабель с запасом {0.25:P0}: {125:N0} м", result);
-        Assert.Contains("Требуются обследование и согласование.", result);
+        Assert.Contains("Пересечённых дорог: 1", result);
+        Assert.Contains("Переходов по мостам: 0", result);
+        Assert.DoesNotContain("Высотные характеристики", result);
+        Assert.DoesNotContain("Требуются обследование и согласование.", result);
     }
 
     private static MapViewModel CreateVm(IGeodataRepository data) => new(
         new NavigationHost(),
         new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
-        data,
+        new MapAreaLoader(data),
         new MemorySettings(),
         new MemoryClipboard());
 

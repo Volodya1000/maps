@@ -159,6 +159,7 @@
                                         Classes.selected="{Binding IsSelected}"
                                         Command="{Binding $parent[local:MapView].ViewModel.ChooseRoute}"
                                         CommandParameter="{Binding Id}">
+                                        <StackPanel Spacing="4">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <TextBlock
                                                 Classes="route-choice-name"
@@ -168,6 +169,12 @@
                                                 Grid.Column="1"
                                                 Text="{Binding LengthText}" />
                                         </Grid>
+                                        <WrapPanel>
+                                            <Border Classes="metric-badge forest"><TextBlock Text="{Binding ForestText}" /></Border>
+                                            <Border Classes="metric-badge field"><TextBlock Text="{Binding FieldText}" /></Border>
+                                            <Border Classes="metric-badge bridge"><TextBlock Text="{Binding BridgesText}" /></Border>
+                                        </WrapPanel>
+                                        </StackPanel>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -187,24 +194,34 @@
                         <StackPanel Margin="0,8,0,0" Spacing="4">
                             <TextBlock
                                 Classes="view-hint"
-                                Text="Значимые повороты и переходы выбранного маршрута." />
-                            <ListBox
-                                Classes="route-vertex-list"
-                                ItemsSource="{Binding RouteVertices}"
-                                SelectedItem="{Binding SelectedRouteVertex}">
-                                <ListBox.ItemTemplate>
+                                Text="Зелёные — основные, фиолетовые — промежуточные, синие — выбранные. Раскройте ▸ у нужной точки." />
+                            <ItemsControl ItemsSource="{Binding VisibleRouteVertices}">
+                                <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:RouteVertexRow">
-                                        <Border
-                                            Classes="route-vertex-row"
-                                            Classes.selected="{Binding IsSelected}">
+                                        <Border Classes="route-vertex-row" Classes.child="{Binding IsChild}">
                                             <Grid ColumnDefinitions="32,*">
-                                                <TextBlock Text="{Binding Number}" />
-                                                <TextBlock Grid.Column="1" Text="{Binding Display}" />
+                                                <Button Content="{Binding ExpansionText}"
+                                                    IsVisible="{Binding HasChildren}"
+                                                    AutomationProperties.Name="Раскрыть или свернуть промежуточные вершины"
+                                                    Command="{Binding $parent[local:MapView].ViewModel.ToggleRouteLeg}"
+                                                    CommandParameter="{Binding LegIndex}" />
+                                                <Button Grid.Column="1" Classes="vertex-select"
+                                                    Classes.selected="{Binding IsSelected}"
+                                                    Command="{Binding $parent[local:MapView].ViewModel.SelectRouteVertex}"
+                                                    CommandParameter="{Binding Number}">
+                                                    <Grid ColumnDefinitions="64,*">
+                                                        <TextBlock Text="{Binding DisplayLabel}" />
+                                                        <StackPanel Grid.Column="1">
+                                                            <TextBlock Classes="vertex-coordinate" Text="{Binding Display}" />
+                                                            <TextBlock Classes="view-hint" Text="{Binding KindText}" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Button>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                             <Button
                                 Command="{Binding CopyRouteVertex}"
                                 Content="{Binding CopyRouteVertexText}" />

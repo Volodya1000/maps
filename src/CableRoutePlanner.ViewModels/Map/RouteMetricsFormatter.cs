@@ -14,11 +14,9 @@ public static class RouteMetricsFormatter
             $"Кабель с запасом {options.ReserveFraction:P0}: "
                 + $"{metrics.CableLengthMetres(options.ReserveFraction):N0} м",
             $"Лес: {metrics.ForestMetres:N0} м · поле: {metrics.FieldMetres:N0} м",
-            $"Пересечённых объектов дорог: {metrics.RoadCrossings}",
+            $"Пересечённых дорог: {metrics.RoadCrossings}",
             $"Разрешённых водных переходов: {metrics.ApprovedWaterCrossings}",
-            $"Переходов по мостам OSM, требуют проверки: {metrics.PotentialBridgeCrossings}",
-            $"Взвешенная стоимость: {metrics.WeightedCost:N0} усл. м",
-            "Высотные характеристики: нет данных DEM",
-            "Требуются обследование и согласование.");
+            $"Переходов по мостам: {metrics.PotentialBridgeCrossings}",
+            $"Взвешенная стоимость: {metrics.WeightedCost:N0} усл. м");
     }
 }

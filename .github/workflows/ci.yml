@@ -120,7 +120,6 @@ jobs:
       - name: Preserve the tested PR preview and signing key
         if: >-
           github.event_name == 'pull_request'
-          && contains(github.event.pull_request.labels.*.name, 'build-belarus-apk')
         run: |
           mkdir -p artifacts/pr-preview-base
           cp artifacts/CableRoutePlanner-CI-Minsk.apk artifacts/pr-preview-base/Minsk.apk
@@ -128,7 +127,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: >-
           github.event_name == 'pull_request'
-          && contains(github.event.pull_request.labels.*.name, 'build-belarus-apk')
         with:
           name: pull-request-preview-base
           path: artifacts/pr-preview-base/
@@ -190,7 +188,6 @@ jobs:
     if: >-
       github.event_name == 'pull_request'
       && github.event.pull_request.number != ''
-      && contains(github.event.pull_request.labels.*.name, 'build-belarus-apk')
     needs: [quality, tests, data, terrain-spike, android]
     uses: ./.github/workflows/pull-request-apks.yml
     with:
