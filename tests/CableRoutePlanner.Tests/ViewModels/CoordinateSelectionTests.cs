@@ -23,7 +23,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
     public async Task SelectingCopyingAndRemovingWaypointKeepVisibleSelectionConsistent()
     {
         var clipboard = new MemoryClipboard();
-        using var vm = new MapViewModel(new NavigationHost(), new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(), new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), clipboard);
         await vm.AddPoint.Execute(TestData.P(50, 150));
         await vm.AddPoint.Execute(TestData.P(260, 150));
@@ -45,7 +45,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
     {
         var clipboard = new MemoryClipboard();
         var data = new MemoryData();
-        using var vm = new MapViewModel(new NavigationHost(), new PlanningSession(new VertexPlanner(), TestData.AllowAllValidator),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(), new PlanningSession(new VertexPlanner(), TestData.AllowAllValidator),
             new MapAreaLoader(data), new MemorySettings(), clipboard);
         await vm.AddPoint.Execute(TestData.P(50, 150));
         await vm.AddPoint.Execute(TestData.P(260, 150));
@@ -69,7 +69,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
     [Fact]
     public async Task StraightBridgeTransitionKeepsAuxiliaryKindWithoutInventingATurn()
     {
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new PlanningSession(new StraightTransitionPlanner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(50, 150));
@@ -84,7 +84,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
     [Fact]
     public async Task ShortZigzagBendsAreAllNumberedEvenWhenAdjacentSegmentsAreBelowFifteenMetres()
     {
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new PlanningSession(new ShortZigzagPlanner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(50, 150));
@@ -105,7 +105,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
     public async Task MultipleLegsKeepHumanLabelsAndCollapseDuplicateBridgeMarkers()
     {
         var clipboard = new MemoryClipboard();
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new PlanningSession(new ClusteredBridgePlanner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), clipboard);
         await vm.AddPoint.Execute(TestData.P(0, 0));
@@ -135,7 +135,7 @@ public sealed class CoordinateSelectionTests : ReactiveTestScope
     [Fact]
     public async Task RouteLegsStartCollapsedAndExpandIndependentlyWithoutChangingMapVertices()
     {
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new PlanningSession(new ClusteredBridgePlanner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(0, 0));

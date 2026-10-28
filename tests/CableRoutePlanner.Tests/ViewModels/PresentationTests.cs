@@ -49,7 +49,7 @@ public sealed class PresentationTests : ReactiveTestScope
     {
         var clipboard = new MemoryClipboard();
         var session = new PlanningSession(TestData.Planner(), TestData.AllowAllValidator);
-        using var vm = new MapViewModel(
+        using MapViewModel vm = TestData.CreateMapViewModel(
             new NavigationHost(),
             session,
             new MapAreaLoader(new MemoryData()),
@@ -225,7 +225,7 @@ public sealed class PresentationTests : ReactiveTestScope
     private static MapViewModel CreateVm(
         IRoutePlanner planner,
         IGeodataRepository data,
-        IScreen? screen = null) => new(
+        IScreen? screen = null) => TestData.CreateMapViewModel(
         screen ?? new NavigationHost(),
         new PlanningSession(planner, TestData.AllowAllValidator),
         new MapAreaLoader(data),

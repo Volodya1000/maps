@@ -114,7 +114,7 @@ public sealed class WaypointGestureTests
 
     private sealed class WaypointListFixture : IDisposable
     {
-        public MapViewModel ViewModel { get; } = new(new NavigationHost(), new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+        public MapViewModel ViewModel { get; } = TestData.CreateMapViewModel(new NavigationHost(), new PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         public WaypointList List { get; }
         public ScrollViewer Scroll { get; }

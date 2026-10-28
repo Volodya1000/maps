@@ -54,7 +54,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task ExtractedStylesKeepMapAndWaypointAppearance()
     {
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(30, 150));
@@ -323,7 +323,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task AlternativesAreHiddenUntilRouteIsBuiltAndAfterClear()
     {
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
@@ -360,7 +360,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public void RotatingCompassKeepsTheNeedleCenteredInsideTheFixedButton()
     {
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) =>
@@ -478,7 +478,7 @@ public sealed class UiTests
     public async Task AlternativeButtonChangesRenderedPolyline()
     {
         MapFeature forest = TestData.Polygon(1, CableRoutePlanner.Domain.TerrainKind.Forest, 100, 60, 220, 240);
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(forest), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData(forest)), new MemorySettings(), new MemoryClipboard());
         await vm.AddPoint.Execute(TestData.P(30, 150));
@@ -560,7 +560,7 @@ public sealed class UiTests
     public async Task FirstOpeningRequestsCountryViewportRatherThanAStartupPatch()
     {
         var repository = new ViewportRepository();
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MapAreaLoader(repository), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
@@ -584,7 +584,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task MobileMapPanelCanBeCollapsedAndSwipedOpenAgain()
     {
-        using var vm = new MapViewModel(new NavigationHost(),
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
