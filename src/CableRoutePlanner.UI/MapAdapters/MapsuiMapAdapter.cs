@@ -246,7 +246,9 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     }
 
     internal static IFeature[] PrepareFeatures(
-        IReadOnlyList<MapFeature> features, CancellationToken cancellationToken)
+        IReadOnlyList<MapFeature> features,
+        CancellationToken cancellationToken,
+        double metresPerPixel = 0)
     {
         var reader = new WKBReader();
         var transform = new MercatorTransformer();
@@ -267,7 +269,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             }
             else
             {
-                foreach (IStyle style in MapsuiStyleFactory.ForTerrain(f.Kind))
+                foreach (IStyle style in MapsuiStyleFactory.ForTerrain(f.Kind, metresPerPixel))
                 {
                     feature.Styles.Add(style);
                 }

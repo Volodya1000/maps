@@ -32,7 +32,10 @@ internal sealed class GeodataFeatureProvider(IGeodataRepository geodata) : IProv
             new GeoBounds(west, south, east, north),
             fetchInfo.Resolution,
             CancellationToken.None).ConfigureAwait(false);
-        IFeature[] prepared = MapsuiMapAdapter.PrepareFeatures(features, CancellationToken.None);
+        IFeature[] prepared = MapsuiMapAdapter.PrepareFeatures(
+            features,
+            CancellationToken.None,
+            fetchInfo.Resolution);
         if (prepared.Length > 0 && Interlocked.Exchange(ref _readyAnnounced, 1) == 0)
         {
             // Android routes stdout to logcat for the offline-map startup smoke test.

@@ -133,7 +133,8 @@ public sealed class UiTests
     {
         // Arrange
         MapFeature road = TestData.Line(1, Domain.TerrainKind.Road, (10, 10), (200, 200));
-        var repository = new TileRepository(road);
+        MapFeature bridge = TestData.Line(2, Domain.TerrainKind.BridgeCandidate, (20, 10), (20, 200));
+        var repository = new TileRepository(road, bridge);
         var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(
             control,
@@ -158,8 +159,20 @@ public sealed class UiTests
         Assert.NotNull(repository.LastBounds);
         Assert.Equal(27, repository.LastBounds.Value.West, 4);
         Assert.Equal(54, repository.LastBounds.Value.South, 4);
-        Mapsui.IFeature renderedRoad = Assert.Single(features);
-        Assert.Equal(2, renderedRoad.Styles.Count);
+        Mapsui.IFeature[] rendered = features.ToArray();
+        Assert.Equal(2, rendered.Length);
+        Mapsui.IFeature renderedRoad = rendered[0];
+        Mapsui.Styles.VectorStyle roadStyle = Assert.IsType<Mapsui.Styles.VectorStyle>(
+            Assert.Single(renderedRoad.Styles));
+        Assert.NotNull(roadStyle.Line);
+        Assert.InRange(roadStyle.Line.Width, 0.5, 1.1);
+        Mapsui.IFeature renderedBridge = rendered[1];
+        Assert.Equal(2, renderedBridge.Styles.Count);
+        Mapsui.Styles.VectorStyle bridgeMask = Assert.IsType<Mapsui.Styles.VectorStyle>(
+            renderedBridge.Styles.First());
+        Mapsui.Styles.Pen bridgeMaskLine = Assert.IsType<Mapsui.Styles.Pen>(bridgeMask.Line);
+        Assert.Equal(new Mapsui.Styles.Color(244, 242, 233), bridgeMaskLine.Color);
+        Assert.Equal(Mapsui.Styles.PenStrokeCap.Square, bridgeMaskLine.PenStrokeCap);
         Assert.DoesNotContain(
             control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
             layer => layer.Name == "Офлайн OSM");
