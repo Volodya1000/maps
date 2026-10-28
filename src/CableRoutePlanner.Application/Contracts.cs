@@ -48,7 +48,10 @@ public enum PlanningErrorReason
 {
     Unknown,
     PointOutsidePackage,
-    BlockedTerrain
+    BlockedTerrain,
+    GridConnectionUnavailable,
+    NoRouteInSearchArea,
+    ResourceLimit
 }
 
 public sealed class PlanningException : Exception

@@ -6,7 +6,9 @@ import os
 
 def full_maps(event_name, labels):
     return event_name == "pull_request" and (
-        "ci:skip-full-maps" not in labels or "ci:full-maps" in labels
+        "ci:skip-full-maps" not in labels
+        or "ci:full-maps" in labels
+        or "ci:routing-benchmark" in labels
     )
 
 

@@ -436,7 +436,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 {
                     Fill = new Brush(new Color(224, 122, 27)),
                     Outline = new Pen(Color.White, 2),
-                    SymbolScale = 0.8
+                    SymbolScale = 1.4
                 });
             }
             else

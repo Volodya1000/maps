@@ -130,11 +130,30 @@ jobs:
           '@
           $laptopScript.Replace('COMMIT_SHA', $env:GITHUB_SHA) | Set-Content (Join-Path $payload 'test-on-laptop.cmd') -Encoding ASCII
           Copy-Item 'docs/windows7-laptop.md' (Join-Path $payload 'README.md')
+          & 'tools/Windows7Prototype/prepare-usb.ps1' -Payload $payload
+          $instructions = Get-Content 'tools/Windows7Prototype/README.txt' -Raw
+          ($instructions -replace '\r?\n', "`r`n") | Set-Content (Join-Path $payload 'README.txt') -Encoding UTF8
+          $testScript = Get-Content (Join-Path $payload 'test-on-laptop.cmd') -Raw
+          $testScript = $testScript.Replace('set "RESULTS=%~dp0results"', @'
+          call "%PAYLOAD%check-prerequisites.cmd"
+          if errorlevel 1 exit /b 3
+          set "RESULTS=%~dp0results"
+          '@)
+          $testScript | Set-Content (Join-Path $payload 'test-on-laptop.cmd') -Encoding ASCII
           $files = Get-ChildItem $payload -File -Recurse | ForEach-Object {
             [pscustomobject]@{ path = $_.FullName.Substring($payload.Length + 1).Replace('\', '/'); sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
           }
           [pscustomobject]@{ schema = 'maps.win7.payload.v1'; commit = $env:GITHUB_SHA; files = $files } |
             ConvertTo-Json -Depth 5 | Set-Content (Join-Path $payload 'manifest.json') -Encoding UTF8
+      - name: Create the portable USB ZIP
+        shell: pwsh
+        run: |
+          Compress-Archive -Path 'artifacts/win7-payload/*' -DestinationPath "artifacts/CableRoutePlanner-Win7-x64-USB-$env:GITHUB_SHA.zip"
+      - uses: actions/upload-artifact@v7
+        with:
+          path: artifacts/CableRoutePlanner-Win7-x64-USB-*.zip
+          archive: false
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: windows7-payload-tree-${{ github.run_id }}

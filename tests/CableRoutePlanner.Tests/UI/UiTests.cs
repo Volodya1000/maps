@@ -52,6 +52,27 @@ public static class TestApplication
 public sealed class UiTests
 {
     [AvaloniaFact]
+    public void ShowAllIntermediateVerticesPreferenceAppliesWhenViewActivates()
+    {
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
+        vm.ShowAllRouteVertices = true;
+        vm.RouteVertices.Add(new RouteVertexRow(1, TestData.P(100, 100), LegIndex: 1, LegSubIndex: 1));
+        vm.RouteVertices.Add(new RouteVertexRow(2, TestData.P(101, 100), LegIndex: 1, LegSubIndex: 2));
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds)) { ViewModel = vm };
+        var window = new Window { Content = view, Width = 420, Height = 850 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Mapsui.UI.Avalonia.MapControl map = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
+        var layer = (Mapsui.Layers.MemoryLayer)map.Map.Layers.Single(item => item.Name == "Вершины маршрута");
+        Assert.Equal(2, layer.Features.Count());
+        Assert.All(layer.Features, feature => Assert.Equal(double.MaxValue,
+            Assert.Single(feature.Styles.OfType<Mapsui.Styles.SymbolStyle>()).MaxVisible));
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task GasPipelineCandidateRendersCrossingSpanAndLabelWithoutTheWholePipeline()
     {
         var control = new Mapsui.UI.Avalonia.MapControl();

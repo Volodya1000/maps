@@ -13,5 +13,10 @@ class PreviewPolicyTests(unittest.TestCase):
             full_maps("pull_request", ["ci:skip-full-maps", "ci:full-maps"])
         )
 
+    def test_country_benchmark_keeps_its_data_preparation_enabled(self):
+        self.assertTrue(
+            full_maps("pull_request", ["ci:skip-full-maps", "ci:routing-benchmark"])
+        )
+
     def test_main_push_does_not_publish_pr_previews(self):
         self.assertFalse(full_maps("push", []))

@@ -114,7 +114,8 @@ public sealed class AStarGridPathfinder : IGridPathfinder
         {
             throw new PlanningException(
                 $"Точка не соединяется с узлами сетки {mesh.CellSizeMetres:F0} м. "
-                + "Это может быть препятствие либо ограничение разрешения сетки; физическая непроходимость не доказана.");
+                + "Это может быть препятствие либо ограничение разрешения сетки; физическая непроходимость не доказана.",
+                PlanningErrorReason.GridConnectionUnavailable);
         }
 
         IEnumerable<(int Id, double Cost)> Neighbours(int id)
@@ -225,8 +226,8 @@ public sealed class AStarGridPathfinder : IGridPathfinder
 
         throw new PlanningException(
             "В доступной области нет допустимого маршрута. "
-            + "Река требует разрешённого или потенциального перехода. "
             + $"Сетка {mesh.CellSizeMetres:F0} м может не представить узкий проход; алгоритм не гарантирует полноту. "
-            + "Можно увеличить область данных или изменить точки.");
+            + "Можно увеличить область данных или изменить точки.",
+            PlanningErrorReason.NoRouteInSearchArea);
     }
 }

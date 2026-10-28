@@ -47,7 +47,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         adapter.InitializeViewport();
         adapter.SetPoints(viewModel.Points.ToArray());
         adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
-        adapter.SetRouteVertices(viewModel.RouteVertices.ToArray());
+        adapter.SetRouteVertices(viewModel.RouteVertices.ToArray(), viewModel.ShowAllRouteVertices);
         AdaptLayout();
 
         void BindButton(Button button, Action action) =>
