@@ -20,7 +20,7 @@ public interface IMapAdapter : IDisposable
 
     void InitializeViewport();
 
-    void SetFeatures(IReadOnlyList<MapFeature> features);
+    Task SetFeaturesAsync(IReadOnlyList<MapFeature> features);
 
     void SetPoints(IReadOnlyList<WaypointRow> points);
 

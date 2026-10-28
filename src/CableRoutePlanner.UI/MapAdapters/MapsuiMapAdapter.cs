@@ -12,6 +12,7 @@ using Mapsui.Layers;
 using Mapsui.Nts;
 using Mapsui.Projections;
 using Mapsui.Styles;
+using Mapsui.Tiling.Layers;
 using Mapsui.UI.Avalonia;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
@@ -25,10 +26,9 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     private const double MapReloadResolutionRatio = 1.25;
     private readonly MapControl _control;
 
-    private readonly MemoryLayer _base = new("Офлайн OSM")
-    {
-        Style = null
-    };
+    private readonly MemoryLayer _base;
+
+    private readonly RasterizingTileLayer? _tiledBase;
 
     private readonly MemoryLayer _routes = new("Маршруты")
     {
@@ -49,7 +49,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private IReadOnlyList<RouteVertexRow> _vertices = [];
 
-    private IReadOnlyList<MapFeature> _features = [];
+    private CancellationTokenSource _featurePreparation = new();
 
     private bool _fitQueued;
 
@@ -80,14 +80,41 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     public event Action<int>? RouteVertexSelected;
 
     public MapsuiMapAdapter(MapControl control, GeoBounds bounds)
+        : this(control, bounds, null)
+    {
+    }
+
+    public MapsuiMapAdapter(MapControl control, GeoBounds bounds, IGeodataRepository? geodata)
     {
         _control = control;
+        _base = new MemoryLayer("Офлайн OSM")
+        {
+            Style = null
+        };
         control.Map = new Mapsui.Map
         {
             CRS = "EPSG:3857",
             BackColor = new Color(244, 242, 233)
         };
-        control.Map.Layers.Add(_base);
+        if (geodata is null)
+        {
+            control.Map.Layers.Add(_base);
+        }
+        else
+        {
+            var source = new Layer("Офлайн OSM")
+            {
+                DataSource = new GeodataFeatureProvider(geodata),
+                Style = null
+            };
+            _tiledBase = new RasterizingTileLayer(
+                source,
+                minTiles: 96,
+                maxTiles: 160,
+                minExtraTiles: 8,
+                maxExtraTiles: 32);
+            control.Map.Layers.Add(_tiledBase);
+        }
         control.Map.Layers.Add(_routes);
         control.Map.Layers.Add(_routeVertices);
         control.Map.Layers.Add(_points);
@@ -173,19 +200,61 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         return new(x, y);
     }
 
-    public void SetFeatures(IReadOnlyList<MapFeature> features)
+    public async Task SetFeaturesAsync(IReadOnlyList<MapFeature> features)
     {
-        if (SameFeatures(_features, features))
+        if (_disposed || _tiledBase is not null)
         {
             return;
         }
 
-        _features = features.ToArray();
+        CancellationTokenSource previous = _featurePreparation;
+        CancellationTokenSource current = new();
+        _featurePreparation = current;
+        previous.Cancel();
+        previous.Dispose();
+        CancellationToken cancellationToken = current.Token;
+        MapFeature[] snapshot = features.ToArray();
+        try
+        {
+            IFeature[] prepared = await Task.Run(
+                () => PrepareFeatures(snapshot, cancellationToken), cancellationToken);
+            void Publish()
+            {
+                if (_disposed || cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                _base.Features = prepared;
+                _base.DataHasChanged();
+                _control.RefreshGraphics();
+            }
+
+            if (Dispatcher.UIThread.CheckAccess())
+            {
+                Publish();
+            }
+            else
+            {
+                await Dispatcher.UIThread.InvokeAsync(Publish);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // A newer viewport or disposal replaced this preparation.
+        }
+    }
+
+    internal static IFeature[] PrepareFeatures(
+        IReadOnlyList<MapFeature> features,
+        CancellationToken cancellationToken,
+        double metresPerPixel = 0)
+    {
         var reader = new WKBReader();
         var transform = new MercatorTransformer();
-        _base.Features = features.OrderBy(
-            f => f.Kind is TerrainKind.Forest or TerrainKind.Field ? 0 : 1).Select(f =>
+        return features.OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind)).Select(f =>
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var feature = new GeometryFeature(transform.Transform(reader.Read(f.Wkb)));
             if (f.Kind == TerrainKind.Settlement)
             {
@@ -200,33 +269,14 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             }
             else
             {
-                feature.Styles.Add(MapsuiStyleFactory.ForTerrain(f.Kind));
+                foreach (IStyle style in MapsuiStyleFactory.ForTerrain(f.Kind, metresPerPixel))
+                {
+                    feature.Styles.Add(style);
+                }
             }
 
             return (IFeature)feature;
         }).ToArray();
-        _base.DataHasChanged();
-        _control.RefreshGraphics();
-    }
-
-    private static bool SameFeatures(IReadOnlyList<MapFeature> previous, IReadOnlyList<MapFeature> current)
-    {
-        if (previous.Count != current.Count)
-        {
-            return false;
-        }
-
-        for (int index = 0; index < previous.Count; index++)
-        {
-            MapFeature left = previous[index];
-            MapFeature right = current[index];
-            if (left.Id != right.Id || left.Kind != right.Kind || !left.Wkb.AsSpan().SequenceEqual(right.Wkb))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public void SetPoints(IReadOnlyList<WaypointRow> points)
@@ -396,6 +446,11 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             screenNorth.X - screenCenter.X) * 180 / Math.PI + 90;
         NorthIndicatorRotationChanged?.Invoke(northAngle);
 
+        if (_tiledBase is not null)
+        {
+            return;
+        }
+
         if (!RequiresMapDataReload(viewport))
         {
             return;
@@ -445,6 +500,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     public void Dispose()
     {
         _disposed = true;
+        _featurePreparation.Cancel();
+        _featurePreparation.Dispose();
+        _tiledBase?.AbortFetch();
+        _tiledBase?.Dispose();
         _control.SizeChanged -= OnMapSizeChanged;
         _control.RemoveHandler(InputElement.PointerWheelChangedEvent, WheelChanged);
         _control.RemoveHandler(Avalonia.Input.InputElement.PointerPressedEvent, _pointerInteraction.Pressed);

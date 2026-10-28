@@ -28,7 +28,10 @@ public static class PresentationServiceCollectionExtensions
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<ShellViewModel>();
         services.AddSingleton<Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter>>(
-            _ => (control, bounds) => new MapsuiMapAdapter(control, bounds));
+            provider => (control, bounds) => new MapsuiMapAdapter(
+                control,
+                bounds,
+                provider.GetRequiredService<IGeodataRepository>()));
         services.AddTransient<MapView>();
         services.AddTransient<SettingsView>();
         services.AddTransient<ShellView>();

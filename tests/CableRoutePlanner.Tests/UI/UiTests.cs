@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Reactive.Linq;
 using Avalonia.ReactiveUI;
 using CableRoutePlanner.Application;
+using CableRoutePlanner.Domain;
 using CableRoutePlanner.Infrastructure;
 using CableRoutePlanner.Persistence;
 using CableRoutePlanner.UI;
@@ -101,7 +102,7 @@ public sealed class UiTests
     }
 
     [AvaloniaFact]
-    public void MapAdapterRendersEveryTerrainCategory()
+    public async Task MapAdapterRendersEveryTerrainCategory()
     {
         // Arrange
         var control = new Mapsui.UI.Avalonia.MapControl();
@@ -118,13 +119,116 @@ public sealed class UiTests
             12)).ToArray();
 
         // Act
-        adapter.SetFeatures(features);
+        await adapter.SetFeaturesAsync(features);
 
         // Assert
         Mapsui.Layers.MemoryLayer rendered = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
             layer => layer.Name == "Офлайн OSM");
         Assert.Equal(kinds.Length, rendered.Features!.Count());
         Assert.All(rendered.Features, feature => Assert.NotEmpty(feature.Styles));
+    }
+
+    [AvaloniaFact]
+    public async Task ProductionMapAdapterRasterizesRepositoryDataByTile()
+    {
+        // Arrange
+        MapFeature road = TestData.Line(1, Domain.TerrainKind.Road, (10, 10), (200, 200));
+        MapFeature bridge = TestData.Line(2, Domain.TerrainKind.BridgeCandidate, (20, 10), (20, 200));
+        var repository = new TileRepository(road, bridge);
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(
+            control,
+            repository.Info.Bounds,
+            repository);
+        Mapsui.Tiling.Layers.RasterizingTileLayer tiled = Assert.Single(
+            control.Map.Layers.OfType<Mapsui.Tiling.Layers.RasterizingTileLayer>());
+        Mapsui.Layers.Layer source = Assert.IsType<Mapsui.Layers.Layer>(tiled.SourceLayer);
+        Mapsui.Providers.IProvider provider = Assert.IsAssignableFrom<Mapsui.Providers.IProvider>(source.DataSource);
+        (double west, double south) = Mapsui.Projections.SphericalMercator.FromLonLat(27, 54);
+        (double east, double north) = Mapsui.Projections.SphericalMercator.FromLonLat(27.006, 54.006);
+        var extent = new Mapsui.MRect(west, south, east, north);
+
+        // Act
+        IEnumerable<Mapsui.IFeature> features = await provider.GetFeaturesAsync(
+            new Mapsui.Layers.FetchInfo(new Mapsui.MSection(extent, 4), "EPSG:3857"));
+        await adapter.SetFeaturesAsync([TestData.Polygon(2, Domain.TerrainKind.Forest, 0, 0, 5, 5)]);
+
+        // Assert
+        Assert.Equal(1, repository.MapQueries);
+        Assert.Equal(4, repository.Resolution);
+        Assert.NotNull(repository.LastBounds);
+        Assert.Equal(27, repository.LastBounds.Value.West, 4);
+        Assert.Equal(54, repository.LastBounds.Value.South, 4);
+        Mapsui.IFeature[] rendered = features.ToArray();
+        Assert.Equal(2, rendered.Length);
+        Mapsui.IFeature renderedRoad = rendered[0];
+        Mapsui.Styles.VectorStyle roadStyle = Assert.IsType<Mapsui.Styles.VectorStyle>(
+            Assert.Single(renderedRoad.Styles));
+        Assert.NotNull(roadStyle.Line);
+        Assert.InRange(roadStyle.Line.Width, 0.5, 1.1);
+        Mapsui.IFeature renderedBridge = rendered[1];
+        Assert.Equal(2, renderedBridge.Styles.Count);
+        Mapsui.Styles.VectorStyle bridgeMask = Assert.IsType<Mapsui.Styles.VectorStyle>(
+            renderedBridge.Styles.First());
+        Mapsui.Styles.Pen bridgeMaskLine = Assert.IsType<Mapsui.Styles.Pen>(bridgeMask.Line);
+        Assert.Equal(new Mapsui.Styles.Color(244, 242, 233), bridgeMaskLine.Color);
+        Assert.Equal(Mapsui.Styles.PenStrokeCap.Square, bridgeMaskLine.PenStrokeCap);
+        Assert.DoesNotContain(
+            control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            layer => layer.Name == "Офлайн OSM");
+    }
+
+    [AvaloniaFact]
+    public async Task MapAdapterKeepsPreviousLayerWhenNewGeometryCannotBeRead()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        MapFeature original = TestData.Polygon(1, Domain.TerrainKind.Field, 10, 10, 12, 12);
+        await adapter.SetFeaturesAsync([original]);
+        Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            candidate => candidate.Name == "Офлайн OSM");
+        Mapsui.IFeature displayed = Assert.Single(layer.Features);
+
+        await Assert.ThrowsAnyAsync<Exception>(() => adapter.SetFeaturesAsync(
+            [new MapFeature(2, Domain.TerrainKind.Road, [], "invalid")]));
+
+        Assert.Same(displayed, Assert.Single(layer.Features));
+    }
+
+    [AvaloniaFact]
+    public async Task MapAdapterPublishesLatestFeaturesAfterOverlappingPreparations()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        MapFeature[] oldFeatures = Enumerable.Range(0, 200).Select(index => TestData.Polygon(
+            index + 1, Domain.TerrainKind.Field, 10 + index * 0.01, 10,
+            10.005 + index * 0.01, 10.005)).ToArray();
+        MapFeature newest = TestData.Polygon(300, Domain.TerrainKind.Settlement, 15, 15, 16, 16);
+
+        Task oldPreparation = adapter.SetFeaturesAsync(oldFeatures);
+        Task newPreparation = adapter.SetFeaturesAsync([newest]);
+        await Task.WhenAll(oldPreparation, newPreparation);
+
+        Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            candidate => candidate.Name == "Офлайн OSM");
+        Mapsui.IFeature displayed = Assert.Single(layer.Features);
+        Assert.Single(displayed.Styles.OfType<Mapsui.Styles.LabelStyle>());
+    }
+
+    [AvaloniaFact]
+    public async Task DisposingMapAdapterCancelsPendingFeaturePreparation()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 53, 28, 54));
+        MapFeature[] features = Enumerable.Range(0, 200).Select(index => TestData.Polygon(
+            index + 1, Domain.TerrainKind.Field, 10 + index * 0.01, 10,
+            10.005 + index * 0.01, 10.005)).ToArray();
+
+        Task preparation = adapter.SetFeaturesAsync(features);
+        adapter.Dispose();
+
+        await preparation;
+        Assert.True(preparation.IsCompletedSuccessfully);
     }
 
     [AvaloniaFact]
@@ -538,6 +642,36 @@ public sealed class UiTests
         {
             LastBounds = bounds;
             Resolution = resolution;
+            return QueryAsync(bounds, ct);
+        }
+    }
+
+    private sealed class TileRepository(params MapFeature[] features) : IGeodataRepository
+    {
+        public DataPackageInfo Info { get; } = new(
+            "synthetic-tile-test",
+            new(27, 54, 27.006, 54.006),
+            "test",
+            false,
+            "test");
+
+        public int MapQueries { get; private set; }
+
+        public GeoBounds? LastBounds { get; private set; }
+
+        public double Resolution { get; private set; }
+
+        public Task<IReadOnlyList<MapFeature>> QueryAsync(GeoBounds bounds, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<MapFeature>>(features);
+
+        public Task<IReadOnlyList<MapFeature>> QueryMapAsync(
+            GeoBounds bounds,
+            double metresPerPixel,
+            CancellationToken ct)
+        {
+            MapQueries++;
+            LastBounds = bounds;
+            Resolution = metresPerPixel;
             return QueryAsync(bounds, ct);
         }
     }
