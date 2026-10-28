@@ -504,7 +504,12 @@ public sealed class UiTests
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Button toggle = view.GetVisualDescendants().OfType<Button>()
             .First(candidate => ReferenceEquals(candidate.Command, vm.ToggleRouteLeg) && candidate.IsVisible);
+        Avalonia.Controls.Shapes.Path closedIcon = Assert.Single(toggle.GetVisualDescendants()
+            .OfType<Avalonia.Controls.Shapes.Path>(), path => path.IsVisible);
+        Assert.NotNull(closedIcon.Data);
+        Assert.NotNull(closedIcon.Stroke);
         toggle.Command!.Execute(toggle.CommandParameter);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Button primaryRow = view.GetVisualDescendants().OfType<Button>()
             .First(candidate => ReferenceEquals(candidate.Command, vm.SelectRouteVertex)

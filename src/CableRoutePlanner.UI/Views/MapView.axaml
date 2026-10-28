@@ -192,19 +192,21 @@
                                 Text="Точки прокладки кабеля" />
                         </Expander.Header>
                         <StackPanel Margin="0,8,0,0" Spacing="4">
-                            <TextBlock
-                                Classes="view-hint"
-                                Text="Зелёные — основные, фиолетовые — промежуточные, синие — выбранные. Раскройте ▸ у нужной точки." />
                             <ItemsControl ItemsSource="{Binding VisibleRouteVertices}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:RouteVertexRow">
                                         <Border Classes="route-vertex-row" Classes.child="{Binding IsChild}">
                                             <Grid ColumnDefinitions="32,*">
-                                                <Button Content="{Binding ExpansionText}"
+                                                <Button
                                                     IsVisible="{Binding HasChildren}"
                                                     AutomationProperties.Name="Раскрыть или свернуть промежуточные вершины"
                                                     Command="{Binding $parent[local:MapView].ViewModel.ToggleRouteLeg}"
-                                                    CommandParameter="{Binding LegIndex}" />
+                                                    CommandParameter="{Binding LegIndex}">
+                                                    <Grid Width="16" Height="16">
+                                                        <Path Classes="vertex-chevron" Data="M 4,2 L 10,8 L 4,14" IsVisible="{Binding !IsExpanded}" />
+                                                        <Path Classes="vertex-chevron" Data="M 2,4 L 8,10 L 14,4" IsVisible="{Binding IsExpanded}" />
+                                                    </Grid>
+                                                </Button>
                                                 <Button Grid.Column="1" Classes="vertex-select"
                                                     Classes.selected="{Binding IsSelected}"
                                                     Command="{Binding $parent[local:MapView].ViewModel.SelectRouteVertex}"

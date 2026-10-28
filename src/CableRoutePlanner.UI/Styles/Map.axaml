@@ -144,4 +144,8 @@
     <Style Selector="Border.metric-badge.bridge">
         <Setter Property="Background" Value="{DynamicResource AppBridgeBadgeBrush}" />
     </Style>
+    <Style Selector="Path.vertex-chevron">
+        <Setter Property="Stroke" Value="{DynamicResource AppMutedTextBrush}" />
+        <Setter Property="StrokeThickness" Value="2" />
+    </Style>
 </Styles>
