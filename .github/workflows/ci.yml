@@ -160,7 +160,20 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: python3 tools/android_smoke.py --apk artifacts/CableRoutePlanner-CI-Minsk.apk --package "$ANDROID_APPLICATION_ID" --output artifacts/android-smoke --settle-seconds 90 --wait-map-ready
+          script: |
+            set -eu
+            for attempt in 1 2; do
+              adb kill-server || true
+              adb start-server || true
+              if python3 tools/android_smoke.py --apk artifacts/CableRoutePlanner-CI-Minsk.apk --package "$ANDROID_APPLICATION_ID" --output artifacts/android-smoke --settle-seconds 90 --wait-map-ready; then
+                exit 0
+              fi
+              if [ "$attempt" -eq 1 ]; then
+                echo "Android smoke attempt failed; restarting adb before retry." >&2
+                sleep 5
+              fi
+            done
+            exit 1
       - uses: actions/upload-artifact@v7
         if: always()
         with:
