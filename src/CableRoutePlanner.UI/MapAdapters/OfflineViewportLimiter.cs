@@ -13,8 +13,8 @@ public sealed class OfflineViewportLimiter(MRect extent) : IViewportLimiter
         }
 
         // Rotation enlarges the axis-aligned world footprint of the screen.
-        // Keep the camera centre inside the offline package so a drag cannot leave
-        // almost the entire screen empty. Edge locations can still reach the centre.
+        // Keep the visible footprint inside the offline package where it fits.
+        // If overview aspect ratios leave margins, centre the package in that axis.
         double radians = viewport.Rotation * Math.PI / 180;
         double cosine = Math.Abs(Math.Cos(radians));
         double sine = Math.Abs(Math.Sin(radians));
@@ -23,11 +23,24 @@ public sealed class OfflineViewportLimiter(MRect extent) : IViewportLimiter
         double maximum = Math.Max(projectedWidth / viewport.Width, projectedHeight / viewport.Height);
         double minimum = Math.Min(zoomBounds?.Min ?? 0, maximum);
         double resolution = Math.Clamp(viewport.Resolution, minimum, maximum);
+        double halfWidth = Math.Min(extent.Width / 2,
+            (viewport.Width * cosine + viewport.Height * sine) * resolution / 2);
+        double halfHeight = Math.Min(extent.Height / 2,
+            (viewport.Width * sine + viewport.Height * cosine) * resolution / 2);
         return viewport with
         {
             Resolution = resolution,
-            CenterX = Math.Clamp(viewport.CenterX, extent.MinX, extent.MaxX),
-            CenterY = Math.Clamp(viewport.CenterY, extent.MinY, extent.MaxY)
+            CenterX = LimitCenter(viewport.CenterX, extent.MinX, extent.MaxX, halfWidth),
+            CenterY = LimitCenter(viewport.CenterY, extent.MinY, extent.MaxY, halfHeight)
         };
+    }
+
+    private static double LimitCenter(double requested, double minimum, double maximum, double halfSpan)
+    {
+        double lower = minimum + halfSpan;
+        double upper = maximum - halfSpan;
+        // At a full-package overview, large Mercator coordinates can round the
+        // two limits in opposite directions. A collapsed range means centring.
+        return lower >= upper ? minimum + (maximum - minimum) / 2 : Math.Clamp(requested, lower, upper);
     }
 }

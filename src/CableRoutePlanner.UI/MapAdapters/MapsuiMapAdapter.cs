@@ -13,6 +13,7 @@ using Mapsui.Nts;
 using Mapsui.Projections;
 using Mapsui.Styles;
 using Mapsui.Tiling.Layers;
+using Mapsui.Tiling.Fetcher;
 using Mapsui.UI.Avalonia;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
@@ -115,7 +116,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         control.Map = new Mapsui.Map
         {
             CRS = "EPSG:3857",
-            BackColor = new Color(244, 242, 233)
+            BackColor = MapsuiStyleFactory.MapBackground
         };
         if (geodata is null)
         {
@@ -132,6 +133,9 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 source,
                 minTiles: 96,
                 maxTiles: 160,
+                // Keep nearby fallback coverage without simultaneously preparing
+                // three increasingly large parent areas on a phone.
+                dataFetchStrategy: new DataFetchStrategy(maxLevelsUp: 1),
                 minExtraTiles: 8,
                 maxExtraTiles: 32);
             control.Map.Layers.Add(_tiledBase);

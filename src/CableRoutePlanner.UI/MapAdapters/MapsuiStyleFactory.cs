@@ -6,7 +6,7 @@ namespace CableRoutePlanner.UI.MapAdapters;
 
 internal static class MapsuiStyleFactory
 {
-    private static readonly Color MapBackground = new(244, 242, 233);
+    public static Color MapBackground { get; } = new(244, 242, 233);
 
     public static int DrawingOrder(TerrainKind kind) => kind switch
     {
