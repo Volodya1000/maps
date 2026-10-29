@@ -16,7 +16,7 @@ public sealed class GeodataPointPlacementValidator(IGeodataRepository geodata) :
     public async Task ValidateAsync(GeoCoordinate coordinate, CancellationToken cancellationToken)
     {
         GeoBounds coverage = geodata.Info.Bounds;
-        if (!coverage.Contains(coordinate))
+        if (!geodata.Info.Contains(coordinate))
         {
             throw new PlanningException(
                 "Для этой точки нет данных в офлайн-пакете.",

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <EmbeddedResource Include="../../data/belarus-coverage.json" LogicalName="CableRoutePlanner.Persistence.BelarusCoverage.json" />
     <ProjectReference Include="../CableRoutePlanner.Application/CableRoutePlanner.Application.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Data.Sqlite" />

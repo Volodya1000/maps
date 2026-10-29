@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Persistence;
+using CableRoutePlanner.Domain;
 using Microsoft.Data.Sqlite;
 using NetTopologySuite.IO;
 
@@ -19,7 +20,8 @@ internal sealed class SqliteGeodataFixture : IDisposable
     {
     }
 
-    public SqliteGeodataFixture(IReadOnlyList<MapFeature> features, int? displayLod)
+    public SqliteGeodataFixture(IReadOnlyList<MapFeature> features, int? displayLod,
+        GeoCoverage? coverage = null, string regionId = "synthetic-test-only", GeoBounds? bounds = null)
     {
         try
         {
@@ -32,10 +34,11 @@ internal sealed class SqliteGeodataFixture : IDisposable
                 schema_version = 2,
                 coordinate_system = "EPSG:4326",
                 database_sha256 = checksum,
-                bounds = SyntheticBounds,
-                region_id = "synthetic-test-only",
+                bounds = bounds is { } area ? new[] { area.West, area.South, area.East, area.North } : SyntheticBounds,
+                region_id = regionId,
                 attribution = "test",
-                status = "synthetic fixture"
+                status = "synthetic fixture",
+                coverage_boundary = coverage?.Boundary.Select(point => new[] { point.Longitude, point.Latitude }).ToArray()
             }));
             Repository = new SqliteGeodataRepository(DirectoryPath);
         }

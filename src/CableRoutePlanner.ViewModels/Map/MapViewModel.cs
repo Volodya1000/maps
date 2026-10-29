@@ -496,7 +496,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private void EnsureInBounds(GeoCoordinate coordinate, string errorMessage)
     {
-        if (!_mapLoader.Info.Bounds.Contains(coordinate))
+        if (!_mapLoader.Info.Contains(coordinate))
         {
             throw new PlanningException(errorMessage);
         }

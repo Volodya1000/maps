@@ -58,10 +58,10 @@ public sealed class GridRoutePlanner(
             throw new PlanningException("Установите минимум две точки.");
         }
 
-        if (points.Any(p => !data.Info.Bounds.Contains(p)))
+        if (points.Any(p => !data.Info.Contains(p)))
         {
             throw new PlanningException(
-                "Для выбранной точки нет данных в офлайн-пакете.");
+                "Для выбранной точки нет данных в офлайн-пакете.", PlanningErrorReason.PointOutsidePackage);
         }
 
         SearchMargins margins = SearchMarginDegrees(points);

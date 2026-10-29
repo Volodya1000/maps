@@ -10,7 +10,12 @@ public sealed record DataPackageInfo(
     GeoBounds Bounds,
     string Attribution,
     bool HasTerrain,
-    string Status);
+    string Status,
+    GeoCoverage? Coverage = null)
+{
+    public bool Contains(GeoCoordinate coordinate) => Bounds.Contains(coordinate)
+        && (Coverage?.Contains(coordinate) ?? true);
+}
 
 public interface IGeodataRepository
 {
