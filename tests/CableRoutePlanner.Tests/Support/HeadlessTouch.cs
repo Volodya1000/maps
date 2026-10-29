@@ -20,12 +20,12 @@ internal sealed class HeadlessTouch(Window window) : IDisposable
         candidate.GetParameters().Length == 7 && candidate.GetParameters()[4].ParameterType == typeof(Point));
     private ulong _timestamp;
 
-    public void Send(RawPointerEventType type, Point position)
+    public void Send(RawPointerEventType type, Point position, long pointerId = 1)
     {
         Present();
         object input = Constructor.Invoke(new object[]
         {
-            _device, ++_timestamp, window, type, position, RawInputModifiers.None, 1L
+            _device, ++_timestamp, window, type, position, RawInputModifiers.None, pointerId
         });
         Process.Invoke(window, new[] { input });
         Dispatcher.UIThread.RunJobs();

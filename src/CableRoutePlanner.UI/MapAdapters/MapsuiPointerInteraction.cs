@@ -80,7 +80,7 @@ internal sealed class MapsuiPointerInteraction
             _pointers.Add(e.Pointer.Id);
             _cameraUsed();
             e.Pointer.Capture(_control);
-            e.Handled = true;
+            e.Handled = e.Pointer.Type != PointerType.Touch;
             return;
         }
 
@@ -97,6 +97,7 @@ internal sealed class MapsuiPointerInteraction
             _dragged = null;
             _pressedRouteVertex = null;
             _control.Map.Navigator.PanLock = false;
+            _previewChanged(_waypoints());
             return;
         }
 
@@ -108,7 +109,7 @@ internal sealed class MapsuiPointerInteraction
         {
             _control.Map.Navigator.PanLock = true;
             e.Pointer.Capture(_control);
-            e.Handled = true;
+            e.Handled = e.Pointer.Type != PointerType.Touch;
             return;
         }
 
@@ -122,7 +123,7 @@ internal sealed class MapsuiPointerInteraction
         {
             _control.Map.Navigator.PanLock = true;
             e.Pointer.Capture(_control);
-            e.Handled = true;
+            e.Handled = e.Pointer.Type != PointerType.Touch;
             return;
         }
 
@@ -134,13 +135,13 @@ internal sealed class MapsuiPointerInteraction
         {
             double delta = PointerAngle(e.GetPosition(_control)) - _rotationStartAngle;
             _rotate(_rotationStart + delta * 180 / Math.PI);
-            e.Handled = true;
+            e.Handled = e.Pointer.Type != PointerType.Touch;
             return;
         }
 
         if (_pressedRouteVertex is not null)
         {
-            e.Handled = true;
+            e.Handled = e.Pointer.Type != PointerType.Touch;
             return;
         }
 
@@ -152,7 +153,7 @@ internal sealed class MapsuiPointerInteraction
         GeoCoordinate coordinate = _toGeo(e.GetPosition(_control));
         _lastDragCoordinate = coordinate;
         _previewChanged(_waypoints().Select(p => p.Id == dragged ? p with { Coordinate = coordinate } : p).ToArray());
-        e.Handled = true;
+        e.Handled = e.Pointer.Type != PointerType.Touch;
     }
 
     public void Released(object? sender, PointerReleasedEventArgs e)
@@ -167,7 +168,7 @@ internal sealed class MapsuiPointerInteraction
         {
             _rotatingPointer = null;
             e.Pointer.Capture(null);
-            e.Handled = true;
+            e.Handled = e.Pointer.Type != PointerType.Touch;
             _multiTouch = false;
             return;
         }
@@ -182,7 +183,7 @@ internal sealed class MapsuiPointerInteraction
                 _routeVertexSelected(routeVertex);
             }
 
-            e.Handled = true;
+            e.Handled = e.Pointer.Type != PointerType.Touch;
             return;
         }
 
@@ -199,7 +200,7 @@ internal sealed class MapsuiPointerInteraction
             {
                 _pointMoved(dragged, _lastDragCoordinate ?? _toGeo(position));
             }
-            e.Handled = true;
+            e.Handled = e.Pointer.Type != PointerType.Touch;
         }
         else if (_addMode && !_multiTouch && IsClick(position))
         {

@@ -147,6 +147,29 @@ public sealed class TileTransitionTests
         Assert.Throws<ObjectDisposedException>(() => strategy.Get(Rect(child.Extent), schema.Resolutions[15].UnitsPerPixel, schema, cache));
     }
 
+    [Fact]
+    public void ReturningToCachedDetailDoesNotRestartItsFade()
+    {
+        var clock = new ManualClock();
+        using var strategy = new FadingTileRenderFetchStrategy(clock);
+        using var cache = new MemoryCache<IFeature?>(2, 10);
+        var schema = new GlobalSphericalMercator();
+        (TileInfo child, TileInfo parent) = Tiles(schema);
+        RasterFeature detail = Raster(child, SKColors.Blue);
+        cache.Add(parent.Index, Raster(parent, SKColors.Red));
+        cache.Add(child.Index, detail);
+        MRect extent = Rect(child.Extent);
+        double resolution = schema.Resolutions[15].UnitsPerPixel;
+        _ = strategy.Get(extent, resolution, schema, cache);
+        clock.Advance(300);
+        _ = strategy.Get(extent, resolution, schema, cache);
+        _ = strategy.Get(extent, schema.Resolutions[14].UnitsPerPixel, schema, cache);
+        RasterFeature shown = strategy.Get(extent, resolution, schema, cache).OfType<RasterFeature>()
+            .Single(feature => ReferenceEquals(feature.Raster, detail.Raster));
+        Assert.Equal(1, Assert.Single(shown.Styles).Opacity);
+        Assert.False(strategy.IsAnimating);
+    }
+
     private static (TileInfo Child, TileInfo Parent) Tiles(GlobalSphericalMercator schema)
     {
         (double x, double y) = SphericalMercator.FromLonLat(27, 54);

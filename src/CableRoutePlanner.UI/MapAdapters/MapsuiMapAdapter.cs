@@ -128,7 +128,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 DataSource = new GeodataFeatureProvider(geodata),
                 Style = null
             };
-            _tiledBase = new OfflineRasterLayer(source, control.RefreshGraphics);
+            _tiledBase = new OfflineRasterLayer(source);
             control.Map.Layers.Add(_tiledBase);
             if (geodata.Info.Coverage is not null)
             {
@@ -485,18 +485,12 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _control.Map.Navigator.ZoomOut();
     }
 
-    // RotateTo uses Dispatcher.PushFrame even with a zero duration in Mapsui 4.1.
-    // SetViewport applies the complete target viewport, preserving camera position.
     public void ResetNorth()
         => SetRotation(0);
 
     private void SetRotation(double rotation)
     {
-        Viewport current = _control.Map.Navigator.Viewport;
-        _control.Map.Navigator.SetViewport(
-            new Viewport(current.CenterX, current.CenterY, current.Resolution, rotation, current.Width, current.Height),
-            0,
-            new Mapsui.Animations.Easing(progress => progress));
+        _control.Map.Navigator.RotateTo(rotation, 0);
         // Navigator updates its state immediately, but Avalonia may retain the previous
         // raster frame until the next pointer event unless graphics are invalidated.
         _control.RefreshGraphics();
