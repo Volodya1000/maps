@@ -13,7 +13,6 @@ public sealed class FadingTileRenderFetchStrategy(TimeProvider? clock = null)
     public static TimeSpan TransitionDuration { get; } = TimeSpan.FromMilliseconds(200);
     private readonly TimeProvider _clock = clock ?? TimeProvider.System;
     private readonly Dictionary<TileIndex, TileState> _states = [];
-    private double _lastUnitsPerPixel = double.PositiveInfinity;
     private bool _disposed;
     private long? _animationStarted;
     public bool IsAnimating => !_disposed && _animationStarted is { } started
@@ -42,8 +41,6 @@ public sealed class FadingTileRenderFetchStrategy(TimeProvider? clock = null)
         }
         int level = BruTile.Utilities.GetNearestLevel(schema.Resolutions, resolution);
         double units = schema.Resolutions[level].UnitsPerPixel;
-        bool finerLevel = units < _lastUnitsPerPixel;
-        _lastUnitsPerPixel = units;
         KeyValuePair<int, Resolution>[] coarser = schema.Resolutions.Where(pair => pair.Value.UnitsPerPixel > units)
             .OrderBy(pair => pair.Value.UnitsPerPixel).ToArray();
         var selected = new Dictionary<TileIndex, TileState>();
@@ -62,7 +59,7 @@ public sealed class FadingTileRenderFetchStrategy(TimeProvider? clock = null)
             }
             TileState detail = State(tile.Index, current);
             (TileIndex Index, RasterFeature Feature)? parent = null;
-            if (!detail.WasCurrent || finerLevel)
+            if (!detail.WasCurrent)
             {
                 detail.Started = _clock.GetTimestamp();
                 detail.WasCurrent = true;

@@ -43,6 +43,13 @@ public sealed class OfflineBasemapTests
 
         double[] fetched = repository.Resolutions.Distinct().Order().ToArray();
         Assert.Equal(new[] { resolution, resolution * 2 }, fetched);
+        MRect extent = new(x, y, x + 256 * resolution, y + 256 * resolution);
+        _ = tiled.GetFeatures(extent, resolution).ToArray();
+        Assert.True(tiled.UpdateAnimations());
+        await Task.Delay(FadingTileRenderFetchStrategy.TransitionDuration + TimeSpan.FromMilliseconds(30));
+        IFeature[] settled = tiled.GetFeatures(extent, resolution).ToArray();
+        Assert.All(settled, feature => Assert.All(feature.Styles, style => Assert.Equal(1, style.Opacity)));
+        Assert.False(tiled.UpdateAnimations());
     }
 
     [AvaloniaTheory]
