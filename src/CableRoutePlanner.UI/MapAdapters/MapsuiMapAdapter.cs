@@ -13,7 +13,6 @@ using Mapsui.Nts;
 using Mapsui.Projections;
 using Mapsui.Styles;
 using Mapsui.Tiling.Layers;
-using Mapsui.Tiling.Fetcher;
 using Mapsui.UI.Avalonia;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
@@ -44,7 +43,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private readonly MemoryLayer _base;
 
-    private readonly RasterizingTileLayer? _tiledBase;
+    private readonly OfflineRasterLayer? _tiledBase;
 
     private readonly MemoryLayer _routes = new("Маршруты")
     {
@@ -129,15 +128,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 DataSource = new GeodataFeatureProvider(geodata),
                 Style = null
             };
-            _tiledBase = new RasterizingTileLayer(
-                source,
-                minTiles: 96,
-                maxTiles: 160,
-                // Keep nearby fallback coverage without simultaneously preparing
-                // three increasingly large parent areas on a phone.
-                dataFetchStrategy: new DataFetchStrategy(maxLevelsUp: 1),
-                minExtraTiles: 8,
-                maxExtraTiles: 32);
+            _tiledBase = new OfflineRasterLayer(source, control.RefreshGraphics);
             control.Map.Layers.Add(_tiledBase);
         }
         control.Map.Layers.Add(_routes);
@@ -279,6 +270,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     {
         var reader = new WKBReader();
         var transform = new MercatorTransformer();
+        var terrainStyles = new Dictionary<TerrainKind, IReadOnlyList<IStyle>>();
         return features.Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline).OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind)).Select(f =>
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -296,7 +288,12 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             }
             else
             {
-                foreach (IStyle style in MapsuiStyleFactory.ForTerrain(f.Kind, metresPerPixel))
+                if (!terrainStyles.TryGetValue(f.Kind, out IReadOnlyList<IStyle>? styles))
+                {
+                    styles = MapsuiStyleFactory.ForTerrain(f.Kind, metresPerPixel);
+                    terrainStyles.Add(f.Kind, styles);
+                }
+                foreach (IStyle style in styles)
                 {
                     feature.Styles.Add(style);
                 }
@@ -587,6 +584,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
         _disposed = true;
         _viewportChanged.OnCompleted();
         _pointAdded.OnCompleted();

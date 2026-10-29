@@ -222,9 +222,9 @@ public sealed class UiTests
             control,
             repository.Info.Bounds,
             repository);
-        Mapsui.Tiling.Layers.RasterizingTileLayer tiled = Assert.Single(
-            control.Map.Layers.OfType<Mapsui.Tiling.Layers.RasterizingTileLayer>());
-        Mapsui.Layers.Layer source = Assert.IsType<Mapsui.Layers.Layer>(tiled.SourceLayer);
+        Mapsui.Tiling.Layers.TileLayer tiled = Assert.Single(
+            control.Map.Layers.OfType<Mapsui.Tiling.Layers.TileLayer>());
+        Mapsui.Layers.Layer source = Assert.IsType<Mapsui.Layers.Layer>(((Mapsui.Layers.ISourceLayer)tiled).SourceLayer);
         Mapsui.Providers.IProvider provider = Assert.IsAssignableFrom<Mapsui.Providers.IProvider>(source.DataSource);
         (double west, double south) = Mapsui.Projections.SphericalMercator.FromLonLat(27, 54);
         (double east, double north) = Mapsui.Projections.SphericalMercator.FromLonLat(27.006, 54.006);

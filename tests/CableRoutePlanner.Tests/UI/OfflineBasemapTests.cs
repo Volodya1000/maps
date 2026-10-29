@@ -26,7 +26,7 @@ public sealed class OfflineBasemapTests
         var repository = new ResolutionRepository();
         var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, repository.Info.Bounds, repository);
-        RasterizingTileLayer tiled = Assert.Single(control.Map.Layers.OfType<RasterizingTileLayer>());
+        TileLayer tiled = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         double resolution = tiled.TileSource.Schema.Resolutions[10].UnitsPerPixel;
         (double x, double y) = SphericalMercator.FromLonLat(27.003, 54.003);
         var finished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -59,7 +59,7 @@ public sealed class OfflineBasemapTests
         // Use the real production provider and tile renderer with controlled map data.
         var populatedControl = new Mapsui.UI.Avalonia.MapControl();
         using var populatedAdapter = new MapsuiMapAdapter(populatedControl, new(27, 54, 27.006, 54.006), new MemoryData(features));
-        RasterizingTileLayer populated = Assert.Single(populatedControl.Map.Layers.OfType<RasterizingTileLayer>());
+        TileLayer populated = Assert.Single(populatedControl.Map.Layers.OfType<TileLayer>());
         byte[]? bytes = await populated.TileSource.GetTileAsync(tile);
 
         Assert.NotNull(bytes);
@@ -79,7 +79,7 @@ public sealed class OfflineBasemapTests
         BruTile.TileInfo parent = Assert.Single(schema.GetTileInfos(point, 14));
         var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006), new MemoryData());
-        RasterizingTileLayer tiled = Assert.Single(control.Map.Layers.OfType<RasterizingTileLayer>());
+        TileLayer tiled = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         byte[] childImage = Assert.IsType<byte[]>(await tiled.TileSource.GetTileAsync(child));
         using var oldImage = new SKBitmap(256, 256);
         using (var canvas = new SKCanvas(oldImage))
