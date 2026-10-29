@@ -212,6 +212,13 @@ public sealed class GridRoutePlanner(
         }
 
         SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);
+        if (options.PreferOverheadGasCrossings)
+        {
+            // Consumers select the first alternative. Keep the shortest ground route
+            // available, but initially show a mapped gas crossing when one was found.
+            result = result.OrderByDescending(route => route.Metrics.PotentialGasPipelineCrossings > 0).ToList();
+        }
+
         return result.AsReadOnly();
     }
 
