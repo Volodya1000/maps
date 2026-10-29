@@ -37,9 +37,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         MapGestureBindings.Bind(viewModel, adapter, bindings);
         MapLayerBindings.Bind(viewModel, adapter, bindings);
         _sheet.Bind(SheetHandleButton, this, AdaptLayout).DisposeWith(bindings);
-        Observable.FromEvent<Action<double>, double>(handler => angle => handler(angle),
-                handler => adapter.NorthIndicatorRotationChanged += handler,
-                handler => adapter.NorthIndicatorRotationChanged -= handler)
+        adapter.NorthIndicatorRotationChangedStream
             .Subscribe(angle => _northArrowRotation.Angle = angle).DisposeWith(bindings);
         BindButton(ZoomInButton, adapter.ZoomIn);
         BindButton(ZoomOutButton, adapter.ZoomOut);

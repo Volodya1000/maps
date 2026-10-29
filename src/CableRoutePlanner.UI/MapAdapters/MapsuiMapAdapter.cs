@@ -16,11 +16,26 @@ using Mapsui.Tiling.Layers;
 using Mapsui.UI.Avalonia;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace CableRoutePlanner.UI.MapAdapters;
 
 public sealed class MapsuiMapAdapter : IMapAdapter
 {
+    private readonly Subject<(GeoBounds Bounds, double Resolution)> _viewportChanged = new();
+    private readonly Subject<GeoCoordinate> _pointAdded = new();
+    private readonly Subject<(Guid Id, GeoCoordinate Coordinate)> _pointMoved = new();
+    private readonly Subject<Guid> _waypointSelected = new();
+    private readonly Subject<double> _northIndicatorRotationChanged = new();
+    private readonly Subject<int> _routeVertexSelected = new();
+
+    public IObservable<(GeoBounds Bounds, double Resolution)> ViewportChangedStream => _viewportChanged.AsObservable();
+    public IObservable<GeoCoordinate> PointAddedStream => _pointAdded.AsObservable();
+    public IObservable<(Guid Id, GeoCoordinate Coordinate)> PointMovedStream => _pointMoved.AsObservable();
+    public IObservable<Guid> WaypointSelectedStream => _waypointSelected.AsObservable();
+    public IObservable<double> NorthIndicatorRotationChangedStream => _northIndicatorRotationChanged.AsObservable();
+    public IObservable<int> RouteVertexSelectedStream => _routeVertexSelected.AsObservable();
     private const double MapReloadDistanceViewportFraction = 0.25;
 
     private const double MapReloadResolutionRatio = 1.25;
@@ -140,11 +155,11 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 || _control.Map.Navigator.Viewport.Resolution <= _vertexVisibility[vertex.Number]).ToArray(),
             ToScreen,
             ToGeo,
-            coordinate => PointAdded?.Invoke(coordinate),
-            (id, coordinate) => PointMoved?.Invoke(id, coordinate),
-            id => WaypointSelected?.Invoke(id),
+            coordinate => { _pointAdded.OnNext(coordinate); PointAdded?.Invoke(coordinate); },
+            (id, coordinate) => { _pointMoved.OnNext((id, coordinate)); PointMoved?.Invoke(id, coordinate); },
+            id => { _waypointSelected.OnNext(id); WaypointSelected?.Invoke(id); },
             RenderPoints,
-            number => RouteVertexSelected?.Invoke(number),
+            number => { _routeVertexSelected.OnNext(number); RouteVertexSelected?.Invoke(number); },
             () => _cameraWasUsed = true,
             SetRotation);
         control.Map.Navigator.CenterOnAndZoomTo(new MPoint(x, y), 7);
@@ -512,6 +527,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         double northAngle = Math.Atan2(
             screenNorth.Y - screenCenter.Y,
             screenNorth.X - screenCenter.X) * 180 / Math.PI + 90;
+        _northIndicatorRotationChanged.OnNext(northAngle);
         NorthIndicatorRotationChanged?.Invoke(northAngle);
 
         if (_tiledBase is not null)
@@ -533,13 +549,13 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             ToGeo(new(0, viewport.Height)),
             ToGeo(new(viewport.Width, viewport.Height))
         };
-        ViewportChanged?.Invoke(
-            new(
+        GeoBounds bounds = new(
                 corners.Min(p => p.Longitude),
                 corners.Min(p => p.Latitude),
                 corners.Max(p => p.Longitude),
-                corners.Max(p => p.Latitude)),
-            viewport.Resolution);
+                corners.Max(p => p.Latitude));
+        _viewportChanged.OnNext((bounds, viewport.Resolution));
+        ViewportChanged?.Invoke(bounds, viewport.Resolution);
     }
 
     private bool RequiresMapDataReload(Viewport viewport)
@@ -568,6 +584,12 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     public void Dispose()
     {
         _disposed = true;
+        _viewportChanged.OnCompleted();
+        _pointAdded.OnCompleted();
+        _pointMoved.OnCompleted();
+        _waypointSelected.OnCompleted();
+        _northIndicatorRotationChanged.OnCompleted();
+        _routeVertexSelected.OnCompleted();
         _featurePreparation.Cancel();
         _featurePreparation.Dispose();
         _tiledBase?.AbortFetch();
@@ -581,6 +603,12 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _control.PointerCaptureLost -= _pointerInteraction.CaptureLost;
         _control.Map.Navigator.PanLock = false;
         _control.Map.Dispose();
+        _viewportChanged.Dispose();
+        _pointAdded.Dispose();
+        _pointMoved.Dispose();
+        _waypointSelected.Dispose();
+        _northIndicatorRotationChanged.Dispose();
+        _routeVertexSelected.Dispose();
     }
 
 }

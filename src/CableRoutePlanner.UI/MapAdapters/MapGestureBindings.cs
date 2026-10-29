@@ -11,25 +11,20 @@ internal static class MapGestureBindings
 {
     public static void Bind(MapViewModel viewModel, IMapAdapter adapter, CompositeDisposable lifetime)
     {
-        Observable.FromEvent<Action<GeoCoordinate>, GeoCoordinate>(handler => point => handler(point),
-                handler => adapter.PointAdded += handler, handler => adapter.PointAdded -= handler)
+        adapter.PointAddedStream
             .SelectMany(point => viewModel.AddPoint.Execute(point))
             .Subscribe(_ => { }, viewModel.ReportUnexpectedError).DisposeWith(lifetime);
 
-        Observable.FromEvent<Action<Guid>, Guid>(handler => id => handler(id),
-                handler => adapter.WaypointSelected += handler, handler => adapter.WaypointSelected -= handler)
+        adapter.WaypointSelectedStream
             .SelectMany(id => viewModel.SelectPoint.Execute(id))
             .Subscribe(_ => { }, viewModel.ReportUnexpectedError).DisposeWith(lifetime);
 
-        Observable.FromEvent<Action<int>, int>(handler => number => handler(number),
-                handler => adapter.RouteVertexSelected += handler, handler => adapter.RouteVertexSelected -= handler)
+        adapter.RouteVertexSelectedStream
             .Subscribe(number => viewModel.SelectedRouteVertex =
                 viewModel.RouteVertices.FirstOrDefault(vertex => vertex.Number == number))
             .DisposeWith(lifetime);
 
-        Observable.FromEvent<Action<Guid, GeoCoordinate>, (Guid Id, GeoCoordinate Coordinate)>(
-                handler => (id, point) => handler((id, point)),
-                handler => adapter.PointMoved += handler, handler => adapter.PointMoved -= handler)
+        adapter.PointMovedStream
             .Select(move => Observable.FromAsync(() => viewModel.MovePointAsync(move.Id, move.Coordinate))
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Do(_ => adapter.SetPoints(viewModel.Points.ToArray()))

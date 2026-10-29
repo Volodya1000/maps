@@ -26,8 +26,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Restore and build net48 prototype
@@ -75,7 +75,7 @@ jobs:
             exit 1
           fi
           printf '%s\n' '{"status":"PASS","accelerator":"kvm","process_start":"verified"}' > artifacts/windows7-kvm/kvm-feasibility.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: windows7-kvm-feasibility-${{ github.run_id }}
@@ -88,8 +88,8 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Restore and build prototype and guest agent
@@ -154,7 +154,7 @@ jobs:
           path: artifacts/CableRoutePlanner-Win7-x64-USB-*.zip
           archive: false
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows7-payload-tree-${{ github.run_id }}
           path: artifacts/win7-payload
@@ -167,13 +167,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install ISO tooling
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y genisoimage
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: windows7-payload-tree-${{ github.run_id }}
           path: payload
@@ -198,7 +198,7 @@ jobs:
           mkdir -p artifacts/windows7-payload
           genisoimage -quiet -J -R -V WIN7PAYLOAD -o artifacts/windows7-payload/win7-payload.iso payload
           sha256sum artifacts/windows7-payload/win7-payload.iso | tee artifacts/windows7-payload/win7-payload.iso.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows7-payload-iso-check-${{ github.run_id }}
           path: artifacts/windows7-payload
@@ -216,7 +216,7 @@ jobs:
       WIN7_BASE_IMAGE_SHA256: ${{ secrets.WIN7_BASE_IMAGE_SHA256 }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install QEMU/KVM tools
         shell: bash
@@ -228,7 +228,7 @@ jobs:
           echo "WIN7_PRIVATE_DIR=$RUNNER_TEMP/win7-private" >> "$GITHUB_ENV"
 
       - name: Download payload generated from this commit
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: windows7-payload-tree-${{ github.run_id }}
           path: payload
@@ -385,7 +385,7 @@ jobs:
 
       - name: Publish diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows7-diagnostics-${{ github.run_id }}
           path: artifacts/windows7

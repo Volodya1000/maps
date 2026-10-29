@@ -101,7 +101,7 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
             JOIN display_index i ON i.id=f.id
             WHERE i.minx <= $east AND i.maxx >= $west AND i.miny <= $north AND i.maxy >= $south
               AND f.lod=$lod
-            ORDER BY f.id
+            ORDER BY CASE WHEN f.kind = 'GasPipelineCrossingCandidate' THEN 0 ELSE 1 END, f.id
             LIMIT $display_limit
             """ : displayRequest ? """
             SELECT f.id,f.kind,f.wkb,f.name,f.approval_id FROM features f

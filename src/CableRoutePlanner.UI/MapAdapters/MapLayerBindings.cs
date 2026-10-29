@@ -31,9 +31,7 @@ internal static class MapLayerBindings
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Catch<Unit, Exception>(error => Report(viewModel, error)))
             .Switch().Subscribe().DisposeWith(lifetime);
-        Observable.FromEvent<Action<GeoBounds, double>, (GeoBounds Bounds, double Resolution)>(
-                handler => (bounds, resolution) => handler((bounds, resolution)),
-                handler => adapter.ViewportChanged += handler, handler => adapter.ViewportChanged -= handler)
+        adapter.ViewportChangedStream
             .Throttle(TimeSpan.FromMilliseconds(200), RxApp.MainThreadScheduler)
             .Select(viewport => Observable.FromAsync(token =>
                     viewModel.LoadMapAreaAsync(viewport.Bounds, token, viewport.Resolution))

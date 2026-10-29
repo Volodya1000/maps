@@ -24,7 +24,7 @@ internal static class TestData
 {
     public static MapViewModel CreateMapViewModel(ReactiveUI.IScreen screen, IPlanningSession session,
         IMapAreaLoader loader, ISettingsStore settings, IClipboardService clipboard) =>
-        new(screen, session, loader, new RouteCalculationService(session, settings, loader.Info.Bounds), clipboard);
+        new(screen, session, loader, new RouteCalculationService(session, settings, () => loader.Info.Bounds), clipboard);
 
     public static IPointPlacementValidator AllowAllValidator { get; } = new AllowAllPointPlacementValidator();
 

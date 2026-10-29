@@ -6,6 +6,13 @@ namespace CableRoutePlanner.UI.MapAdapters;
 
 public interface IMapAdapter : IDisposable
 {
+    IObservable<(GeoBounds Bounds, double Resolution)> ViewportChangedStream { get; }
+    IObservable<GeoCoordinate> PointAddedStream { get; }
+    IObservable<(Guid Id, GeoCoordinate Coordinate)> PointMovedStream { get; }
+    IObservable<Guid> WaypointSelectedStream { get; }
+    IObservable<double> NorthIndicatorRotationChangedStream { get; }
+    IObservable<int> RouteVertexSelectedStream { get; }
+
     event Action<GeoBounds, double>? ViewportChanged;
 
     event Action<GeoCoordinate>? PointAdded;

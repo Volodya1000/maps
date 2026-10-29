@@ -43,9 +43,14 @@ public sealed class AStarGridPathfinder : IGridPathfinder
             int column = (int)Math.Round((point.X - mesh.Minimum.X) / mesh.CellSizeMetres);
             int row = (int)Math.Round((point.Y - mesh.Minimum.Y) / mesh.CellSizeMetres);
             var connections = new Dictionary<int, double>();
-            for (int y = Math.Max(0, row - 1); y <= Math.Min(mesh.Rows - 1, row + 1); y++)
+            // A long route can use a coarse cell size. A point near a cell edge may
+            // be several hundred metres from the nearest usable node; checking only
+            // the immediate 3x3 neighbourhood made valid city-to-city routes fail
+            // with a misleading "740 m" connection error.
+            const int connectionRadius = 8;
+            for (int y = Math.Max(0, row - connectionRadius); y <= Math.Min(mesh.Rows - 1, row + connectionRadius); y++)
             {
-                for (int x = Math.Max(0, column - 1); x <= Math.Min(mesh.Columns - 1, column + 1); x++)
+                for (int x = Math.Max(0, column - connectionRadius); x <= Math.Min(mesh.Columns - 1, column + connectionRadius); x++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     int id = y * mesh.Columns + x;

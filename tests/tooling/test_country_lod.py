@@ -17,9 +17,8 @@ class CountryLodTests(unittest.TestCase):
         include = display_lod.include_in_display_lod
         for lod in (0, 1, 2):
             self.assertFalse(include("OverheadGasPipeline", {}, 0, lod))
-        self.assertFalse(include("GasPipelineCrossingCandidate", {}, 0, 0))
-        self.assertFalse(include("GasPipelineCrossingCandidate", {}, 0, 1))
-        self.assertTrue(include("GasPipelineCrossingCandidate", {}, 0, 2))
+        for lod in (0, 1, 2):
+            self.assertTrue(include("GasPipelineCrossingCandidate", {}, 0, lod))
 
     def test_country_overview_keeps_only_city_labels(self):
         include = display_lod.include_in_display_lod
