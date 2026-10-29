@@ -8,7 +8,7 @@ for attempt in 1 2; do
       --apk artifacts/CableRoutePlanner-CI-Minsk.apk \
       --package "$ANDROID_APPLICATION_ID" \
       --output artifacts/android-smoke \
-      --settle-seconds "${ANDROID_SMOKE_SETTLE_SECONDS:-300}" \
+      --settle-seconds "${ANDROID_SMOKE_SETTLE_SECONDS:-90}" \
       --wait-map-ready; then
     exit 0
   fi

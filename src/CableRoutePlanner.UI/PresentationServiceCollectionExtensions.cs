@@ -49,7 +49,7 @@ public static class PresentationServiceCollectionExtensions
             () => provider.GetRequiredService<IGeodataRepository>()));
         services.AddSingleton<StartupViewModel>(provider =>
             new StartupViewModel((progress, ct) => provider.GetRequiredService<StartupLoader>()
-                .LoadAsync(progress, provider.GetRequiredService<ShellViewModel>(), ct)));
+                .LoadAsync(progress, () => provider.GetRequiredService<ShellViewModel>(), ct)));
         services.AddTransient<StartupView>();
         return services;
     }

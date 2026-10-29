@@ -618,6 +618,35 @@ public sealed class UiTests
     }
 
     [AvaloniaFact]
+    public async Task FreshInstallationPreparesOfflinePackageBeforeOpeningShell()
+    {
+        DirectoryInfo directory = Directory.CreateTempSubdirectory("maps-first-start-");
+        try
+        {
+            using ServiceProvider provider = TestApplication.CreateServices(directory.FullName,
+                Path.Combine(directory.FullName, "settings.json"), new MemoryClipboard(),
+                async (_, ct) =>
+                {
+                    await Task.Yield();
+                    ct.ThrowIfCancellationRequested();
+                    File.Copy(Path.Combine(TestData.RealData, "manifest.json"), Path.Combine(directory.FullName, "manifest.json"));
+                    File.Copy(Path.Combine(TestData.RealData, "geodata.sqlite"), Path.Combine(directory.FullName, "geodata.sqlite"));
+                });
+            StartupViewModel startup = provider.GetRequiredService<StartupViewModel>();
+
+            await startup.Load.Execute();
+
+            Assert.True(File.Exists(Path.Combine(directory.FullName, "geodata.sqlite")));
+            Assert.NotNull(startup.Shell);
+            Assert.False(startup.IsLoading);
+        }
+        finally
+        {
+            directory.Delete(true);
+        }
+    }
+
+    [AvaloniaFact]
     public async Task StartupOpensShellAfterBackgroundDataPreparation()
     {
         bool prepared = false;

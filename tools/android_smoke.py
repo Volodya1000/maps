@@ -101,7 +101,7 @@ def main():
             if "Error:" in start or "Exception" in start:
                 raise RuntimeError("Activity start failed: " + start)
             # Keep observing after am start: AppCompat failures can occur just after it returns.
-            ready_marker = None
+            map_ready = None
             observation_seconds = (
                 args.settle_seconds if args.wait_map_ready or index == 0 else 15
             )
@@ -112,23 +112,22 @@ def main():
                     raise RuntimeError("Application died after launching Activity")
                 if args.wait_map_ready:
                     current_logs = adb("logcat", "-d", "-v", "brief")
-                    ready_marker = next(
+                    map_ready = next(
                         (
                             line
                             for line in current_logs.splitlines()
-                            if "CRP_OFFLINE_DATA_READY" in line
-                            or "CRP_OFFLINE_MAP_READY" in line
+                            if "CRP_OFFLINE_MAP_READY" in line
                         ),
                         None,
                     )
-                    if ready_marker:
+                    if map_ready:
                         time.sleep(
                             2
                         )  # Allow the next map frame to be presented before capture.
                         break
-            if args.wait_map_ready and not ready_marker:
+            if args.wait_map_ready and not map_ready:
                 raise RuntimeError(
-                    "Activity survived but offline data/map did not become ready"
+                    "Activity survived but offline map did not become ready"
                 )
             activities = adb("shell", "dumpsys", "activity", "activities")
             resumed = [
@@ -156,7 +155,7 @@ def main():
                     attempt=index + 1,
                     pid=pid,
                     resumed=resumed,
-                    ready_marker=ready_marker,
+                    map_ready=map_ready,
                 )
             )
         report["success"] = True

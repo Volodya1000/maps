@@ -9,7 +9,7 @@ internal sealed class StartupLoader(
 {
     public async Task<ShellViewModel> LoadAsync(
         IProgress<string> progress,
-        ShellViewModel shell,
+        Func<ShellViewModel> shellFactory,
         CancellationToken cancellationToken)
     {
         if (prepareData is not null)
@@ -18,9 +18,8 @@ internal sealed class StartupLoader(
         }
 
         progress.Report("Проверка геоданных…");
-        IGeodataRepository repository = await Task.Run(repositoryFactory, cancellationToken);
-        Console.WriteLine(
-            $"CRP_OFFLINE_DATA_READY region={repository.Info.RegionId} mode=sqlite");
-        return shell;
+        await Task.Run(repositoryFactory, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        return shellFactory();
     }
 }
