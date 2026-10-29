@@ -8,10 +8,6 @@ namespace CableRoutePlanner.Persistence;
 
 public sealed class SqliteGeodataRepository : IGeodataRepository
 {
-    // A map viewport is a presentation query, not an export query. Keeping this
-    // budget bounded is important on Android: Mapsui creates one feature object
-    // and one geometry for every row returned here.
-    private const int LegacyDisplayFeatureBudget = 6000;
     private readonly string _connectionString;
 
     private readonly int _schemaVersion;
@@ -66,7 +62,7 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         }.ToString();
     }
 
-    public Task<IReadOnlyList<MapFeature>> QueryAsync(GeoBounds bounds, CancellationToken cancellationToken) => QueryInternalAsync(bounds, null, false, cancellationToken);
+    public Task<IReadOnlyList<MapFeature>> QueryAsync(GeoBounds bounds, CancellationToken cancellationToken) => QueryInternalAsync(bounds, null, cancellationToken);
 
     public Task<IReadOnlyList<MapFeature>> QueryMapAsync(
         GeoBounds bounds,
@@ -77,38 +73,26 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         // Routing always uses original geometry, so display simplification cannot open an obstacle.
         int? lod = _schemaVersion < 2
             || metresPerPixel <= 10 ? null : metresPerPixel > 250 ? 0 : metresPerPixel > 40 ? 1 : 2;
-        return QueryInternalAsync(bounds, lod, true, cancellationToken);
+        return QueryInternalAsync(bounds, lod, cancellationToken);
     }
 
     private Task<IReadOnlyList<MapFeature>> QueryInternalAsync(
         GeoBounds bounds,
         int? lod,
-        bool displayRequest,
         CancellationToken cancellationToken) => Task.Run<IReadOnlyList<MapFeature>>(() =>
     {
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
         using SqliteCommand command = connection.CreateCommand();
-        int displayLimit = lod switch
-        {
-            0 => 500,
-            1 => 1_500,
-            2 => 5_000,
-            _ => LegacyDisplayFeatureBudget
-        };
+        // The raster basemap queries one tile at its prepared detail level.
+        // An ID-ordered LIMIT permanently caches incomplete tiles, dropping roads
+        // and whole terrain areas rather than reducing geometric detail.
         command.CommandText = lod.HasValue ? """
             SELECT f.id,f.kind,f.wkb,f.name,NULL FROM display_features f
             JOIN display_index i ON i.id=f.id
             WHERE i.minx <= $east AND i.maxx >= $west AND i.miny <= $north AND i.maxy >= $south
               AND f.lod=$lod
             ORDER BY CASE WHEN f.kind = 'GasPipelineCrossingCandidate' THEN 0 ELSE 1 END, f.id
-            LIMIT $display_limit
-            """ : displayRequest ? """
-            SELECT f.id,f.kind,f.wkb,f.name,f.approval_id FROM features f
-            JOIN feature_index i ON i.id=f.id
-            WHERE i.minx <= $east AND i.maxx >= $west AND i.miny <= $north AND i.maxy >= $south
-            ORDER BY f.id
-            LIMIT $display_limit
             """ : """
             SELECT f.id,f.kind,f.wkb,f.name,f.approval_id FROM features f
             JOIN feature_index i ON i.id=f.id
@@ -118,11 +102,6 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         if (lod.HasValue)
         {
             command.Parameters.AddWithValue("$lod", lod.Value);
-        }
-
-        if (displayRequest)
-        {
-            command.Parameters.AddWithValue("$display_limit", displayLimit);
         }
 
         command.Parameters.AddWithValue("$east", bounds.East);

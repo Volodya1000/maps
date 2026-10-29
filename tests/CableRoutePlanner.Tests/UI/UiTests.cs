@@ -222,9 +222,9 @@ public sealed class UiTests
             control,
             repository.Info.Bounds,
             repository);
-        Mapsui.Tiling.Layers.RasterizingTileLayer tiled = Assert.Single(
-            control.Map.Layers.OfType<Mapsui.Tiling.Layers.RasterizingTileLayer>());
-        Mapsui.Layers.Layer source = Assert.IsType<Mapsui.Layers.Layer>(tiled.SourceLayer);
+        Mapsui.Tiling.Layers.TileLayer tiled = Assert.Single(
+            control.Map.Layers.OfType<Mapsui.Tiling.Layers.TileLayer>());
+        Mapsui.Layers.Layer source = Assert.IsType<Mapsui.Layers.Layer>(((Mapsui.Layers.ISourceLayer)tiled).SourceLayer);
         Mapsui.Providers.IProvider provider = Assert.IsAssignableFrom<Mapsui.Providers.IProvider>(source.DataSource);
         (double west, double south) = Mapsui.Projections.SphericalMercator.FromLonLat(27, 54);
         (double east, double north) = Mapsui.Projections.SphericalMercator.FromLonLat(27.006, 54.006);
@@ -242,13 +242,15 @@ public sealed class UiTests
         Assert.Equal(27, repository.LastBounds.Value.West, 4);
         Assert.Equal(54, repository.LastBounds.Value.South, 4);
         Mapsui.IFeature[] rendered = features.ToArray();
-        Assert.Equal(2, rendered.Length);
-        Mapsui.IFeature renderedRoad = rendered[0];
+        Assert.Equal(3, rendered.Length);
+        Mapsui.Styles.VectorStyle background = Assert.IsType<Mapsui.Styles.VectorStyle>(Assert.Single(rendered[0].Styles));
+        Assert.Equal(new Mapsui.Styles.Color(244, 242, 233), background.Fill!.Color);
+        Mapsui.IFeature renderedRoad = rendered[1];
         Mapsui.Styles.VectorStyle roadStyle = Assert.IsType<Mapsui.Styles.VectorStyle>(
             Assert.Single(renderedRoad.Styles));
         Assert.NotNull(roadStyle.Line);
         Assert.InRange(roadStyle.Line.Width, 0.5, 1.1);
-        Mapsui.IFeature renderedBridge = rendered[1];
+        Mapsui.IFeature renderedBridge = rendered[2];
         Assert.Equal(2, renderedBridge.Styles.Count);
         Mapsui.Styles.VectorStyle bridgeMask = Assert.IsType<Mapsui.Styles.VectorStyle>(
             renderedBridge.Styles.First());

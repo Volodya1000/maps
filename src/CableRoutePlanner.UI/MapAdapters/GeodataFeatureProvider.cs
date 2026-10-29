@@ -4,6 +4,8 @@ using Mapsui;
 using Mapsui.Layers;
 using Mapsui.Projections;
 using Mapsui.Providers;
+using Mapsui.Nts;
+using Mapsui.Styles;
 using NetTopologySuite.Geometries;
 
 namespace CableRoutePlanner.UI.MapAdapters;
@@ -43,6 +45,20 @@ internal sealed class GeodataFeatureProvider(IGeodataRepository geodata) : IProv
                 $"CRP_OFFLINE_MAP_READY region={geodata.Info.RegionId} features={prepared.Length} mode=raster-tiles");
         }
 
-        return prepared;
+        // Cached parent tiles remain visible while adjacent detail tiles load.
+        // An opaque tile background prevents their enlarged labels and old roads
+        // bleeding through already loaded, otherwise transparent detail tiles.
+        var background = new GeometryFeature(new GeometryFactory().CreatePolygon([
+            new Coordinate(extent.MinX, extent.MinY),
+            new Coordinate(extent.MaxX, extent.MinY),
+            new Coordinate(extent.MaxX, extent.MaxY),
+            new Coordinate(extent.MinX, extent.MaxY),
+            new Coordinate(extent.MinX, extent.MinY)]));
+        background.Styles.Add(new VectorStyle
+        {
+            Fill = new Brush(MapsuiStyleFactory.MapBackground),
+            Outline = null
+        });
+        return prepared.Prepend(background);
     }
 }

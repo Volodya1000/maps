@@ -57,7 +57,7 @@ public sealed class MapCameraTests
     [InlineData(-1, 1)]
     [InlineData(1, -1)]
     [InlineData(1, 1)]
-    public void PanningKeepsHalfOfMapViewportVisibleAndLetsAnEdgeReachScreenCentre(int horizontal, int vertical)
+    public void PanningKeepsMapViewportInsideCoverageAtEveryCorner(int horizontal, int vertical)
     {
         var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
@@ -80,12 +80,10 @@ public sealed class MapCameraTests
             - Math.Max(left, viewport.CenterX - visibleHalfWidth);
         double verticalOverlap = Math.Min(top, viewport.CenterY + visibleHalfHeight)
             - Math.Max(bottom, viewport.CenterY - visibleHalfHeight);
-        Assert.True(horizontalOverlap >= Math.Min(right - left, visibleHalfWidth) - 0.001);
-        Assert.True(verticalOverlap >= Math.Min(top - bottom, visibleHalfHeight) - 0.001);
+        Assert.True(horizontalOverlap >= Math.Min(right - left, visibleHalfWidth * 2) - 0.001);
+        Assert.True(verticalOverlap >= Math.Min(top - bottom, visibleHalfHeight * 2) - 0.001);
         Assert.InRange(viewport.CenterX, left, right);
         Assert.InRange(viewport.CenterY, bottom, top);
-        Assert.True(Math.Abs(viewport.CenterX - (horizontal < 0 ? left : right)) < visibleHalfWidth);
-        Assert.True(Math.Abs(viewport.CenterY - (vertical < 0 ? bottom : top)) < visibleHalfHeight);
         window.Close();
     }
 
@@ -129,6 +127,59 @@ public sealed class MapCameraTests
         Assert.Equal(angle, limited.Rotation);
         Assert.Equal(requested.Resolution, limited.Resolution);
         window.Close();
+    }
+
+    [Theory]
+    [InlineData(0, 0, 0)]
+    [InlineData(30, 0, 0)]
+    [InlineData(90, 0, 0)]
+    [InlineData(0, 3026545.647585, 7201022.31875)]
+    public void OverviewCameraCentersCoverageInsteadOfLeavingItAtScreenEdge(double rotation, double centerX, double centerY)
+    {
+        var extent = new MRect(centerX - 500, centerY - 400, centerX + 500, centerY + 400);
+        var limiter = new OfflineViewportLimiter(extent);
+        Viewport requested = new(100000, -100000, 10, rotation, 360, 800);
+
+        Viewport limited = limiter.Limit(requested, null, null);
+
+        Assert.Equal(centerX, limited.CenterX, 6);
+        Assert.Equal(centerY, limited.CenterY, 6);
+        Assert.Equal(rotation, limited.Rotation);
+    }
+
+    [Theory]
+    [InlineData(0, 600)]
+    [InlineData(-1, 600)]
+    [InlineData(360, 0)]
+    [InlineData(360, -1)]
+    public void UnarrangedViewportKeepsCameraUnchanged(double width, double height)
+    {
+        var limiter = new OfflineViewportLimiter(new MRect(-500, -400, 500, 400));
+        Viewport requested = new(500, 500, 10, 30, width, height);
+
+        Assert.Equal(requested, limiter.Limit(requested, null, null));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(30)]
+    [InlineData(90)]
+    public void PanningKeepsVisibleFootprintWithinOfflineCoverage(double rotation)
+    {
+        var extent = new MRect(-500, -400, 500, 400);
+        var limiter = new OfflineViewportLimiter(extent);
+        Viewport requested = new(100000, -100000, 0.5, rotation, 360, 600);
+
+        Viewport limited = limiter.Limit(requested, null, null);
+
+        double radians = rotation * Math.PI / 180;
+        double halfWidth = (360 * Math.Abs(Math.Cos(radians)) + 600 * Math.Abs(Math.Sin(radians))) * 0.5 / 2;
+        double halfHeight = (360 * Math.Abs(Math.Sin(radians)) + 600 * Math.Abs(Math.Cos(radians))) * 0.5 / 2;
+        Assert.InRange(limited.CenterX - halfWidth, extent.MinX - 0.001, extent.MaxX);
+        Assert.InRange(limited.CenterX + halfWidth, extent.MinX, extent.MaxX + 0.001);
+        Assert.InRange(limited.CenterY - halfHeight, extent.MinY - 0.001, extent.MaxY);
+        Assert.InRange(limited.CenterY + halfHeight, extent.MinY, extent.MaxY + 0.001);
+        Assert.Equal(0.5, limited.Resolution);
     }
 
     [AvaloniaFact]

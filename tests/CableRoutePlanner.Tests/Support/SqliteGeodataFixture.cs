@@ -15,11 +15,16 @@ internal sealed class SqliteGeodataFixture : IDisposable
     public SqliteGeodataRepository Repository { get; }
 
     public SqliteGeodataFixture(params MapFeature[] features)
+        : this(features, null)
+    {
+    }
+
+    public SqliteGeodataFixture(IReadOnlyList<MapFeature> features, int? displayLod)
     {
         try
         {
             string database = Path.Combine(DirectoryPath, "geodata.sqlite");
-            CreateDatabase(database, features);
+            CreateDatabase(database, features, displayLod);
             using FileStream input = File.OpenRead(database);
             string checksum = Convert.ToHexString(SHA256.HashData(input));
             File.WriteAllText(Path.Combine(DirectoryPath, "manifest.json"), JsonSerializer.Serialize(new
@@ -41,7 +46,7 @@ internal sealed class SqliteGeodataFixture : IDisposable
         }
     }
 
-    private static void CreateDatabase(string path, IEnumerable<MapFeature> features)
+    private static void CreateDatabase(string path, IEnumerable<MapFeature> features, int? displayLod)
     {
         using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {
@@ -57,6 +62,8 @@ internal sealed class SqliteGeodataFixture : IDisposable
             CREATE VIRTUAL TABLE display_index USING rtree(id,minx,maxx,miny,maxy);
             """;
         command.ExecuteNonQuery();
+        using SqliteTransaction transaction = connection.BeginTransaction();
+        command.Transaction = transaction;
         foreach (MapFeature feature in features)
         {
             NetTopologySuite.Geometries.Envelope envelope = new WKBReader().Read(feature.Wkb).EnvelopeInternal;
@@ -65,6 +72,14 @@ internal sealed class SqliteGeodataFixture : IDisposable
                 INSERT INTO features VALUES($id,$kind,$wkb,$name,$approval);
                 INSERT INTO feature_index VALUES($id,$west,$east,$south,$north);
                 """;
+            if (displayLod.HasValue)
+            {
+                command.CommandText += """
+                    INSERT INTO display_features VALUES($id,$kind,$wkb,$name,$lod);
+                    INSERT INTO display_index VALUES($id,$west,$east,$south,$north);
+                    """;
+                command.Parameters.AddWithValue("$lod", displayLod.Value);
+            }
             command.Parameters.AddWithValue("$id", feature.Id);
             command.Parameters.AddWithValue("$kind", feature.Kind.ToString());
             command.Parameters.AddWithValue("$wkb", feature.Wkb);
@@ -76,6 +91,8 @@ internal sealed class SqliteGeodataFixture : IDisposable
             command.Parameters.AddWithValue("$north", envelope.MaxY);
             command.ExecuteNonQuery();
         }
+
+        transaction.Commit();
     }
 
     public void Dispose() => _directory.Dispose();
