@@ -132,6 +132,29 @@ public sealed class MapCameraTests
     }
 
     [AvaloniaFact]
+    public void IntermediateVerticesOfOneLegAppearTogetherAndCanBeForcedVisible()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
+        RouteVertexRow first = new(2, TestData.P(10, 150), LegIndex: 1, LegSubIndex: 1);
+        RouteVertexRow second = new(3, TestData.P(100, 150), LegIndex: 1, LegSubIndex: 2);
+        RouteVertexRow parent = new(1, TestData.P(0, 150), RouteVertexKind.UserWaypoint, LegIndex: 1);
+        Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            candidate => candidate.Name == "Вершины маршрута");
+        static double[] Thresholds(Mapsui.Layers.MemoryLayer layer) => layer.Features
+            .Select(feature => Assert.Single(feature.Styles.OfType<Mapsui.Styles.SymbolStyle>()).MaxVisible).ToArray();
+        adapter.SetRouteVertices([parent, first, second]);
+        double[] thresholds = Thresholds(layer);
+        Assert.Equal(2, thresholds.Length);
+        Assert.Equal(thresholds[0], thresholds[1]);
+        Assert.True(thresholds[0] < double.MaxValue);
+        adapter.SetRouteVertices([parent, first with { IsSelected = true }, second]);
+        Assert.All(Thresholds(layer), threshold => Assert.Equal(double.MaxValue, threshold));
+        adapter.SetRouteVertices([parent, first, second], showAll: true);
+        Assert.All(Thresholds(layer), threshold => Assert.Equal(double.MaxValue, threshold));
+    }
+
+    [AvaloniaFact]
     public void CompassResetReturnsNorthAndPreservesCameraCenterAndScale()
     {
         var control = new Mapsui.UI.Avalonia.MapControl();

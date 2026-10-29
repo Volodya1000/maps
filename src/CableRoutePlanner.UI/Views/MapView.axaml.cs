@@ -1,12 +1,12 @@
-using System.Collections.Specialized;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.ReactiveUI;
 using CableRoutePlanner.Domain;
+using CableRoutePlanner.UI.Behaviors;
 using CableRoutePlanner.UI.MapAdapters;
 using CableRoutePlanner.ViewModels;
 using ReactiveUI;
@@ -15,16 +15,9 @@ namespace CableRoutePlanner.UI.Views;
 
 public partial class MapView : ReactiveUserControl<MapViewModel>
 {
-    private const double PanelSwipeThreshold = 36;
-
     private readonly RotateTransform _northArrowRotation = new();
-
+    private readonly BottomSheetController _sheet = new();
     private readonly Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter> _adapterFactory;
-
-    private IMapAdapter? _activeAdapter;
-    private IPointer? _panelPointer;
-    private Point _panelPointerStart;
-    private bool _panelExpanded = true;
 
     public MapView(Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter> adapterFactory)
     {
@@ -38,305 +31,34 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
     private void Activate(CompositeDisposable lifetime)
     {
         MapViewModel viewModel = ViewModel!;
-        IMapAdapter adapter = _adapterFactory(MapControl, viewModel.DataInfo.Bounds)
-            .DisposeWith(lifetime);
-        _activeAdapter = adapter;
-
-        BindCollections(viewModel, adapter, lifetime);
-        BindMapGestures(viewModel, adapter, lifetime);
-        BindMapState(viewModel, adapter, lifetime);
-        BindViewport(viewModel, adapter, lifetime);
-        BindButtons();
-        void NorthAngleChanged(double angle) => _northArrowRotation.Angle = angle;
-        adapter.NorthIndicatorRotationChanged += NorthAngleChanged;
-        Disposable.Create(() => adapter.NorthIndicatorRotationChanged -= NorthAngleChanged)
-            .DisposeWith(lifetime);
-
+        // Detach subscriptions and cancel their tasks before disposing the adapter.
+        CompositeDisposable bindings = new CompositeDisposable().DisposeWith(lifetime);
+        IMapAdapter adapter = _adapterFactory(MapControl, viewModel.DataInfo.Bounds).DisposeWith(lifetime);
+        MapGestureBindings.Bind(viewModel, adapter, bindings);
+        MapLayerBindings.Bind(viewModel, adapter, bindings);
+        _sheet.Bind(SheetHandleButton, this, AdaptLayout).DisposeWith(bindings);
+        adapter.NorthIndicatorRotationChangedStream
+            .Subscribe(angle => _northArrowRotation.Angle = angle).DisposeWith(bindings);
+        BindButton(ZoomInButton, adapter.ZoomIn);
+        BindButton(ZoomOutButton, adapter.ZoomOut);
+        BindButton(NorthButton, adapter.ResetNorth);
         adapter.InitializeViewport();
         adapter.SetPoints(viewModel.Points.ToArray());
         adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
-        adapter.SetRouteVertices(viewModel.RouteVertices.ToArray());
-        Disposable.Create(UnbindButtons)
-            .DisposeWith(lifetime);
-    }
-
-    private static void BindMapGestures(
-        MapViewModel viewModel,
-        IMapAdapter adapter,
-        CompositeDisposable lifetime)
-    {
-        bool active = true;
-        void PointAdded(GeoCoordinate point) =>
-            viewModel.AddPoint.Execute(point)
-                .Subscribe(_ => { }, viewModel.ReportUnexpectedError)
-                .DisposeWith(lifetime);
-
-        async void PointMoved(Guid id, GeoCoordinate point)
-        {
-            try
-            {
-                await viewModel.MovePointAsync(id, point);
-            }
-            catch (Exception error)
-            {
-                viewModel.ReportUnexpectedError(error);
-            }
-            finally
-            {
-                if (active)
-                {
-                    adapter.SetPoints(viewModel.Points.ToArray());
-                }
-            }
-        }
-
-        void WaypointSelected(Guid id) => viewModel.SelectPoint.Execute(id)
-            .Subscribe(_ => { }, viewModel.ReportUnexpectedError)
-            .DisposeWith(lifetime);
-
-        void RouteVertexSelected(int number) => viewModel.SelectedRouteVertex =
-            viewModel.RouteVertices.FirstOrDefault(vertex => vertex.Number == number);
-
-        adapter.PointAdded += PointAdded;
-        adapter.PointMoved += PointMoved;
-        adapter.WaypointSelected += WaypointSelected;
-        adapter.RouteVertexSelected += RouteVertexSelected;
-        Disposable.Create(() =>
-        {
-            active = false;
-            adapter.PointAdded -= PointAdded;
-            adapter.PointMoved -= PointMoved;
-            adapter.WaypointSelected -= WaypointSelected;
-            adapter.RouteVertexSelected -= RouteVertexSelected;
-        }).DisposeWith(lifetime);
-    }
-
-    private static void BindCollections(
-        MapViewModel viewModel,
-        IMapAdapter adapter,
-        CompositeDisposable lifetime)
-    {
-        void PointsChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
-            adapter.SetPoints(viewModel.Points.ToArray());
-
-        void RoutesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
-            adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
-
-        void VerticesChanged(object? sender, NotifyCollectionChangedEventArgs args) =>
-            adapter.SetRouteVertices(viewModel.RouteVertices.ToArray());
-
-        viewModel.Points.CollectionChanged += PointsChanged;
-        viewModel.Alternatives.CollectionChanged += RoutesChanged;
-        viewModel.RouteVertices.CollectionChanged += VerticesChanged;
-        Disposable.Create(() =>
-        {
-            viewModel.Points.CollectionChanged -= PointsChanged;
-            viewModel.Alternatives.CollectionChanged -= RoutesChanged;
-            viewModel.RouteVertices.CollectionChanged -= VerticesChanged;
-        }).DisposeWith(lifetime);
-    }
-
-    private static void BindMapState(
-        MapViewModel viewModel,
-        IMapAdapter adapter,
-        CompositeDisposable lifetime)
-    {
-        viewModel.WhenAnyValue(x => x.SelectedRoute)
-            .Subscribe(_ => adapter.SetRoutes(
-                viewModel.Alternatives.ToArray(),
-                viewModel.SelectedRoute?.Id))
-            .DisposeWith(lifetime);
-
-        viewModel.WhenAnyValue(x => x.SelectedRouteVertex)
-            .Subscribe(_ => adapter.SetRouteVertices(viewModel.RouteVertices.ToArray()))
-            .DisposeWith(lifetime);
-
-        viewModel.WhenAnyValue(x => x.AddMode)
-            .Subscribe(adapter.SetAddMode)
-            .DisposeWith(lifetime);
-
-        bool active = true;
-        Disposable.Create(() => active = false).DisposeWith(lifetime);
-        viewModel.WhenAnyValue(x => x.MapVersion)
-            .Subscribe(version =>
-            {
-                _ = RenderFeaturesAsync(version);
-            })
-            .DisposeWith(lifetime);
-
-        async Task RenderFeaturesAsync(int version)
-        {
-            try
-            {
-                await adapter.SetFeaturesAsync(viewModel.Features);
-            }
-            catch (Exception error)
-            {
-                if (active)
-                {
-                    viewModel.ReportUnexpectedError(error);
-                }
-            }
-        }
-    }
-
-    private void BindViewport(
-        MapViewModel viewModel,
-        IMapAdapter adapter,
-        CompositeDisposable lifetime)
-    {
-        System.Reactive.Subjects.Subject<(GeoBounds Bounds, double Resolution)> changes = new System.Reactive.Subjects.Subject<(GeoBounds Bounds, double Resolution)>()
-            .DisposeWith(lifetime);
-        void ViewportChanged(GeoBounds bounds, double resolution) => changes.OnNext((bounds, resolution));
-
-        adapter.ViewportChanged += ViewportChanged;
-        var cancellation = new CancellationTokenSource();
-        CancellationTokenSource? latestMapLoad = null;
-        CancellationToken token = cancellation.Token;
-        changes
-            .Throttle(TimeSpan.FromMilliseconds(200), RxApp.MainThreadScheduler)
-            .Subscribe(viewport =>
-            {
-                latestMapLoad?.Cancel();
-                latestMapLoad = CancellationTokenSource.CreateLinkedTokenSource(token);
-                _ = LoadViewportAsync(viewport.Bounds, viewport.Resolution, latestMapLoad);
-            })
-            .DisposeWith(lifetime);
-
-        async Task LoadViewportAsync(GeoBounds bounds, double resolution, CancellationTokenSource request)
-        {
-            try
-            {
-                await viewModel.LoadMapAreaAsync(bounds, request.Token, resolution);
-            }
-            catch (OperationCanceledException) when (request.IsCancellationRequested)
-            {
-                System.Diagnostics.Debug.WriteLine("Устаревшая загрузка карты отменена.");
-            }
-            catch (Exception error)
-            {
-                viewModel.ReportUnexpectedError(error);
-            }
-            finally
-            {
-                if (ReferenceEquals(latestMapLoad, request))
-                {
-                    latestMapLoad = null;
-                }
-
-                request.Dispose();
-            }
-        }
-
-        Disposable.Create(() =>
-        {
-            cancellation.Cancel();
-            latestMapLoad?.Cancel();
-            cancellation.Dispose();
-            adapter.ViewportChanged -= ViewportChanged;
-        }).DisposeWith(lifetime);
-    }
-
-    private void BindButtons()
-    {
-        ZoomInButton.Click += ZoomInClicked;
-        ZoomOutButton.Click += ZoomOutClicked;
-        NorthButton.Click += NorthClicked;
-        SheetHandleButton.PointerPressed += SheetPointerPressed;
-        SheetHandleButton.PointerMoved += SheetPointerMoved;
-        SheetHandleButton.PointerReleased += SheetPointerReleased;
-        SheetHandleButton.KeyDown += SheetHandleKeyDown;
-    }
-
-    private void UnbindButtons()
-    {
-        ZoomInButton.Click -= ZoomInClicked;
-        ZoomOutButton.Click -= ZoomOutClicked;
-        NorthButton.Click -= NorthClicked;
-        SheetHandleButton.PointerPressed -= SheetPointerPressed;
-        SheetHandleButton.PointerMoved -= SheetPointerMoved;
-        SheetHandleButton.PointerReleased -= SheetPointerReleased;
-        SheetHandleButton.KeyDown -= SheetHandleKeyDown;
-        _activeAdapter = null;
-        _panelPointer?.Capture(null);
-        _panelPointer = null;
-    }
-
-    private void ZoomInClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
-        _activeAdapter?.ZoomIn();
-
-    private void ZoomOutClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
-        _activeAdapter?.ZoomOut();
-
-    private void NorthClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
-        _activeAdapter?.ResetNorth();
-
-    private void SheetPointerPressed(object? sender, PointerPressedEventArgs args)
-    {
-        _panelPointer = args.Pointer;
-        _panelPointerStart = args.GetPosition(this);
-        args.Pointer.Capture(SheetHandleButton);
-        args.Handled = true;
-    }
-
-    private void SheetPointerMoved(object? sender, PointerEventArgs args)
-    {
-        if (_panelPointer?.Id != args.Pointer.Id)
-        {
-            return;
-        }
-
-        args.Handled = true;
-    }
-
-    private void SheetPointerReleased(object? sender, PointerReleasedEventArgs args)
-    {
-        if (_panelPointer?.Id != args.Pointer.Id)
-        {
-            return;
-        }
-
-        double distance = args.GetPosition(this).Y - _panelPointerStart.Y;
-        _panelPointer = null;
-        args.Pointer.Capture(null);
-        args.Handled = true;
-
-        if (distance <= -PanelSwipeThreshold)
-        {
-            SetPanelExpanded(true);
-        }
-        else if (distance >= PanelSwipeThreshold)
-        {
-            SetPanelExpanded(false);
-        }
-        else
-        {
-            SetPanelExpanded(!_panelExpanded);
-        }
-    }
-
-    private void SheetHandleKeyDown(object? sender, KeyEventArgs args)
-    {
-        if (args.Key is not (Key.Enter or Key.Space))
-        {
-            return;
-        }
-
-        SetPanelExpanded(!_panelExpanded);
-        args.Handled = true;
-    }
-
-    private void SetPanelExpanded(bool expanded)
-    {
-        _panelExpanded = expanded;
+        adapter.SetRouteVertices(viewModel.RouteVertices.ToArray(), viewModel.ShowAllRouteVertices);
         AdaptLayout();
+
+        void BindButton(Button button, Action action) =>
+            Observable.FromEventPattern<RoutedEventArgs>(handler => button.Click += handler,
+                    handler => button.Click -= handler)
+                .Subscribe(_ => action()).DisposeWith(bindings);
     }
 
     private void OnSizeChanged(object? sender, SizeChangedEventArgs args) => AdaptLayout();
 
     private void AdaptLayout()
     {
-        BottomSheetLayout layout = BottomSheetLayout.Create(Bounds.Width, Bounds.Height, _panelExpanded);
+        BottomSheetLayout layout = BottomSheetLayout.Create(Bounds.Width, Bounds.Height, _sheet.IsExpanded);
         bool narrow = layout.IsNarrow;
         Layout.ColumnDefinitions = new(narrow ? "*" : "*,350");
         Layout.RowDefinitions = new("*");
@@ -349,7 +71,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             ? Avalonia.Layout.VerticalAlignment.Bottom
             : Avalonia.Layout.VerticalAlignment.Stretch;
         SheetHandleButton.IsVisible = narrow;
-        SidePanelContent.IsVisible = !narrow || _panelExpanded;
+        SidePanelContent.IsVisible = !narrow || _sheet.IsExpanded;
         SheetHandleText.Text = layout.HandleText;
 
         if (narrow)

@@ -13,6 +13,13 @@ SPEC.loader.exec_module(display_lod)
 
 
 class CountryLodTests(unittest.TestCase):
+    def test_pipeline_crossings_are_local_details_and_full_pipes_are_hidden(self):
+        include = display_lod.include_in_display_lod
+        for lod in (0, 1, 2):
+            self.assertFalse(include("OverheadGasPipeline", {}, 0, lod))
+        for lod in (0, 1, 2):
+            self.assertTrue(include("GasPipelineCrossingCandidate", {}, 0, lod))
+
     def test_country_overview_keeps_only_city_labels(self):
         include = display_lod.include_in_display_lod
 

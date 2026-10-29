@@ -29,18 +29,21 @@ public sealed class GridGenerator : IGridGenerator
     // Upper bound for the overview graph; wider cells risk losing narrow passages.
     private const double MaximumAdaptiveCellSizeMetres = 2_000;
 
+    private const int CellSizeSearchIterations = 48;
+
     public GridMesh Generate(GeoBounds bounds, RoutingOptions options, LocalProjection projection)
     {
         Coordinate minimum = projection.Forward(new GeoCoordinate(bounds.South, bounds.West));
         Coordinate maximum = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
         double width = maximum.X - minimum.X;
         double height = maximum.Y - minimum.Y;
-        double requestedNodes = Math.Max(1d, width / options.CellSizeMetres)
-            * Math.Max(1d, height / options.CellSizeMetres);
+        long NodeCount(double size) => ((long)Math.Floor(width / size) + 1)
+            * ((long)Math.Floor(height / size) + 1);
+        long requestedNodes = NodeCount(options.CellSizeMetres);
         if (options.MaxNodes < MinimumNodesForAdaptiveCoarsening && requestedNodes > options.MaxNodes)
         {
             throw new PlanningException(
-                "Слишком большая область расчёта. Увеличьте размер ячейки или лимит узлов.");
+                "Слишком большая область расчёта. Увеличьте размер ячейки или лимит узлов.", PlanningErrorReason.ResourceLimit);
         }
 
         // Long inter-city routes use a coarse overview graph. The final path is
@@ -49,12 +52,28 @@ public sealed class GridGenerator : IGridGenerator
         double cellSize = Math.Max(options.CellSizeMetres,
             Math.Sqrt(width * height / options.MaxNodes));
         cellSize = Math.Min(cellSize, MaximumAdaptiveCellSizeMetres);
+        if (NodeCount(cellSize) > options.MaxNodes && NodeCount(MaximumAdaptiveCellSizeMetres) <= options.MaxNodes)
+        {
+            // A sqrt(area / budget) estimate omits the final row and column.
+            // Keep a valid upper bound while finding the smallest usable cell size.
+            double lower = cellSize;
+            double upper = MaximumAdaptiveCellSizeMetres;
+            for (int iteration = 0; iteration < CellSizeSearchIterations; iteration++)
+            {
+                double middle = lower + (upper - lower) / 2;
+                if (NodeCount(middle) > options.MaxNodes)
+                { lower = middle; }
+                else
+                { upper = middle; }
+            }
+            cellSize = upper;
+        }
         int columns = (int)Math.Floor(width / cellSize) + 1;
         int rows = (int)Math.Floor(height / cellSize) + 1;
         if ((long)columns * rows > options.MaxNodes)
         {
             throw new PlanningException(
-                "Слишком большая область расчёта. Увеличьте размер ячейки или уменьшите область.");
+                "Слишком большая область расчёта. Увеличьте размер ячейки или уменьшите область.", PlanningErrorReason.ResourceLimit);
         }
 
         var nodes = new Coordinate[columns * rows];

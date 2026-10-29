@@ -151,7 +151,12 @@ def main():
                 adb("exec-out", "screencap", "-p", binary=True)
             )
             report["launches"].append(
-                dict(attempt=index + 1, pid=pid, resumed=resumed, map_ready=map_ready)
+                dict(
+                    attempt=index + 1,
+                    pid=pid,
+                    resumed=resumed,
+                    map_ready=map_ready,
+                )
             )
         report["success"] = True
     except Exception as error:

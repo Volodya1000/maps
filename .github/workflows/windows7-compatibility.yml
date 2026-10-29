@@ -2,7 +2,7 @@ name: Windows 7 compatibility (experimental)
 
 on:
   pull_request:
-    types: [opened, reopened, labeled, synchronize]
+    types: [opened, reopened, labeled, unlabeled, synchronize]
   workflow_dispatch:
     inputs:
       timeout_minutes:
@@ -10,6 +10,10 @@ on:
         required: false
         default: "15"
         type: string
+
+concurrency:
+  group: windows7-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -22,8 +26,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Restore and build net48 prototype
@@ -71,7 +75,7 @@ jobs:
             exit 1
           fi
           printf '%s\n' '{"status":"PASS","accelerator":"kvm","process_start":"verified"}' > artifacts/windows7-kvm/kvm-feasibility.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: windows7-kvm-feasibility-${{ github.run_id }}
@@ -79,13 +83,13 @@ jobs:
           if-no-files-found: error
 
   build-payload:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'ci:windows7') || contains(github.event.pull_request.labels.*.name, 'test-win7-feasibility')))
     name: Build Windows 7 prototype payload from this commit
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Restore and build prototype and guest agent
@@ -126,12 +130,31 @@ jobs:
           '@
           $laptopScript.Replace('COMMIT_SHA', $env:GITHUB_SHA) | Set-Content (Join-Path $payload 'test-on-laptop.cmd') -Encoding ASCII
           Copy-Item 'docs/windows7-laptop.md' (Join-Path $payload 'README.md')
+          & 'tools/Windows7Prototype/prepare-usb.ps1' -Payload $payload
+          $instructions = Get-Content 'tools/Windows7Prototype/README.txt' -Raw
+          ($instructions -replace '\r?\n', "`r`n") | Set-Content (Join-Path $payload 'README.txt') -Encoding UTF8
+          $testScript = Get-Content (Join-Path $payload 'test-on-laptop.cmd') -Raw
+          $testScript = $testScript.Replace('set "RESULTS=%~dp0results"', @'
+          call "%PAYLOAD%check-prerequisites.cmd"
+          if errorlevel 1 exit /b 3
+          set "RESULTS=%~dp0results"
+          '@)
+          $testScript | Set-Content (Join-Path $payload 'test-on-laptop.cmd') -Encoding ASCII
           $files = Get-ChildItem $payload -File -Recurse | ForEach-Object {
             [pscustomobject]@{ path = $_.FullName.Substring($payload.Length + 1).Replace('\', '/'); sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
           }
           [pscustomobject]@{ schema = 'maps.win7.payload.v1'; commit = $env:GITHUB_SHA; files = $files } |
             ConvertTo-Json -Depth 5 | Set-Content (Join-Path $payload 'manifest.json') -Encoding UTF8
-      - uses: actions/upload-artifact@v4
+      - name: Create the portable USB ZIP
+        shell: pwsh
+        run: |
+          Compress-Archive -Path 'artifacts/win7-payload/*' -DestinationPath "artifacts/CableRoutePlanner-Win7-x64-USB-$env:GITHUB_SHA.zip"
+      - uses: actions/upload-artifact@v7
+        with:
+          path: artifacts/CableRoutePlanner-Win7-x64-USB-*.zip
+          archive: false
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
         with:
           name: windows7-payload-tree-${{ github.run_id }}
           path: artifacts/win7-payload
@@ -144,13 +167,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install ISO tooling
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y genisoimage
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: windows7-payload-tree-${{ github.run_id }}
           path: payload
@@ -175,7 +198,7 @@ jobs:
           mkdir -p artifacts/windows7-payload
           genisoimage -quiet -J -R -V WIN7PAYLOAD -o artifacts/windows7-payload/win7-payload.iso payload
           sha256sum artifacts/windows7-payload/win7-payload.iso | tee artifacts/windows7-payload/win7-payload.iso.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows7-payload-iso-check-${{ github.run_id }}
           path: artifacts/windows7-payload
@@ -193,7 +216,7 @@ jobs:
       WIN7_BASE_IMAGE_SHA256: ${{ secrets.WIN7_BASE_IMAGE_SHA256 }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install QEMU/KVM tools
         shell: bash
@@ -205,7 +228,7 @@ jobs:
           echo "WIN7_PRIVATE_DIR=$RUNNER_TEMP/win7-private" >> "$GITHUB_ENV"
 
       - name: Download payload generated from this commit
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: windows7-payload-tree-${{ github.run_id }}
           path: payload
@@ -362,7 +385,7 @@ jobs:
 
       - name: Publish diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows7-diagnostics-${{ github.run_id }}
           path: artifacts/windows7

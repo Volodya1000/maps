@@ -149,7 +149,7 @@ public sealed class RouteCalculationServiceTests
     }
 
     private static RouteCalculationService CreateService(IPlanningSession session) =>
-        new(session, new MemorySettings(), new MemoryData().Info.Bounds);
+        new(session, new MemorySettings(), () => new MemoryData().Info.Bounds);
 
     private static async Task<PlanningSession> CreateSession(IRoutePlanner planner)
     {

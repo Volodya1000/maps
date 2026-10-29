@@ -86,8 +86,7 @@ public sealed class RoutingTests(ITestOutputHelper output)
         LocalProjection projection = new(TestData.P(0, 0));
         TerrainEvaluator evaluator = new(
             [river, bridge, road],
-            projection,
-            20);
+            projection);
         CostProfile profile = new("road-averse", 0, 0, 500, 1);
         Coordinate[] route =
         [
@@ -332,6 +331,55 @@ public sealed class RoutingTests(ITestOutputHelper output)
             Assert.Equal(0, route.Metrics.ApprovedWaterCrossings);
             Assert.Equal(1, route.Metrics.PotentialBridgeCrossings);
         });
+    }
+
+    [Fact]
+    public void BridgeOpeningRejectsParallelWaterShortcut()
+    {
+        MapFeature river = TestData.Polygon(1, TerrainKind.River, 95, -1000, 105, 1000);
+        MapFeature bridge = TestData.Line(2, TerrainKind.BridgeCandidate, (80, 0), (120, 0));
+        LocalProjection projection = new(TestData.P(0, 0));
+        TerrainEvaluator evaluator = new([river, bridge], projection);
+        Assert.Null(evaluator.Evaluate(new Coordinate(80, 7), new Coordinate(120, 7)));
+        Assert.NotNull(evaluator.Evaluate(new Coordinate(80, 0), new Coordinate(120, 0)));
+    }
+
+    [Fact]
+    public async Task RoadWithDryEndpointsDoesNotAuthorizeSubmergedSegment()
+    {
+        MapFeature lake = TestData.Polygon(1, TerrainKind.Lake, 140, -1000, 180, 1000);
+        MapFeature road = TestData.Line(2, TerrainKind.Road, (50, 150), (260, 150));
+        Geometry water = new WKBReader().Read(lake.Wkb);
+        Assert.All(new[] { TestData.P(50, 150), TestData.P(260, 150) }, point =>
+            Assert.False(water.Intersects(new Point(point.Longitude, point.Latitude))));
+        await Assert.ThrowsAsync<PlanningException>(() => TestData.Planner(lake, road).PlanAsync(
+            [TestData.P(50, 150), TestData.P(260, 150)], TestData.Options, CancellationToken.None));
+    }
+
+    [Theory]
+    [InlineData(20)]
+    [InlineData(100)]
+    public async Task CurvedBridgeRouteStaysOnMappedWaterCrossingWithoutLoops(double cellSize)
+    {
+        MapFeature river = TestData.Polygon(1, TerrainKind.River, 130, -1000, 180, 1000);
+        MapFeature bridge = TestData.Line(2, TerrainKind.BridgeCandidate,
+            (110, 150), (150, 175), (200, 150));
+        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(river, bridge).PlanAsync(
+            [TestData.P(40, 150), TestData.P(280, 150)],
+            TestData.Options with { CellSizeMetres = cellSize }, CancellationToken.None);
+        LocalProjection projection = new(TestData.P(0, 0));
+        Geometry water = projection.Forward(new WKBReader().Read(river.Wkb));
+        Geometry mappedBridge = projection.Forward(new WKBReader().Read(bridge.Wkb));
+        Geometry allowed = mappedBridge.Buffer(2.01);
+        Assert.NotEmpty(routes);
+        foreach (RouteAlternative route in routes)
+        {
+            LineString line = new(route.Geometry.Select(projection.Forward).ToArray());
+            Assert.True(line.IsSimple);
+            Assert.True(line.Intersection(water).Difference(allowed).IsEmpty);
+            Assert.Equal(1, route.Metrics.PotentialBridgeCrossings);
+            Assert.Equal(0, route.Metrics.ApprovedWaterCrossings);
+        }
     }
 
     [Fact]

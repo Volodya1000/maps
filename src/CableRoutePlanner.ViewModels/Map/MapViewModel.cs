@@ -53,7 +53,10 @@ public sealed record RouteVertexRow(
 public sealed record WaypointReorder(Guid PointId, int TargetIndex);
 
 public sealed record RouteChoice(Guid Id, string Name, string LengthText, bool IsSelected,
-    string ForestText = "", string FieldText = "", string BridgesText = "");
+    string ForestText = "", string FieldText = "", string BridgesText = "", string GasText = "")
+{
+    public bool HasGas => GasText.Length > 0;
+}
 
 public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposable
 {
@@ -195,6 +198,12 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public string MetricsText { get; private set; } = "Выберите точки и постройте маршруты.";
 
     public bool CanBuild => _canBuild.Value;
+
+    [Reactive]
+    public bool ShowRoadContacts { get; set; }
+
+    [Reactive]
+    public bool ShowAllRouteVertices { get; set; }
 
     public bool HasRoute => SelectedRoute is not null;
 
@@ -464,7 +473,9 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 alternative.Id == route?.Id,
                 $"Лес {alternative.Metrics.ForestMetres:N0} м",
                 $"Поле {alternative.Metrics.FieldMetres:N0} м",
-                $"Мосты {alternative.Metrics.PotentialBridgeCrossings}"));
+                $"Мосты {alternative.Metrics.PotentialBridgeCrossings}",
+                alternative.Metrics.PotentialGasPipelineCrossings > 0
+                    ? $"Газопроводы: {alternative.Metrics.PotentialGasPipelineCrossings}" : ""));
         }
 
         if (route is not null)

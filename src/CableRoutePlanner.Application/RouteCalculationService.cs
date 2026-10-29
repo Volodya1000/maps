@@ -20,7 +20,10 @@ public interface IRouteCalculationService : IDisposable
     void Invalidate();
 }
 
-public sealed class RouteCalculationService(IPlanningSession session, ISettingsStore settings, GeoBounds bounds) : IRouteCalculationService
+public sealed class RouteCalculationService(
+    IPlanningSession session,
+    ISettingsStore settings,
+    Func<GeoBounds> bounds) : IRouteCalculationService
 {
     private readonly object _gate = new();
     private CancellationTokenSource? _calculation;
@@ -110,7 +113,7 @@ public sealed class RouteCalculationService(IPlanningSession session, ISettingsS
 
         try
         {
-            if (!bounds.Contains(coordinate))
+            if (!bounds().Contains(coordinate))
             {
                 throw new PlanningException("Для этой точки нет данных в офлайн-пакете.", PlanningErrorReason.PointOutsidePackage);
             }

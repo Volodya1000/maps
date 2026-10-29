@@ -173,12 +173,21 @@
                                             <Border Classes="metric-badge forest"><TextBlock Text="{Binding ForestText}" /></Border>
                                             <Border Classes="metric-badge field"><TextBlock Text="{Binding FieldText}" /></Border>
                                             <Border Classes="metric-badge bridge"><TextBlock Text="{Binding BridgesText}" /></Border>
+                                            <Border Classes="metric-badge pipeline" IsVisible="{Binding HasGas}" ToolTip.Tip="Кандидаты воздушных переходов; согласование не подтверждено"><TextBlock Text="{Binding GasText}" /></Border>
                                         </WrapPanel>
                                         </StackPanel>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                    </StackPanel>
+                    <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
+                        <CheckBox x:Name="RoadContactsToggle"
+                            IsChecked="{Binding ShowRoadContacts}"
+                            Content="Пересечения с дорогами" />
+                        <TextBlock IsVisible="{Binding ShowRoadContacts}"
+                            Text="Круг — пересечение; линия — общий участок."
+                            TextWrapping="Wrap" />
                     </StackPanel>
                     <TextBlock
                         Classes="route-metrics"
@@ -192,6 +201,9 @@
                                 Text="Точки прокладки кабеля" />
                         </Expander.Header>
                         <StackPanel Margin="0,8,0,0" Spacing="4">
+                            <CheckBox IsChecked="{Binding ShowAllRouteVertices}"
+                                Content="Все промежуточные точки на карте"
+                                ToolTip.Tip="Без переключателя точки одного участка появляются вместе при приближении. Выбор точки раскрывает весь участок на карте." />
                             <ItemsControl ItemsSource="{Binding VisibleRouteVertices}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:RouteVertexRow">

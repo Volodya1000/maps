@@ -22,6 +22,8 @@ public sealed class GridRoutePlanner(
 
     private readonly PreparedRoutingAreaCache _areas = new(data);
 
+    private readonly RouteGeometryBuilder _geometryBuilder = new(pathfinder);
+
     private static readonly Action<ILogger, long, long, Exception?> PreparationLog =
         LoggerMessage.Define<long, long>(
             LogLevel.Information,
@@ -39,6 +41,11 @@ public sealed class GridRoutePlanner(
             LogLevel.Information,
             new EventId(3, nameof(SearchCompletedLog)),
             "Calculated {RouteCount} distinct routes over {NodeCount} grid nodes and evaluated {EdgeEvaluations} grid edges");
+
+    private static readonly Action<ILogger, string, PlanningErrorReason, Exception?> ProfileUnavailableLog =
+        LoggerMessage.Define<string, PlanningErrorReason>(LogLevel.Information,
+            new EventId(4, nameof(ProfileUnavailableLog)),
+            "Profile {Profile} is unavailable in the search graph ({Reason}); retaining validated alternatives");
 
     public async Task<IReadOnlyList<RouteAlternative>> PlanAsync(
         IReadOnlyList<GeoCoordinate> points,
@@ -69,7 +76,7 @@ public sealed class GridRoutePlanner(
             Math.Max(requested.South, coverage.South),
             Math.Min(requested.East, coverage.East),
             Math.Min(requested.North, coverage.North));
-        PreparedRoutingArea area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken);
+        PreparedRoutingArea area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken, options.PreferOverheadGasCrossings);
         PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds, null);
 
         Stopwatch calculationTimer = Stopwatch.StartNew();
@@ -108,9 +115,14 @@ public sealed class GridRoutePlanner(
     {
         LocalProjection projection = area.Projection;
         TerrainEvaluator evaluator = area.Evaluator;
-        GridMesh mesh = gridGenerator.Generate(bounds, options, projection) with
+        GridMesh mesh = gridGenerator.Generate(bounds, options, projection);
+        Coordinate maximum = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
+        mesh = mesh with
         {
-            Portals = evaluator.BridgePortals
+            // A portal outside the queried area could bypass obstacles we never loaded.
+            Portals = evaluator.GetTransitionPortals().Where(portal => portal.Coordinates.All(point =>
+                point.X >= mesh.Minimum.X && point.Y >= mesh.Minimum.Y
+                && point.X <= maximum.X && point.Y <= maximum.Y)).ToArray()
         };
         var cache = new Dictionary<(int, int), EdgeEvaluation?>();
         int gridEdgeEvaluations = 0;
@@ -131,50 +143,18 @@ public sealed class GridRoutePlanner(
         {
             ct.ThrowIfCancellationRequested();
             profile.Validate();
-            var route = new List<Coordinate>();
-            for (int leg = 0; leg < points.Count - 1; leg++)
+            List<Coordinate> route;
+            try
             {
-                Coordinate start = projection.Forward(points[leg]);
-                Coordinate end = projection.Forward(points[leg + 1]);
-                if (start.Equals2D(end))
-                {
-                    if (route.Count == 0)
-                    {
-                        route.Add(start);
-                    }
-
-                    continue;
-                }
-
-                EdgeEvaluation? direct = evaluator.Evaluate(start, end);
-                // The direct segment is globally optimal only for a pure length
-                // profile: Euclidean distance is a lower bound, and every terrain
-                // contribution is nonnegative. Other profiles must search because
-                // a longer clearing route can cost less, even when the direct leg
-                // contains no obstacle.
-                bool lengthOnlyProfile = profile.Clearing == 1
-                    && profile.Forest == 0
-                    && profile.Field == 0
-                    && profile.RoadCrossingMetres == 0;
-                List<Coordinate> part = lengthOnlyProfile && direct is not null
-                    ? new List<Coordinate> { start, end }
-                    : pathfinder.FindPath(
-                        start,
-                        end,
-                        mesh,
-                        profile,
-                        (from, to) => evaluator.EvaluateForSearch(from, to)?.Cost(profile),
-                        (from, to) => GridEdge(from, to)?.Cost(profile),
-                        ct).ToList();
-                // Smooth the grid path first, then impose the surveyed bridge alignment.
-                // The latter remains part of the engineering geometry and is not collapsed.
-                part = evaluator.AlignBridgeCrossings(evaluator.SimplifyPath(part, profile), profile);
-                if (route.Count > 0)
-                {
-                    part.RemoveAt(0);
-                }
-
-                route.AddRange(part);
+                route = _geometryBuilder.Build(points, projection, evaluator, mesh, profile, GridEdge, ct);
+            }
+            catch (PlanningException error) when (result.Count > 0 && error.Reason is
+                PlanningErrorReason.GridConnectionUnavailable or PlanningErrorReason.NoRouteInSearchArea)
+            {
+                // Preserve a fully validated earlier profile when the coarse graph
+                // cannot represent this profile. Cancellation and other errors still propagate.
+                ProfileUnavailableLog(logger, profile.Name, error.Reason, null);
+                continue;
             }
 
             if (route.Count < 2)
@@ -182,16 +162,11 @@ public sealed class GridRoutePlanner(
                 throw new PlanningException("Все точки совпадают. Установите разные точки.");
             }
 
-            // Alternatives must represent different geometry; profiles alone do not create an alternative.
-            if (result.Any(r => Similar(r.Geometry, route, projection, options.CellSizeMetres)))
-            {
-                continue;
-            }
-
             double length = 0, forest = 0, field = 0, cost = 0;
             var roads = new HashSet<long>();
             var crossings = new HashSet<long>();
             var bridgeCandidates = new HashSet<long>();
+            HashSet<long> gasCandidates = [];
             for (int i = 1; i < route.Count; i++)
             {
                 EdgeEvaluation edge = evaluator.Evaluate(route[i - 1], route[i])
@@ -203,6 +178,16 @@ public sealed class GridRoutePlanner(
                 roads.UnionWith(edge.Roads);
                 crossings.UnionWith(edge.Crossings);
                 bridgeCandidates.UnionWith(edge.BridgeCandidates);
+                gasCandidates.UnionWith(edge.GasCandidates);
+            }
+
+            // A nearby aerial candidate and a ground crossing are meaningful choices,
+            // even when their lines occupy almost the same map corridor.
+            if (result.Any(existing => (existing.GasPipelineCandidateIds ?? [])
+                .SequenceEqual(gasCandidates.Order())
+                && Similar(existing.Geometry, route, projection, options.CellSizeMetres)))
+            {
+                continue;
             }
 
             result.Add(
@@ -218,9 +203,12 @@ public sealed class GridRoutePlanner(
                         crossings.Count,
                         bridgeCandidates.Count,
                         cost,
-                        null),
+                        null,
+                        gasCandidates.Count),
                     Array.AsReadOnly(evaluator.BridgeTransitionPoints(route)
-                        .Select(projection.Inverse).ToArray())));
+                        .Select(projection.Inverse).ToArray()),
+                    evaluator.RoadContacts(route, ct),
+                    Array.AsReadOnly(gasCandidates.Order().ToArray())));
         }
 
         SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);

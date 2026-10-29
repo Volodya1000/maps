@@ -23,7 +23,7 @@ jobs:
         id: data-cache
         with:
           path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py') }}
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
       - if: steps.data-cache.outputs.cache-hit != 'true'
         name: Download verified OSM snapshot
         run: |
@@ -56,7 +56,7 @@ jobs:
         id: country-cache
         with:
           path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py') }}
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
       - uses: actions/download-artifact@v8
         if: steps.country-cache.outputs.cache-hit != 'true'
         with:

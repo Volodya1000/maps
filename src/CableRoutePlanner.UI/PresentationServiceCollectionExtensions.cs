@@ -28,7 +28,7 @@ public static class PresentationServiceCollectionExtensions
         services.AddSingleton<IRouteCalculationService>(provider => new RouteCalculationService(
             provider.GetRequiredService<IPlanningSession>(),
             provider.GetRequiredService<ISettingsStore>(),
-            provider.GetRequiredService<IGeodataRepository>().Info.Bounds));
+            () => provider.GetRequiredService<IGeodataRepository>().Info.Bounds));
         services.AddSingleton<MapViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<ShellViewModel>();
@@ -44,17 +44,12 @@ public static class PresentationServiceCollectionExtensions
         services.AddSingleton<Func<SettingsView>>(provider => () => provider.GetRequiredService<SettingsView>());
         services.AddSingleton<Func<ShellView>>(provider => () => provider.GetRequiredService<ShellView>());
         services.AddSingleton<TypedViewLocator>();
-        services.AddSingleton<StartupViewModel>(provider => new StartupViewModel(async (progress, ct) =>
-        {
-            if (prepareData is not null)
-            {
-                await prepareData(progress, ct);
-            }
-
-            progress.Report("Проверка геоданных…");
-            await Task.Run(() => provider.GetRequiredService<IGeodataRepository>(), ct);
-            return provider.GetRequiredService<ShellViewModel>();
-        }));
+        services.AddSingleton(provider => new StartupLoader(
+            prepareData,
+            () => provider.GetRequiredService<IGeodataRepository>()));
+        services.AddSingleton<StartupViewModel>(provider =>
+            new StartupViewModel((progress, ct) => provider.GetRequiredService<StartupLoader>()
+                .LoadAsync(progress, () => provider.GetRequiredService<ShellViewModel>(), ct)));
         services.AddTransient<StartupView>();
         return services;
     }

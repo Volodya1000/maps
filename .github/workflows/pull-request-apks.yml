@@ -51,7 +51,7 @@ jobs:
         id: data-cache
         with:
           path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py') }}
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
       - if: steps.data-cache.outputs.cache-hit != 'true'
         name: Download verified OSM snapshot
         run: |
@@ -91,7 +91,7 @@ jobs:
         id: data-cache
         with:
           path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py') }}
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
       - if: steps.data-cache.outputs.cache-hit != 'true'
         uses: actions/download-artifact@v8
         with:
@@ -165,11 +165,6 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
-          path: artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Minsk.apk
-          archive: false
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v7
-        with:
           path: artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk
           archive: false
           if-no-files-found: error
@@ -177,4 +172,44 @@ jobs:
         with:
           name: CableRoutePlanner-PR-${{ inputs.pr_number }}-checksums
           path: artifacts/apk/SHA256SUMS.txt
+          if-no-files-found: error
+
+  routing-benchmark:
+    if: contains(github.event.pull_request.labels.*.name, 'ci:routing-benchmark')
+    needs: [verify-source, geodata]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tested_sha }}
+      - uses: actions/cache/restore@v6
+        id: benchmark-data
+        with:
+          path: artifacts/belarus
+          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
+      - if: steps.benchmark-data.outputs.cache-hit != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: pull-request-belarus-data
+          path: artifacts/belarus
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Extract the verified country database
+        run: gzip -dk artifacts/belarus/geodata.sqlite.gz
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: dotnet restore tools/CableRoutePlanner.Verify --locked-mode
+      - run: dotnet build tools/CableRoutePlanner.Verify --no-restore -c Release -warnaserror
+      - name: Measure cold-process local and intercity routes
+        run: |
+          python3 tools/benchmark_routes.py --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-benchmark --timeout-seconds 120
+          cat artifacts/routing-benchmark/report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: routing-benchmark-${{ inputs.tested_sha }}
+          path: artifacts/routing-benchmark
           if-no-files-found: error

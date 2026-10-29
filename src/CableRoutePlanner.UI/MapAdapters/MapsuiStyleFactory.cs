@@ -17,11 +17,21 @@ internal static class MapsuiStyleFactory
         TerrainKind.Road => 4,
         TerrainKind.BridgeCandidate or TerrainKind.ApprovedCrossing => 5,
         TerrainKind.Settlement => 6,
+        TerrainKind.GasPipelineCrossingCandidate => 7,
         _ => 3
     };
 
     public static IReadOnlyList<IStyle> ForTerrain(TerrainKind kind, double metresPerPixel = 0)
     {
+        if (kind == TerrainKind.GasPipelineCrossingCandidate)
+        {
+            return [
+                new VectorStyle { Line = new Pen(Color.White, 7) },
+                new VectorStyle { Line = new Pen(new Color(0, 143, 157), 4) },
+                new LabelStyle { Text = "ГАЗ", ForeColor = Color.White,
+                    BackColor = new Brush(new Color(0, 112, 126)), CollisionDetection = true }
+            ];
+        }
         Color color = kind switch
         {
             TerrainKind.Forest => new Color(188, 214, 176),

@@ -14,7 +14,9 @@ from pathlib import Path
 
 import osmium
 from display_lod import include_in_display_lod
-from prepare import METRES_PER_DEGREE, classify
+from feature_classification import classify
+from pipeline_crossings import pipeline_road_candidates
+from prepare import METRES_PER_DEGREE
 from shapely import from_wkb, make_valid, to_wkb
 from shapely.affinity import scale
 from shapely.geometry import Point
@@ -123,7 +125,13 @@ def main():
             tags = dict(way.tags)
             kind = classify(tags)
             # Areas are handled by osmium's multipolygon assembler, including closed ways and holes.
-            if kind not in ("Road", "BridgeCandidate", "Clearing", "River"):
+            if kind not in (
+                "Road",
+                "BridgeCandidate",
+                "Clearing",
+                "River",
+                "OverheadGasPipeline",
+            ):
                 return
             if kind == "River" and tags.get("waterway") not in (
                 "river",
@@ -167,7 +175,12 @@ def main():
         def area(self, area):
             tags = dict(area.tags)
             kind = classify(tags)
-            if kind is None or kind in ("Road", "BridgeCandidate", "Clearing"):
+            if kind is None or kind in (
+                "Road",
+                "BridgeCandidate",
+                "Clearing",
+                "OverheadGasPipeline",
+            ):
                 return
             try:
                 geometry = from_wkb(bytes.fromhex(factory.create_multipolygon(area)))
@@ -182,13 +195,26 @@ def main():
 
     if not args.finalize_only:
         Handler().apply_file(str(args.pbf), locations=True, idx="flex_mem")
+        if not args.audit_only:
+            for geometry, source in pipeline_road_candidates(connection):
+                add(
+                    "GasPipelineCrossingCandidate",
+                    geometry,
+                    {"name": "Газопровод над дорогой"},
+                    source,
+                )
     else:
         counts.update(
             dict(connection.execute("SELECT kind,count(*) FROM features GROUP BY kind"))
         )
         if args.audit_report:
             audited = json.loads(args.audit_report.read_text())
-            if dict(counts) != audited["feature_counts"]:
+            source_counts = {
+                kind: count
+                for kind, count in counts.items()
+                if kind != "GasPipelineCrossingCandidate"
+            }
+            if source_counts != audited["feature_counts"]:
                 raise ValueError("Independent audit feature counts differ")
             errors.update(audited["conversion_errors"])
     connection.commit()

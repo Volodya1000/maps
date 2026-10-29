@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,6 +15,8 @@ env:
   DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
 jobs:
   quality:
+    outputs:
+      full_maps: ${{ steps.preview-policy.outputs.full_maps }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
@@ -31,6 +33,12 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: '1.23.4'
+      - name: Select optional preview artifacts
+        id: preview-policy
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: python3 tools/ci_policy.py >> "$GITHUB_OUTPUT"
       - run: uv sync --locked
       - run: uv run --locked python tools/check.py lint
       - if: github.event_name == 'pull_request'
@@ -123,6 +131,7 @@ jobs:
         run: |
           mkdir -p artifacts/pr-preview-base
           cp artifacts/CableRoutePlanner-CI-Minsk.apk artifacts/pr-preview-base/Minsk.apk
+          cp artifacts/CableRoutePlanner-CI-Minsk.apk "artifacts/CableRoutePlanner-PR-${{ github.event.pull_request.number }}-Minsk.apk"
           cp "$ANDROID_SIGNING_KEYSTORE" artifacts/pr-preview-base/preview.keystore
       - uses: actions/upload-artifact@v7
         if: >-
@@ -151,7 +160,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: python3 tools/android_smoke.py --apk artifacts/CableRoutePlanner-CI-Minsk.apk --package "$ANDROID_APPLICATION_ID" --output artifacts/android-smoke --settle-seconds 90 --wait-map-ready
+          script: bash tools/android_smoke_retry.sh
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -160,7 +169,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          path: artifacts/CableRoutePlanner-CI-Minsk.apk
+          path: ${{ github.event_name == 'pull_request' && format('artifacts/CableRoutePlanner-PR-{0}-Minsk.apk', github.event.pull_request.number) || 'artifacts/CableRoutePlanner-CI-Minsk.apk' }}
           archive: false
           if-no-files-found: error
   terrain-spike:
@@ -188,6 +197,7 @@ jobs:
     if: >-
       github.event_name == 'pull_request'
       && github.event.pull_request.number != ''
+      && needs.quality.outputs.full_maps == 'true'
     needs: [quality, tests, data, terrain-spike, android]
     uses: ./.github/workflows/pull-request-apks.yml
     with:

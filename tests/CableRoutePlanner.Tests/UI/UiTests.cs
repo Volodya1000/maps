@@ -52,6 +52,87 @@ public static class TestApplication
 public sealed class UiTests
 {
     [AvaloniaFact]
+    public void ShowAllIntermediateVerticesPreferenceAppliesWhenViewActivates()
+    {
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
+        vm.ShowAllRouteVertices = true;
+        vm.RouteVertices.Add(new RouteVertexRow(1, TestData.P(100, 100), LegIndex: 1, LegSubIndex: 1));
+        vm.RouteVertices.Add(new RouteVertexRow(2, TestData.P(101, 100), LegIndex: 1, LegSubIndex: 2));
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds)) { ViewModel = vm };
+        var window = new Window { Content = view, Width = 420, Height = 850 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Mapsui.UI.Avalonia.MapControl map = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
+        var layer = (Mapsui.Layers.MemoryLayer)map.Map.Layers.Single(item => item.Name == "Вершины маршрута");
+        Assert.Equal(2, layer.Features.Count());
+        Assert.All(layer.Features, feature => Assert.Equal(double.MaxValue,
+            Assert.Single(feature.Styles.OfType<Mapsui.Styles.SymbolStyle>()).MaxVisible));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task GasPipelineCandidateRendersCrossingSpanAndLabelWithoutTheWholePipeline()
+    {
+        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
+        await adapter.SetFeaturesAsync([
+            TestData.Line(1, TerrainKind.OverheadGasPipeline, (100, 0), (100, 500)),
+            TestData.Line(2, TerrainKind.GasPipelineCrossingCandidate, (100, 138), (100, 150), (100, 162))]);
+        Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
+            item => item.Name == "Офлайн OSM");
+        Mapsui.Nts.GeometryFeature feature = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features));
+        Assert.IsType<NetTopologySuite.Geometries.LineString>(feature.Geometry);
+        Assert.Equal("ГАЗ", Assert.Single(feature.Styles.OfType<Mapsui.Styles.LabelStyle>()).GetLabelText(feature));
+        Assert.Equal(3, feature.Geometry!.Coordinates.Length);
+    }
+
+    [AvaloniaFact]
+    public async Task RoadContactToggleShowsSelectedAlternativeAndClearsOnDisableOrRouteRemoval()
+    {
+        using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
+            new CableRoutePlanner.Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        { ViewModel = vm };
+        var window = new Window { Content = view, Width = 420, Height = 850 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var point = new RouteRoadContact(1, RoadContactKind.Crossing, [TestData.P(100, 100)]);
+        var shared = new RouteRoadContact(2, RoadContactKind.SharedSection, [TestData.P(150, 100), TestData.P(200, 100)]);
+        var first = new RouteAlternative(Guid.NewGuid(), "first", [TestData.P(20, 100), TestData.P(280, 100)],
+            new RouteMetrics(260, 0, 0, 1, 0, 0, 260, null), RoadContacts: [point]);
+        RouteAlternative second = first with { Id = Guid.NewGuid(), Name = "second", RoadContacts = [shared] };
+        vm.Alternatives.Add(first);
+        vm.Alternatives.Add(second);
+        vm.SelectedRoute = first;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Mapsui.UI.Avalonia.MapControl map = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
+        var layer = (Mapsui.Layers.MemoryLayer)map.Map.Layers.Single(candidate => candidate.Name == "Пересечения с дорогами");
+        CheckBox toggle = view.FindControl<CheckBox>("RoadContactsToggle")!;
+        Assert.False(vm.ShowRoadContacts);
+        Assert.Empty(layer.Features);
+        toggle.IsChecked = true;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.True(vm.ShowRoadContacts);
+        Mapsui.Nts.GeometryFeature feature = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features));
+        Assert.IsType<NetTopologySuite.Geometries.Point>(feature.Geometry);
+        Assert.Equal(1L, feature["road_id"]);
+        await vm.ChooseRoute.Execute(second.Id);
+        feature = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features));
+        Assert.IsType<NetTopologySuite.Geometries.LineString>(feature.Geometry);
+        Assert.Equal(2L, feature["road_id"]);
+        toggle.IsChecked = false;
+        Assert.Empty(layer.Features);
+        toggle.IsChecked = true;
+        Assert.Single(layer.Features);
+        vm.SelectedRoute = null;
+        Assert.Empty(layer.Features);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task ExtractedStylesKeepMapAndWaypointAppearance()
     {
         using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
@@ -124,7 +205,8 @@ public sealed class UiTests
         // Assert
         Mapsui.Layers.MemoryLayer rendered = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
             layer => layer.Name == "Офлайн OSM");
-        Assert.Equal(kinds.Length, rendered.Features!.Count());
+        // Source pipelines are calculation data; only their derived road spans are displayed.
+        Assert.Equal(kinds.Count(kind => kind != TerrainKind.OverheadGasPipeline), rendered.Features!.Count());
         Assert.All(rendered.Features, feature => Assert.NotEmpty(feature.Styles));
     }
 
@@ -533,6 +615,35 @@ public sealed class UiTests
         Assert.Equal(target.Id.ToString(), rendered["route_id"]);
         Assert.False(before.EqualsExact(rendered.Geometry));
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task FreshInstallationPreparesOfflinePackageBeforeOpeningShell()
+    {
+        DirectoryInfo directory = Directory.CreateTempSubdirectory("maps-first-start-");
+        try
+        {
+            using ServiceProvider provider = TestApplication.CreateServices(directory.FullName,
+                Path.Combine(directory.FullName, "settings.json"), new MemoryClipboard(),
+                async (_, ct) =>
+                {
+                    await Task.Yield();
+                    ct.ThrowIfCancellationRequested();
+                    File.Copy(Path.Combine(TestData.RealData, "manifest.json"), Path.Combine(directory.FullName, "manifest.json"));
+                    File.Copy(Path.Combine(TestData.RealData, "geodata.sqlite"), Path.Combine(directory.FullName, "geodata.sqlite"));
+                });
+            StartupViewModel startup = provider.GetRequiredService<StartupViewModel>();
+
+            await startup.Load.Execute();
+
+            Assert.True(File.Exists(Path.Combine(directory.FullName, "geodata.sqlite")));
+            Assert.NotNull(startup.Shell);
+            Assert.False(startup.IsLoading);
+        }
+        finally
+        {
+            directory.Delete(true);
+        }
     }
 
     [AvaloniaFact]

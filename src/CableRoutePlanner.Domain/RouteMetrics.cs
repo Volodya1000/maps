@@ -8,7 +8,8 @@ public sealed record RouteMetrics(
     int ApprovedWaterCrossings,
     int PotentialBridgeCrossings,
     double WeightedCost,
-    double? AscentMetres)
+    double? AscentMetres,
+    int PotentialGasPipelineCrossings = 0)
 {
     public double CableLengthMetres(double reserveFraction)
     {

@@ -16,11 +16,26 @@ using Mapsui.Tiling.Layers;
 using Mapsui.UI.Avalonia;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace CableRoutePlanner.UI.MapAdapters;
 
 public sealed class MapsuiMapAdapter : IMapAdapter
 {
+    private readonly Subject<(GeoBounds Bounds, double Resolution)> _viewportChanged = new();
+    private readonly Subject<GeoCoordinate> _pointAdded = new();
+    private readonly Subject<(Guid Id, GeoCoordinate Coordinate)> _pointMoved = new();
+    private readonly Subject<Guid> _waypointSelected = new();
+    private readonly Subject<double> _northIndicatorRotationChanged = new();
+    private readonly Subject<int> _routeVertexSelected = new();
+
+    public IObservable<(GeoBounds Bounds, double Resolution)> ViewportChangedStream => _viewportChanged.AsObservable();
+    public IObservable<GeoCoordinate> PointAddedStream => _pointAdded.AsObservable();
+    public IObservable<(Guid Id, GeoCoordinate Coordinate)> PointMovedStream => _pointMoved.AsObservable();
+    public IObservable<Guid> WaypointSelectedStream => _waypointSelected.AsObservable();
+    public IObservable<double> NorthIndicatorRotationChangedStream => _northIndicatorRotationChanged.AsObservable();
+    public IObservable<int> RouteVertexSelectedStream => _routeVertexSelected.AsObservable();
     private const double MapReloadDistanceViewportFraction = 0.25;
 
     private const double MapReloadResolutionRatio = 1.25;
@@ -34,6 +49,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     {
         Style = null
     };
+
+    private readonly MemoryLayer _roadContacts = new("Пересечения с дорогами") { Style = null };
 
     private readonly MemoryLayer _points = new("Точки")
     {
@@ -120,6 +137,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             control.Map.Layers.Add(_tiledBase);
         }
         control.Map.Layers.Add(_routes);
+        control.Map.Layers.Add(_roadContacts);
         control.Map.Layers.Add(_routeVertices);
         control.Map.Layers.Add(_points);
         (double x, double y) = SphericalMercator.FromLonLat(
@@ -137,11 +155,11 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 || _control.Map.Navigator.Viewport.Resolution <= _vertexVisibility[vertex.Number]).ToArray(),
             ToScreen,
             ToGeo,
-            coordinate => PointAdded?.Invoke(coordinate),
-            (id, coordinate) => PointMoved?.Invoke(id, coordinate),
-            id => WaypointSelected?.Invoke(id),
+            coordinate => { _pointAdded.OnNext(coordinate); PointAdded?.Invoke(coordinate); },
+            (id, coordinate) => { _pointMoved.OnNext((id, coordinate)); PointMoved?.Invoke(id, coordinate); },
+            id => { _waypointSelected.OnNext(id); WaypointSelected?.Invoke(id); },
             RenderPoints,
-            number => RouteVertexSelected?.Invoke(number),
+            number => { _routeVertexSelected.OnNext(number); RouteVertexSelected?.Invoke(number); },
             () => _cameraWasUsed = true,
             SetRotation);
         control.Map.Navigator.CenterOnAndZoomTo(new MPoint(x, y), 7);
@@ -257,7 +275,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     {
         var reader = new WKBReader();
         var transform = new MercatorTransformer();
-        return features.OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind)).Select(f =>
+        return features.Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline).OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind)).Select(f =>
         {
             cancellationToken.ThrowIfCancellationRequested();
             var feature = new GeometryFeature(transform.Transform(reader.Read(f.Wkb)));
@@ -290,7 +308,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         RenderPoints(_waypoints);
     }
 
-    public void SetRouteVertices(IReadOnlyList<RouteVertexRow> vertices)
+    public void SetRouteVertices(IReadOnlyList<RouteVertexRow> vertices, bool showAll = false)
     {
         // Every numbered route vertex must be represented on the map, including
         // straight bridge entry/exit points. Only user waypoints are drawn separately.
@@ -305,14 +323,17 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _vertices = vertices.Where(vertex => vertex.Kind != RouteVertexKind.UserWaypoint).ToArray();
         _vertexVisibility.Clear();
         Dictionary<int, Coordinate> positions = vertices.ToDictionary(vertex => vertex.Number, vertex => Project(vertex.Coordinate));
-        foreach (RouteVertexRow vertex in _vertices)
+        foreach (IGrouping<int, RouteVertexRow> leg in _vertices.GroupBy(vertex => vertex.LegIndex))
         {
-            Coordinate position = positions[vertex.Number];
-            double nearestDistance = positions.Where(other => other.Key != vertex.Number)
-                .Select(other => position.Distance(other.Value))
-                .DefaultIfEmpty(double.MaxValue).Min();
-            _vertexVisibility[vertex.Number] = vertex.IsSelected || !vertex.IsChild ? double.MaxValue
-                : nearestDistance / ChildMarkerSpacingPixels;
+            double threshold = showAll || leg.Any(vertex => vertex.IsSelected)
+                ? double.MaxValue
+                : leg.Select(vertex => positions.Where(other => other.Key != vertex.Number)
+                    .Select(other => positions[vertex.Number].Distance(other.Value))
+                    .DefaultIfEmpty(double.MaxValue).Min() / ChildMarkerSpacingPixels).Min();
+            foreach (RouteVertexRow vertex in leg)
+            {
+                _vertexVisibility[vertex.Number] = !vertex.IsChild ? double.MaxValue : threshold;
+            }
         }
         _routeVertices.Features = _vertices.OrderBy(vertex => vertex.IsSelected ? 1 : 0).Select(vertex =>
         {
@@ -413,6 +434,38 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _control.RefreshGraphics();
     }
 
+    public void SetRoadContacts(IReadOnlyList<RouteRoadContact> contacts)
+    {
+        List<IFeature> features = [];
+        foreach (RouteRoadContact contact in contacts)
+        {
+            Geometry geometry = contact.Kind == RoadContactKind.Crossing
+                ? new Point(Project(contact.Geometry[0]))
+                : new LineString(contact.Geometry.Select(Project).ToArray());
+            var feature = new GeometryFeature(geometry);
+            feature["road_id"] = contact.RoadId;
+            feature["contact_kind"] = contact.Kind.ToString();
+            if (contact.Kind == RoadContactKind.Crossing)
+            {
+                feature.Styles.Add(new SymbolStyle
+                {
+                    Fill = new Brush(new Color(224, 122, 27)),
+                    Outline = new Pen(Color.White, 2),
+                    SymbolScale = 1.4
+                });
+            }
+            else
+            {
+                feature.Styles.Add(new VectorStyle { Line = new Pen(Color.White, 12) });
+                feature.Styles.Add(new VectorStyle { Line = new Pen(new Color(155, 64, 145), 8) });
+            }
+            features.Add(feature);
+        }
+        _roadContacts.Features = features;
+        _roadContacts.DataHasChanged();
+        _control.RefreshGraphics();
+    }
+
     public void SetAddMode(bool enabled) => _pointerInteraction.SetAddMode(enabled);
 
     public void ZoomIn()
@@ -474,6 +527,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         double northAngle = Math.Atan2(
             screenNorth.Y - screenCenter.Y,
             screenNorth.X - screenCenter.X) * 180 / Math.PI + 90;
+        _northIndicatorRotationChanged.OnNext(northAngle);
         NorthIndicatorRotationChanged?.Invoke(northAngle);
 
         if (_tiledBase is not null)
@@ -495,13 +549,13 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             ToGeo(new(0, viewport.Height)),
             ToGeo(new(viewport.Width, viewport.Height))
         };
-        ViewportChanged?.Invoke(
-            new(
+        GeoBounds bounds = new(
                 corners.Min(p => p.Longitude),
                 corners.Min(p => p.Latitude),
                 corners.Max(p => p.Longitude),
-                corners.Max(p => p.Latitude)),
-            viewport.Resolution);
+                corners.Max(p => p.Latitude));
+        _viewportChanged.OnNext((bounds, viewport.Resolution));
+        ViewportChanged?.Invoke(bounds, viewport.Resolution);
     }
 
     private bool RequiresMapDataReload(Viewport viewport)
@@ -530,6 +584,12 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     public void Dispose()
     {
         _disposed = true;
+        _viewportChanged.OnCompleted();
+        _pointAdded.OnCompleted();
+        _pointMoved.OnCompleted();
+        _waypointSelected.OnCompleted();
+        _northIndicatorRotationChanged.OnCompleted();
+        _routeVertexSelected.OnCompleted();
         _featurePreparation.Cancel();
         _featurePreparation.Dispose();
         _tiledBase?.AbortFetch();
@@ -543,6 +603,12 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _control.PointerCaptureLost -= _pointerInteraction.CaptureLost;
         _control.Map.Navigator.PanLock = false;
         _control.Map.Dispose();
+        _viewportChanged.Dispose();
+        _pointAdded.Dispose();
+        _pointMoved.Dispose();
+        _waypointSelected.Dispose();
+        _northIndicatorRotationChanged.Dispose();
+        _routeVertexSelected.Dispose();
     }
 
 }
