@@ -130,6 +130,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             };
             _tiledBase = new OfflineRasterLayer(source, control.RefreshGraphics);
             control.Map.Layers.Add(_tiledBase);
+            if (geodata.Info.Coverage is not null)
+            {
+                control.Map.Layers.Add(new OfflineCoverageLayer(geodata.Info));
+            }
         }
         control.Map.Layers.Add(_routes);
         control.Map.Layers.Add(_roadContacts);

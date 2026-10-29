@@ -2,6 +2,7 @@ using System.Diagnostics;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.Infrastructure.Geography;
+using NetTopologySuite.Geometries;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
 
@@ -41,7 +42,19 @@ internal sealed class PreparedRoutingAreaCache(IGeodataRepository repository)
         timer.Restart();
         var projection = new LocalProjection(
             new((bounds.South + bounds.North) / 2, (bounds.West + bounds.East) / 2));
-        TerrainEvaluator evaluator = await Task.Run(() => new TerrainEvaluator(features, projection, preferGas: preferGas), ct);
+        TerrainEvaluator evaluator = await Task.Run(() =>
+        {
+            var factory = new GeometryFactory();
+            Geometry? coverage = repository.Info.Coverage is { } outline
+                ? factory.CreatePolygon(outline.Boundary.Select(projection.Forward).ToArray()) : null;
+            Coordinate minimum = projection.Forward(new GeoCoordinate(bounds.South, bounds.West));
+            Coordinate maximum = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
+            var rectangle = new Envelope(minimum, maximum);
+            // Grid edges inside a covered search rectangle need no polygon test.
+            // Other geometry (for example a full bridge guide) still must be checked.
+            Envelope? fullyCoveredArea = coverage?.Covers(factory.ToGeometry(rectangle)) == true ? rectangle : null;
+            return new TerrainEvaluator(features, projection, preferGas: preferGas, coverage: coverage, fullyCoveredArea: fullyCoveredArea);
+        }, ct);
         ct.ThrowIfCancellationRequested();
         var prepared = new PreparedRoutingArea(
             bounds, cellSize, projection, evaluator, queryMilliseconds, timer.ElapsedMilliseconds, preferGas);

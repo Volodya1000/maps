@@ -8,6 +8,14 @@ namespace CableRoutePlanner.Persistence;
 
 public sealed class SqliteGeodataRepository : IGeodataRepository
 {
+    private static readonly Lazy<GeoCoverage> BelarusCoverage = new(() =>
+    {
+        using Stream stream = typeof(SqliteGeodataRepository).Assembly
+            .GetManifestResourceStream("CableRoutePlanner.Persistence.BelarusCoverage.json")
+            ?? throw new InvalidOperationException("Embedded Belarus coverage is missing.");
+        using JsonDocument document = JsonDocument.Parse(stream);
+        return ReadCoverage(document.RootElement);
+    });
     private readonly string _connectionString;
 
     private readonly int _schemaVersion;
@@ -53,13 +61,34 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
             new(b[0], b[1], b[2], b[3]),
             root.GetProperty("attribution").GetString()!,
             false,
-            root.GetProperty("status").GetString()!);
+            root.GetProperty("status").GetString()!,
+            root.TryGetProperty("coverage_boundary", out JsonElement boundary) && boundary.ValueKind != JsonValueKind.Null
+                ? ReadCoverage(boundary)
+                : root.GetProperty("region_id").GetString() == "belarus" ? BelarusCoverage.Value : null);
         _connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = db,
             Mode = SqliteOpenMode.ReadOnly,
             Pooling = false
         }.ToString();
+    }
+
+    private static GeoCoverage ReadCoverage(JsonElement boundary)
+    {
+        if (boundary.ValueKind != JsonValueKind.Array)
+        {
+            throw new ArgumentException($"coverage_boundary has type {boundary.ValueKind}; an array of coordinates is required.", nameof(boundary));
+        }
+        List<GeoCoordinate> points = [];
+        foreach (JsonElement point in boundary.EnumerateArray())
+        {
+            if (point.ValueKind != JsonValueKind.Array || point.GetArrayLength() != 2)
+            {
+                throw new ArgumentException($"coverage_boundary coordinate has type {point.ValueKind}; an array of exactly longitude and latitude is required.", nameof(boundary));
+            }
+            points.Add(new GeoCoordinate(point[1].GetDouble(), point[0].GetDouble()));
+        }
+        return new GeoCoverage(points);
     }
 
     public Task<IReadOnlyList<MapFeature>> QueryAsync(GeoBounds bounds, CancellationToken cancellationToken) => QueryInternalAsync(bounds, null, cancellationToken);

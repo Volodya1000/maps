@@ -54,3 +54,5 @@ settings for each calculation, and returns a result only for the current request
 it owns neither cancellation sources nor calculation completion sources.
 Disposing the screen disposes this service and cancels both operations. Geometry
 and search continue to run through `IPlanningSession` / `IRoutePlanner`.
+
+`DataPackageInfo` distinguishes its rectangular query envelope from actual polygon coverage. `GeoCoverage` keeps the immutable coverage ring and point-inclusion rule in BCL-only Domain. Persistence reads explicit manifest metadata or the embedded legacy Belarus extract outline. Infrastructure applies prepared NTS coverage to entire route segments; UI independently draws the coverage mask and no-data notice. [Coverage diagnosis and regression checks](offline-coverage.md) describe the boundary cases.

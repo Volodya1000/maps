@@ -81,13 +81,19 @@ internal sealed class TerrainEvaluator
     private readonly GeometryFactory _factory = new();
 
     private readonly TerrainRules _rules;
+    private readonly IPreparedGeometry? _coverage;
+    private readonly Envelope? _fullyCoveredArea;
 
     public TerrainEvaluator(
         IReadOnlyList<MapFeature> features,
         LocalProjection projection,
         TerrainRules? rules = null,
-        bool preferGas = false)
+        bool preferGas = false,
+        Geometry? coverage = null,
+        Envelope? fullyCoveredArea = null)
     {
+        _coverage = coverage is null ? null : PreparedGeometryFactory.Prepare(coverage);
+        _fullyCoveredArea = fullyCoveredArea;
         _projection = projection;
         _gasCrossings = new GasCrossingIndex(features, projection);
         _preferGas = preferGas;
@@ -379,6 +385,11 @@ internal sealed class TerrainEvaluator
     private EdgeEvaluation? Evaluate(Coordinate a, Coordinate b, bool useProjectedLength)
     {
         LineString line = _factory.CreateLineString([a, b]);
+        if (_coverage is not null && !(_fullyCoveredArea?.Covers(line.EnvelopeInternal) ?? false)
+            && !_coverage.Covers(line))
+        {
+            return null;
+        }
         var contribution = new TerrainContribution();
         HashSet<long>? gasCandidates = null;
         HashSet<long>? gasRoads = null;

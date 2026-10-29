@@ -10,7 +10,7 @@ namespace CableRoutePlanner.Tests;
 
 internal sealed class MemoryData(params MapFeature[] features) : IGeodataRepository
 {
-    public DataPackageInfo Info { get; } = new(
+    public DataPackageInfo Info { get; init; } = new(
         "synthetic-test-only",
         new(27, 54, 27.006, 54.006),
         "Synthetic fixture",
