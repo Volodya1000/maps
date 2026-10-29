@@ -18,7 +18,9 @@ internal sealed class StartupLoader(
         }
 
         progress.Report("Проверка геоданных…");
-        await Task.Run(repositoryFactory, cancellationToken);
+        IGeodataRepository repository = await Task.Run(repositoryFactory, cancellationToken);
+        Console.WriteLine(
+            $"CRP_OFFLINE_DATA_READY region={repository.Info.RegionId} mode=sqlite");
         return shell;
     }
 }

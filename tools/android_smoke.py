@@ -101,7 +101,7 @@ def main():
             if "Error:" in start or "Exception" in start:
                 raise RuntimeError("Activity start failed: " + start)
             # Keep observing after am start: AppCompat failures can occur just after it returns.
-            map_ready = None
+            ready_marker = None
             observation_seconds = (
                 args.settle_seconds if args.wait_map_ready or index == 0 else 15
             )
@@ -112,22 +112,23 @@ def main():
                     raise RuntimeError("Application died after launching Activity")
                 if args.wait_map_ready:
                     current_logs = adb("logcat", "-d", "-v", "brief")
-                    map_ready = next(
+                    ready_marker = next(
                         (
                             line
                             for line in current_logs.splitlines()
-                            if "CRP_OFFLINE_MAP_READY" in line
+                            if "CRP_OFFLINE_DATA_READY" in line
+                            or "CRP_OFFLINE_MAP_READY" in line
                         ),
                         None,
                     )
-                    if map_ready:
+                    if ready_marker:
                         time.sleep(
                             2
                         )  # Allow the next map frame to be presented before capture.
                         break
-            if args.wait_map_ready and not map_ready:
+            if args.wait_map_ready and not ready_marker:
                 raise RuntimeError(
-                    "Activity survived but offline map did not become ready"
+                    "Activity survived but offline data/map did not become ready"
                 )
             activities = adb("shell", "dumpsys", "activity", "activities")
             resumed = [
@@ -151,7 +152,12 @@ def main():
                 adb("exec-out", "screencap", "-p", binary=True)
             )
             report["launches"].append(
-                dict(attempt=index + 1, pid=pid, resumed=resumed, map_ready=map_ready)
+                dict(
+                    attempt=index + 1,
+                    pid=pid,
+                    resumed=resumed,
+                    ready_marker=ready_marker,
+                )
             )
         report["success"] = True
     except Exception as error:
