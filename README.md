@@ -86,7 +86,7 @@ dotnet run --project tools/CableRoutePlanner.Verify -- samples/real-geodata-fixt
 - Расчёт ограничен областью 20 км, 100 000 узлов и 100 точками. Сетка может не обнаружить слишком узкий допустимый коридор; уменьшите ячейку. Недостающие препятствия OSM остаются неизвестными.
 - Возвращается от одного до трёх разных маршрутов, без обещания трёх независимых коридоров. Целевая функция — инженерная эвристика, не смета.
 
-[Архитектура](docs/architecture.md) · [Источники](docs/data-sources.md) · [Алгоритм](docs/routing-algorithm.md) · [Тестирование](docs/testing.md) · [Аудит тестов и SOLID](docs/test-and-solid-review.md) · [Платформы](docs/platform-compatibility.md) · [Матрица требований](docs/acceptance.md).
+[Архитектура](docs/architecture.md) · [Persistence и SQLite](docs/persistence.md) · [Источники](docs/data-sources.md) · [Алгоритм](docs/routing-algorithm.md) · [Тестирование](docs/testing.md) · [Аудит тестов и SOLID](docs/test-and-solid-review.md) · [Платформы](docs/platform-compatibility.md) · [Матрица требований](docs/acceptance.md).
 
 [Как выбрать и обновить Android APK](docs/android-distribution.md).
 
