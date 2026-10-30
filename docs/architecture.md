@@ -19,6 +19,8 @@ graph TB
 
 Domain использует только BCL и содержит географические инварианты, правила проходимости, стоимостные профили, расчёт стоимости участков и сравнение альтернатив. Application определяет контракты геоданных, маршрутизации, настроек и сессии; управляет точками и ревизией ввода. Параметры выполнения поиска находятся в Application request options, не в Domain. Persistence отвечает за SQLite/R-tree, чтение исходных геометрий, настройки и проверку офлайн-пакетов. Infrastructure реализует NTS-операции, пространственные индексы, A* и генерацию сетки, вызывая предметные правила Domain. ViewModels содержат состояние и команды, включая контракт clipboard; прямой ссылки на UI-технологии нет. UI содержит XAML, карты и `AvaloniaClipboardService`.
 
+Подробное описание границ слоя Persistence, схем SQLite v1/v2, пространственных индексов R-tree, подготовки офлайн-пакета и путей чтения данных см. в [Persistence и SQLite](persistence.md).
+
 Desktop, Android и Verify являются Composition Root. Они вызывают модульные `AddInfrastructure()`, `AddPersistence(dataDirectory, settingsPath)` и `AddPresentation(prepareData)`, затем регистрируют `IPlanningSession`. Проектов Bootstrap и Composition больше нет; Infrastructure и Persistence друг от друга не зависят.
 
 `NavigationHost` реализует IScreen. Map/Settings — singleton ViewModels с IRoutableViewModel, Shell получает их через DI. RoutingState сохраняет не более двух записей; back работает, количество экранов и подписок не растёт от повторных переходов. View создаются зарегистрированными типизированными фабриками, без поиска по строкам и reflection.
