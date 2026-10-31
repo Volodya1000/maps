@@ -15,8 +15,9 @@ runs:
         python3 - <<'PYTHON' >> "$GITHUB_OUTPUT"
         import json
         from pathlib import Path
-        runtime = json.loads(Path('tools/GeodataPreparation/belarus.lock.json').read_text())['runtime']
-        for name, value in runtime.items():
+        lock = json.loads(Path('tools/GeodataPreparation/belarus.lock.json').read_text())
+        print('prepared_key=' + lock.get('prepared', {}).get('key', ''))
+        for name, value in lock['runtime'].items():
             print(f'{name}={value}')
         PYTHON
     - uses: actions/cache/restore@v6
@@ -35,7 +36,13 @@ runs:
         COUNTRY_COMMAND: ${{ inputs.rebuild == 'true' && 'prepare' || 'ensure' }}
       run: python3 tools/GeodataPreparation/country_data.py "$COUNTRY_COMMAND"
     - uses: actions/cache/save@v6
-      if: inputs.rebuild != 'true' && steps.country-cache.outputs.cache-hit != 'true'
+      # Published packages already have durable storage. Avoid one duplicate
+      # 1.2 GB PR-scoped cache per PR; cache changed converters and trusted runs.
+      if: >-
+        inputs.rebuild != 'true'
+        && steps.country-cache.outputs.cache-hit != 'true'
+        && (github.event_name != 'pull_request'
+            || steps.identity.outputs.key != steps.identity.outputs.prepared_key)
       with:
         path: artifacts/belarus
         key: ${{ steps.identity.outputs.key }}
