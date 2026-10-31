@@ -138,19 +138,9 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: |
-            # android-emulator-runner executes this script with /bin/sh, not Bash.
-            set -eu
-            apk="artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk"
-            echo "Installing the exact full-size APK published to users: $apk"
-            stat -c '%n: %s bytes' "$apk"
-            if ! adb install -r "$apk" > "$RUNNER_TEMP/belarus-install.log" 2>&1; then
-              cat "$RUNNER_TEMP/belarus-install.log"
-              adb logcat -d -s PackageManager PackageInstaller installd | tail -n 150 || true
-              exit 1
-            fi
-            cat "$RUNNER_TEMP/belarus-install.log"
-            adb shell pm path "$PREVIEW_PACKAGE_ID" | grep -F 'package:'
+          # The runner invokes each inline command in a fresh /bin/sh process.
+          # Use a separate Bash script to preserve its local variables and error handling.
+          script: bash tools/android_full_apk_install_smoke.sh "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" "$PREVIEW_PACKAGE_ID"
       - name: Explain preview installation behavior
         run: |
           {
