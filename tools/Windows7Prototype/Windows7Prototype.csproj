@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <ApplicationIcon />
+    <RuntimeIdentifiers>win-x64;win-x86;win7-x86</RuntimeIdentifiers>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all" />
