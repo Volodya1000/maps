@@ -1,0 +1,41 @@
+name: Verified country package
+description: Restore the exact country package or prepare changed conversion inputs
+inputs:
+  rebuild:
+    description: Force preparation for an explicit versioned publication
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Identify country conversion inputs
+      id: identity
+      shell: bash
+      run: |
+        echo "key=$(python3 tools/GeodataPreparation/country_data.py key)" >> "$GITHUB_OUTPUT"
+        python3 - <<'PYTHON' >> "$GITHUB_OUTPUT"
+        import json
+        from pathlib import Path
+        runtime = json.loads(Path('tools/GeodataPreparation/belarus.lock.json').read_text())['runtime']
+        for name, value in runtime.items():
+            print(f'{name}={value}')
+        PYTHON
+    - uses: actions/cache/restore@v6
+      if: inputs.rebuild != 'true'
+      id: country-cache
+      with:
+        path: artifacts/belarus
+        key: ${{ steps.identity.outputs.key }}
+    - uses: astral-sh/setup-uv@v10.3.2
+      with:
+        version: ${{ steps.identity.outputs.uv }}
+        python-version: ${{ steps.identity.outputs.python }}
+    - name: Obtain and verify the country package
+      shell: bash
+      env:
+        COUNTRY_COMMAND: ${{ inputs.rebuild == 'true' && 'prepare' || 'ensure' }}
+      run: python3 tools/GeodataPreparation/country_data.py "$COUNTRY_COMMAND"
+    - uses: actions/cache/save@v6
+      if: inputs.rebuild != 'true' && steps.country-cache.outputs.cache-hit != 'true'
+      with:
+        path: artifacts/belarus
+        key: ${{ steps.identity.outputs.key }}

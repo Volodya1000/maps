@@ -1,6 +1,12 @@
 name: Full Belarus offline installers
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Build installers or explicitly publish versioned geodata
+        type: choice
+        default: installers
+        options: [installers, geodata]
 permissions:
   contents: read
 concurrency:
@@ -11,34 +17,12 @@ env:
   DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
 jobs:
   geodata:
+    if: inputs.mode != 'geodata'
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.2
-        with:
-          version: '0.12.23'
-          python-version: '3.12'
-      - uses: actions/cache@v6
-        id: data-cache
-        with:
-          path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
-      - if: steps.data-cache.outputs.cache-hit != 'true'
-        name: Download verified OSM snapshot
-        run: |
-          uv sync --project tools/GeodataPreparation --locked
-          curl --fail --location --retry 3 --connect-timeout 30 --max-time 900 https://download.geofabrik.de/europe/belarus-261022.osm.pbf --output source.osm.pbf
-      - if: steps.data-cache.outputs.cache-hit != 'true'
-        name: Prepare country database and compressed asset
-        run: |
-          uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/prepare_country.py --pbf source.osm.pbf --expected-md5 a2327228173b7fe8e74e2097e3dae0d4 --output artifacts/belarus --compress
-          cp -r samples/real-geodata-fixtures/minsk/licenses artifacts/belarus/
-          rm artifacts/belarus/geodata.sqlite
-      - name: Include country attribution
-        run: |
-          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
-          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
+      - uses: ./.github/actions/country-data
       - uses: actions/upload-artifact@v7
         with:
           name: belarus-offline-data
@@ -52,20 +36,10 @@ jobs:
       - uses: actions/checkout@v7
       - name: Read release version
         run: python3 tools/release_version.py >> "$GITHUB_ENV"
-      - uses: actions/cache/restore@v6
-        id: country-cache
-        with:
-          path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
       - uses: actions/download-artifact@v8
-        if: steps.country-cache.outputs.cache-hit != 'true'
         with:
           name: belarus-offline-data
           path: artifacts/belarus
-      - name: Include country attribution
-        run: |
-          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
-          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -203,3 +177,63 @@ jobs:
     uses: ./.github/workflows/publish-preview.yml
     with:
       source_run_id: ${{ github.run_id }}
+
+  publish-geodata:
+    if: inputs.mode == 'geodata'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/country-data
+        with:
+          rebuild: 'true'
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - name: Prepare and verify changed inputs (explicit publication only)
+        run: |
+          gzip -dk artifacts/belarus/geodata.sqlite.gz
+          dotnet restore tools/CableRoutePlanner.Verify --locked-mode
+          dotnet run --project tools/CableRoutePlanner.Verify -c Release --no-restore -- --inspect artifacts/belarus artifacts/belarus-package-check.json
+          rm artifacts/belarus/geodata.sqlite
+      - name: Stage permanent source and prepared package
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import shutil
+          from pathlib import Path
+          from tools.GeodataPreparation import country_data as country
+          lock = json.loads(country.LOCK.read_text())
+          key = country.cache_key(lock)
+          tag = lock['source']['version'] + '-' + key.removeprefix('belarus-v1-')[:16]
+          base = 'https://github.com/Volodya1000/maps/releases/download/' + tag
+          country.pin(lock, Path('artifacts/belarus'), base)
+          staging = Path('artifacts/geodata-release')
+          staging.mkdir(parents=True)
+          for path in Path('artifacts/belarus').rglob('*'):
+              if path.is_file():
+                  shutil.copyfile(path, staging / path.relative_to('artifacts/belarus').as_posix().replace('/', '--'))
+          source = Path('artifacts/osm') / (lock['source']['sha256'] + '.osm.pbf')
+          shutil.copyfile(source, staging / (lock['source']['version'] + '.osm.pbf'))
+          # Publication also moves the permanent source to this new release.
+          lock['source']['urls'][0] = base + '/' + lock['source']['version'] + '.osm.pbf'
+          country.LOCK.write_text(json.dumps(lock, indent=2) + '\n')
+          shutil.copyfile(country.LOCK, staging / 'belarus.lock.json')
+          Path('artifacts/geodata-tag.txt').write_text(tag)
+          PYTHON
+      - name: Publish immutable versioned inputs without replacing assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(cat artifacts/geodata-tag.txt)
+          gh release create "$tag" --target "$GITHUB_SHA" --prerelease --latest=false --title "Geodata $tag" --notes 'Verified OSM/Geofabrik inputs and prepared SQLite package. OpenStreetMap contributors, ODbL 1.0. Commit the accompanying belarus.lock.json to select this version.' artifacts/geodata-release/*
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: geodata-publication
+          path: |
+            tools/GeodataPreparation/belarus.lock.json
+            artifacts/belarus-package-check.json
+          if-no-files-found: error

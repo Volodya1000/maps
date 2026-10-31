@@ -1,0 +1,14 @@
+{
+  "source": {
+    "version": "belarus-261030",
+    "sha256": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01",
+    "urls": [
+      "https://github.com/Volodya1000/maps/releases/download/geodata-belarus-261030/belarus-261030.osm.pbf",
+      "https://download.geofabrik.de/europe/belarus-261030.osm.pbf"
+    ]
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "uv": "0.12.23"
+  }
+}
