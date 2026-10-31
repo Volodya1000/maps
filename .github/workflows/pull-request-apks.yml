@@ -43,7 +43,7 @@ jobs:
       - name: Read application version
         id: version
         run: echo "android_version_code=$(python3 tools/release_version.py | sed -n 's/^ANDROID_VERSION_CODE=//p')" >> "$GITHUB_OUTPUT"
-      - uses: astral-sh/setup-uv@v10.3.2
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           version: '0.12.23'
           python-version: '3.12'
