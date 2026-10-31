@@ -25,7 +25,9 @@ from shapely.geometry import Point
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pbf", type=Path, required=True)
-    parser.add_argument("--expected-md5", required=True)
+    checksums = parser.add_mutually_exclusive_group(required=True)
+    checksums.add_argument("--expected-sha256")
+    checksums.add_argument("--expected-md5", help="Legacy local use; CI uses SHA-256")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--compress",
@@ -44,8 +46,10 @@ def main():
                 h.update(block)
         return h.hexdigest()
 
-    if digest("md5") != args.expected_md5.lower():
-        raise ValueError("Geofabrik PBF checksum mismatch")
+    algorithm = "sha256" if args.expected_sha256 else "md5"
+    expected = args.expected_sha256 or args.expected_md5
+    if digest(algorithm) != expected.lower():
+        raise ValueError(f"Geofabrik PBF {algorithm} checksum mismatch: {args.pbf}")
     args.output.mkdir(parents=True, exist_ok=True)
     db = args.output / "geodata.sqlite"
     if db.exists() and not args.finalize_only:
@@ -255,7 +259,7 @@ def main():
                 name="OpenStreetMap/Geofabrik",
                 url="https://download.geofabrik.de/europe/belarus.html",
                 source_file=args.pbf.name,
-                md5=args.expected_md5,
+                md5=digest("md5"),
                 sha256=digest("sha256"),
                 license="ODbL-1.0",
                 timestamp=header.get("osmosis_replication_timestamp"),

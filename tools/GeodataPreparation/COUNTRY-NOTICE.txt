@@ -1,9 +1,10 @@
-Belarus OpenStreetMap extract, Geofabrik snapshot 2026-10-22.
+Belarus OpenStreetMap extract, verified Geofabrik snapshot.
+Snapshot timestamp and source SHA-256 are recorded in manifest.json.
 © OpenStreetMap contributors, Open Database License 1.0 (ODbL).
 https://www.openstreetmap.org/copyright
 https://download.geofabrik.de/europe/belarus.html
 Database is a derived database; ODbL and DbCL included in licenses/.
 Prepared by tools/GeodataPreparation/prepare_country.py in Volodya1000/maps.
 OSM coverage does not establish construction permission or completeness of obstacles.
-One malformed forest object could not be converted; see manifest.json.
+Conversion errors, if any, are recorded in manifest.json.
 No DEM, WorldCover or approved river crossings are fabricated.
