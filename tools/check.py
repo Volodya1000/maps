@@ -172,8 +172,12 @@ def desktop() -> None:
             "tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll",
             "samples/real-geodata-fixtures/minsk",
             "artifacts/route.geojson",
-            "53.9400,27.4900",
-            "53.9550,27.5200",
+            # Keep the smoke route on a mapped bridge.  The previous points
+            # crossed a road without an approved bridge or gas-pipeline
+            # candidate and therefore became invalid when road crossings were
+            # made subject to the same terrain rules as all other obstacles.
+            "53.9409,27.4977",
+            "53.9424,27.4991",
         )
         run(
             sys.executable,
@@ -275,12 +279,21 @@ def terrain() -> None:
 
 def android() -> None:
     dotnet = executable("dotnet")
+    dotnet_env = os.environ.copy()
+    dotnet_directory = str(Path(dotnet).resolve().parent)
+    dotnet_env["PATH"] = os.pathsep.join((dotnet_directory, dotnet_env.get("PATH", "")))
     sdk = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
     if not sdk:
         raise ValueError(
             "Set ANDROID_HOME to Android SDK with API/build-tools 34.0.0; install JDK 17 and the .NET Android workload."
         )
-    run(dotnet, "restore", "src/CableRoutePlanner.Android", "--locked-mode")
+    run(
+        dotnet,
+        "restore",
+        "src/CableRoutePlanner.Android",
+        "--locked-mode",
+        env=dotnet_env,
+    )
     run(
         dotnet,
         "format",
@@ -290,6 +303,7 @@ def android() -> None:
         "--verify-no-changes",
         "--severity",
         "warn",
+        env=dotnet_env,
     )
     version_values = subprocess.check_output(
         [sys.executable, "tools/release_version.py"], cwd=ROOT, text=True
@@ -332,7 +346,7 @@ def android() -> None:
                 f"-p:AndroidSigningStorePass={os.environ.get('ANDROID_SIGNING_STORE_PASSWORD', 'android')}",
             )
         )
-    run(*publish)
+    run(*publish, env=dotnet_env)
     publish_directory = (
         ROOT / "src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish"
     )
