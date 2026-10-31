@@ -3,12 +3,59 @@
     "version": "belarus-261030",
     "sha256": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01",
     "urls": [
-      "https://github.com/Volodya1000/maps/releases/download/geodata-belarus-261030/belarus-261030.osm.pbf",
+      "https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/belarus-261030.osm.pbf",
       "https://download.geofabrik.de/europe/belarus-261030.osm.pbf"
     ]
   },
   "runtime": {
     "python": "3.12.14",
     "uv": "0.12.23"
+  },
+  "prepared": {
+    "key": "belarus-v1-f94aa250266aee19da6712975170557c920c3e0625bb20d8282fdd4227197557",
+    "files": {
+      "NOTICE.txt": {
+        "sha256": "3e8046e465679d56f5b469d8efcec10d41f85710104b5a82320b9f9760b58436",
+        "urls": [
+          "https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/NOTICE.txt"
+        ]
+      },
+      "geodata.sqlite.gz": {
+        "sha256": "fb9d956e69c0011707e8c7a0ccab30c67d50e9b79eb8dbca2fe3e30caa3aa2ae",
+        "urls": [
+          "https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/geodata.sqlite.gz"
+        ]
+      },
+      "licenses/DbCL-1.0.html": {
+        "sha256": "0821aa7e70784ec590d14533a1d41d1ff9e3b8fb046c5b8586b0f8beaaf9de32",
+        "urls": [
+          "https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/licenses--DbCL-1.0.html"
+        ]
+      },
+      "licenses/NOTICE.txt": {
+        "sha256": "3e8046e465679d56f5b469d8efcec10d41f85710104b5a82320b9f9760b58436",
+        "urls": [
+          "https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/licenses--NOTICE.txt"
+        ]
+      },
+      "licenses/ODbL-1.0.html": {
+        "sha256": "a0a9cd46c5b039b7bd55ca91ee4b0b02938d56b5530bfb3d839ab8b9e647039c",
+        "urls": [
+          "https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/licenses--ODbL-1.0.html"
+        ]
+      },
+      "manifest.json": {
+        "sha256": "7b045bbf00f43b41f92cc47b545676388099fca263214b8f1a8078d3204cc893",
+        "urls": [
+          "https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/manifest.json"
+        ]
+      },
+      "package.json": {
+        "sha256": "0cf82583ef16f3cef6307f8b19ec713277769939f2d7b47307e120bfe7fdb2b2",
+        "urls": [
+          "https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/package.json"
+        ]
+      }
+    }
   }
 }

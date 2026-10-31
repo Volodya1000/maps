@@ -1,0 +1,25 @@
+{
+  "measured_at_utc": "2026-10-31",
+  "scope": "Managed Linux executor; HTTPS Release downloads and SHA-256/provenance validation. Warm run reused local prepared files, not an Actions service cache.",
+  "publication_run": "https://github.com/Volodya1000/maps/actions/runs/41201086419",
+  "release": "https://github.com/Volodya1000/maps/releases/tag/belarus-261030-f94aa250266aee19",
+  "source_version": "belarus-261030",
+  "source_sha256": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01",
+  "source_download_bytes": 351288844,
+  "source_download_seconds": 25.155619,
+  "prepared_gzip_bytes": 1211600958,
+  "prepared_package_bytes": 1211683375,
+  "cold_recovery_seconds": 56.67207145400016,
+  "warm_local_validation_seconds": 2.4447606359999554,
+  "actions_preparation_seconds_after_verified_download_including_uv_sync": 1458.3406183,
+  "conversion_errors": {},
+  "github_release_asset_digests_match_lock": true,
+  "verified_regional_centres": [
+    "Минск",
+    "Брест",
+    "Гродно",
+    "Витебск",
+    "Гомель",
+    "Могилёв"
+  ]
+}

@@ -48,6 +48,7 @@ jobs:
         with:
           name: pull-request-belarus-data
           path: artifacts/belarus/
+          retention-days: 1
           compression-level: 0
 
   android:
