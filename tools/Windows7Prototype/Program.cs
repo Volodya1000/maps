@@ -71,6 +71,11 @@ internal static class Program
         PrototypeApplication.Options = new PrototypeMapOptions(name, latitude, longitude);
         return AppBuilder.Configure<PrototypeApplication>()
         .UsePlatformDetect()
+        .With(new Win32PlatformOptions
+        {
+            RenderingMode = new[] { Win32RenderingMode.Software },
+            CompositionMode = new[] { Win32CompositionMode.RedirectionSurface }
+        })
         .LogToTrace();
     }
 }
