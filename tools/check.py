@@ -172,8 +172,12 @@ def desktop() -> None:
             "tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll",
             "samples/real-geodata-fixtures/minsk",
             "artifacts/route.geojson",
-            "53.9400,27.4900",
-            "53.9550,27.5200",
+            # Keep the smoke route on a mapped bridge.  The previous points
+            # crossed a road without an approved bridge or gas-pipeline
+            # candidate and therefore became invalid when road crossings were
+            # made subject to the same terrain rules as all other obstacles.
+            "53.9409,27.4977",
+            "53.9424,27.4991",
         )
         run(
             sys.executable,
