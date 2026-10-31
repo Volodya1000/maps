@@ -92,4 +92,4 @@ dotnet run --project tools/CableRoutePlanner.Verify -- samples/real-geodata-fixt
 
 Результаты предназначены для предварительного планирования. Они не заменяют обследование местности, согласование переходов и рабочий проект строительства.
 
-Сборка с полным набором: добавьте `-p:GeodataDirectory=/absolute/path/belarus-package` к publish. Подготовка данных и выпуск APK/setup описаны в `.github/workflows/offline-packages.yml`; зависимости Python зафиксированы через uv, а не requirements.txt.
+Сборка с полным набором: добавьте `-p:GeodataDirectory=/absolute/path/belarus-package` к publish. Источники, SHA-256 и кеширование описаны в [архитектуре геоданных CI](docs/ci-geodata.md). Подготовка данных и выпуск APK/setup описаны в `.github/workflows/offline-packages.yml`; зависимости Python зафиксированы через uv, а не requirements.txt.

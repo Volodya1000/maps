@@ -1,0 +1,49 @@
+{
+  "schema_version": 2,
+  "region_id": "belarus",
+  "coordinate_system": "EPSG:4326",
+  "bounds": [
+    23.174801,
+    51.234408,
+    32.76947,
+    56.173846
+  ],
+  "database_sha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "attribution": "© OpenStreetMap contributors · ODbL 1.0 · Geofabrik",
+  "status": "Belarus OSM offline package; construction approvals, DEM and ESA WorldCover absent.",
+  "sources": [
+    {
+      "name": "OpenStreetMap/Geofabrik",
+      "url": "https://download.geofabrik.de/europe/belarus.html",
+      "source_file": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01.osm.pbf",
+      "md5": "ce3132cbab9ce2e627fc4f49d5055dca",
+      "sha256": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01",
+      "license": "ODbL-1.0",
+      "timestamp": "2026-10-30T21:24:51Z"
+    }
+  ],
+  "feature_counts": {
+    "Settlement": 22044,
+    "Road": 725970,
+    "BridgeCandidate": 15123,
+    "River": 386778,
+    "Lake": 80042,
+    "Building": 3007287,
+    "Forest": 192254,
+    "Field": 114639,
+    "Marsh": 30112,
+    "Clearing": 31640,
+    "OverheadGasPipeline": 67,
+    "GasPipelineCrossingCandidate": 12
+  },
+  "conversion_errors": {},
+  "terrain": false,
+  "worldcover": false,
+  "artifacts": [
+    "base-map-vectors",
+    "map-levels-of-detail",
+    "obstacles",
+    "routing-data",
+    "spatial-index"
+  ]
+}

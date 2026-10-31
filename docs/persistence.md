@@ -58,7 +58,7 @@ OpenStreetMap / Geofabrik (belarus.osm.pbf)
 ```sh
 uv sync --project tools/GeodataPreparation --locked
 uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/prepare_country.py \
-  --pbf /data/belarus.osm.pbf --expected-md5 <MD5-исходного-PBF> \
+  --pbf /data/belarus.osm.pbf --expected-sha256 <SHA-256-из-belarus.lock.json> \
   --output /data/belarus-package --compress
 ```
 

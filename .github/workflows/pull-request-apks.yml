@@ -43,35 +43,12 @@ jobs:
       - name: Read application version
         id: version
         run: echo "android_version_code=$(python3 tools/release_version.py | sed -n 's/^ANDROID_VERSION_CODE=//p')" >> "$GITHUB_OUTPUT"
-      - uses: astral-sh/setup-uv@v10.3.2
-        with:
-          version: '0.12.23'
-          python-version: '3.12'
-      - uses: actions/cache@v6
-        id: data-cache
-        with:
-          path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
-      - if: steps.data-cache.outputs.cache-hit != 'true'
-        name: Download verified OSM snapshot
-        run: |
-          uv sync --project tools/GeodataPreparation --locked
-          curl --fail --location --retry 3 --connect-timeout 30 --max-time 900 https://download.geofabrik.de/europe/belarus-261022.osm.pbf --output source.osm.pbf
-      - if: steps.data-cache.outputs.cache-hit != 'true'
-        name: Prepare country database and compressed asset
-        run: |
-          uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/prepare_country.py --pbf source.osm.pbf --expected-md5 a2327228173b7fe8e74e2097e3dae0d4 --output artifacts/belarus --compress
-          cp -r samples/real-geodata-fixtures/minsk/licenses artifacts/belarus/
-          rm artifacts/belarus/geodata.sqlite
-      - name: Include country attribution
-        run: |
-          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/NOTICE.txt
-          cp tools/GeodataPreparation/COUNTRY-NOTICE.txt artifacts/belarus/licenses/NOTICE.txt
-      - if: steps.data-cache.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v7
+      - uses: ./.github/actions/country-data
+      - uses: actions/upload-artifact@v7
         with:
           name: pull-request-belarus-data
           path: artifacts/belarus/
+          retention-days: 1
           compression-level: 0
 
   android:
@@ -87,13 +64,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tested_sha }}
-      - uses: actions/cache/restore@v6
-        id: data-cache
-        with:
-          path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
-      - if: steps.data-cache.outputs.cache-hit != 'true'
-        uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8
         with:
           name: pull-request-belarus-data
           path: artifacts/belarus
@@ -183,13 +154,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tested_sha }}
-      - uses: actions/cache/restore@v6
-        id: benchmark-data
-        with:
-          path: artifacts/belarus
-          key: belarus-a2327228173b7fe8e74e2097e3dae0d4-${{ hashFiles('tools/GeodataPreparation/prepare_country.py', 'tools/GeodataPreparation/display_lod.py', 'tools/GeodataPreparation/prepare.py', 'tools/GeodataPreparation/feature_classification.py', 'tools/GeodataPreparation/pipeline_crossings.py') }}
-      - if: steps.benchmark-data.outputs.cache-hit != 'true'
-        uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8
         with:
           name: pull-request-belarus-data
           path: artifacts/belarus
