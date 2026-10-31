@@ -27,6 +27,12 @@
                 FormatString="0.0"
                 Maximum="100"
                 Minimum="0" />
+            <TextBlock Text="Максимальная длина маршрута, м (1–10 000 000)" />
+            <NumericUpDown
+                x:Name="MaxRouteLengthInput"
+                FormatString="0"
+                Maximum="10000000"
+                Minimum="1" />
             <TextBlock
                 Text="Мелкая сетка увеличивает время и расход памяти. Для дальних маршрутов шаг автоматически укрупняется в пределах лимита узлов, а затем маршрут проверяется по исходным геометриям."
                 TextWrapping="Wrap" />

@@ -214,6 +214,16 @@ public sealed class DomainTests
         Assert.IsType<ArgumentOutOfRangeException>(error);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10_000_001)]
+    public void RoutingOptionsRejectOutOfRangeMaximumRouteLength(double maximum)
+    {
+        RoutingOptions options = new(MaxRouteLengthMetres: maximum);
+
+        Assert.Throws<ArgumentOutOfRangeException>(options.Validate);
+    }
+
     private sealed class CultureScope : IDisposable
     {
         private readonly System.Globalization.CultureInfo _previous = System.Globalization.CultureInfo.CurrentCulture;

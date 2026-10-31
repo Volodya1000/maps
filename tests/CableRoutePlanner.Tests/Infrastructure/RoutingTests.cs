@@ -111,7 +111,7 @@ public sealed class RoutingTests(ITestOutputHelper output)
             .Sum();
         Coordinate[] shorterSplice = [route[0], new(80, 0), new(120, 0), route[^1]];
         double shorterCost = shorterSplice
-            .Zip(shorterSplice.Skip(1), (from, to) => evaluator.Evaluate(from, to)!.Cost(profile))
+            .Zip(shorterSplice.Skip(1), (from, to) => evaluator.Evaluate(from, to)?.Cost(profile) ?? double.PositiveInfinity)
             .Sum();
         Assert.True(cost < shorterCost);
     }
@@ -495,16 +495,52 @@ public sealed class RoutingTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public async Task PassableDirectRoadCrossingCanLoseToALongerCheaperDetour()
+    public async Task DirectRoadCrossingWithoutBridgeOrGasCandidateHasNoRoute()
     {
-        MapFeature road = TestData.Line(1, TerrainKind.Road, (150, 100), (150, 200));
-        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(road).PlanAsync(
-            [TestData.P(50, 150), TestData.P(250, 150)],
-            TestData.Options,
-            default);
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-5000, 150), (5000, 150));
+        PlanningException error = await Assert.ThrowsAsync<PlanningException>(() => TestData.Planner(road).PlanAsync(
+            [TestData.P(50, 100), TestData.P(250, 200)],
+            TestData.Options, default));
 
-        Assert.Contains(routes, route => route.Name == "Короче" && route.Metrics.RoadCrossings == 1);
-        Assert.Contains(routes, route => route.Name == "Баланс" && route.Metrics.RoadCrossings == 0);
+        Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
+    }
+
+    [Fact]
+    public async Task RoadCrossingUsesMappedBridgeCandidate()
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-5000, 150), (5000, 150));
+        MapFeature bridge = TestData.Line(2, TerrainKind.BridgeCandidate, (150, 130), (150, 170));
+
+        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(road, bridge).PlanAsync(
+            [TestData.P(50, 140), TestData.P(250, 160)], TestData.Options, CancellationToken.None);
+
+        Assert.NotEmpty(routes);
+        Assert.All(routes, route =>
+        {
+            Assert.Equal(1, route.Metrics.RoadCrossings);
+            Assert.Equal(1, route.Metrics.PotentialBridgeCrossings);
+        });
+    }
+
+    [Fact]
+    public async Task RouteAtMaximumLengthIsAcceptedButLongerRouteIsRejected()
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-5000, 150), (5000, 150));
+        MapFeature bridge = TestData.Line(2, TerrainKind.BridgeCandidate, (150, 130), (150, 170));
+        GeoCoordinate[] points = [TestData.P(50, 140), TestData.P(250, 160)];
+        IReadOnlyList<RouteAlternative> unrestricted = await TestData.Planner(road, bridge).PlanAsync(
+            points, TestData.Options, CancellationToken.None);
+        double maximum = unrestricted.Min(route => route.Metrics.LengthMetres);
+
+        IReadOnlyList<RouteAlternative> accepted = await TestData.Planner(road, bridge).PlanAsync(
+            points, TestData.Options with { MaxRouteLengthMetres = maximum }, CancellationToken.None);
+        Assert.NotEmpty(accepted);
+
+        PlanningException error = await Assert.ThrowsAsync<PlanningException>(() =>
+            TestData.Planner(road, bridge).PlanAsync(
+                points, TestData.Options with { MaxRouteLengthMetres = maximum - 0.1 }, CancellationToken.None));
+        Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
+        Assert.Contains("максимум", error.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

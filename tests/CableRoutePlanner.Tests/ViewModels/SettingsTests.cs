@@ -18,6 +18,7 @@ public sealed class SettingsTests : ReactiveTestScope
         using var vm = new SettingsViewModel(new NavigationHost(), store);
         Assert.Equal(20m, vm.CellSize);
         Assert.Equal(10m, vm.ReservePercent);
+        Assert.Equal(1_000_000m, vm.MaxRouteLengthMetres);
         Assert.False(vm.HasChanges);
         Assert.False(await vm.Save.CanExecute.FirstAsync());
         vm.CellSize = 35;
@@ -32,6 +33,10 @@ public sealed class SettingsTests : ReactiveTestScope
         vm.ReservePercent = 10;
         Assert.True(vm.HasChanges);
         vm.ReservePercent = 15;
+        Assert.False(vm.HasChanges);
+        vm.MaxRouteLengthMetres = 250_000;
+        await vm.Save.Execute();
+        Assert.Equal(250_000, store.Options.MaxRouteLengthMetres);
         Assert.False(vm.HasChanges);
         vm.CellSize = null;
         Assert.True(vm.HasChanges);

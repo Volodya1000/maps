@@ -139,6 +139,7 @@ public sealed class GridRoutePlanner(
         }
 
         var result = new List<RouteAlternative>();
+        PlanningException? lengthLimitError = null;
         foreach (CostProfile profile in CostProfile.Defaults)
         {
             ct.ThrowIfCancellationRequested();
@@ -148,12 +149,15 @@ public sealed class GridRoutePlanner(
             {
                 route = _geometryBuilder.Build(points, projection, evaluator, mesh, profile, GridEdge, ct);
             }
-            catch (PlanningException error) when (result.Count > 0 && error.Reason is
+            catch (PlanningException error) when (error.Reason is
                 PlanningErrorReason.GridConnectionUnavailable or PlanningErrorReason.NoRouteInSearchArea)
             {
                 // Preserve a fully validated earlier profile when the coarse graph
                 // cannot represent this profile. Cancellation and other errors still propagate.
-                ProfileUnavailableLog(logger, profile.Name, error.Reason, null);
+                if (result.Count > 0)
+                {
+                    ProfileUnavailableLog(logger, profile.Name, error.Reason, null);
+                }
                 continue;
             }
 
@@ -179,6 +183,15 @@ public sealed class GridRoutePlanner(
                 crossings.UnionWith(edge.Crossings);
                 bridgeCandidates.UnionWith(edge.BridgeCandidates);
                 gasCandidates.UnionWith(edge.GasCandidates);
+            }
+
+            if (length > options.MaxRouteLengthMetres)
+            {
+                lengthLimitError = new PlanningException(
+                    $"Маршрут длиной {length:F0} м превышает заданный максимум "
+                    + $"{options.MaxRouteLengthMetres:F0} м.",
+                    PlanningErrorReason.NoRouteInSearchArea);
+                continue;
             }
 
             // A nearby aerial candidate and a ground crossing are meaningful choices,
@@ -209,6 +222,14 @@ public sealed class GridRoutePlanner(
                         .Select(projection.Inverse).ToArray()),
                     evaluator.RoadContacts(route, ct),
                     Array.AsReadOnly(gasCandidates.Order().ToArray())));
+        }
+
+        if (result.Count == 0)
+        {
+            throw lengthLimitError ?? new PlanningException(
+                "Не удалось построить маршрут: пересечение дороги возможно только через ближайший мост "
+                + "или газопровод, но допустимого перехода в пределах заданной длины нет.",
+                PlanningErrorReason.NoRouteInSearchArea);
         }
 
         SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);

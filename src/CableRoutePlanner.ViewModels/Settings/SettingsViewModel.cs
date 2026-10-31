@@ -30,16 +30,23 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
     {
         get; set;
     }
+    [Reactive]
+    public decimal? MaxRouteLengthMetres
+    {
+        get; set;
+    }
     [Reactive] public bool PreferOverheadGasCrossings { get; set; }
 
     [Reactive] public string Status { get; private set; } = "";
 
     public bool HasChanges => CellSize != (decimal)_saved.CellSizeMetres
         || ReservePercent != (decimal)(_saved.ReserveFraction * 100)
+        || MaxRouteLengthMetres != (decimal)_saved.MaxRouteLengthMetres
         || PreferOverheadGasCrossings != _saved.PreferOverheadGasCrossings;
 
     public bool CanSave => HasChanges && CellSize is >= 5 and <= 200
-        && ReservePercent is >= 0 and <= 100 && !_loadFailed;
+        && ReservePercent is >= 0 and <= 100
+        && MaxRouteLengthMetres is >= 1 and <= 10_000_000 && !_loadFailed;
 
     public bool CanReset => _loadFailed;
 
@@ -63,7 +70,8 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
     }
 
     private void SetupSubscriptions() =>
-        this.WhenAnyValue(x => x.CellSize, x => x.ReservePercent, x => x.PreferOverheadGasCrossings)
+        this.WhenAnyValue(x => x.CellSize, x => x.ReservePercent, x => x.MaxRouteLengthMetres,
+            x => x.PreferOverheadGasCrossings)
             .Subscribe(_ => NotifyChanges()).DisposeWith(_lifetime);
 
     [MemberNotNull(nameof(Save), nameof(ResetDefaults))]
@@ -83,6 +91,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
             PreferOverheadGasCrossings = _saved.PreferOverheadGasCrossings;
             CellSize = (decimal)_saved.CellSizeMetres;
             ReservePercent = (decimal)(_saved.ReserveFraction * 100);
+            MaxRouteLengthMetres = (decimal)_saved.MaxRouteLengthMetres;
             _loadFailed = false;
             Status = "";
             NotifyChanges();
@@ -95,6 +104,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
             PreferOverheadGasCrossings = defaults.PreferOverheadGasCrossings;
             CellSize = (decimal)defaults.CellSizeMetres;
             ReservePercent = (decimal)(defaults.ReserveFraction * 100);
+            MaxRouteLengthMetres = (decimal)defaults.MaxRouteLengthMetres;
             Status = $"Ошибка загрузки настроек: {ex.Message}";
             NotifyChanges();
         }
@@ -123,7 +133,8 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
             {
                 PreferOverheadGasCrossings = PreferOverheadGasCrossings,
                 CellSizeMetres = (double)CellSize!.Value,
-                ReserveFraction = (double)ReservePercent!.Value / 100
+                ReserveFraction = (double)ReservePercent!.Value / 100,
+                MaxRouteLengthMetres = (double)MaxRouteLengthMetres!.Value
             };
             _store.Save(options);
             _saved = _store.Load();
