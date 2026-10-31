@@ -41,6 +41,29 @@ jobs:
         shell: pwsh
         run: .\tools\Windows7MonoPrototype\build-mkbundle.ps1
 
+      - name: Check startup without Mono on PATH
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+          $env:MONO_ENV_OPTIONS = '--trace=N:Avalonia.Win32.WinRT'
+          $env:WIN7_PROTOTYPE_READY_PATH = Join-Path $env:RUNNER_TEMP 'win7-mono-ready.json'
+          $exe = Join-Path $PWD 'artifacts/windows7-mono-x86/Windows7MonoPrototype.exe'
+          $process = Start-Process $exe -WorkingDirectory (Split-Path $exe) -WindowStyle Hidden -PassThru
+          try {
+            for ($i = 0; $i -lt 30 -and -not (Test-Path $env:WIN7_PROTOTYPE_READY_PATH); $i++) {
+              Start-Sleep -Seconds 1
+              $process.Refresh()
+              if ($process.HasExited) { throw "Prototype exited early: $($process.ExitCode)" }
+            }
+            if (-not (Test-Path $env:WIN7_PROTOTYPE_READY_PATH)) { throw 'Prototype did not report readiness.' }
+            Start-Sleep -Seconds 5
+            $process.Refresh()
+            if ($process.HasExited) { throw "Prototype exited after readiness: $($process.ExitCode)" }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id }
+          }
+
       - uses: actions/upload-artifact@v7
         with:
           name: windows7-mono-x86-bundle-${{ github.sha }}

@@ -5,8 +5,16 @@ Windows 7 `net48` payload and does not claim production application support.
 
 The project reuses the deterministic Avalonia/Mapsui/SQLite smoke program from
 `tools/Windows7Prototype`, targets `net48`, and requests x86 output. The build
-script then asks Mono `mkbundle` to embed the managed assemblies and the Mono
-runtime into `Windows7MonoPrototype.exe`.
+script uses Mono `mkbundle` to embed managed assemblies. Mono's x86 runtime and
+the Microsoft C runtime libraries are included beside the executable.
+
+## Test on Windows 7 x86 without internet
+
+Copy the complete extracted folder to the laptop. Double-click `START-TEST.cmd`.
+No separate Mono or .NET installation is needed. The test should display a
+window containing a red point; this is an experimental prototype, not the full
+application. If it fails, send `test-log.txt` from the folder and a photo of
+the error. The command window stays open until a key is pressed.
 
 ## Build
 
@@ -18,9 +26,10 @@ root:
 pwsh tools/Windows7MonoPrototype/build-mkbundle.ps1
 ```
 
-The result is written to `artifacts/windows7-mono-x86`. Native SkiaSharp,
-HarfBuzz and SQLite libraries remain beside the executable because `mkbundle`
-does not automatically make every native P/Invoke library part of the bundle.
+The result is written to `artifacts/windows7-mono-x86`. The Mono runtime,
+native SkiaSharp, HarfBuzz, SQLite and C runtime libraries remain beside the
+executable. The Windows SDK x86 UCRT redistributables and Visual C++ x86 CRT
+redistributable files must be installed on the build machine.
 
 The same build can be started manually from the `Windows 7 Mono mkbundle
 feasibility` GitHub Actions workflow. That workflow downloads the official Mono
