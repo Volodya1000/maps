@@ -27,6 +27,10 @@ runs:
         path: artifacts/belarus
         key: ${{ steps.identity.outputs.key }}
     - uses: astral-sh/setup-uv@v10.3.2
+      if: >-
+        inputs.rebuild == 'true'
+        || (steps.country-cache.outputs.cache-hit != 'true'
+            && steps.identity.outputs.key != steps.identity.outputs.prepared_key)
       with:
         version: ${{ steps.identity.outputs.uv }}
         python-version: ${{ steps.identity.outputs.python }}

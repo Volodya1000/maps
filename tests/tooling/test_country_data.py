@@ -366,3 +366,22 @@ class CountryWorkflowTests(unittest.TestCase):
             {"contents": "write"}, workflow["jobs"]["publish-geodata"]["permissions"]
         )
         self.assertEqual({"contents": "read"}, workflow["permissions"])
+
+    def test_ready_package_and_cache_paths_do_not_require_uv_setup(self):
+        action = yaml.safe_load(
+            (country.ROOT / ".github/actions/country-data/action.yml").read_text()
+        )
+        setup = next(
+            step
+            for step in action["runs"]["steps"]
+            if step.get("uses", "").startswith("astral-sh/setup-uv@")
+        )
+        # The observed failure was an unconditional installer whose post-step
+        # tried to save dependencies although the stdlib download used none.
+        condition = setup.get("if", "")
+        self.assertIn("steps.country-cache.outputs.cache-hit != 'true'", condition)
+        self.assertIn(
+            "steps.identity.outputs.key != steps.identity.outputs.prepared_key",
+            condition,
+        )
+        self.assertIn("inputs.rebuild == 'true'", condition)
