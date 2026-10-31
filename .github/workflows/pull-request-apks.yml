@@ -123,6 +123,33 @@ jobs:
             signer="$actual_signer"
           done
 
+      # A signed/parsable APK is not necessarily installable: the full country
+      # package is much larger than the Minsk smoke-tested build.
+      - name: Enable KVM for full APK installation test
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install full Belarus APK on Android 15 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            set -euo pipefail
+            apk="artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk"
+            echo "Installing the exact full-size APK published to users: $apk"
+            stat -c '%n: %s bytes' "$apk"
+            if ! adb install -r "$apk" > "$RUNNER_TEMP/belarus-install.log" 2>&1; then
+              cat "$RUNNER_TEMP/belarus-install.log"
+              adb logcat -d -s PackageManager PackageInstaller installd | tail -n 150 || true
+              exit 1
+            fi
+            cat "$RUNNER_TEMP/belarus-install.log"
+            adb shell pm path "$PREVIEW_PACKAGE_ID" | grep -F 'package:'
       - name: Explain preview installation behavior
         run: |
           {
