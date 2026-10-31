@@ -139,7 +139,8 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: |
-            set -euo pipefail
+            # android-emulator-runner executes this script with /bin/sh, not Bash.
+            set -eu
             apk="artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk"
             echo "Installing the exact full-size APK published to users: $apk"
             stat -c '%n: %s bytes' "$apk"
