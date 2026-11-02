@@ -22,7 +22,11 @@ jobs:
   # This label-triggered path intentionally has no access to Windows 7 secrets.
   net48-prototype:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'test-win7-feasibility')
-    name: Build Avalonia 11 net48 prototype
+    name: Build Avalonia 11 net48 prototype (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -34,8 +38,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode -p:RuntimeIdentifier=win-x64
-          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:RuntimeIdentifier=win-x64 -p:TreatWarningsAsErrors=true
+          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode -p:RuntimeIdentifier=win-${{ matrix.arch }}
+          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:RuntimeIdentifier=win-${{ matrix.arch }} -p:TreatWarningsAsErrors=true
       - name: Test guest result validator
         run: python3 -m unittest tests/tooling/test_windows7_result.py -v
   kvm-feasibility:
@@ -84,7 +88,11 @@ jobs:
 
   build-payload:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'ci:windows7') || contains(github.event.pull_request.labels.*.name, 'test-win7-feasibility')))
-    name: Build Windows 7 prototype payload from this commit
+    name: Build Windows 7 prototype payload from this commit (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
@@ -96,18 +104,20 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode -p:RuntimeIdentifier=win-x64
-          dotnet restore tools/Windows7GuestAgent/Windows7GuestAgent.csproj --locked-mode -p:RuntimeIdentifier=win-x64
-          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:RuntimeIdentifier=win-x64 -p:TreatWarningsAsErrors=true
-          dotnet build tools/Windows7GuestAgent/Windows7GuestAgent.csproj --no-restore -c Release --nologo -p:RuntimeIdentifier=win-x64 -p:TreatWarningsAsErrors=true
+          dotnet restore tools/Windows7Prototype/Windows7Prototype.csproj --locked-mode -p:RuntimeIdentifier=win-${{ matrix.arch }}
+          dotnet restore tools/Windows7GuestAgent/Windows7GuestAgent.csproj --locked-mode -p:RuntimeIdentifier=win-${{ matrix.arch }}
+          dotnet build tools/Windows7Prototype/Windows7Prototype.csproj --no-restore -c Release --nologo -p:RuntimeIdentifier=win-${{ matrix.arch }} -p:TreatWarningsAsErrors=true
+          dotnet build tools/Windows7GuestAgent/Windows7GuestAgent.csproj --no-restore -c Release --nologo -p:RuntimeIdentifier=win-${{ matrix.arch }} -p:TreatWarningsAsErrors=true
       - name: Assemble payload and manifest
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $payload = Join-Path $env:GITHUB_WORKSPACE 'artifacts/win7-payload'
+          $architecture = '${{ matrix.arch }}'
+          $payload = Join-Path $env:GITHUB_WORKSPACE "artifacts/win7-payload-$architecture"
           New-Item -ItemType Directory -Force -Path $payload | Out-Null
-          Copy-Item 'tools/Windows7Prototype/bin/Release/net48/win-x64' (Join-Path $payload 'Windows7Prototype') -Recurse
-          Copy-Item 'tools/Windows7GuestAgent/bin/Release/net48/win-x64' (Join-Path $payload 'Windows7GuestAgent') -Recurse
+          Copy-Item "tools/Windows7Prototype/bin/Release/net48/win-$architecture" (Join-Path $payload 'Windows7Prototype') -Recurse
+          Copy-Item "tools/Windows7GuestAgent/bin/Release/net48/win-$architecture" (Join-Path $payload 'Windows7GuestAgent') -Recurse
+          Set-Content (Join-Path $payload 'architecture.txt') $architecture -Encoding ASCII
           @"
           @echo off
           setlocal
@@ -124,9 +134,17 @@ jobs:
           set "PAYLOAD=%~dp0"
           set "RESULTS=%~dp0results"
           if not exist "%RESULTS%" mkdir "%RESULTS%"
+          call "%PAYLOAD%check-prerequisites.cmd" --no-pause
+          if errorlevel 1 goto failed
           "%PAYLOAD%Windows7GuestAgent\Windows7GuestAgent.exe" --prototype "%PAYLOAD%Windows7Prototype\Windows7Prototype.exe" --results "%RESULTS%" --commit COMMIT_SHA --timeout-seconds 300
+          if errorlevel 1 goto failed
           echo Results: %RESULTS%
           pause
+          exit /b 0
+          :failed
+          echo The check failed. Read README.txt and send the results folder.
+          pause
+          exit /b 1
           '@
           $laptopScript.Replace('COMMIT_SHA', $env:GITHUB_SHA) | Set-Content (Join-Path $payload 'test-on-laptop.cmd') -Encoding ASCII
           Copy-Item 'docs/windows7-laptop.md' (Join-Path $payload 'README.md')
@@ -135,7 +153,7 @@ jobs:
           ($instructions -replace '\r?\n', "`r`n") | Set-Content (Join-Path $payload 'README.txt') -Encoding UTF8
           $testScript = Get-Content (Join-Path $payload 'test-on-laptop.cmd') -Raw
           $testScript = $testScript.Replace('set "RESULTS=%~dp0results"', @'
-          call "%PAYLOAD%check-prerequisites.cmd"
+          call "%PAYLOAD%check-prerequisites.cmd" --no-pause
           if errorlevel 1 exit /b 3
           set "RESULTS=%~dp0results"
           '@)
@@ -148,22 +166,26 @@ jobs:
       - name: Create the portable USB ZIP
         shell: pwsh
         run: |
-          Compress-Archive -Path 'artifacts/win7-payload/*' -DestinationPath "artifacts/CableRoutePlanner-Win7-x64-USB-$env:GITHUB_SHA.zip"
+          Compress-Archive -Path 'artifacts/win7-payload-${{ matrix.arch }}/*' -DestinationPath "artifacts/CableRoutePlanner-Win7-${{ matrix.arch }}-USB-$env:GITHUB_SHA.zip"
       - uses: actions/upload-artifact@v7
         with:
-          path: artifacts/CableRoutePlanner-Win7-x64-USB-*.zip
+          path: artifacts/CableRoutePlanner-Win7-${{ matrix.arch }}-USB-*.zip
           archive: false
           if-no-files-found: error
       - uses: actions/upload-artifact@v7
         with:
-          name: windows7-payload-tree-${{ github.run_id }}
-          path: artifacts/win7-payload
+          name: windows7-payload-tree-${{ matrix.arch }}-${{ github.run_id }}
+          path: artifacts/win7-payload-${{ matrix.arch }}
           if-no-files-found: error
 
   payload-iso-check:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'test-win7-feasibility')
     needs: build-payload
-    name: Create and verify payload ISO
+    name: Create and verify payload ISO (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -175,7 +197,7 @@ jobs:
           sudo apt-get install --no-install-recommends -y genisoimage
       - uses: actions/download-artifact@v8
         with:
-          name: windows7-payload-tree-${{ github.run_id }}
+          name: windows7-payload-tree-${{ matrix.arch }}-${{ github.run_id }}
           path: payload
       - name: Verify manifest and create ISO
         shell: bash
@@ -200,7 +222,7 @@ jobs:
           sha256sum artifacts/windows7-payload/win7-payload.iso | tee artifacts/windows7-payload/win7-payload.iso.sha256
       - uses: actions/upload-artifact@v7
         with:
-          name: windows7-payload-iso-check-${{ github.run_id }}
+          name: windows7-payload-iso-check-${{ matrix.arch }}-${{ github.run_id }}
           path: artifacts/windows7-payload
           if-no-files-found: error
 
@@ -230,7 +252,7 @@ jobs:
       - name: Download payload generated from this commit
         uses: actions/download-artifact@v8
         with:
-          name: windows7-payload-tree-${{ github.run_id }}
+          name: windows7-payload-tree-x64-${{ github.run_id }}
           path: payload
 
       - name: Verify payload and create private ISO
