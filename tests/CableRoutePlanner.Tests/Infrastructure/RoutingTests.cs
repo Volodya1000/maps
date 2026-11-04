@@ -98,7 +98,8 @@ public sealed class RoutingTests(ITestOutputHelper output)
             new(200, 30)
         ];
 
-        List<Coordinate> aligned = evaluator.AlignBridgeCrossings(route, profile);
+        RouteGeometryPostProcessor postProcessor = new(evaluator, evaluator.Terrain);
+        List<Coordinate> aligned = postProcessor.AlignBridgeCrossings(route, profile);
 
         Assert.Contains(aligned, point => point.Distance(route[1]) < 0.5);
         for (int index = 1; index < aligned.Count; index++)
@@ -119,47 +120,53 @@ public sealed class RoutingTests(ITestOutputHelper output)
     [Fact]
     public void ThirtyKilometreGridSearchRecordsCostAndResources()
     {
-        var origin = new GeoCoordinate(54, 27);
-        var projection = new LocalProjection(origin);
+        GeoCoordinate origin = new(54, 27);
+        LocalProjection projection = new(origin);
         Coordinate start = projection.Forward(origin);
-        var finish = new Coordinate(30_000, 500);
+        Coordinate finish = new(30_000, 500);
         GeoCoordinate end = projection.Inverse(finish);
-        var options = new RoutingOptions(200, 30_000);
+        RoutingOptions options = new(200, 30_000);
         GridMesh mesh = new GridGenerator().Generate(GeoBounds.Around([origin, end]), options, projection);
-        int edges = 0;
+        TerrainEvaluator evaluator = new([], projection);
+        GridEdgeEvaluationCache edges = new(mesh, evaluator);
         using System.Diagnostics.Process process = System.Diagnostics.Process.GetCurrentProcess();
         process.Refresh();
         long initialMemory = process.WorkingSet64;
         System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
 
-        IReadOnlyList<Coordinate> path = new AStarGridPathfinder().FindPath(start, finish, mesh, CostProfile.Defaults[0],
-            (from, to) => from.Distance(to),
-            (from, to) =>
-            {
-                edges++;
-                return mesh.Nodes[from].Distance(mesh.Nodes[to]);
-            }, default);
+        GridSearchGraph graph = new(start, finish, mesh, CostProfile.Defaults[0], evaluator, edges, default);
+        IReadOnlyList<int> nodes = Assert.IsAssignableFrom<IReadOnlyList<int>>(
+            new AStarGridPathfinder().FindPath(graph, default));
+        Coordinate[] path = nodes.Select(graph.GetCoordinate).ToArray();
         timer.Stop();
         process.Refresh();
         double length = path.Zip(path.Skip(1), (from, to) => from.Distance(to)).Sum();
+        // The measurement includes geometric evaluation and caching.
+        // Earlier diagnostic measurements used idealized distance callbacks.
         output.WriteLine($"long-grid: length={length:F1}m cost={length:F1} nodes={mesh.Nodes.Length} "
-            + $"edgesChecked={edges} elapsedMs={timer.ElapsedMilliseconds} "
+            + $"uniqueEdges={edges.EvaluationCount} elapsedMs={timer.ElapsedMilliseconds} "
             + $"workingSetDeltaMiB={Math.Max(0, process.WorkingSet64 - initialMemory) / 1048576d:F1}");
         Assert.True(length >= start.Distance(finish));
         Assert.True(double.IsFinite(length));
-        Assert.True(edges > 0);
+        Assert.True(edges.EvaluationCount > 0);
     }
 
     [Fact]
     public void DirectEdgeRemainsUsableWhenGridEndpointsAreDisconnected()
     {
-        var start = new Coordinate(1, 0);
-        var finish = new Coordinate(2, 0);
-        var mesh = new GridMesh([new Coordinate(100, 100)], 1, 1, new Coordinate(100, 100), 10);
-        IReadOnlyList<Coordinate> path = new AStarGridPathfinder().FindPath(
-            start, finish, mesh, CostProfile.Defaults[0],
-            (from, to) => from == start && to == finish ? 1d : null,
-            (_, _) => null, default);
+        Coordinate start = new(1, 0);
+        Coordinate finish = new(2, 0);
+        GridMesh mesh = new([new Coordinate(100, 100)], 1, 1, new Coordinate(100, 100), 10);
+        LocalProjection projection = new(TestData.P(0, 0));
+        // The sole grid node is blocked, while the short direct segment is clear.
+        TerrainEvaluator evaluator = new(
+            [TestData.Polygon(1, TerrainKind.Building, 50, 50, 150, 150)], projection);
+        GridSearchGraph graph = new(start, finish, mesh, CostProfile.Defaults[0], evaluator, new(mesh, evaluator), default);
+
+        IReadOnlyList<int> nodes = Assert.IsAssignableFrom<IReadOnlyList<int>>(
+            new AStarGridPathfinder().FindPath(graph, default));
+        Coordinate[] path = nodes.Select(graph.GetCoordinate).ToArray();
+
         Assert.Equal([start, finish], path);
     }
 
@@ -173,48 +180,25 @@ public sealed class RoutingTests(ITestOutputHelper output)
             new(0, 0), new(100, 0), new(200, 0),
             new(0, 100), new(100, 100), new(200, 100)
         ];
-        var mesh = new GridMesh(
-            nodes,
-            3,
-            2,
-            new Coordinate(0, 0),
-            100,
+        GridMesh mesh = new(nodes, 3, 2, new Coordinate(0, 0), 100,
             [new GridPortal([portalStart, portalEnd])]);
-        Coordinate start = new(0, 50);
-        Coordinate finish = new(200, 50);
+        // Beyond two cells, so the direct-edge shortcut cannot replace the portal.
+        Coordinate start = new(-10, 50);
+        Coordinate finish = new(210, 50);
+        LocalProjection projection = new(TestData.P(0, 0));
+        TerrainEvaluator evaluator = new(
+            [TestData.Polygon(1, TerrainKind.River, 95, -1000, 105, 1000),
+                TestData.Line(2, TerrainKind.BridgeCandidate, (90, 50), (110, 50))], projection);
+        AStarGridPathfinder search = new();
+        GridMesh withoutPortal = mesh with { Portals = null };
+        GridSearchGraph disconnected = new(start, finish, withoutPortal, CostProfile.Defaults[0], evaluator,
+            new(withoutPortal, evaluator), default);
+        Assert.Null(search.FindPath(disconnected, default));
 
-        double? Evaluate(Coordinate from, Coordinate to)
-        {
-            bool mappedBridge = from.Equals2D(portalStart) && to.Equals2D(portalEnd)
-                || from.Equals2D(portalEnd) && to.Equals2D(portalStart);
-            bool crossesBarrier = from.X < 95 && to.X >= 95
-                || to.X < 95 && from.X >= 95
-                || from.X > 105 && to.X <= 105
-                || to.X > 105 && from.X <= 105;
-            return !crossesBarrier || mappedBridge ? from.Distance(to) : null;
-        }
-
-        double? GridEdge(int from, int to) => Evaluate(nodes[from], nodes[to]);
-
-        var pathfinder = new AStarGridPathfinder();
-        GridMesh meshWithoutPortal = mesh with { Portals = null };
-        Assert.Throws<PlanningException>(() => pathfinder.FindPath(
-            start,
-            finish,
-            meshWithoutPortal,
-            CostProfile.Defaults[0],
-            Evaluate,
-            GridEdge,
-            default));
-
-        IReadOnlyList<Coordinate> path = pathfinder.FindPath(
-            start,
-            finish,
-            mesh,
-            CostProfile.Defaults[0],
-            Evaluate,
-            GridEdge,
-            default);
+        GridSearchGraph connected = new(start, finish, mesh, CostProfile.Defaults[0], evaluator,
+            new(mesh, evaluator), default);
+        IReadOnlyList<int> result = Assert.IsAssignableFrom<IReadOnlyList<int>>(search.FindPath(connected, default));
+        Coordinate[] path = result.Select(connected.GetCoordinate).ToArray();
 
         Assert.Contains(portalStart, path);
         Assert.Contains(portalEnd, path);
@@ -622,13 +606,10 @@ public sealed class RoutingTests(ITestOutputHelper output)
 
     private sealed class DirectPathfinder : IGridPathfinder
     {
-        public IReadOnlyList<Coordinate> FindPath(
-            Coordinate start,
-            Coordinate destination,
-            GridMesh mesh,
-            CostProfile profile,
-            Func<Coordinate, Coordinate, double?> evaluate,
-            Func<int, int, double?> gridEdgeCost,
-            CancellationToken cancellationToken) => [start, destination];
+        public IReadOnlyList<int>? FindPath(IRoutingGraph graph, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return [graph.StartNodeId, graph.DestinationNodeId];
+        }
     }
 }

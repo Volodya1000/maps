@@ -10,12 +10,18 @@ internal sealed record PreparedRoutingArea(
     GeoBounds Bounds,
     double CellSize,
     LocalProjection Projection,
-    TerrainEvaluator Evaluator,
+    PreparedTerrainData Terrain,
     long QueryMilliseconds,
     long PreparationMilliseconds,
     bool PreferGas = false);
 
-// One region per planner/repository lifetime. Do not retain projected geometry for a whole country.
+/// <summary>Retains one read-only spatial snapshot per planner/repository lifetime.</summary>
+/// <remarks>
+/// Exact bounds, requested spacing and gas preference preserve the existing cache
+/// key. Preparation occurs outside the publication lock; concurrent misses may
+/// prepare independently. Failed or cancelled preparation never replaces a valid
+/// entry. Query/preparation timings are zero on reuse; search state is never shared.
+/// </remarks>
 internal sealed class PreparedRoutingAreaCache(IGeodataRepository repository)
 {
     private readonly object _gate = new();
@@ -42,7 +48,7 @@ internal sealed class PreparedRoutingAreaCache(IGeodataRepository repository)
         timer.Restart();
         var projection = new LocalProjection(
             new((bounds.South + bounds.North) / 2, (bounds.West + bounds.East) / 2));
-        TerrainEvaluator evaluator = await Task.Run(() =>
+        PreparedTerrainData terrain = await Task.Run(() =>
         {
             var factory = new GeometryFactory();
             Geometry? coverage = repository.Info.Coverage is { } outline
@@ -53,11 +59,11 @@ internal sealed class PreparedRoutingAreaCache(IGeodataRepository repository)
             // Grid edges inside a covered search rectangle need no polygon test.
             // Other geometry (for example a full bridge guide) still must be checked.
             Envelope? fullyCoveredArea = coverage?.Covers(factory.ToGeometry(rectangle)) == true ? rectangle : null;
-            return new TerrainEvaluator(features, projection, preferGas: preferGas, coverage: coverage, fullyCoveredArea: fullyCoveredArea);
+            return new PreparedTerrainData(features, projection, coverage, fullyCoveredArea);
         }, ct);
         ct.ThrowIfCancellationRequested();
         var prepared = new PreparedRoutingArea(
-            bounds, cellSize, projection, evaluator, queryMilliseconds, timer.ElapsedMilliseconds, preferGas);
+            bounds, cellSize, projection, terrain, queryMilliseconds, timer.ElapsedMilliseconds, preferGas);
         lock (_gate)
         {
             _last = prepared;

@@ -17,6 +17,8 @@ public static class TerrainTraversalPolicy
     public static bool AllowsRoadCrossing(bool hasBridgeCandidate, bool hasGasCandidate) =>
         hasBridgeCandidate || hasGasCandidate;
 
+    /// <summary>Classifies every supported object explicitly; an unknown kind cannot silently acquire permission.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The source supplies a terrain kind without a declared policy.</exception>
     public static TerrainTraversalRule For(TerrainKind terrain) => terrain switch
     {
         TerrainKind.Marsh or TerrainKind.Lake or TerrainKind.River or TerrainKind.Building => TerrainTraversalRule.Blocked,
@@ -24,6 +26,7 @@ public static class TerrainTraversalPolicy
         TerrainKind.Road => TerrainTraversalRule.ConditionalTransition,
         TerrainKind.BridgeCandidate or TerrainKind.GasPipelineCrossingCandidate => TerrainTraversalRule.ConditionalTransition,
         TerrainKind.ApprovedCrossing => TerrainTraversalRule.ApprovedTransition,
-        _ => TerrainTraversalRule.Neutral
+        TerrainKind.Settlement or TerrainKind.OverheadGasPipeline => TerrainTraversalRule.Neutral,
+        _ => throw new ArgumentOutOfRangeException(nameof(terrain), terrain, "Для типа местности не определено правило проходимости.")
     };
 }

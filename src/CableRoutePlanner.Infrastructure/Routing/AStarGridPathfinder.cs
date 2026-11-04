@@ -1,238 +1,60 @@
-using CableRoutePlanner.Application;
-using CableRoutePlanner.Domain;
-using NetTopologySuite.Geometries;
-
 namespace CableRoutePlanner.Infrastructure.Routing;
 
+/// <summary>Substitutable shortest-path algorithm over a typed weighted graph.</summary>
 public interface IGridPathfinder
 {
-    IReadOnlyList<Coordinate> FindPath(
-        Coordinate start,
-        Coordinate destination,
-        GridMesh mesh,
-        CostProfile profile,
-        Func<Coordinate, Coordinate, double?> evaluate,
-        Func<int, int, double?> gridEdgeCost,
-        CancellationToken cancellationToken);
+    /// <summary>Finds an ordered node path, or null when the finite graph has no permitted path.</summary>
+    /// <param name="graph">Stable node IDs, permitted costs and an admissible lower-bound heuristic.</param>
+    /// <param name="cancellationToken">Cancels search without publishing a partial path.</param>
+    /// <returns>Start-to-destination IDs, including both endpoints, or null.</returns>
+    /// <exception cref="OperationCanceledException">Cancellation was requested.</exception>
+    IReadOnlyList<int>? FindPath(IRoutingGraph graph, CancellationToken cancellationToken);
 }
 
+/// <summary>Array-backed A*; graph construction, geometry and engineering costs belong to the graph.</summary>
+/// <remarks>
+/// Priorities are accumulated cost plus an admissible remaining-cost estimate.
+/// Stale queue entries are skipped; improved nodes can be enqueued again. Stable
+/// neighbour order preserves the existing tie behavior. Memory is O(NodeCount)
+/// plus queued improvements. A zero heuristic is the Dijkstra reference case.
+/// </remarks>
 public sealed class AStarGridPathfinder : IGridPathfinder
 {
-    public IReadOnlyList<Coordinate> FindPath(
-        Coordinate start,
-        Coordinate destination,
-        GridMesh mesh,
-        CostProfile profile,
-        Func<Coordinate, Coordinate, double?> evaluate,
-        Func<int, int, double?> gridEdgeCost,
-        CancellationToken cancellationToken)
+    public IReadOnlyList<int>? FindPath(IRoutingGraph graph, CancellationToken cancellationToken)
     {
-        IReadOnlyList<GridPortal> portals = mesh.Portals ?? [];
-        Coordinate[] portalNodes = portals.SelectMany(portal => portal.Coordinates).ToArray();
-        int portalStartId = mesh.Nodes.Length;
-        int startId = portalStartId + portalNodes.Length;
-        int endId = startId + 1;
-        Coordinate Node(int id) => id == startId
-            ? start
-            : id == endId
-                ? destination
-                : id < portalStartId ? mesh.Nodes[id] : portalNodes[id - portalStartId];
-
-        Dictionary<int, double> Connect(Coordinate point)
-        {
-            int column = (int)Math.Round((point.X - mesh.Minimum.X) / mesh.CellSizeMetres);
-            int row = (int)Math.Round((point.Y - mesh.Minimum.Y) / mesh.CellSizeMetres);
-            var connections = new Dictionary<int, double>();
-            // A long route can use a coarse cell size. A point near a cell edge may
-            // be several hundred metres from the nearest usable node; checking only
-            // the immediate 3x3 neighbourhood made valid city-to-city routes fail
-            // with a misleading "740 m" connection error.
-            const int connectionRadius = 8;
-            for (int y = Math.Max(0, row - connectionRadius); y <= Math.Min(mesh.Rows - 1, row + connectionRadius); y++)
-            {
-                for (int x = Math.Max(0, column - connectionRadius); x <= Math.Min(mesh.Columns - 1, column + connectionRadius); x++)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    int id = y * mesh.Columns + x;
-                    if (evaluate(point, mesh.Nodes[id]) is { } cost)
-                    {
-                        connections[id] = cost;
-                    }
-                }
-            }
-
-            return connections;
-        }
-
-        Dictionary<int, double> fromStart = Connect(start);
-        Dictionary<int, double> toEnd = Connect(destination);
-        var portalConnections = new Dictionary<int, List<(int Id, double Cost)>>();
-        var gridToPortals = new Dictionary<int, List<(int Id, double Cost)>>();
-        void AddPortalConnection(int from, int to, double cost)
-        {
-            if (!portalConnections.TryGetValue(from, out List<(int Id, double Cost)>? connections))
-            {
-                connections = [];
-                portalConnections[from] = connections;
-            }
-
-            connections.Add((to, cost));
-        }
-
-        void ConnectPortalEnd(int portalId)
-        {
-            foreach (KeyValuePair<int, double> connection in Connect(Node(portalId)))
-            {
-                AddPortalConnection(portalId, connection.Key, connection.Value);
-                if (!gridToPortals.TryGetValue(connection.Key, out List<(int Id, double Cost)>? reverse))
-                {
-                    reverse = [];
-                    gridToPortals[connection.Key] = reverse;
-                }
-
-                reverse.Add((portalId, connection.Value));
-            }
-        }
-
-        int portalOffset = 0;
-        foreach (GridPortal portal in portals)
-        {
-            int firstId = portalStartId + portalOffset;
-            for (int index = 1; index < portal.Coordinates.Length; index++)
-            {
-                int previousId = firstId + index - 1;
-                int currentId = firstId + index;
-                if (evaluate(Node(previousId), Node(currentId)) is { } cost)
-                {
-                    AddPortalConnection(previousId, currentId, cost);
-                    AddPortalConnection(currentId, previousId, cost);
-                }
-            }
-
-            ConnectPortalEnd(firstId);
-            ConnectPortalEnd(firstId + portal.Coordinates.Length - 1);
-            portalOffset += portal.Coordinates.Length;
-        }
-
-        double? direct = start.Distance(destination) <= mesh.CellSizeMetres * 2 ? evaluate(start, destination) : null;
-        if ((fromStart.Count == 0 || toEnd.Count == 0) && direct is null)
-        {
-            throw new PlanningException(
-                $"Точка не соединяется с узлами сетки {mesh.CellSizeMetres:F0} м. "
-                + "Это может быть препятствие либо ограничение разрешения сетки; физическая непроходимость не доказана.",
-                PlanningErrorReason.GridConnectionUnavailable);
-        }
-
-        IEnumerable<(int Id, double Cost)> Neighbours(int id)
-        {
-            if (id == startId)
-            {
-                foreach (KeyValuePair<int, double> connection in fromStart)
-                {
-                    yield return (connection.Key, connection.Value);
-                }
-
-                if (direct is { } directCost)
-                {
-                    yield return (endId, directCost);
-                }
-
-                yield break;
-            }
-
-            if (toEnd.TryGetValue(id, out double finish))
-            {
-                yield return (endId, finish);
-            }
-
-            if (id >= portalStartId)
-            {
-                if (portalConnections.TryGetValue(id, out List<(int Id, double Cost)>? connections))
-                {
-                    foreach ((int portalNeighbour, double portalCost) in connections)
-                    {
-                        yield return (portalNeighbour, portalCost);
-                    }
-                }
-
-                yield break;
-            }
-
-            if (gridToPortals.TryGetValue(id, out List<(int Id, double Cost)>? portalLinks))
-            {
-                foreach ((int portalId, double portalCost) in portalLinks)
-                {
-                    yield return (portalId, portalCost);
-                }
-            }
-
-            int x = id % mesh.Columns;
-            int y = id / mesh.Columns;
-            for (int dy = -1; dy <= 1; dy++)
-            {
-                for (int dx = -1; dx <= 1; dx++)
-                {
-                    if ((dx == 0 && dy == 0)
-                        || x + dx < 0 || x + dx >= mesh.Columns
-                        || y + dy < 0 || y + dy >= mesh.Rows)
-                    {
-                        continue;
-                    }
-
-                    int next = (y + dy) * mesh.Columns + x + dx;
-                    if (gridEdgeCost(id, next) is { } cost)
-                    {
-                        yield return (next, cost);
-                    }
-                }
-            }
-        }
-
-        var queue = new PriorityQueue<(int Id, double Cost), double>();
-        double[] distances = Enumerable.Repeat(double.PositiveInfinity, mesh.Nodes.Length + portalNodes.Length + 2).ToArray();
-        int[] parents = Enumerable.Repeat(-1, distances.Length).ToArray();
-        distances[startId] = 0;
-        queue.Enqueue((startId, 0), 0);
+        PriorityQueue<(int Id, double Cost), double> queue = new();
+        double[] distances = Enumerable.Repeat(double.PositiveInfinity, graph.NodeCount).ToArray();
+        int[] parents = Enumerable.Repeat(-1, graph.NodeCount).ToArray();
+        distances[graph.StartNodeId] = 0;
+        queue.Enqueue((graph.StartNodeId, 0), 0);
         while (queue.TryDequeue(out (int Id, double Cost) current, out _))
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (current.Cost > distances[current.Id])
-            {
-                continue;
-            }
+            { continue; }
+            if (current.Id == graph.DestinationNodeId)
+            { return ReconstructPath(graph.DestinationNodeId, parents); }
 
-            if (current.Id == endId)
-            {
-                var path = new List<Coordinate>();
-                for (int id = endId; id != -1; id = parents[id])
-                {
-                    path.Add(Node(id));
-                }
-
-                path.Reverse();
-                return path;
-            }
-
-            foreach ((int next, double edgeCost) in Neighbours(current.Id))
+            foreach ((int next, double edgeCost) in graph.Neighbours(current.Id))
             {
                 double cost = current.Cost + edgeCost;
                 if (cost >= distances[next])
-                {
-                    continue;
-                }
-
+                { continue; }
                 distances[next] = cost;
                 parents[next] = current.Id;
-                // Terrain penalties are nonnegative; the profile's clearing multiplier is its
-                // lowest possible per-metre cost, so this remains an admissible lower bound.
-                queue.Enqueue((next, cost), cost + Node(next).Distance(destination) * profile.MinimumCostPerMetre);
+                queue.Enqueue((next, cost), cost + graph.EstimateRemainingCost(next));
             }
         }
-
-        throw new PlanningException(
-            "В доступной области нет допустимого маршрута. "
-            + $"Сетка {mesh.CellSizeMetres:F0} м может не представить узкий проход; алгоритм не гарантирует полноту. "
-            + "Можно увеличить область данных или изменить точки.",
-            PlanningErrorReason.NoRouteInSearchArea);
+        return null;
     }
+
+    private static List<int> ReconstructPath(int destination, int[] parents)
+    {
+        List<int> path = [];
+        for (int id = destination; id != -1; id = parents[id])
+        { path.Add(id); }
+        path.Reverse();
+        return path;
+    }
+
 }

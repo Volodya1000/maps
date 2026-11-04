@@ -9,7 +9,6 @@ using CableRoutePlanner.UI;
 using CableRoutePlanner.UI.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using NetTopologySuite.Geometries;
 using Xunit;
 
 namespace CableRoutePlanner.Tests;
@@ -109,19 +108,13 @@ public sealed class CompositionTests
             get; private set;
         }
 
-        public IReadOnlyList<Coordinate> FindPath(
-            Coordinate start,
-            Coordinate destination,
-            GridMesh mesh,
-            CostProfile profile,
-            Func<Coordinate, Coordinate, double?> evaluate,
-            Func<int, int, double?> gridEdgeCost,
-            CancellationToken cancellationToken)
+        public IReadOnlyList<int>? FindPath(IRoutingGraph graph, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             Calls++;
-            Assert.NotNull(evaluate(start, destination));
-            return [start, destination];
+            IReadOnlyList<int>? path = new AStarGridPathfinder().FindPath(graph, cancellationToken);
+            Assert.NotNull(path);
+            return path;
         }
     }
 }

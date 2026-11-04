@@ -2,7 +2,6 @@ using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.Infrastructure.Routing;
 using Microsoft.Extensions.Logging.Abstractions;
-using NetTopologySuite.Geometries;
 using Xunit;
 
 namespace CableRoutePlanner.Tests;
@@ -101,11 +100,9 @@ public sealed class PlanningDiagnosticsTests
     public async Task DiagnosticPriorityDependsOnTypedReasonsRatherThanLanguage(string message)
     {
         PlanningException connectionError = new(message, PlanningErrorReason.GridConnectionUnavailable);
-        GridRoutePlanner planner = Planner(new ScenarioPathfinder((_, _, profile) =>
-        {
-            throw profile.Name == "Проще прокладка" ? connectionError
-                : new PlanningException("Search exhausted", PlanningErrorReason.NoRouteInSearchArea);
-        }));
+        GridRoutePlanner planner = Planner(new ScenarioPathfinder(profile =>
+            profile.Name == "Проще прокладка" ? connectionError
+                : new PlanningException("Search exhausted", PlanningErrorReason.NoRouteInSearchArea)));
 
         PlanningException error = await Assert.ThrowsAsync<PlanningException>(() => planner.PlanAsync(
             [TestData.P(50, 150), TestData.P(300, 150)], TestData.Options, default));
@@ -121,10 +118,10 @@ public sealed class PlanningDiagnosticsTests
     [InlineData("Проще прокладка")]
     public async Task OneFailedProfileDoesNotDiscardAnotherProfilesValidRoute(string failedProfile)
     {
-        GridRoutePlanner planner = Planner(new ScenarioPathfinder((start, end, profile) =>
+        GridRoutePlanner planner = Planner(new ScenarioPathfinder(profile =>
             profile.Name == failedProfile
-                ? throw new PlanningException("Unavailable", PlanningErrorReason.GridConnectionUnavailable)
-                : [start, new(start.X, start.Y + 120), new(end.X, end.Y + 120), end]));
+                ? new PlanningException("Unavailable", PlanningErrorReason.GridConnectionUnavailable)
+                : null));
 
         IReadOnlyList<RouteAlternative> routes = await planner.PlanAsync(
             [TestData.P(50, 150), TestData.P(300, 150)], TestData.Options, default);
@@ -137,7 +134,7 @@ public sealed class PlanningDiagnosticsTests
     public async Task UnexpectedSearchExceptionPropagates()
     {
         InvalidOperationException failure = new("Programming error");
-        GridRoutePlanner planner = Planner(new ScenarioPathfinder((_, _, _) => throw failure));
+        GridRoutePlanner planner = Planner(new ScenarioPathfinder(_ => failure));
 
         InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(() => planner.PlanAsync(
             [TestData.P(50, 150), TestData.P(300, 150)], TestData.Options, default));
@@ -149,10 +146,14 @@ public sealed class PlanningDiagnosticsTests
         new MemoryData(TestData.Polygon(1, TerrainKind.Building, 140, 100, 180, 200)),
         new GridGenerator(), pathfinder, NullLogger<GridRoutePlanner>.Instance);
 
-    private sealed class ScenarioPathfinder(Func<Coordinate, Coordinate, CostProfile, IReadOnlyList<Coordinate>> search) : IGridPathfinder
+    private sealed class ScenarioPathfinder(Func<CostProfile, Exception?> failure) : IGridPathfinder
     {
-        public IReadOnlyList<Coordinate> FindPath(Coordinate start, Coordinate destination, GridMesh mesh,
-            CostProfile profile, Func<Coordinate, Coordinate, double?> evaluate,
-            Func<int, int, double?> gridEdgeCost, CancellationToken cancellationToken) => search(start, destination, profile);
+        public IReadOnlyList<int>? FindPath(IRoutingGraph graph, CancellationToken cancellationToken)
+        {
+            GridSearchGraph grid = Assert.IsType<GridSearchGraph>(graph);
+            if (failure(grid.Profile) is { } error)
+            { throw error; }
+            return new AStarGridPathfinder().FindPath(graph, cancellationToken);
+        }
     }
 }

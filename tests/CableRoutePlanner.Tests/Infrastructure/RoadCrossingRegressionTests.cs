@@ -135,7 +135,8 @@ public sealed class RoadCrossingRegressionTests
         TerrainEvaluator evaluator = new([MixedRoad()], Projection);
         Coordinate[] detour = [At(50, 0), At(50, -80), At(300, -80), At(300, 0)];
 
-        List<Coordinate> simplified = evaluator.SimplifyPath(detour, CostProfile.Defaults[0]);
+        RouteGeometryPostProcessor postProcessor = new(evaluator, evaluator.Terrain);
+        List<Coordinate> simplified = postProcessor.SimplifyPath(detour, CostProfile.Defaults[0]);
 
         Assert.True(simplified.Count > 2);
         for (int index = 1; index < simplified.Count; index++)

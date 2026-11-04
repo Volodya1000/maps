@@ -1,0 +1,29 @@
+[
+  {
+    "Name": "\u041A\u043E\u0440\u043E\u0447\u0435",
+    "Geometry": [
+      {
+        "Latitude": 54.00134898054842,
+        "Longitude": 27.000765007595977
+      },
+      {
+        "Latitude": 54.00134898054842,
+        "Longitude": 27.004284042537467
+      }
+    ],
+    "Metrics": {
+      "LengthMetres": 229.99254707413616,
+      "ForestMetres": 0,
+      "FieldMetres": 0,
+      "RoadCrossings": 0,
+      "ApprovedWaterCrossings": 1,
+      "PotentialBridgeCrossings": 0,
+      "WeightedCost": 229.99254707413616,
+      "AscentMetres": null,
+      "PotentialGasPipelineCrossings": 0
+    },
+    "TransitionPoints": [],
+    "RoadContacts": [],
+    "GasPipelineCandidateIds": []
+  }
+]

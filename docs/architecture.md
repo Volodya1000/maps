@@ -58,3 +58,13 @@ Disposing the screen disposes this service and cancels both operations. Geometry
 and search continue to run through `IPlanningSession` / `IRoutePlanner`.
 
 `DataPackageInfo` distinguishes its rectangular query envelope from actual polygon coverage. `GeoCoverage` keeps the immutable coverage ring and point-inclusion rule in BCL-only Domain. Persistence reads explicit manifest metadata or the embedded legacy Belarus extract outline. Infrastructure applies prepared NTS coverage to entire route segments; UI independently draws the coverage mask and no-data notice. [Coverage diagnosis and regression checks](offline-coverage.md) describe the boundary cases.
+
+## Внутренняя архитектура маршрутизации
+
+[Руководство routing-internals.md](routing-internals.md) содержит жизненный цикл,
+UML классов и последовательности, границы геометрии/Domain и пример нового правила.
+[Аудит рефакторинга](routing-refactoring-audit.md) фиксирует исходную схему,
+выбранные выделения и сравнение поведения/производительности. A* принимает
+`IRoutingGraph` и не зависит от NTS или профилей; подготовленные пространственные
+данные отделены от состояния поиска. DI-подмены генератора и поисковика сохранены;
+кеш рёбер, постобработчик и сборщик альтернатив создаются на один расчёт.

@@ -8,6 +8,12 @@ using NetTopologySuite.Geometries;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
 
+/// <summary>Coordinates package-bounded preparation, grid generation and ordered engineering cost profiles.</summary>
+/// <remarks>
+/// The planner owns one reusable prepared area. Search graphs, measured edge caches
+/// and result builders belong to each calculation, including concurrent requests.
+/// Geometry operations and alternative metrics have separate internal owners.
+/// </remarks>
 public sealed class GridRoutePlanner(
     IGeodataRepository data,
     IGridGenerator gridGenerator,
@@ -22,31 +28,13 @@ public sealed class GridRoutePlanner(
 
     private readonly PreparedRoutingAreaCache _areas = new(data);
 
-    private readonly RouteGeometryBuilder _geometryBuilder = new(pathfinder);
-
-    private static readonly Action<ILogger, long, long, Exception?> PreparationLog =
-        LoggerMessage.Define<long, long>(
-            LogLevel.Information,
-            new EventId(1, nameof(PreparationLog)),
-            "Routing SQLite query {QueryMilliseconds} ms; WKB, projection and spatial index {PreparationMilliseconds} ms (zero on cache reuse)");
-
-    private static readonly Action<ILogger, int, int, long, Exception?> RoutesCompletedLog =
-        LoggerMessage.Define<int, int, long>(
-            LogLevel.Information,
-            new EventId(2, nameof(RoutesCompletedLog)),
-            "Completed {RouteCount} routes for {WaypointCount} waypoints in {ElapsedMilliseconds} ms");
-
-    private static readonly Action<ILogger, int, int, int, Exception?> SearchCompletedLog =
-        LoggerMessage.Define<int, int, int>(
-            LogLevel.Information,
-            new EventId(3, nameof(SearchCompletedLog)),
-            "Calculated {RouteCount} distinct routes over {NodeCount} grid nodes and evaluated {EdgeEvaluations} grid edges");
-
-    private static readonly Action<ILogger, string, PlanningErrorReason, Exception?> ProfileUnavailableLog =
-        LoggerMessage.Define<string, PlanningErrorReason>(LogLevel.Information,
-            new EventId(4, nameof(ProfileUnavailableLog)),
-            "Profile {Profile} is unavailable ({Reason})");
-
+    /// <summary>Builds permitted, distinct alternatives through the points in their supplied order.</summary>
+    /// <param name="points">Geographic waypoints inside the package coverage.</param>
+    /// <param name="options">Validated grid/resource settings and inclusive route-length limit.</param>
+    /// <param name="cancellationToken">Cancels preparation or search without publishing partial results.</param>
+    /// <returns>Read-only alternatives in profile order, stably prioritizing gas when requested.</returns>
+    /// <exception cref="PlanningException">Input, resource limits or every profile prevent a usable route.</exception>
+    /// <exception cref="OperationCanceledException">The calculation was cancelled.</exception>
     public async Task<IReadOnlyList<RouteAlternative>> PlanAsync(
         IReadOnlyList<GeoCoordinate> points,
         RoutingOptions options,
@@ -77,16 +65,22 @@ public sealed class GridRoutePlanner(
             Math.Min(requested.East, coverage.East),
             Math.Min(requested.North, coverage.North));
         PreparedRoutingArea area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken, options.PreferOverheadGasCrossings);
-        PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds, null);
+        RoutingLog.PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds);
 
         Stopwatch calculationTimer = Stopwatch.StartNew();
         IReadOnlyList<RouteAlternative> routes = await Task.Run<IReadOnlyList<RouteAlternative>>(
             () => Calculate(points, bounds, area, options, cancellationToken),
             cancellationToken);
-        RoutesCompletedLog(logger, routes.Count, points.Count, calculationTimer.ElapsedMilliseconds, null);
+        RoutingLog.RoutesCompletedLog(logger, routes.Count, points.Count, calculationTimer.ElapsedMilliseconds);
         return routes;
     }
 
+    /// <summary>Converts a bounded detour allowance in metres to separate latitude/longitude margins.</summary>
+    /// <remarks>
+    /// Ten percent of the longest consecutive leg is clamped to 1–5 km. The
+    /// longitude correction uses the mean latitude's cosine and caps at 180 degrees
+    /// near the poles. This bounds loaded data; it does not guarantee search completeness.
+    /// </remarks>
     private static SearchMargins SearchMarginDegrees(IReadOnlyList<GeoCoordinate> points)
     {
         double spanMetres = points
@@ -114,32 +108,20 @@ public sealed class GridRoutePlanner(
         CancellationToken ct)
     {
         LocalProjection projection = area.Projection;
-        TerrainEvaluator evaluator = area.Evaluator;
+        TerrainEvaluator evaluator = new(area.Terrain, preferGas: options.PreferOverheadGasCrossings);
+        RouteGeometryPostProcessor postProcessor = new(evaluator, area.Terrain);
         GridMesh mesh = gridGenerator.Generate(bounds, options, projection);
         Coordinate maximum = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
         mesh = mesh with
         {
             // A portal outside the queried area could bypass obstacles we never loaded.
-            Portals = evaluator.GetTransitionPortals().Where(portal => portal.Coordinates.All(point =>
+            Portals = area.Terrain.TransitionPortals.Where(portal => portal.Coordinates.All(point =>
                 point.X >= mesh.Minimum.X && point.Y >= mesh.Minimum.Y
                 && point.X <= maximum.X && point.Y <= maximum.Y)).ToArray()
         };
-        var cache = new Dictionary<(int, int), EdgeEvaluation?>();
-        int gridEdgeEvaluations = 0;
-        EdgeEvaluation? GridEdge(int a, int b)
-        {
-            (int, int) key = a < b ? (a, b) : (b, a);
-            if (!cache.TryGetValue(key, out EdgeEvaluation? edge))
-            {
-                gridEdgeEvaluations++;
-                cache[key] = edge = evaluator.EvaluateForSearch(mesh.Nodes[a], mesh.Nodes[b]);
-            }
+        RouteGeometryBuilder geometryBuilder = new(pathfinder, mesh, evaluator, projection, postProcessor);
 
-            return edge;
-        }
-
-        var result = new List<RouteAlternative>();
-        List<ProfileSearchFailure> failures = [];
+        RouteAlternativeBuilder alternatives = new(evaluator, postProcessor, area.Terrain, options);
         foreach (CostProfile profile in CostProfile.Defaults)
         {
             ct.ThrowIfCancellationRequested();
@@ -147,138 +129,28 @@ public sealed class GridRoutePlanner(
             List<Coordinate> route;
             try
             {
-                route = _geometryBuilder.Build(points, projection, evaluator, mesh, profile, GridEdge, ct);
+                route = geometryBuilder.Build(points, profile, ct);
             }
             catch (PlanningException error) when (error.Reason is
                 PlanningErrorReason.GridConnectionUnavailable or PlanningErrorReason.NoRouteInSearchArea)
             {
                 // Try other profiles, retaining the actual diagnostic even if no
                 // earlier profile succeeded. Unexpected exceptions still propagate.
-                failures.Add(new(profile.Name, error));
-                ProfileUnavailableLog(logger, profile.Name, error.Reason, error);
+                alternatives.RecordFailure(profile, error);
+                RoutingLog.ProfileUnavailableLog(logger, profile.Name, error.Reason, error);
                 continue;
             }
 
-            if (route.Count < 2)
+            PlanningException? rejection = alternatives.Add(route, profile, ct);
+            if (rejection is not null)
             {
-                throw new PlanningException("Все точки совпадают. Установите разные точки.");
+                alternatives.RecordFailure(profile, rejection);
+                RoutingLog.ProfileUnavailableLog(logger, profile.Name, rejection.Reason, rejection);
             }
-
-            double length = 0, forest = 0, field = 0, cost = 0;
-            var roads = new HashSet<long>();
-            var crossings = new HashSet<long>();
-            var bridgeCandidates = new HashSet<long>();
-            HashSet<long> gasCandidates = [];
-            for (int i = 1; i < route.Count; i++)
-            {
-                EdgeEvaluation edge = evaluator.Evaluate(route[i - 1], route[i])
-                    ?? throw new PlanningException("Маршрут не прошёл проверку препятствий.");
-                length += edge.Length;
-                forest += edge.Forest;
-                field += edge.Field;
-                cost += edge.Cost(profile);
-                roads.UnionWith(edge.Roads);
-                crossings.UnionWith(edge.Crossings);
-                bridgeCandidates.UnionWith(edge.BridgeCandidates);
-                gasCandidates.UnionWith(edge.GasCandidates);
-            }
-
-            if (length > options.MaxRouteLengthMetres)
-            {
-                PlanningException error = new(
-                    $"Маршрут длиной {length:F0} м превышает заданный максимум "
-                    + $"{options.MaxRouteLengthMetres:F0} м.",
-                    PlanningErrorReason.RouteLengthLimitExceeded)
-                {
-                    ActualRouteLengthMetres = length,
-                    MaximumRouteLengthMetres = options.MaxRouteLengthMetres
-                };
-                failures.Add(new(profile.Name, error));
-                ProfileUnavailableLog(logger, profile.Name, error.Reason, error);
-                continue;
-            }
-
-            // A nearby aerial candidate and a ground crossing are meaningful choices,
-            // even when their lines occupy almost the same map corridor.
-            if (result.Any(existing => (existing.GasPipelineCandidateIds ?? [])
-                .SequenceEqual(gasCandidates.Order())
-                && Similar(existing.Geometry, route, projection, options.CellSizeMetres)))
-            {
-                continue;
-            }
-
-            result.Add(
-                new(
-                    Guid.NewGuid(),
-                    profile.Name,
-                    Array.AsReadOnly(route.Select(projection.Inverse).ToArray()),
-                    new(
-                        length,
-                        forest,
-                        field,
-                        roads.Count,
-                        crossings.Count,
-                        bridgeCandidates.Count,
-                        cost,
-                        null,
-                        gasCandidates.Count),
-                    Array.AsReadOnly(evaluator.BridgeTransitionPoints(route)
-                        .Select(projection.Inverse).ToArray()),
-                    evaluator.RoadContacts(route, ct),
-                    Array.AsReadOnly(gasCandidates.Order().ToArray())));
         }
 
-        if (result.Count == 0)
-        {
-            // Prefer proof of a valid over-limit route, then a specific graph
-            // connection diagnostic, then the first exhausted-search diagnostic.
-            // Stable profile order breaks ties; retain every failure for consumers.
-            PlanningException selected = failures.Select(failure => failure.Error)
-                .OrderBy(error => error.Reason switch
-                {
-                    PlanningErrorReason.RouteLengthLimitExceeded => 0,
-                    PlanningErrorReason.GridConnectionUnavailable => 1,
-                    _ => 2
-                })
-                .ThenBy(error => error.ActualRouteLengthMetres ?? double.PositiveInfinity)
-                .First();
-            throw new PlanningException(selected.Message, selected.Reason, selected.TerrainKind, selected)
-            {
-                ActualRouteLengthMetres = selected.ActualRouteLengthMetres,
-                MaximumRouteLengthMetres = selected.MaximumRouteLengthMetres,
-                SearchFailures = failures.AsReadOnly()
-            };
-        }
-
-        SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);
-        if (options.PreferOverheadGasCrossings)
-        {
-            // Consumers select the first alternative. Keep the shortest ground route
-            // available, but initially show a mapped gas crossing when one was found.
-            result = result.OrderByDescending(route => route.Metrics.PotentialGasPipelineCrossings > 0).ToList();
-        }
-
-        return result.AsReadOnly();
+        ReadOnlyCollection<RouteAlternative> result = alternatives.Complete();
+        RoutingLog.SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, geometryBuilder.Edges.EvaluationCount);
+        return result;
     }
-
-    private static bool Similar(
-        IReadOnlyList<GeoCoordinate> existing,
-        IReadOnlyList<Coordinate> candidate,
-        LocalProjection projection,
-        double cellSize)
-    {
-        // A sub-cell deviation is usually not a meaningful alternative corridor. Compare metres,
-        // not exact floating-point equality of vertices. 90% overlap suppresses near-duplicates.
-        var reference = new LineString(existing.Select(projection.Forward).ToArray());
-        var proposed = new LineString(candidate.ToArray());
-        Geometry corridor = reference.Buffer(cellSize * 0.75);
-        if (proposed.Length == 0)
-        {
-            return true;
-        }
-
-        return proposed.Intersection(corridor).Length / proposed.Length
-            >= AlternativeRoutePolicy.MaximumCorridorOverlap;
-    }
-
 }
