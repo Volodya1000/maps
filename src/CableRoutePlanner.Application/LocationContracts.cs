@@ -10,6 +10,97 @@ public sealed record LocationMeasurement(
     double? SpeedMetresPerSecond = null,
     bool IsApproximate = false);
 
+public sealed record HeadingMeasurement(
+    double Degrees,
+    bool IsReliable,
+    DateTimeOffset TimestampUtc);
+
+public sealed record LocationPreferences(bool IsEnabled = false);
+
+public enum LocationPermissionState
+{
+    NotRequested,
+    Fine,
+    Approximate,
+    Denied,
+    PermanentlyDenied
+}
+
+public enum SystemLocationState
+{
+    Unknown,
+    Enabled,
+    Disabled
+}
+
+public sealed record LocationServiceState(
+    bool IsEnabled,
+    LocationPermissionState Permission,
+    SystemLocationState SystemLocation,
+    bool IsSearching,
+    string? Message = null)
+{
+    public static LocationServiceState Disabled { get; } = new(
+        false,
+        LocationPermissionState.NotRequested,
+        SystemLocationState.Unknown,
+        false);
+
+    public static LocationServiceState Enabled { get; } = new(
+        true,
+        LocationPermissionState.Fine,
+        SystemLocationState.Enabled,
+        false);
+}
+
+public interface ILocationService : IDisposable
+{
+    bool IsSupported { get; }
+
+    LocationServiceState State { get; }
+
+    IObservable<LocationMeasurement> Measurements { get; }
+
+    IObservable<LocationServiceState> States { get; }
+
+    Task<LocationServiceState> EnableAsync(CancellationToken cancellationToken);
+
+    void Disable();
+
+    void PauseUpdates();
+
+    void ResumeUpdates();
+
+    void OpenSystemSettings();
+}
+
+public interface IHeadingService : IDisposable
+{
+    bool IsSupported { get; }
+
+    IObservable<HeadingMeasurement> Measurements { get; }
+
+    void PauseUpdates();
+
+    void ResumeUpdates();
+}
+
+public interface ILocationPreferencesStore
+{
+    LocationPreferences Load();
+
+    void Save(LocationPreferences preferences);
+}
+
+public interface ITrackingSessionStore
+{
+    RouteProgressSnapshot? Load();
+
+    void Save(RouteProgressSnapshot snapshot);
+
+    void Clear();
+}
+
 public enum LocationQuality
 {
     Unknown,
