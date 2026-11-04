@@ -13,6 +13,8 @@ public interface IMapAdapter : IDisposable
     IObservable<double> NorthIndicatorRotationChangedStream { get; }
     IObservable<int> RouteVertexSelectedStream { get; }
 
+    bool IsFollowing { get; }
+
     event Action<GeoBounds, double>? ViewportChanged;
 
     event Action<GeoCoordinate>? PointAdded;
@@ -25,6 +27,8 @@ public interface IMapAdapter : IDisposable
 
     event Action<int>? RouteVertexSelected;
 
+    event Action? ManualCameraUsed;
+
     void InitializeViewport();
 
     Task SetFeaturesAsync(IReadOnlyList<MapFeature> features);
@@ -35,6 +39,10 @@ public interface IMapAdapter : IDisposable
 
     void SetRoutes(IReadOnlyList<RouteAlternative> routes, Guid? selectedId);
 
+    void SetProgress(RouteProgressState? progress);
+
+    void SetLocation(LocationMeasurement? location, HeadingMeasurement? heading, bool isInsideCoverage);
+
     void SetRoadContacts(IReadOnlyList<RouteRoadContact> contacts);
 
     void SetAddMode(bool enabled);
@@ -44,4 +52,6 @@ public interface IMapAdapter : IDisposable
     void ZoomOut();
 
     void ResetNorth();
+
+    void CenterOnLocation();
 }

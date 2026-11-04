@@ -50,9 +50,19 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         Style = null
     };
 
+    private readonly MemoryLayer _progress = new("Пройденный маршрут")
+    {
+        Style = null
+    };
+
     private readonly MemoryLayer _roadContacts = new("Пересечения с дорогами") { Style = null };
 
     private readonly MemoryLayer _points = new("Точки")
+    {
+        Style = null
+    };
+
+    private readonly MemoryLayer _location = new("Моё местоположение")
     {
         Style = null
     };
@@ -82,6 +92,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private bool _routeExtentShown;
 
+    private bool _following;
+
+    private LocationMeasurement? _lastLocation;
+
     private readonly MRect _extent;
 
     private readonly MapsuiPointerInteraction _pointerInteraction;
@@ -99,6 +113,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     public event Action<double>? NorthIndicatorRotationChanged;
 
     public event Action<int>? RouteVertexSelected;
+
+    public event Action? ManualCameraUsed;
+
+    public bool IsFollowing => _following;
 
     public MapsuiMapAdapter(MapControl control, GeoBounds bounds)
         : this(control, bounds, null)
@@ -136,9 +154,11 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             }
         }
         control.Map.Layers.Add(_routes);
+        control.Map.Layers.Add(_progress);
         control.Map.Layers.Add(_roadContacts);
         control.Map.Layers.Add(_routeVertices);
         control.Map.Layers.Add(_points);
+        control.Map.Layers.Add(_location);
         (double x, double y) = SphericalMercator.FromLonLat(
             (bounds.West + bounds.East) / 2,
             (bounds.South + bounds.North) / 2);
@@ -159,7 +179,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             id => { _waypointSelected.OnNext(id); WaypointSelected?.Invoke(id); },
             RenderPoints,
             number => { _routeVertexSelected.OnNext(number); RouteVertexSelected?.Invoke(number); },
-            () => _cameraWasUsed = true,
+            UserUsedCamera,
             SetRotation);
         control.Map.Navigator.CenterOnAndZoomTo(new MPoint(x, y), 7);
         control.AddHandler(
@@ -214,7 +234,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         }, DispatcherPriority.Loaded);
     }
 
-    private void WheelChanged(object? sender, PointerWheelEventArgs e) => _cameraWasUsed = true;
+    private void WheelChanged(object? sender, PointerWheelEventArgs e) => UserUsedCamera();
 
     internal static Coordinate Project(GeoCoordinate p)
     {
@@ -439,6 +459,84 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _control.RefreshGraphics();
     }
 
+    public void SetProgress(RouteProgressState? progress)
+    {
+        _progress.Features = progress?.CoveredGeometry
+            .Where(geometry => geometry.Count >= 2)
+            .Select(geometry =>
+            {
+                GeometryFeature feature = new(new LineString(geometry.Select(Project).ToArray()));
+                feature.Styles.Add(new VectorStyle
+                {
+                    Line = new Pen(new Color(38, 166, 91), 7)
+                    {
+                        PenStrokeCap = PenStrokeCap.Round
+                    }
+                });
+                return (IFeature)feature;
+            })
+            .ToArray() ?? [];
+        _progress.DataHasChanged();
+        _control.RefreshGraphics();
+    }
+
+    public void SetLocation(
+        LocationMeasurement? location,
+        HeadingMeasurement? heading,
+        bool isInsideCoverage)
+    {
+        _lastLocation = location;
+        if (location is null)
+        {
+            _location.Features = Array.Empty<IFeature>();
+            _location.DataHasChanged();
+            _control.RefreshGraphics();
+            return;
+        }
+
+        List<IFeature> features = [];
+        Coordinate center = Project(location.Coordinate);
+        if (double.IsFinite(location.AccuracyMetres) && location.AccuracyMetres > 0)
+        {
+            GeometryFeature accuracy = new(CreateCircle(center, location.AccuracyMetres));
+            accuracy.Styles.Add(new VectorStyle
+            {
+                Fill = new Brush(new Color(32, 112, 220, isInsideCoverage ? (byte)55 : (byte)35)),
+                Outline = new Pen(new Color(32, 112, 220, 110), 1)
+            });
+            features.Add(accuracy);
+        }
+
+        if (heading is { IsReliable: true } reliable)
+        {
+            double radius = Math.Max(location.AccuracyMetres * 1.8, 45);
+            GeometryFeature sector = new(CreateHeadingSector(center, reliable.Degrees, radius));
+            sector.Styles.Add(new VectorStyle
+            {
+                Fill = new Brush(new Color(32, 112, 220, 70)),
+                Outline = null
+            });
+            features.Add(sector);
+        }
+
+        GeometryFeature marker = new(new Point(center));
+        marker.Styles.Add(new SymbolStyle
+        {
+            Fill = new Brush(new Color(32, 112, 220)),
+            Outline = new Pen(Color.White, 2),
+            SymbolScale = 1.1
+        });
+        features.Add(marker);
+        _location.Features = features;
+        _location.DataHasChanged();
+        if (_following)
+        {
+            CenterOnLocation();
+        }
+
+        _control.RefreshGraphics();
+    }
+
     public void SetRoadContacts(IReadOnlyList<RouteRoadContact> contacts)
     {
         List<IFeature> features = [];
@@ -475,18 +573,35 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     public void ZoomIn()
     {
-        _cameraWasUsed = true;
+        UserUsedCamera();
         _control.Map.Navigator.ZoomIn();
     }
 
     public void ZoomOut()
     {
-        _cameraWasUsed = true;
+        UserUsedCamera();
         _control.Map.Navigator.ZoomOut();
     }
 
     public void ResetNorth()
-        => SetRotation(0);
+    {
+        UserUsedCamera();
+        SetRotation(0);
+    }
+
+    public void CenterOnLocation()
+    {
+        if (_lastLocation is not { } location)
+        {
+            return;
+        }
+
+        _following = true;
+        _cameraWasUsed = true;
+        Coordinate point = Project(location.Coordinate);
+        _control.Map.Navigator.CenterOn(new MPoint(point.X, point.Y));
+        _control.RefreshGraphics();
+    }
 
     private void SetRotation(double rotation)
     {
@@ -509,6 +624,45 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         MPoint world = _control.Map.Navigator.Viewport.ScreenToWorld(p.X, p.Y);
         (double lon, double lat) = SphericalMercator.ToLonLat(world.X, world.Y);
         return new(lat, lon);
+    }
+
+    private void UserUsedCamera()
+    {
+        bool wasFollowing = _following;
+        _cameraWasUsed = true;
+        _following = false;
+        if (wasFollowing)
+        {
+            ManualCameraUsed?.Invoke();
+        }
+    }
+
+    private static Polygon CreateCircle(Coordinate center, double radius)
+    {
+        Coordinate[] points = Enumerable.Range(0, 33)
+            .Select(index =>
+            {
+                double angle = index * Math.PI * 2 / 32;
+                return new Coordinate(center.X + Math.Cos(angle) * radius,
+                    center.Y + Math.Sin(angle) * radius);
+            })
+            .ToArray();
+        return new GeometryFactory().CreatePolygon(points);
+    }
+
+    private static Polygon CreateHeadingSector(Coordinate center, double headingDegrees, double radius)
+    {
+        List<Coordinate> points = [center];
+        for (int index = -6; index <= 6; index++)
+        {
+            double angle = (headingDegrees + index * 5) * Math.PI / 180;
+            points.Add(new Coordinate(
+                center.X + Math.Sin(angle) * radius,
+                center.Y + Math.Cos(angle) * radius));
+        }
+
+        points.Add(center);
+        return new GeometryFactory().CreatePolygon(points.ToArray());
     }
 
     private void OnViewportChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
