@@ -22,8 +22,6 @@ public sealed class GridRoutePlanner(
 
     private readonly PreparedRoutingAreaCache _areas = new(data);
 
-    private readonly RouteGeometryBuilder _geometryBuilder = new(pathfinder);
-
     private static readonly Action<ILogger, long, long, Exception?> PreparationLog =
         LoggerMessage.Define<long, long>(
             LogLevel.Information,
@@ -124,7 +122,7 @@ public sealed class GridRoutePlanner(
                 point.X >= mesh.Minimum.X && point.Y >= mesh.Minimum.Y
                 && point.X <= maximum.X && point.Y <= maximum.Y)).ToArray()
         };
-        GridEdgeEvaluationCache edges = new(mesh, evaluator);
+        RouteGeometryBuilder geometryBuilder = new(pathfinder, mesh, evaluator, projection);
 
         var result = new List<RouteAlternative>();
         List<ProfileSearchFailure> failures = [];
@@ -135,7 +133,7 @@ public sealed class GridRoutePlanner(
             List<Coordinate> route;
             try
             {
-                route = _geometryBuilder.Build(points, projection, evaluator, mesh, profile, edges.Get, ct);
+                route = geometryBuilder.Build(points, profile, ct);
             }
             catch (PlanningException error) when (error.Reason is
                 PlanningErrorReason.GridConnectionUnavailable or PlanningErrorReason.NoRouteInSearchArea)
@@ -238,7 +236,7 @@ public sealed class GridRoutePlanner(
             };
         }
 
-        SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, edges.EvaluationCount, null);
+        SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, geometryBuilder.Edges.EvaluationCount, null);
         if (options.PreferOverheadGasCrossings)
         {
             // Consumers select the first alternative. Keep the shortest ground route
