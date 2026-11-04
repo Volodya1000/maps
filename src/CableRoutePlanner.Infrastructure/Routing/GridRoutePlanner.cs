@@ -124,19 +124,7 @@ public sealed class GridRoutePlanner(
                 point.X >= mesh.Minimum.X && point.Y >= mesh.Minimum.Y
                 && point.X <= maximum.X && point.Y <= maximum.Y)).ToArray()
         };
-        var cache = new Dictionary<(int, int), EdgeEvaluation?>();
-        int gridEdgeEvaluations = 0;
-        EdgeEvaluation? GridEdge(int a, int b)
-        {
-            (int, int) key = a < b ? (a, b) : (b, a);
-            if (!cache.TryGetValue(key, out EdgeEvaluation? edge))
-            {
-                gridEdgeEvaluations++;
-                cache[key] = edge = evaluator.EvaluateForSearch(mesh.Nodes[a], mesh.Nodes[b]);
-            }
-
-            return edge;
-        }
+        GridEdgeEvaluationCache edges = new(mesh, evaluator);
 
         var result = new List<RouteAlternative>();
         List<ProfileSearchFailure> failures = [];
@@ -147,7 +135,7 @@ public sealed class GridRoutePlanner(
             List<Coordinate> route;
             try
             {
-                route = _geometryBuilder.Build(points, projection, evaluator, mesh, profile, GridEdge, ct);
+                route = _geometryBuilder.Build(points, projection, evaluator, mesh, profile, edges.Get, ct);
             }
             catch (PlanningException error) when (error.Reason is
                 PlanningErrorReason.GridConnectionUnavailable or PlanningErrorReason.NoRouteInSearchArea)
@@ -250,7 +238,7 @@ public sealed class GridRoutePlanner(
             };
         }
 
-        SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);
+        SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, edges.EvaluationCount, null);
         if (options.PreferOverheadGasCrossings)
         {
             // Consumers select the first alternative. Keep the shortest ground route
