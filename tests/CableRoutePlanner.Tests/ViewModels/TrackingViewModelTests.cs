@@ -114,6 +114,7 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         viewModel.StartTraversal();
         location.Emit(Fix(0, Start.AddSeconds(1)));
         location.Emit(Fix(400, Start.AddSeconds(30)));
+        await sessions.WaitForCoveredAsync(400);
 
         using TrackingViewModel restored = CreateViewModel(location, sessions: sessions);
         restored.SetRoute(route);
@@ -243,7 +244,25 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
     {
         public RouteProgressSnapshot? Value { get; private set; }
         public RouteProgressSnapshot? Load() => Value;
-        public void Save(RouteProgressSnapshot snapshot) => Value = snapshot;
+        public void Save(RouteProgressSnapshot snapshot)
+        {
+            Value = snapshot;
+        }
         public void Clear() => Value = null;
+        public async Task WaitForCoveredAsync(double coveredMetres)
+        {
+            DateTimeOffset deadline = DateTimeOffset.UtcNow.AddSeconds(2);
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                if (Value?.CoveredIntervals.Sum(interval => interval.LengthMetres) >= coveredMetres)
+                {
+                    return;
+                }
+
+                await Task.Delay(1);
+            }
+
+            throw new TimeoutException("The asynchronous tracking snapshot was not saved in time.");
+        }
     }
 }

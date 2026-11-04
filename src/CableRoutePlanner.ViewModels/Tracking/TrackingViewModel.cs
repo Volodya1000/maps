@@ -31,6 +31,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private HeadingMeasurement? _currentHeading;
     private RouteProgressState? _progress;
     private bool? _isLocationInsideCoverage;
+    private string _persistenceStatus = "";
 
     public TrackingViewModel(
         ILocationService locationService,
@@ -116,6 +117,10 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     public string CoverageStatus => _isLocationInsideCoverage == false
         ? "Местоположение вне покрытия офлайн-карты. GPS-точка показана без подмены координат."
         : "";
+
+    public string PersistenceStatus => _persistenceStatus;
+
+    public bool HasPersistenceError => !string.IsNullOrWhiteSpace(PersistenceStatus);
 
     public ReactiveCommand<Unit, Unit> Start { get; }
 
@@ -408,6 +413,18 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Не удалось сохранить сессию обхода: {ex.Message}");
+            RxApp.MainThreadScheduler.Schedule(Unit.Default, (_, _) =>
+            {
+                if (_disposed)
+                {
+                    return Disposable.Empty;
+                }
+
+                _persistenceStatus = "Не удалось сохранить прогресс обхода. Проверьте свободное место в памяти устройства.";
+                this.RaisePropertyChanged(nameof(PersistenceStatus));
+                this.RaisePropertyChanged(nameof(HasPersistenceError));
+                return Disposable.Empty;
+            });
         }
     }
 

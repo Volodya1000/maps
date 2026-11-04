@@ -224,6 +224,11 @@
                                 Classes="view-hint"
                                 Text="{Binding Tracking.LocationState.Message}"
                                 TextWrapping="Wrap" />
+                            <TextBlock
+                                Classes="view-hint"
+                                Text="{Binding Tracking.PersistenceStatus}"
+                                IsVisible="{Binding Tracking.HasPersistenceError}"
+                                TextWrapping="Wrap" />
                             <WrapPanel>
                                 <Button
                                     x:Name="StartTraversalButton"
