@@ -29,9 +29,11 @@ internal sealed class TerrainEvaluator
         TerrainRules? rules = null, bool preferGas = false, Geometry? coverage = null, Envelope? fullyCoveredArea = null)
         : this(new PreparedTerrainData(features, projection, coverage, fullyCoveredArea), rules, preferGas) { }
 
+    /// <summary>Returns complete segment facts with geodesic length, or null when coverage or policy forbids it.</summary>
     public EdgeEvaluation? Evaluate(Coordinate a, Coordinate b)
         => Evaluate(a, b, useProjectedLength: false);
 
+    /// <summary>Uses the same permissions with planar metre lengths consistent with the graph's heuristic.</summary>
     public EdgeEvaluation? EvaluateForSearch(Coordinate a, Coordinate b)
         => Evaluate(a, b, useProjectedLength: true);
 
@@ -106,11 +108,15 @@ internal sealed class TerrainEvaluator
             ? projectedLength
             : Terrain.Projection.Inverse(a).DistanceTo(Terrain.Projection.Inverse(b));
         double scale = projectedLength > 0 ? length / projectedLength : 1;
+        // Layers may overlap; each separate layer is bounded by segment length.
+        // Scale planar metres to the chosen length metric, then clamp once more
+        // because geodesic conversion can introduce a rounding excess.
+        double ScaledTerrainLength(double measured) => Math.Min(Math.Min(measured, projectedLength) * scale, length);
         return new(
             length,
-            Math.Min(Math.Min(contribution.Forest, projectedLength) * scale, length),
-            Math.Min(Math.Min(contribution.Field, projectedLength) * scale, length),
-            Math.Min(Math.Min(contribution.Clearing, projectedLength) * scale, length),
+            ScaledTerrainLength(contribution.Forest),
+            ScaledTerrainLength(contribution.Field),
+            ScaledTerrainLength(contribution.Clearing),
             contribution.Roads.ToArray(),
             contribution.Crossings.ToArray(),
             contribution.BridgeCandidates.ToArray(),

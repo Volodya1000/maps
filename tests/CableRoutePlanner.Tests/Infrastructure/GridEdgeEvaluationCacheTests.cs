@@ -98,4 +98,43 @@ public sealed class GridEdgeEvaluationCacheTests
             }
         }
     }
+
+    [Fact]
+    public async Task ConcurrentBridgeRequestsCanShareOnePreparedSnapshot()
+    {
+        IRoutePlanner planner = TestData.Planner(
+            TestData.Polygon(1, TerrainKind.River, 100, -1000, 180, 1000),
+            TestData.Line(2, TerrainKind.BridgeCandidate, (80, 150), (200, 150)),
+            TestData.Line(3, TerrainKind.Road, (140, -1000), (140, 1000)));
+        GeoCoordinate[] points = [TestData.P(50, 150), TestData.P(250, 150)];
+        IReadOnlyList<RouteAlternative> expected = await planner.PlanAsync(points, TestData.Options, default);
+        Assert.NotEmpty(expected);
+        Assert.All(expected, route => Assert.Equal(1, route.Metrics.PotentialBridgeCrossings));
+
+        IReadOnlyList<RouteAlternative>[] parallel = await Task.WhenAll(Enumerable.Range(0, 4)
+            .Select(_ => planner.PlanAsync(points, TestData.Options, default)));
+
+        foreach (IReadOnlyList<RouteAlternative> routes in parallel)
+        {
+            Assert.Equal(expected.Count, routes.Count);
+            for (int index = 0; index < routes.Count; index++)
+            {
+                Assert.Equal(expected[index].Geometry, routes[index].Geometry);
+                Assert.Equal(expected[index].Metrics, routes[index].Metrics);
+                Assert.Equal(expected[index].TransitionPoints, routes[index].TransitionPoints);
+                IReadOnlyList<RouteRoadContact>? originalContacts = expected[index].RoadContacts;
+                IReadOnlyList<RouteRoadContact>? concurrentContacts = routes[index].RoadContacts;
+                Assert.NotNull(originalContacts);
+                Assert.NotNull(concurrentContacts);
+                Assert.Equal(originalContacts.Count, concurrentContacts.Count);
+                for (int contactIndex = 0; contactIndex < originalContacts.Count; contactIndex++)
+                {
+                    Assert.Equal(originalContacts[contactIndex].RoadId, concurrentContacts[contactIndex].RoadId);
+                    Assert.Equal(originalContacts[contactIndex].Kind, concurrentContacts[contactIndex].Kind);
+                    Assert.Equal(originalContacts[contactIndex].Geometry, concurrentContacts[contactIndex].Geometry);
+                }
+                Assert.Equal(expected[index].GasPipelineCandidateIds, routes[index].GasPipelineCandidateIds);
+            }
+        }
+    }
 }

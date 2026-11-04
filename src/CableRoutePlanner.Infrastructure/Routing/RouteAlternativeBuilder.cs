@@ -26,6 +26,7 @@ internal sealed class RouteAlternativeBuilder(
         failures.Add(new(profile.Name, error));
 
     /// <summary>Rechecks every final segment; returns a structured length rejection or retains a distinct alternative.</summary>
+    /// <returns>A length-limit error, or null for an accepted path or a suppressed duplicate corridor.</returns>
     public PlanningException? Add(IReadOnlyList<Coordinate> route, CostProfile profile, CancellationToken ct)
     {
         if (route.Count < 2)

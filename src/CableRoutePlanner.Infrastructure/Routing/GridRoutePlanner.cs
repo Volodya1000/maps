@@ -8,6 +8,12 @@ using NetTopologySuite.Geometries;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
 
+/// <summary>Coordinates package-bounded preparation, grid generation and ordered engineering cost profiles.</summary>
+/// <remarks>
+/// The planner owns one reusable prepared area. Search graphs, measured edge caches
+/// and result builders belong to each calculation, including concurrent requests.
+/// Geometry operations and alternative metrics have separate internal owners.
+/// </remarks>
 public sealed class GridRoutePlanner(
     IGeodataRepository data,
     IGridGenerator gridGenerator,
@@ -22,6 +28,13 @@ public sealed class GridRoutePlanner(
 
     private readonly PreparedRoutingAreaCache _areas = new(data);
 
+    /// <summary>Builds permitted, distinct alternatives through the points in their supplied order.</summary>
+    /// <param name="points">Geographic waypoints inside the package coverage.</param>
+    /// <param name="options">Validated grid/resource settings and inclusive route-length limit.</param>
+    /// <param name="cancellationToken">Cancels preparation or search without publishing partial results.</param>
+    /// <returns>Read-only alternatives in profile order, stably prioritizing gas when requested.</returns>
+    /// <exception cref="PlanningException">Input, resource limits or every profile prevent a usable route.</exception>
+    /// <exception cref="OperationCanceledException">The calculation was cancelled.</exception>
     public async Task<IReadOnlyList<RouteAlternative>> PlanAsync(
         IReadOnlyList<GeoCoordinate> points,
         RoutingOptions options,
@@ -62,6 +75,12 @@ public sealed class GridRoutePlanner(
         return routes;
     }
 
+    /// <summary>Converts a bounded detour allowance in metres to separate latitude/longitude margins.</summary>
+    /// <remarks>
+    /// Ten percent of the longest consecutive leg is clamped to 1–5 km. The
+    /// longitude correction uses the mean latitude's cosine and caps at 180 degrees
+    /// near the poles. This bounds loaded data; it does not guarantee search completeness.
+    /// </remarks>
     private static SearchMargins SearchMarginDegrees(IReadOnlyList<GeoCoordinate> points)
     {
         double spanMetres = points

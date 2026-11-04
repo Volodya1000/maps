@@ -27,6 +27,12 @@ internal sealed class RouteGeometryBuilder
         Edges = new(mesh, evaluator);
     }
 
+    /// <summary>Builds, simplifies and bridge-aligns each leg before concatenating the waypoint route.</summary>
+    /// <param name="points">Ordered geographic waypoints; repeated adjacent points do not create an edge.</param>
+    /// <param name="profile">One validated profile, also used to constrain shortcut costs.</param>
+    /// <param name="ct">Cancels graph construction and path search.</param>
+    /// <returns>Projected route coordinates with shared leg endpoints included once.</returns>
+    /// <exception cref="PlanningException">A leg cannot connect to the mesh or has no permitted graph path.</exception>
     public List<Coordinate> Build(IReadOnlyList<GeoCoordinate> points, CostProfile profile, CancellationToken ct)
     {
         List<Coordinate> route = [];

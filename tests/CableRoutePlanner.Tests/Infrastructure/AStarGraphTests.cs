@@ -60,6 +60,35 @@ public sealed class AStarGraphTests
             WeightedGraph(useHeuristic: true), cancellation.Token));
     }
 
+    [Fact]
+    public void CancellationDuringExpansionPreventsPublishingTheGoal()
+    {
+        using CancellationTokenSource cancellation = new();
+        CancellingGraph graph = new(cancellation);
+
+        Assert.Throws<OperationCanceledException>(() => new AStarGridPathfinder().FindPath(graph, cancellation.Token));
+        Assert.True(cancellation.IsCancellationRequested);
+    }
+
+    private sealed class CancellingGraph(CancellationTokenSource cancellation) : IRoutingGraph
+    {
+        public int NodeCount => 3;
+        public int StartNodeId => 0;
+        public int DestinationNodeId => 2;
+        public double EstimateRemainingCost(int nodeId) => 0;
+        public IEnumerable<(int Id, double Cost)> Neighbours(int nodeId)
+        {
+            if (nodeId == 1)
+            {
+                cancellation.Cancel();
+            }
+            if (nodeId < DestinationNodeId)
+            {
+                yield return (nodeId + 1, 1);
+            }
+        }
+    }
+
     private static ExampleGraph WeightedGraph(bool useHeuristic) => new(
         [[(1, 5), (2, 2)], [(3, 1)], [(1, 1), (3, 8)], []], useHeuristic ? [4, 1, 2, 0] : [0, 0, 0, 0]);
 

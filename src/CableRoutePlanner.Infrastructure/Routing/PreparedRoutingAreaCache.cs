@@ -15,7 +15,13 @@ internal sealed record PreparedRoutingArea(
     long PreparationMilliseconds,
     bool PreferGas = false);
 
-// One region per planner/repository lifetime. Do not retain projected geometry for a whole country.
+/// <summary>Retains one read-only spatial snapshot per planner/repository lifetime.</summary>
+/// <remarks>
+/// Exact bounds, requested spacing and gas preference preserve the existing cache
+/// key. Preparation occurs outside the publication lock; concurrent misses may
+/// prepare independently. Failed or cancelled preparation never replaces a valid
+/// entry. Query/preparation timings are zero on reuse; search state is never shared.
+/// </remarks>
 internal sealed class PreparedRoutingAreaCache(IGeodataRepository repository)
 {
     private readonly object _gate = new();

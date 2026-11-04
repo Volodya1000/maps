@@ -62,8 +62,19 @@ public sealed record SegmentTerrainFacts(
     }
 }
 
+/// <summary>Prices measured segment facts without geometry or infrastructure dependencies.</summary>
+/// <remarks>
+/// Base length receives independent forest/field penalties, a clearing discount,
+/// and crossing penalties. Only matched gas crossings can remove their road penalty.
+/// Nonnegative weights and CostProfile.MinimumCostPerMetre underpin the A* lower bound.
+/// </remarks>
 public static class RouteCostCalculator
 {
+    /// <summary>Applies one engineering profile to a geometrically permitted segment.</summary>
+    /// <param name="facts">Finite lengths and consistent per-segment crossing counts.</param>
+    /// <param name="profile">Nonnegative penalties and a clearing multiplier in its declared range.</param>
+    /// <returns>A finite, nonnegative weighted cost in metre-equivalent units.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Facts, weights or resulting cost violate their invariants.</exception>
     public static double Calculate(SegmentTerrainFacts facts, CostProfile profile)
     {
         ArgumentNullException.ThrowIfNull(facts);

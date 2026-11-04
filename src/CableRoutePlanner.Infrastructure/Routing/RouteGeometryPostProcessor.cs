@@ -14,6 +14,8 @@ internal sealed class RouteGeometryPostProcessor(TerrainEvaluator evaluator, Pre
     private const double CostComparisonTolerance = 0.001;
     private const int MaximumSimplificationLookahead = 64;
     private const double BridgeAlignmentSearchDistanceMetres = 15;
+    private const double AlreadyAlignedDistanceMetres = 1;
+    private const int NearbyAnchorCount = 3;
     private readonly GeometryFactory _factory = new();
     private readonly record struct BridgeSplice(List<Coordinate> Path, double Length, double Cost, int BridgeEndIndex);
 
@@ -30,74 +32,37 @@ internal sealed class RouteGeometryPostProcessor(TerrainEvaluator evaluator, Pre
         }
 
         var usedGuides = new HashSet<BridgeGuide>();
-        int i = 1;
-        while (i < aligned.Count)
+        int nextSegment = 1;
+        while (nextSegment < aligned.Count)
         {
-            Coordinate previous = aligned[i - 1];
-            Coordinate current = aligned[i];
+            int segmentIndex = nextSegment++;
+            Coordinate previous = aligned[segmentIndex - 1];
+            Coordinate current = aligned[segmentIndex];
             LineString segment = _factory.CreateLineString([previous, current]);
             BridgeGuide? guide = terrain.BridgeGuides
                 .Where(candidate => candidate.Water.Intersects(segment)
                     && candidate.Bridge.Distance(segment) <= BridgeAlignmentSearchDistanceMetres)
                 .OrderBy(candidate => candidate.Bridge.Distance(segment))
                 .FirstOrDefault();
-            if (guide is not null && usedGuides.Add(guide))
+            if (guide is null || !usedGuides.Add(guide))
             {
-                if (guide.Bridge.Distance(_factory.CreatePoint(previous)) < 1
-                    && guide.Bridge.Distance(_factory.CreatePoint(current)) < 1)
-                {
-                    i++;
-                    continue;
-                }
-
-                // Replace nearby grid vertices with the actual bridge line. Appending bridge
-                // points while retaining those vertices makes a visible kink or short backtrack.
-                Coordinate[] points = guide.Bridge.Coordinates;
-                if (points.Length >= 2)
-                {
-                    if (previous.Distance(points[^1]) + current.Distance(points[0])
-                        < previous.Distance(points[0]) + current.Distance(points[^1]))
-                    {
-                        Array.Reverse(points);
-                    }
-
-                    List<BridgeSplice> splices = new();
-                    IEnumerable<int> leftAnchors = Enumerable.Range(Math.Max(0, i - 3), i - Math.Max(0, i - 3))
-                        .Prepend(0)
-                        .Distinct();
-                    IEnumerable<int> rightAnchors = Enumerable.Range(0, Math.Min(3, aligned.Count - i))
-                        .Select(offset => i + offset)
-                        .Append(aligned.Count - 1)
-                        .Distinct();
-                    foreach (int left in leftAnchors)
-                    {
-                        foreach (int right in rightAnchors)
-                        {
-                            List<Coordinate> candidate = aligned.Take(left + 1).ToList();
-                            candidate.AddRange(points);
-                            candidate.AddRange(aligned.Skip(right));
-                            BridgeSplice? splice = TryCreateBridgeSplice(
-                                candidate,
-                                profile,
-                                left + points.Length - 1);
-                            if (splice is { } validSplice)
-                            {
-                                splices.Add(validSplice);
-                            }
-                        }
-                    }
-
-                    if (splices.Count > 0)
-                    {
-                        BridgeSplice splice = splices
-                            .MinBy(candidate => (candidate.Cost, candidate.Length));
-                        aligned = splice.Path;
-                        i = splice.BridgeEndIndex;
-                    }
-                }
+                continue;
             }
 
-            i++;
+            if (guide.Bridge.Distance(_factory.CreatePoint(previous)) < AlreadyAlignedDistanceMetres
+                && guide.Bridge.Distance(_factory.CreatePoint(current)) < AlreadyAlignedDistanceMetres)
+            {
+                continue;
+            }
+
+            // A bridge is considered once, including when its nearest occurrence
+            // needs no change. Selecting a different guide here would alter ties.
+            BridgeSplice? replacement = FindBridgeSplice(aligned, segmentIndex, guide, profile);
+            if (replacement is { } splice)
+            {
+                aligned = splice.Path;
+                nextSegment = splice.BridgeEndIndex + 1;
+            }
         }
 
         return aligned;
@@ -172,6 +137,48 @@ internal sealed class RouteGeometryPostProcessor(TerrainEvaluator evaluator, Pre
         }
 
         return simplified;
+    }
+
+    /// <summary>Tries nearby anchors and both route endpoints without retaining folded grid detours.</summary>
+    private BridgeSplice? FindBridgeSplice(
+        IReadOnlyList<Coordinate> aligned, int segmentIndex, BridgeGuide guide, CostProfile profile)
+    {
+        Coordinate[] points = guide.Bridge.Coordinates;
+        if (points.Length < 2)
+        {
+            return null;
+        }
+
+        Coordinate previous = aligned[segmentIndex - 1];
+        Coordinate current = aligned[segmentIndex];
+        if (previous.Distance(points[^1]) + current.Distance(points[0])
+            < previous.Distance(points[0]) + current.Distance(points[^1]))
+        {
+            Array.Reverse(points);
+        }
+
+        int firstLeftAnchor = Math.Max(0, segmentIndex - NearbyAnchorCount);
+        IEnumerable<int> leftAnchors = Enumerable.Range(firstLeftAnchor, segmentIndex - firstLeftAnchor)
+            .Prepend(0).Distinct();
+        IEnumerable<int> rightAnchors = Enumerable.Range(0, Math.Min(NearbyAnchorCount, aligned.Count - segmentIndex))
+            .Select(offset => segmentIndex + offset).Append(aligned.Count - 1).Distinct();
+        List<BridgeSplice> splices = [];
+        foreach (int left in leftAnchors)
+        {
+            foreach (int right in rightAnchors)
+            {
+                List<Coordinate> candidate = aligned.Take(left + 1).ToList();
+                candidate.AddRange(points);
+                candidate.AddRange(aligned.Skip(right));
+                BridgeSplice? splice = TryCreateBridgeSplice(candidate, profile, left + points.Length - 1);
+                if (splice is { } validSplice)
+                {
+                    splices.Add(validSplice);
+                }
+            }
+        }
+
+        return splices.Count == 0 ? null : splices.MinBy(candidate => (candidate.Cost, candidate.Length));
     }
 
     private BridgeSplice? TryCreateBridgeSplice(
