@@ -71,6 +71,23 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
         return await _permissionRequest.Task.ConfigureAwait(false);
     }
 
+    public Task<LocationServiceState> RestoreAsync(CancellationToken cancellationToken)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!HasAnyLocationPermission())
+        {
+            return Task.FromResult(Publish(new LocationServiceState(
+                false,
+                PermissionState(),
+                SystemLocationState.Unknown,
+                false,
+                "Доступ к местоположению больше не предоставлен. Включите его в настройках Android.")));
+        }
+
+        return Task.FromResult(StartIfProviderEnabled());
+    }
+
     public void OnRequestPermissionsResult()
     {
         if (_disposed)

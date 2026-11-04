@@ -256,7 +256,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     {
         try
         {
-            LocationServiceState state = await _locationService.EnableAsync(CancellationToken.None);
+            LocationServiceState state = await _locationService.RestoreAsync(CancellationToken.None);
             if (_disposed)
             {
                 return;

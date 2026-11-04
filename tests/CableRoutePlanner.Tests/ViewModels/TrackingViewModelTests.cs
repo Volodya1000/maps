@@ -44,7 +44,7 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         using TrackingViewModel viewModel = CreateViewModel(location, preferences);
 
         Assert.True(viewModel.IsLocationEnabled);
-        Assert.Equal(1, location.EnableCalls);
+        Assert.Equal(1, location.RestoreCalls);
     }
 
     [Fact]
@@ -174,6 +174,7 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         public IObservable<LocationMeasurement> Measurements => _measurements;
         public IObservable<LocationServiceState> States => _states;
         public int EnableCalls { get; private set; }
+        public int RestoreCalls { get; private set; }
         public int DisableCalls { get; private set; }
 
         public Task<LocationServiceState> EnableAsync(CancellationToken cancellationToken)
@@ -182,6 +183,13 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
             EnableCalls++;
             State = LocationServiceState.Enabled;
             _states.OnNext(State);
+            return Task.FromResult(State);
+        }
+
+        public Task<LocationServiceState> RestoreAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            RestoreCalls++;
             return Task.FromResult(State);
         }
 

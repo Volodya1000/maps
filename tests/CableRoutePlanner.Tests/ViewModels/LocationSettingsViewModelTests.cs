@@ -77,6 +77,9 @@ public sealed class LocationSettingsViewModelTests : ReactiveTestScope
             _states.OnNext(State);
             return Task.FromResult(State);
         }
+
+        public Task<LocationServiceState> RestoreAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(State);
         public void Disable() => State = LocationServiceState.Disabled;
         public void PauseUpdates() { }
         public void ResumeUpdates() { }

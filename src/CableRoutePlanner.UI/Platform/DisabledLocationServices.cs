@@ -16,6 +16,9 @@ internal sealed class DisabledLocationService : ILocationService
     public Task<LocationServiceState> EnableAsync(CancellationToken cancellationToken) =>
         Task.FromResult(LocationServiceState.Disabled);
 
+    public Task<LocationServiceState> RestoreAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(LocationServiceState.Disabled);
+
     public void Disable() { }
 
     public void PauseUpdates() { }

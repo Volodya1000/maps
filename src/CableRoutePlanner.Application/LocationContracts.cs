@@ -65,6 +65,9 @@ public interface ILocationService : IDisposable
 
     Task<LocationServiceState> EnableAsync(CancellationToken cancellationToken);
 
+    Task<LocationServiceState> RestoreAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(State);
+
     void Disable();
 
     void PauseUpdates();
