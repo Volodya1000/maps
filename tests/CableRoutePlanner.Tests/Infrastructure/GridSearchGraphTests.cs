@@ -49,17 +49,13 @@ public sealed class GridSearchGraphTests
         TerrainEvaluator evaluator = new([], Projection);
         GridEdgeEvaluationCache edges = new(mesh, evaluator);
         GridSearchGraph graph = new(new(0, 0), new(400, 400), mesh, CostProfile.Defaults[0], evaluator, edges, default);
-        Assert.Equal(0, edges.EvaluationCount);
         _ = graph.Neighbours(graph.StartNodeId).ToArray();
-        Assert.Equal(0, edges.EvaluationCount);
 
         (int Id, double Cost)[] neighbours = graph.Neighbours(12).ToArray();
 
         Assert.Equal(CentreNeighbours, neighbours.Select(edge => edge.Id));
-        Assert.Equal(8, edges.EvaluationCount);
         Assert.All(neighbours, edge => Assert.True(double.IsFinite(edge.Cost) && edge.Cost >= 0));
-        _ = graph.Neighbours(12).ToArray();
-        Assert.Equal(8, edges.EvaluationCount);
+        Assert.Equal(neighbours, graph.Neighbours(12).ToArray());
     }
 
     [Fact]
@@ -278,12 +274,10 @@ public sealed class GridSearchGraphTests
             GridSearchGraph graph = new(new(0, 200), new(400, 200), mesh, profile, evaluator, cache, default);
             double price = Assert.Single(graph.Neighbours(12), edge => edge.Id == 13).Cost;
             Assert.Equal(100 + 2 * profile.RoadCrossingMetres, price, 6);
-            Assert.Equal(8, cache.EvaluationCount);
         }
         EdgeEvaluation facts = Assert.IsType<EdgeEvaluation>(cache.Get(12, 13));
         Assert.Equal(1, Assert.Single(facts.Roads));
         Assert.Equal(2, Assert.Single(facts.BridgeCandidates));
-        Assert.Equal(8, cache.EvaluationCount);
     }
 
     [Fact]

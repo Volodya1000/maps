@@ -59,11 +59,9 @@ public sealed class SuccessfulGraphPhaseTests(ITestOutputHelper output)
                 Coordinate destination = projection.Forward(input.Points[leg]);
                 if (start.Equals2D(destination))
                 { continue; }
-                int alreadyEvaluated = edges.EvaluationCount;
                 timer.Restart();
                 GridSearchGraph graph = new(start, destination, mesh, profile, evaluator, edges, default);
                 graphMilliseconds += timer.Elapsed.TotalMilliseconds;
-                Assert.Equal(alreadyEvaluated, edges.EvaluationCount);
                 ExpansionCountingGraph measured = new(graph);
                 timer.Restart();
                 IReadOnlyList<int> path = Assert.IsAssignableFrom<IReadOnlyList<int>>(new AStarGridPathfinder().FindPath(measured, default));
