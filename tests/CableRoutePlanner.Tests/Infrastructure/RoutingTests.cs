@@ -539,8 +539,9 @@ public sealed class RoutingTests(ITestOutputHelper output)
         PlanningException error = await Assert.ThrowsAsync<PlanningException>(() =>
             TestData.Planner(road, bridge).PlanAsync(
                 points, TestData.Options with { MaxRouteLengthMetres = maximum - 0.1 }, CancellationToken.None));
-        Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
-        Assert.Contains("максимум", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(PlanningErrorReason.RouteLengthLimitExceeded, error.Reason);
+        Assert.Equal(maximum, error.ActualRouteLengthMetres!.Value, 6);
+        Assert.Equal(maximum - 0.1, error.MaximumRouteLengthMetres);
     }
 
     [Fact]

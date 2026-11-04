@@ -76,11 +76,20 @@ public sealed class DomainTests
     [InlineData(TerrainKind.Lake, TerrainTraversalRule.Blocked)]
     [InlineData(TerrainKind.River, TerrainTraversalRule.Blocked)]
     [InlineData(TerrainKind.Building, TerrainTraversalRule.Blocked)]
-    [InlineData(TerrainKind.Road, TerrainTraversalRule.CrossingPenalty)]
+    // Roads now require candidate facts, rather than an unconditional surcharge.
+    [InlineData(TerrainKind.Road, TerrainTraversalRule.ConditionalTransition)]
     [InlineData(TerrainKind.BridgeCandidate, TerrainTraversalRule.ConditionalTransition)]
     [InlineData(TerrainKind.ApprovedCrossing, TerrainTraversalRule.ApprovedTransition)]
     public void TraversalPolicyDefinesSubjectRules(TerrainKind terrain, TerrainTraversalRule expected) =>
         Assert.Equal(expected, TerrainTraversalPolicy.For(terrain));
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    public void RoadPermissionRequiresAMappedCandidate(bool bridge, bool gas, bool expected) =>
+        Assert.Equal(expected, TerrainTraversalPolicy.AllowsRoadCrossing(bridge, gas));
 
     [Fact]
     public void SegmentCostMatchesEachConfiguredProfile()

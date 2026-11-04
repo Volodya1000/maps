@@ -67,7 +67,7 @@ internal sealed class TerrainEvaluator
 
     private readonly GasCrossingIndex _gasCrossings;
 
-    private readonly (long Id, Geometry Geometry)[] _bridgeCrossingCandidates;
+    private readonly (long Id, Geometry Geometry, Geometry Corridor)[] _bridgeCrossingCandidates;
 
     private readonly bool _preferGas;
 
@@ -101,11 +101,13 @@ internal sealed class TerrainEvaluator
         _rules = rules ?? new TerrainRules();
         var reader = new WKBReader();
         ProjectedFeature[] projected = features.Select(
-            f => new ProjectedFeature(f, projection.Forward(reader.Read(f.Wkb)))).ToArray();
+            f => new ProjectedFeature(f, projection.Forward(reader.Read(f.Wkb))))
+            .OrderBy(feature => feature.Feature.Id).ToArray();
         _gasCrossings = new GasCrossingIndex(features, projection);
         _bridgeCrossingCandidates = projected
             .Where(feature => feature.Feature.Kind == TerrainKind.BridgeCandidate)
-            .Select(feature => (feature.Feature.Id, feature.Geometry))
+            .Select(feature => (feature.Feature.Id, feature.Geometry,
+                feature.Geometry.Buffer(BridgeCorridorToleranceMetres)))
             .ToArray();
         _roadContacts = new RoadContactAnalyzer(projected
             .Where(feature => feature.Feature.Kind is TerrainKind.Road or TerrainKind.BridgeCandidate)
@@ -402,7 +404,7 @@ internal sealed class TerrainEvaluator
             return null;
         }
         var contribution = new TerrainContribution();
-        HashSet<long>? gasCandidates = null;
+        SortedSet<long>? gasCandidates = null;
         HashSet<long>? gasRoads = null;
         foreach (Obstacle obstacle in _index.Query(line.EnvelopeInternal))
         {
@@ -425,24 +427,31 @@ internal sealed class TerrainEvaluator
             Geometry intersection = obstacle.PreparedGeometry.Covers(line)
                 ? line
                 : geometry.Intersection(line);
-            if (obstacle.Kind == TerrainKind.Road && intersection.Dimension == Dimension.Point)
+            if (obstacle.Kind == TerrainKind.Road)
             {
-                IReadOnlyList<long> bridgeCandidates = _bridgeCrossingCandidates
-                    .Where(candidate => candidate.Geometry.Intersects(geometry)
-                        && candidate.Geometry.Buffer(2).Covers(intersection))
-                    .Select(candidate => candidate.Id)
-                    .ToArray();
-                IReadOnlyList<long> gasCandidateIds = _gasCrossings.UsedBy(line, geometry);
-                if (bridgeCandidates.Count == 0 && gasCandidateIds.Count == 0)
+                foreach (Point crossing in TerrainRules.PointComponents(intersection))
                 {
-                    return null;
-                }
+                    long[] bridgeCandidates = _bridgeCrossingCandidates
+                        .Where(candidate => candidate.Geometry.Intersects(geometry)
+                            && candidate.Corridor.Covers(crossing))
+                        .Select(candidate => candidate.Id)
+                        .ToArray();
+                    IReadOnlyList<long> gasCandidateIds = _gasCrossings.UsedBy(line, geometry, intersection, crossing);
+                    if (!TerrainTraversalPolicy.AllowsRoadCrossing(
+                        bridgeCandidates.Length > 0, gasCandidateIds.Count > 0))
+                    {
+                        return null;
+                    }
 
-                contribution.BridgeCandidates.AddRange(bridgeCandidates);
-                gasCandidates ??= [];
-                gasRoads ??= [];
-                gasCandidates.UnionWith(gasCandidateIds);
-                gasRoads.Add(obstacle.Id);
+                    contribution.BridgeCandidates.UnionWith(bridgeCandidates);
+                    if (gasCandidateIds.Count > 0)
+                    {
+                        gasCandidates ??= [];
+                        gasRoads ??= [];
+                        gasCandidates.UnionWith(gasCandidateIds);
+                        gasRoads.Add(obstacle.Id);
+                    }
+                }
             }
 
             rule.Apply(intersection, obstacle.Id, contribution);
@@ -458,9 +467,9 @@ internal sealed class TerrainEvaluator
             Math.Min(Math.Min(contribution.Forest, projectedLength) * scale, length),
             Math.Min(Math.Min(contribution.Field, projectedLength) * scale, length),
             Math.Min(Math.Min(contribution.Clearing, projectedLength) * scale, length),
-            contribution.Roads,
-            contribution.Crossings,
-            contribution.BridgeCandidates,
+            contribution.Roads.ToArray(),
+            contribution.Crossings.ToArray(),
+            contribution.BridgeCandidates.ToArray(),
             gasCandidates?.ToArray() ?? [],
             gasRoads?.Count ?? 0,
             _preferGas);

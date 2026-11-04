@@ -56,14 +56,23 @@ public enum PlanningErrorReason
     BlockedTerrain,
     GridConnectionUnavailable,
     NoRouteInSearchArea,
-    ResourceLimit
+    ResourceLimit,
+    RouteLengthLimitExceeded
 }
+
+public sealed record ProfileSearchFailure(string Profile, PlanningException Error);
 
 public sealed class PlanningException : Exception
 {
     public PlanningErrorReason Reason { get; }
 
     public TerrainKind? TerrainKind { get; }
+
+    public double? ActualRouteLengthMetres { get; init; }
+
+    public double? MaximumRouteLengthMetres { get; init; }
+
+    public IReadOnlyList<ProfileSearchFailure> SearchFailures { get; init; } = [];
 
     public PlanningException()
     {
@@ -74,8 +83,9 @@ public sealed class PlanningException : Exception
     {
     }
 
-    public PlanningException(string message, PlanningErrorReason reason, TerrainKind? terrainKind = null)
-        : base(message)
+    public PlanningException(string message, PlanningErrorReason reason, TerrainKind? terrainKind = null,
+        Exception? innerException = null)
+        : base(message, innerException)
     {
         Reason = reason;
         TerrainKind = terrainKind;

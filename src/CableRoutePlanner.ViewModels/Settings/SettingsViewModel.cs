@@ -39,6 +39,13 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
 
     [Reactive] public string Status { get; private set; } = "";
 
+    public decimal MinimumRouteLengthMetres { get; } = (decimal)RoutingOptions.MinRouteLengthMetres;
+
+    public decimal MaximumRouteLengthMetres { get; } = (decimal)RoutingOptions.MaxRouteLengthLimitMetres;
+
+    public string RouteLengthRangeText =>
+        $"Максимальная длина маршрута, м ({MinimumRouteLengthMetres:N0}–{MaximumRouteLengthMetres:N0})";
+
     public bool HasChanges => CellSize != (decimal)_saved.CellSizeMetres
         || ReservePercent != (decimal)(_saved.ReserveFraction * 100)
         || MaxRouteLengthMetres != (decimal)_saved.MaxRouteLengthMetres
@@ -46,7 +53,8 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
 
     public bool CanSave => HasChanges && CellSize is >= 5 and <= 200
         && ReservePercent is >= 0 and <= 100
-        && MaxRouteLengthMetres is >= 1 and <= 10_000_000 && !_loadFailed;
+        && MaxRouteLengthMetres >= MinimumRouteLengthMetres
+        && MaxRouteLengthMetres <= MaximumRouteLengthMetres && !_loadFailed;
 
     public bool CanReset => _loadFailed;
 
