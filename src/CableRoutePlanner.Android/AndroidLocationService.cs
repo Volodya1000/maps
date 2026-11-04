@@ -20,11 +20,14 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
     private readonly Subject<LocationMeasurement> _measurements = new();
     private readonly Subject<LocationServiceState> _states = new();
     private readonly Listener _listener;
+    private Timer? _staleTimer;
     private TaskCompletionSource<LocationServiceState>? _permissionRequest;
     private LocationServiceState _state = LocationServiceState.Disabled;
     private bool _permissionRequested;
     private bool _updatesActive;
     private bool _disposed;
+    private DateTimeOffset? _updatesStartedUtc;
+    private DateTimeOffset? _lastLocationUtc;
 
     public AndroidLocationService(Activity activity)
     {
@@ -97,7 +100,10 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
 
         if (HasAnyLocationPermission())
         {
-            _permissionRequest?.TrySetResult(StartIfProviderEnabled());
+            _permissionRequested = false;
+            TaskCompletionSource<LocationServiceState>? request = _permissionRequest;
+            _permissionRequest = null;
+            request?.TrySetResult(StartIfProviderEnabled());
             return;
         }
 
@@ -115,7 +121,10 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             canAskAgain
                 ? "Доступ к местоположению отклонён. Его можно запросить снова из настроек приложения."
                 : "Доступ запрещён. Разрешите местоположение в настройках приложения Android."));
-        _permissionRequest?.TrySetResult(state);
+        _permissionRequested = canAskAgain;
+        TaskCompletionSource<LocationServiceState>? deniedRequest = _permissionRequest;
+        _permissionRequest = null;
+        deniedRequest?.TrySetResult(state);
     }
 
     public void Disable()
@@ -206,11 +215,14 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
                 _listener,
                 Looper.MainLooper);
             _updatesActive = true;
+            _updatesStartedUtc = DateTimeOffset.UtcNow;
+            _lastLocationUtc = null;
+            _staleTimer = new Timer(CheckStale, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(15));
         }
 
         string? message = PermissionState() == LocationPermissionState.Approximate
             ? "Используется приблизительное местоположение."
-            : null;
+            : "Ожидание GPS-сигнала…";
         return Publish(new LocationServiceState(
             true,
             PermissionState(),
@@ -226,6 +238,11 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             _locationManager.RemoveUpdates(_listener);
             _updatesActive = false;
         }
+
+        _staleTimer?.Dispose();
+        _staleTimer = null;
+        _updatesStartedUtc = null;
+        _lastLocationUtc = null;
     }
 
     private bool HasAnyLocationPermission() =>
@@ -253,12 +270,38 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             : DateTimeOffset.UtcNow;
         double? speed = location.HasSpeed ? location.Speed : null;
         bool approximate = PermissionState() == LocationPermissionState.Approximate;
+        _lastLocationUtc = timestamp;
         _measurements.OnNext(new LocationMeasurement(
             new GeoCoordinate(location.Latitude, location.Longitude),
             location.HasAccuracy ? location.Accuracy : 100,
             timestamp,
             speed,
             approximate));
+        Publish(new LocationServiceState(
+            true,
+            PermissionState(),
+            SystemLocationState.Enabled,
+            false,
+            approximate ? "Используется приблизительное местоположение." : null));
+    }
+
+    private void CheckStale(object? state)
+    {
+        if (_disposed || !_updatesActive)
+        {
+            return;
+        }
+
+        DateTimeOffset reference = _lastLocationUtc ?? _updatesStartedUtc ?? DateTimeOffset.UtcNow;
+        if (DateTimeOffset.UtcNow - reference > TimeSpan.FromSeconds(30))
+        {
+            Publish(new LocationServiceState(
+                true,
+                PermissionState(),
+                SystemLocationState.Enabled,
+                true,
+                "GPS-сигнал временно отсутствует или координаты устарели."));
+        }
     }
 
     private sealed class Listener(AndroidLocationService owner) : Java.Lang.Object, ILocationListener
@@ -280,6 +323,17 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
 
         public void OnProviderEnabled(string? provider) => owner.StartIfProviderEnabled();
 
-        public void OnStatusChanged(string? provider, Availability status, Bundle? extras) { }
+        public void OnStatusChanged(string? provider, Availability status, Bundle? extras)
+        {
+            if (status != Availability.Available)
+            {
+                owner.Publish(new LocationServiceState(
+                    true,
+                    owner.PermissionState(),
+                    SystemLocationState.Enabled,
+                    true,
+                    "GPS-сигнал временно недоступен."));
+            }
+        }
     }
 }

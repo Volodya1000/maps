@@ -187,12 +187,27 @@ public sealed class RouteProgressTrackerTests
     }
 
     [Fact]
+    public void ParallelNeighboringSegmentsDoNotTeleportAfterLongSignalGap()
+    {
+        IReadOnlyList<GeoCoordinate> geometry =
+        [Metres(0), Metres(1_000), Metres(1_000, 20), Metres(0, 20)];
+        RouteProgressTracker tracker = StartTracker(geometry);
+
+        tracker.Accept(Fix(500, 1, Start.AddSeconds(1)), Start.AddSeconds(1));
+        RouteProgressState state = tracker.Accept(
+            Fix(500, 1, Start.AddMinutes(2), y: 20), Start.AddMinutes(2));
+
+        Assert.InRange(state.CoveredDistanceMetres, 0, 1);
+    }
+
+    [Fact]
     public void SnapshotRestoresOnlyTheSameGeometry()
     {
         IReadOnlyList<GeoCoordinate> geometry = [Metres(0), Metres(1_000)];
         RouteAlternative route = CreateRoute(geometry);
         RouteProgressTracker tracker = new();
         tracker.Begin(route);
+        tracker.Resume();
         tracker.Accept(Fix(0, 1, Start.AddSeconds(1)), Start.AddSeconds(1));
         tracker.Accept(Fix(400, 1, Start.AddSeconds(30)), Start.AddSeconds(30));
         RouteProgressSnapshot snapshot = tracker.CreateSnapshot(Guid.NewGuid(), Start, Start.AddSeconds(30));
@@ -215,6 +230,7 @@ public sealed class RouteProgressTrackerTests
             ProjectionToleranceMetres: 60,
             StationaryDistanceMetres: 3));
         tracker.Begin(CreateRoute(geometry));
+        tracker.Resume();
         return tracker;
     }
 

@@ -34,7 +34,7 @@ public sealed class RouteProgressTracker
         _coveredIntervals.Clear();
         _previousMeasurement = null;
         _previousProjection = null;
-        _status = ProgressTrackingStatus.Active;
+        _status = ProgressTrackingStatus.Ready;
         _locationQuality = LocationQuality.Unknown;
         return BuildState();
     }
@@ -49,7 +49,11 @@ public sealed class RouteProgressTracker
             return state;
         }
 
-        _coveredIntervals.AddRange(NormalizeIntervals(snapshot.CoveredIntervals));
+        double total = _cumulativeLengths.Length == 0 ? 0 : _cumulativeLengths[^1];
+        _coveredIntervals.AddRange(NormalizeIntervals(snapshot.CoveredIntervals)
+            .Select(interval => new ProgressInterval(
+                Math.Clamp(interval.StartMetres, 0, total),
+                Math.Clamp(interval.EndMetres, 0, total))));
         // A process restart is a tracking gap. Even if the last atomic snapshot was
         // written while active, the user must explicitly resume before a new pair of
         // fixes can contribute to progress.
@@ -129,12 +133,19 @@ public sealed class RouteProgressTracker
         }
 
         double routeDistance = Math.Abs(projection.PositionMetres - previousProjection.PositionMetres);
-        double allowedDistance = _configuration.MaxSpeedMetresPerSecond * elapsed.TotalSeconds
+        double speedLimit = _configuration.MaxSpeedMetresPerSecond * elapsed.TotalSeconds
             + measurement.AccuracyMetres + previousMeasurement.AccuracyMetres;
+        double physicalDistance = previousMeasurement.Coordinate.DistanceTo(measurement.Coordinate);
+        double displacementLimit = physicalDistance * _configuration.MaxRouteDistanceToPhysicalDistanceRatio
+            + (measurement.AccuracyMetres + previousMeasurement.AccuracyMetres)
+            * _configuration.MaxRouteDistanceToPhysicalDistanceRatio;
+        double allowedDistance = Math.Min(speedLimit, Math.Max(
+            displacementLimit,
+            _configuration.StationaryDistanceMetres));
         if (routeDistance > Math.Max(allowedDistance, _configuration.StationaryDistanceMetres))
         {
-            _previousMeasurement = measurement;
-            _previousProjection = projection;
+            _previousMeasurement = null;
+            _previousProjection = null;
             _locationQuality = LocationQuality.Invalid;
             return BuildState();
         }
@@ -425,6 +436,8 @@ public sealed class RouteProgressTracker
             || !double.IsFinite(configuration.MaxSpeedMetresPerSecond) || configuration.MaxSpeedMetresPerSecond <= 0
             || !double.IsFinite(configuration.ProjectionToleranceMetres) || configuration.ProjectionToleranceMetres <= 0
             || !double.IsFinite(configuration.StationaryDistanceMetres) || configuration.StationaryDistanceMetres < 0
+            || !double.IsFinite(configuration.MaxRouteDistanceToPhysicalDistanceRatio)
+            || configuration.MaxRouteDistanceToPhysicalDistanceRatio < 1
             || configuration.EffectiveMaxMeasurementAge <= TimeSpan.Zero
             || configuration.EffectiveMaxConsecutiveGap <= TimeSpan.Zero)
         {

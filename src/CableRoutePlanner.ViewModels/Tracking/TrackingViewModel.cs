@@ -134,7 +134,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        LocationServiceState state = await _locationService.EnableAsync(cancellationToken).ConfigureAwait(false);
+        LocationServiceState state = await _locationService.EnableAsync(cancellationToken);
         HandleLocationState(state);
         bool permissionWasDenied = state.Permission is LocationPermissionState.Denied
             or LocationPermissionState.PermanentlyDenied;

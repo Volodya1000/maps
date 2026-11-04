@@ -87,6 +87,22 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
     }
 
     [Fact]
+    public async Task LocationFixesBeforeStartDoNotCountTowardTraversal()
+    {
+        FakeLocation location = new();
+        using TrackingViewModel viewModel = CreateViewModel(location);
+        RouteAlternative route = Route();
+        viewModel.SetRoute(route);
+        await viewModel.SetLocationEnabledAsync(true);
+
+        location.Emit(Fix(0, Start.AddSeconds(1)));
+        location.Emit(Fix(400, Start.AddSeconds(30)));
+
+        Assert.Equal(0, viewModel.Progress!.CoveredDistanceMetres);
+        Assert.False(viewModel.IsTraversalActive);
+    }
+
+    [Fact]
     public async Task ActiveSessionRestoresPausedUntilUserExplicitlyResumes()
     {
         FakeLocation location = new();

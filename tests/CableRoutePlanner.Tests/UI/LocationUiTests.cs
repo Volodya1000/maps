@@ -87,6 +87,32 @@ public sealed class LocationUiTests
         window.Close();
     }
 
+    [AvaloniaFact]
+    public void DesktopMapHidesTraversalPanelEvenWhenRouteIsSelected()
+    {
+        using MapViewModel viewModel = TestData.CreateMapViewModel(
+            new NavigationHost(),
+            new Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
+            new MapAreaLoader(new MemoryData()),
+            new MemorySettings(),
+            new MemoryClipboard());
+        var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        {
+            ViewModel = viewModel
+        };
+        var window = new Window { Content = view, Width = 600, Height = 800 };
+        window.Show();
+        viewModel.SelectedRoute = new RouteAlternative(
+            Guid.NewGuid(),
+            "Маршрут",
+            [TestData.P(0, 0), TestData.P(100, 0)],
+            new RouteMetrics(100, 100, 0, 0, 0, 0, 100, null));
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.False(view.FindControl<Control>("TrackingPanel")!.IsEffectivelyVisible);
+        window.Close();
+    }
+
     private static TrackingViewModel CreateTracking() => new(
         new UiLocationService(),
         new UiHeadingService(),

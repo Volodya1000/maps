@@ -89,10 +89,10 @@ internal sealed class MapsuiPointerInteraction
             return;
         }
 
-        _cameraUsed();
         _pointers.Add(e.Pointer.Id);
         if (_pointers.Count > 1)
         {
+            _cameraUsed();
             _multiTouch = true;
             _dragged = null;
             _pressedRouteVertex = null;
@@ -147,6 +147,10 @@ internal sealed class MapsuiPointerInteraction
 
         if (_dragged is not { } dragged || _multiTouch)
         {
+            if (!_multiTouch && _pointers.Count == 1)
+            {
+                _cameraUsed();
+            }
             return;
         }
 

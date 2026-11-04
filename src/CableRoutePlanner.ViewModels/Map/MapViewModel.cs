@@ -115,6 +115,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public bool HasLocationCoverageWarning => !string.IsNullOrWhiteSpace(LocationCoverageStatus);
 
+    public bool ShowTrackingPanel => IsLocationSupported && HasRoute;
+
     public WaypointRow? SelectedPoint
     {
         get => _selectedPoint;
@@ -372,6 +374,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             .Subscribe(route =>
             {
                 this.RaisePropertyChanged(nameof(HasRoute));
+                this.RaisePropertyChanged(nameof(ShowTrackingPanel));
                 _tracking?.SetRoute(route);
                 UpdateRoutePresentation(route);
             })

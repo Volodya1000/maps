@@ -133,7 +133,8 @@ public sealed record RouteProgressConfiguration(
     TimeSpan MaxConsecutiveGap = default,
     double MaxSpeedMetresPerSecond = 20,
     double ProjectionToleranceMetres = 60,
-    double StationaryDistanceMetres = 3)
+    double StationaryDistanceMetres = 3,
+    double MaxRouteDistanceToPhysicalDistanceRatio = 3)
 {
     public TimeSpan EffectiveMaxMeasurementAge => MaxMeasurementAge == default
         ? TimeSpan.FromMinutes(2) : MaxMeasurementAge;

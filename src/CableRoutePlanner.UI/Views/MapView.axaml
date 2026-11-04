@@ -211,7 +211,7 @@
                     <Border
                         x:Name="TrackingPanel"
                         Classes="tracking-panel"
-                        IsVisible="{Binding Tracking.HasRoute}">
+                        IsVisible="{Binding ShowTrackingPanel}">
                         <StackPanel Spacing="6">
                             <TextBlock
                                 Classes="section-heading"

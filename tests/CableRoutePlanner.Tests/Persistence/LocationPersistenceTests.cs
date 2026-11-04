@@ -69,4 +69,27 @@ public sealed class LocationPersistenceTests
 
         Assert.Equal(PlanningErrorReason.Unknown, error.Reason);
     }
+
+    [Fact]
+    public void InvalidTrackingIntervalsAreRejectedBeforeRestore()
+    {
+        using TemporaryDirectory directory = new();
+        string path = Path.Combine(directory.DirectoryPath, "tracking.json");
+        File.WriteAllText(path, $$"""
+            {
+              "SessionId": "{{Guid.NewGuid()}}",
+              "RouteFingerprint": "fingerprint",
+              "Geometry": [
+                { "Latitude": 54.0, "Longitude": 27.0 },
+                { "Latitude": 54.001, "Longitude": 27.0 }
+              ],
+              "CoveredIntervals": [ { "StartMetres": 0, "EndMetres": 999999 } ],
+              "Status": 2,
+              "StartedUtc": "2026-11-04T12:00:00+00:00",
+              "UpdatedUtc": "2026-11-04T12:01:00+00:00"
+            }
+            """);
+
+        Assert.Throws<PlanningException>(() => new JsonTrackingSessionStore(path).Load());
+    }
 }
