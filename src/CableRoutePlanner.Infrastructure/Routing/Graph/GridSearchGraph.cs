@@ -14,6 +14,7 @@ namespace CableRoutePlanner.Infrastructure.Routing;
 internal sealed class GridSearchGraph : IRoutingGraph
 {
     private const int ConnectionRadiusCells = 8;
+    private const int MaximumDirectConnectionCells = 2;
     private readonly GridMesh _mesh;
     private readonly TerrainEvaluator _evaluator;
     private readonly GridEdgeEvaluationCache _edges;
@@ -46,17 +47,32 @@ internal sealed class GridSearchGraph : IRoutingGraph
         _portalStartId = mesh.Nodes.Length;
         StartNodeId = _portalStartId + _portalNodes.Length;
         DestinationNodeId = StartNodeId + 1;
-        _fromStart = Connect(start, cancellationToken);
-        _toEnd = Connect(destination, cancellationToken);
+        (_fromStart, _toEnd, _direct) = PrepareConnections(portals, cancellationToken);
+    }
+
+    /// <summary>Prepares only endpoint/portal links; regular-grid facts remain lazy.</summary>
+    /// <remarks>
+    /// Keep start, destination, portal and direct-segment evaluation in this order.
+    /// Connections are priced for this profile and owned by this graph; the shared
+    /// edge cache stores profile-independent facts only. A second builder would
+    /// need the same geometry/ID state without another consumer of these links.
+    /// </remarks>
+    private (Dictionary<int, double> FromStart, Dictionary<int, double> ToEnd, double? Direct)
+        PrepareConnections(IReadOnlyList<GridPortal> portals, CancellationToken cancellationToken)
+    {
+        Dictionary<int, double> fromStart = Connect(_start, cancellationToken);
+        Dictionary<int, double> toEnd = Connect(_destination, cancellationToken);
         ConnectPortals(portals, cancellationToken);
-        _direct = start.Distance(destination) <= mesh.CellSizeMetres * 2 ? Cost(start, destination) : null;
-        if ((_fromStart.Count == 0 || _toEnd.Count == 0) && _direct is null)
+        double? direct = _start.Distance(_destination) <= _mesh.CellSizeMetres * MaximumDirectConnectionCells
+            ? Cost(_start, _destination) : null;
+        if ((fromStart.Count == 0 || toEnd.Count == 0) && direct is null)
         {
             throw new PlanningException(
-                $"Точка не соединяется с узлами сетки {mesh.CellSizeMetres:F0} м. "
+                $"Точка не соединяется с узлами сетки {_mesh.CellSizeMetres:F0} м. "
                 + "Это может быть препятствие либо ограничение разрешения сетки; физическая непроходимость не доказана.",
                 PlanningErrorReason.GridConnectionUnavailable);
         }
+        return (fromStart, toEnd, direct);
     }
 
     public Coordinate GetCoordinate(int id) => id == StartNodeId
@@ -116,17 +132,22 @@ internal sealed class GridSearchGraph : IRoutingGraph
     /// <summary>Connects an arbitrary endpoint to a bounded square of nearby grid nodes.</summary>
     /// <remarks>
     /// Eight cells preserve the existing coarse-grid reachability. Coordinates are
-    /// rounded to the nearest column/row, then clipped to the loaded mesh bounds.
+    /// rounded with ties-to-even to the nearest column/row, then clipped to the
+    /// loaded mesh bounds. The square is enumerated row first, not sorted by distance.
     /// Every candidate segment must pass the same evaluator used for grid edges.
     /// </remarks>
     private Dictionary<int, double> Connect(Coordinate point, CancellationToken cancellationToken)
     {
         int column = (int)Math.Round((point.X - _mesh.Minimum.X) / _mesh.CellSizeMetres);
         int row = (int)Math.Round((point.Y - _mesh.Minimum.Y) / _mesh.CellSizeMetres);
+        int firstRow = Math.Max(0, row - ConnectionRadiusCells);
+        int lastRow = Math.Min(_mesh.Rows - 1, row + ConnectionRadiusCells);
+        int firstColumn = Math.Max(0, column - ConnectionRadiusCells);
+        int lastColumn = Math.Min(_mesh.Columns - 1, column + ConnectionRadiusCells);
         Dictionary<int, double> connections = [];
-        for (int y = Math.Max(0, row - ConnectionRadiusCells); y <= Math.Min(_mesh.Rows - 1, row + ConnectionRadiusCells); y++)
+        for (int y = firstRow; y <= lastRow; y++)
         {
-            for (int x = Math.Max(0, column - ConnectionRadiusCells); x <= Math.Min(_mesh.Columns - 1, column + ConnectionRadiusCells); x++)
+            for (int x = firstColumn; x <= lastColumn; x++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 int id = y * _mesh.Columns + x;

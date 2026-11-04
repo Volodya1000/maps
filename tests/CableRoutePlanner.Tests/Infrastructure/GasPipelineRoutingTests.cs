@@ -149,17 +149,15 @@ public sealed class GasPipelineRoutingTests : ReactiveTestScope
     }
 
     [Fact]
-    public void PipelinePreferenceIsExplicitAndSurvivesSettingsReload()
+    public void PipelinePreferenceIsEnabledByDefaultAndSurvivesSettingsReload()
     {
         var store = new MemorySettings();
         using var settings = new SettingsViewModel(new NavigationHost(), store);
-        Assert.False(settings.PreferOverheadGasCrossings);
-        settings.PreferOverheadGasCrossings = true;
-        Assert.True(settings.CanSave);
+        Assert.True(new RoutingOptions().PreferOverheadGasCrossings);
+        Assert.False(settings.HasChanges);
         settings.Save.Execute().Subscribe();
         Assert.True(store.Load().PreferOverheadGasCrossings);
         settings.Reload();
-        Assert.True(settings.PreferOverheadGasCrossings);
         Assert.False(settings.HasChanges);
     }
 }

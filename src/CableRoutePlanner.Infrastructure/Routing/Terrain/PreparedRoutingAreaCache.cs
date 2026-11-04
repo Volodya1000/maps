@@ -8,17 +8,16 @@ namespace CableRoutePlanner.Infrastructure.Routing;
 
 internal sealed record PreparedRoutingArea(
     GeoBounds Bounds,
-    double CellSize,
     LocalProjection Projection,
     PreparedTerrainData Terrain,
     long QueryMilliseconds,
-    long PreparationMilliseconds,
-    bool PreferGas = false);
+    long PreparationMilliseconds);
 
 /// <summary>Retains one read-only spatial snapshot per planner/repository lifetime.</summary>
 /// <remarks>
-/// Exact bounds, requested spacing and gas preference preserve the existing cache
-/// key. Preparation occurs outside the publication lock; concurrent misses may
+/// Exact bounds identify the snapshot within this immutable repository's lifetime.
+/// Grid spacing and gas preference belong to each calculation, not preparation.
+/// Preparation occurs outside the publication lock; concurrent misses may
 /// prepare independently. Failed or cancelled preparation never replaces a valid
 /// entry. Query/preparation timings are zero on reuse; search state is never shared.
 /// </remarks>
@@ -27,12 +26,12 @@ internal sealed class PreparedRoutingAreaCache(IGeodataRepository repository)
     private readonly object _gate = new();
     private PreparedRoutingArea? _last;
 
-    public async Task<PreparedRoutingArea> GetAsync(GeoBounds bounds, double cellSize, CancellationToken ct, bool preferGas = false)
+    public async Task<PreparedRoutingArea> GetAsync(GeoBounds bounds, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         lock (_gate)
         {
-            if (_last is { } cached && cached.Bounds == bounds && cached.CellSize == cellSize && cached.PreferGas == preferGas)
+            if (_last is { } cached && cached.Bounds == bounds)
             {
                 return cached with
                 {
@@ -63,7 +62,7 @@ internal sealed class PreparedRoutingAreaCache(IGeodataRepository repository)
         }, ct);
         ct.ThrowIfCancellationRequested();
         var prepared = new PreparedRoutingArea(
-            bounds, cellSize, projection, terrain, queryMilliseconds, timer.ElapsedMilliseconds, preferGas);
+            bounds, projection, terrain, queryMilliseconds, timer.ElapsedMilliseconds);
         lock (_gate)
         {
             _last = prepared;

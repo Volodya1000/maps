@@ -1,0 +1,96 @@
+[
+  {
+    "Name": "\u041A\u043E\u0440\u043E\u0447\u0435",
+    "Geometry": [
+      {
+        "Latitude": 53.9409,
+        "Longitude": 27.4977
+      },
+      {
+        "Latitude": 53.9411157,
+        "Longitude": 27.49791875
+      },
+      {
+        "Latitude": 53.9413314,
+        "Longitude": 27.4981375
+      },
+      {
+        "Latitude": 53.9418949,
+        "Longitude": 27.4986523
+      },
+      {
+        "Latitude": 53.9424,
+        "Longitude": 27.4991
+      }
+    ],
+    "Metrics": {
+      "LengthMetres": 190.35819125054445,
+      "ForestMetres": 0,
+      "FieldMetres": 0,
+      "RoadCrossings": 2,
+      "ApprovedWaterCrossings": 0,
+      "PotentialBridgeCrossings": 1,
+      "WeightedCost": 190.35819125054445,
+      "AscentMetres": null,
+      "PotentialGasPipelineCrossings": 0
+    },
+    "TransitionPoints": [
+      {
+        "Latitude": 53.94162986996656,
+        "Longitude": 27.49841017495791
+      },
+      {
+        "Latitude": 53.94153466433886,
+        "Longitude": 27.498323197394225
+      },
+      {
+        "Latitude": 53.94170950600065,
+        "Longitude": 27.49848292851665
+      },
+      {
+        "Latitude": 53.94152263558876,
+        "Longitude": 27.498312208218444
+      }
+    ],
+    "RoadContacts": [
+      {
+        "RoadId": 420,
+        "Kind": 1,
+        "Geometry": [
+          {
+            "Latitude": 53.9413314,
+            "Longitude": 27.4981375
+          },
+          {
+            "Latitude": 53.9418949,
+            "Longitude": 27.4986523
+          }
+        ]
+      },
+      {
+        "RoadId": 994,
+        "Kind": 0,
+        "Geometry": [
+          {
+            "Latitude": 53.9418949,
+            "Longitude": 27.4986523
+          }
+        ]
+      },
+      {
+        "RoadId": 2070,
+        "Kind": 0,
+        "Geometry": [
+          {
+            "Latitude": 53.9413314,
+            "Longitude": 27.4981375
+          }
+        ]
+      }
+    ],
+    "GasPipelineCandidateIds": [],
+    "BridgeCandidateIds": [
+      420
+    ]
+  }
+]

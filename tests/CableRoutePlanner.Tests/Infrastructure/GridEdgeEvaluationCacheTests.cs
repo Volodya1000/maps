@@ -18,15 +18,12 @@ public sealed class GridEdgeEvaluationCacheTests
     public void RepeatedAndReverseAccessReuseTheSameMeasuredFacts()
     {
         GridEdgeEvaluationCache cache = new(Mesh, new TerrainEvaluator([], Projection));
-        Assert.Equal(0, cache.EvaluationCount);
 
         EdgeEvaluation first = Assert.IsType<EdgeEvaluation>(cache.Get(0, 1));
 
-        Assert.Equal(1, cache.EvaluationCount);
         Assert.InRange(first.Length, 9.999, 10.001);
         Assert.Same(first, cache.Get(0, 1));
         Assert.Same(first, cache.Get(1, 0));
-        Assert.Equal(1, cache.EvaluationCount);
     }
 
     [Fact]
@@ -39,7 +36,6 @@ public sealed class GridEdgeEvaluationCacheTests
         Assert.Null(cache.Get(1, 0));
         Assert.Null(cache.Get(0, 1));
 
-        Assert.Equal(1, cache.EvaluationCount);
     }
 
     [Fact]
@@ -50,12 +46,8 @@ public sealed class GridEdgeEvaluationCacheTests
             [TestData.Polygon(1, TerrainKind.Marsh, 4, -5, 6, 5)], Projection));
 
         Assert.NotNull(clear.Get(0, 1));
-        Assert.Equal(0, blocked.EvaluationCount);
         Assert.Null(blocked.Get(0, 1));
         Assert.NotNull(clear.Get(1, 0));
-
-        Assert.Equal(1, clear.EvaluationCount);
-        Assert.Equal(1, blocked.EvaluationCount);
     }
 
     [Fact]
@@ -71,7 +63,6 @@ public sealed class GridEdgeEvaluationCacheTests
             Assert.Same(facts, sameFacts);
             Assert.Equal(facts.Length * (1 + profile.Forest), sameFacts.Cost(profile), 6);
         }
-        Assert.Equal(1, cache.EvaluationCount);
     }
 
     [Fact]

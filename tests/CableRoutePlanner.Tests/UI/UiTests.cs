@@ -360,6 +360,7 @@ public sealed class UiTests
         Assert.Equal((decimal)RoutingOptions.MinRouteLengthMetres, inputs[2].Minimum);
         Assert.Equal((decimal)RoutingOptions.MaxRouteLengthLimitMetres, inputs[2].Maximum);
         Assert.Contains(view.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == vm.RouteLengthRangeText);
+        Assert.Empty(view.GetVisualDescendants().OfType<CheckBox>());
         Assert.NotEmpty(inputs[0].GetVisualDescendants().OfType<TextBox>().Single().Text!);
         Assert.NotEmpty(inputs[1].GetVisualDescendants().OfType<TextBox>().Single().Text!);
         Button save = view.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, "Сохранить"));

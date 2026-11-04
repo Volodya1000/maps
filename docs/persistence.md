@@ -219,7 +219,7 @@ MapViewModel -> RouteCalculationService
 - Desktop: `LocalApplicationData/CableRoutePlanner/settings.json`;
 - Android: `FilesDir/settings.json`.
 
-Файл содержит сериализованный `RoutingOptions`: `CellSizeMetres` (по умолчанию 25 м), `MaxNodes` (100 000), `ReserveFraction` (0.10 = 10 %) и `PreferOverheadGasCrossings` (по умолчанию `false`). При отсутствии файла возвращаются значения по умолчанию. При загрузке и сохранении выполняется `Validate()`. Сохранение идёт через временный файл `settings.json.tmp` и замену целевого.
+Файл содержит сериализованный `RoutingOptions`: `CellSizeMetres` (по умолчанию 25 м), `MaxNodes` (100 000), `ReserveFraction` (0.10 = 10 %) и историческое поле `PreferOverheadGasCrossings`. Предпочтение mapped-переходов газопроводов теперь всегда включено; старое значение `false` при загрузке нормализуется к `true`, чтобы обновление приложения не отключало правило. При отсутствии файла возвращаются значения по умолчанию. При загрузке и сохранении выполняется `Validate()`. Сохранение идёт через временный файл `settings.json.tmp` и замену целевого.
 
 `SettingsViewModel` редактирует настройки через `ISettingsStore`. Перед следующим расчётом `RouteCalculationService.BuildAsync()` снова вызывает `Load()`. Настройки **не меняют уже рассчитанный маршрут задним числом**.
 
@@ -265,7 +265,7 @@ SELECT COUNT(*) FROM display_index;
 | Создание базы v2 | [`tools/GeodataPreparation/prepare_country.py`](../tools/GeodataPreparation/prepare_country.py) |
 | Отбор объектов по масштабу | [`tools/GeodataPreparation/display_lod.py`](../tools/GeodataPreparation/display_lod.py) |
 | Загрузка тайлов для карты | [`UI/MapAdapters/GeodataFeatureProvider.cs`](../src/CableRoutePlanner.UI/MapAdapters/GeodataFeatureProvider.cs) |
-| Подготовка области маршрутизации | [`Infrastructure/Routing/PreparedRoutingAreaCache.cs`](../src/CableRoutePlanner.Infrastructure/Routing/PreparedRoutingAreaCache.cs) |
+| Подготовка области маршрутизации | [`Infrastructure/Routing/Terrain/PreparedRoutingAreaCache.cs`](../src/CableRoutePlanner.Infrastructure/Routing/Terrain/PreparedRoutingAreaCache.cs) |
 | Проверка точки | [`Infrastructure/GeodataPointPlacementValidator.cs`](../src/CableRoutePlanner.Infrastructure/GeodataPointPlacementValidator.cs) |
 | Использование настроек при расчёте | [`Application/RouteCalculationService.cs`](../src/CableRoutePlanner.Application/RouteCalculationService.cs) |
 

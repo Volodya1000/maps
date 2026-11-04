@@ -6,6 +6,18 @@
 [Предметное поведение](routing-algorithm.md), [аудит и baseline](routing-refactoring-audit.md)
 и [измерения](routing-benchmarks.md) дополняют описание кода.
 
+## Структура каталогов
+
+Файлы маршрутизации сгруппированы по уже существующим обязанностям:
+
+- `Routing/` — координация расчёта и структурированное логирование;
+- `Routing/Graph/` — представление графа, ленивые оценки рёбер и алгоритмы поиска;
+- `Routing/Terrain/` — подготовленные пространственные данные и инженерные правила;
+- `Routing/Routes/` — построение, постобработка и формирование альтернатив.
+
+Физическое перемещение не меняет namespace `CableRoutePlanner.Infrastructure.Routing`,
+публичные контракты или зависимости между классами.
+
 ## Назначение и границы
 
 Маршрутизатор соединяет упорядоченные пользовательские точки кабельной трассой
@@ -26,7 +38,7 @@ ViewModels и UI показывают результаты. OSM-кандидат
 | `RouteCalculationService.BuildAsync` | Загружает `ISettingsStore.Load`, фиксирует request/revision, отменяет предыдущий запрос → `IPlanningSession.BuildAsync` | Отмена даёт Cancelled; ошибки становятся Failed на границе представления; устаревший запрос возвращает null |
 | `PlanningSession.BuildAsync` | Проверяет настройки/состояние точек, копирует координаты → `IRoutePlanner.PlanAsync` | Изменившаяся ревизия и cancellation не позволяют сохранить устаревшие альтернативы |
 | `GridRoutePlanner.PlanAsync` | Проверяет options, минимум две точки, покрытие; строит и обрезает область поиска | `PointOutsidePackage`, ошибки параметров |
-| `PreparedRoutingAreaCache.GetAsync` | Ключ bounds/cell/preferGas → повторно использует один снимок либо делает `QueryAsync` и подготовку в фоне | Ошибка репозитория/геометрии, неизвестный тип местности, cancellation; отменённая подготовка не публикуется |
+| `PreparedRoutingAreaCache.GetAsync` | Ключ точные bounds одного repository/planner → повторно использует один снимок либо делает `QueryAsync` и подготовку в фоне | Ошибка репозитория/геометрии, неизвестный тип местности, cancellation; отменённая подготовка не публикуется |
 | `PreparedTerrainData` | WKB → один проход проекции, коридоры воды, prepared geometry, STRtree, мостовые/газовые порталы и дорожные контакты | Некорректные исходные геометрии и неподдерживаемая конфигурация не скрываются |
 | `GridGenerator.Generate` | Область/options/projection → регулярный `GridMesh` с адаптивным шагом | `ResourceLimit`, если бюджет не соблюдается даже с допустимым укрупнением |
 | `GridRoutePlanner.Calculate` | Создаёт evaluator, postprocessor и builders одного расчёта; исключает порталы вне загруженной области; перебирает профили | Cancellation проверяется между профилями; неожиданные исключения распространяются |
@@ -53,7 +65,7 @@ classDiagram
         +QueryAsync(bounds, token)
     }
     class PreparedRoutingAreaCache {
-        +GetAsync(bounds, cellSize, token, preferGas)
+        +GetAsync(bounds, token)
     }
     class PreparedTerrainData
     class IGridGenerator {
@@ -96,6 +108,7 @@ classDiagram
     }
     class GridSearchGraph {
         +GetCoordinate(id)
+        -PrepareConnections(portals, token)
     }
     class AStarGridPathfinder {
         +FindPath(graph, token)
@@ -168,7 +181,7 @@ sequenceDiagram
     VM->>Service: BuildAsync()
     Service->>Session: BuildAsync(options, token)
     Session->>Planner: PlanAsync(points, options, token)
-    Planner->>Area: GetAsync(bounds, cellSize, token, preferGas)
+    Planner->>Area: GetAsync(bounds, token)
     alt cache miss
         Area->>Repo: QueryAsync(bounds, token)
         Repo-->>Area: original MapFeature WKB
@@ -185,6 +198,7 @@ sequenceDiagram
             Note over Builder: use the checked direct leg
         else search
             Builder->>Graph: new(start,end,mesh,profile,evaluator,edges,token)
+            Graph->>Graph: PrepareConnections(portals, token)
             Graph->>Eval: EvaluateForSearch(connectors/portals)
             Builder->>AStar: FindPath(graph, token)
             loop queue relaxation
@@ -218,6 +232,9 @@ sequenceDiagram
 Соседи сетки — восемь клеток. Соединители точки исследуют квадрат радиусом
 **8 ячеек**, с округлением ближайшей строки/колонки и обрезкой границ. Это
 квадрат поиска кандидатов, а не гарантия соединения: каждый отрезок проверяется.
+Конструктор вызывает private `PrepareConnections`: сначала соединения start,
+затем destination, затем порталы и прямой сегмент. Граф владеет этими готовыми
+связями одного leg/profile; отдельный builder или DI-сервис не нужен.
 К концам порталов также строятся проверенные соединители; последовательные
 вершины портала соединяются явно в обоих направлениях. Короткое прямое ребро
 графа рассматривается при расстоянии не более двух ячеек.
@@ -320,7 +337,10 @@ DI регистрирует высокоуровневый `IRoutePlanner`, по
 создаются владельцем расчёта: регистрировать их в контейнере не требуется.
 
 `PreparedRoutingAreaCache` хранит только последнюю область в течение жизни
-planner. Lock защищает чтение/публикацию снимка; дорогая подготовка выполняется
+planner. Ключ включает только точные Bounds: ни размер ячейки, ни историческое
+предпочтение газа не участвуют в подготовке WKB/проекций/индексов. Размер ячейки
+применяется заново в каждом расчёте, а газовое предпочтение в приложении всегда
+включено и нормализуется при чтении legacy-настроек. Lock защищает чтение/публикацию снимка; дорогая подготовка выполняется
 вне lock. Два параллельных miss могут независимо подготовить данные — это
 сознательно сохранённое поведение без блокировки длительной работы. Ни один
 читатель не мутирует опубликованные NTS-геометрии/индексы.
@@ -394,3 +414,17 @@ contribution и формула в Domain `SegmentTerrainFacts`/`RouteCostCalcula
 сохранив допустимую эвристику и ID-контракт. Построение порталов и перевод ID в
 геометрию останутся ответственностью соответствующего графа/builder, а ядро
 A* не должно узнавать о WKB, SQLite или конкретном инженерном объекте.
+
+## Проверка соединений и успешных маршрутов после PR #44
+
+[Точечный аудит и сравнение вариантов](routing-graph-cache-audit.md) объясняет
+отказ от builder, дополнительных интерфейсов и UI-конфигурации подключения.
+`GridSearchGraphTests` проверяет ties-to-even, квадрат 17×17, края, заблокированные
+кандидаты, включительную границу двух ячеек, лень регулярных рёбер, нумерацию/порядок
+порталов, препятствия и сравнение с Dijkstra. При изменении подключения сначала
+закрепите эти контракты тестами; не материализуйте все регулярные рёбра.
+
+`SuccessfulRouteRegressionTests` усиливает исходные положительные контролы и
+три реальных маршрута Минска. `SuccessfulGraphPhaseTests` измеряет отдельный
+fixed-area probe с проверкой найденных путей всех профилей; это не внутренние
+тайминги полного planner. Обычные тесты не имеют wall-clock порогов.

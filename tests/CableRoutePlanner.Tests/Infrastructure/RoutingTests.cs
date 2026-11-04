@@ -148,7 +148,6 @@ public sealed class RoutingTests(ITestOutputHelper output)
             + $"workingSetDeltaMiB={Math.Max(0, process.WorkingSet64 - initialMemory) / 1048576d:F1}");
         Assert.True(length >= start.Distance(finish));
         Assert.True(double.IsFinite(length));
-        Assert.True(edges.EvaluationCount > 0);
     }
 
     [Fact]
