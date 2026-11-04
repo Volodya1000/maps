@@ -284,6 +284,11 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
 
     private void PublishLocation(Location location)
     {
+        if (_disposed || !_updatesActive)
+        {
+            return;
+        }
+
         DateTimeOffset timestamp = location.Time > 0
             ? DateTimeOffset.FromUnixTimeMilliseconds(location.Time)
             : DateTimeOffset.UtcNow;
@@ -341,6 +346,11 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
 
         public void OnProviderDisabled(string? provider)
         {
+            if (owner._disposed)
+            {
+                return;
+            }
+
             owner.StopUpdates();
             owner.Publish(new LocationServiceState(
                 false,
@@ -350,7 +360,13 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
                 "Системная геолокация выключена. Включите её в настройках Android."));
         }
 
-        public void OnProviderEnabled(string? provider) => owner.StartIfProviderEnabled();
+        public void OnProviderEnabled(string? provider)
+        {
+            if (!owner._disposed)
+            {
+                owner.StartIfProviderEnabled();
+            }
+        }
 
         public void OnStatusChanged(string? provider, Availability status, Bundle? extras)
         {

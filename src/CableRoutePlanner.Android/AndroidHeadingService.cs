@@ -52,7 +52,7 @@ internal sealed class AndroidHeadingService : Java.Lang.Object, IHeadingService,
 
     public void OnSensorChanged(SensorEvent? sensorEvent)
     {
-        if (sensorEvent?.Values is null || sensorEvent.Values.Count < 3)
+        if (_disposed || sensorEvent?.Values is null || sensorEvent.Values.Count < 3)
         {
             return;
         }

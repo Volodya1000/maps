@@ -137,10 +137,10 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         if (!enabled)
         {
             IsLocationEnabled = false;
-            _preferencesStore.Save(new LocationPreferences(false));
             _locationService.Disable();
             _headingService.PauseUpdates();
             ClearLocationDisplay();
+            _preferencesStore.Save(new LocationPreferences(false));
             return;
         }
 
@@ -184,7 +184,15 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
         RouteProgressTracker tracker = new();
         RouteProgressState initial = tracker.Begin(route);
-        RouteProgressSnapshot? saved = _sessionStore.Load();
+        RouteProgressSnapshot? saved = null;
+        try
+        {
+            saved = _sessionStore.Load();
+        }
+        catch (Exception ex)
+        {
+            ReportPersistenceError("Не удалось восстановить сохранённый обход: " + ex.Message);
+        }
         if (saved is not null && IsSnapshotForRoute(saved, initial, route))
         {
             Progress = tracker.Restore(saved, route);
@@ -216,7 +224,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public void PauseTraversal()
     {
-        if (_tracker is null)
+        if (_tracker is null || Progress?.Status != ProgressTrackingStatus.Active)
         {
             return;
         }
@@ -228,12 +236,13 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public void ResumeTraversal()
     {
-        if (_tracker is null || Progress?.Status == ProgressTrackingStatus.Completed)
+        if (_tracker is null || Progress?.Status != ProgressTrackingStatus.Paused)
         {
             return;
         }
 
         Progress = _tracker.Resume();
+        SaveSession();
         NotifyProgressChanged();
     }
 
@@ -413,19 +422,24 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Не удалось сохранить сессию обхода: {ex.Message}");
-            RxApp.MainThreadScheduler.Schedule(Unit.Default, (_, _) =>
-            {
-                if (_disposed)
-                {
-                    return Disposable.Empty;
-                }
-
-                _persistenceStatus = "Не удалось сохранить прогресс обхода. Проверьте свободное место в памяти устройства.";
-                this.RaisePropertyChanged(nameof(PersistenceStatus));
-                this.RaisePropertyChanged(nameof(HasPersistenceError));
-                return Disposable.Empty;
-            });
+            ReportPersistenceError("Не удалось сохранить прогресс обхода. Проверьте свободное место в памяти устройства.");
         }
+    }
+
+    private void ReportPersistenceError(string message)
+    {
+        RxApp.MainThreadScheduler.Schedule(Unit.Default, (_, _) =>
+        {
+            if (_disposed)
+            {
+                return Disposable.Empty;
+            }
+
+            _persistenceStatus = message;
+            this.RaisePropertyChanged(nameof(PersistenceStatus));
+            this.RaisePropertyChanged(nameof(HasPersistenceError));
+            return Disposable.Empty;
+        });
     }
 
     private void NotifyProgressChanged()
