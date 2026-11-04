@@ -1,0 +1,79 @@
+[
+  {
+    "Name": "\u041A\u043E\u0440\u043E\u0447\u0435",
+    "Geometry": [
+      {
+        "Latitude": 54.00134898054842,
+        "Longitude": 27.000765007595977
+      },
+      {
+        "Latitude": 54.00134898054842,
+        "Longitude": 27.001683016711148
+      },
+      {
+        "Latitude": 54.00152884462154,
+        "Longitude": 27.00229502278793
+      },
+      {
+        "Latitude": 54.00134898054842,
+        "Longitude": 27.002907028864712
+      },
+      {
+        "Latitude": 54.00134898054842,
+        "Longitude": 27.004284042537467
+      }
+    ],
+    "Metrics": {
+      "LengthMetres": 239.43538533187552,
+      "ForestMetres": 0,
+      "FieldMetres": 0,
+      "RoadCrossings": 0,
+      "ApprovedWaterCrossings": 0,
+      "PotentialBridgeCrossings": 1,
+      "WeightedCost": 239.43538533187552,
+      "AscentMetres": null,
+      "PotentialGasPipelineCrossings": 0
+    },
+    "TransitionPoints": [
+      {
+        "Latitude": 54.00148387860326,
+        "Longitude": 27.002142021268735
+      },
+      {
+        "Latitude": 54.0013939465667,
+        "Longitude": 27.002754027345514
+      }
+    ],
+    "RoadContacts": [
+      {
+        "RoadId": 2,
+        "Kind": 1,
+        "Geometry": [
+          {
+            "Latitude": 54.00134898054842,
+            "Longitude": 27.001683016711148
+          },
+          {
+            "Latitude": 54.00152884462154,
+            "Longitude": 27.00229502278793
+          }
+        ]
+      },
+      {
+        "RoadId": 2,
+        "Kind": 1,
+        "Geometry": [
+          {
+            "Latitude": 54.00152884462154,
+            "Longitude": 27.00229502278793
+          },
+          {
+            "Latitude": 54.00134898054842,
+            "Longitude": 27.002907028864712
+          }
+        ]
+      }
+    ],
+    "GasPipelineCandidateIds": []
+  }
+]

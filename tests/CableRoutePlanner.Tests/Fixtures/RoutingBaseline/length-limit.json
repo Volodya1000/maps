@@ -1,0 +1,20 @@
+{
+  "Reason": 6,
+  "TerrainKind": null,
+  "ActualRouteLengthMetres": 229.99254707413616,
+  "MaximumRouteLengthMetres": 30,
+  "Failures": [
+    {
+      "Profile": "\u041A\u043E\u0440\u043E\u0447\u0435",
+      "Reason": 6
+    },
+    {
+      "Profile": "\u0411\u0430\u043B\u0430\u043D\u0441",
+      "Reason": 6
+    },
+    {
+      "Profile": "\u041F\u0440\u043E\u0449\u0435 \u043F\u0440\u043E\u043A\u043B\u0430\u0434\u043A\u0430",
+      "Reason": 6
+    }
+  ]
+}
