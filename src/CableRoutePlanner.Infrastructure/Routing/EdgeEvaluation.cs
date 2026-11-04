@@ -27,4 +27,3 @@ internal sealed record EdgeEvaluation(
             PreferGas ? GasRoadCrossings : 0),
         profile);
 }
-
