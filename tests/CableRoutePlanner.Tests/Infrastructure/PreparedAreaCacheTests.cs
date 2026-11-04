@@ -35,11 +35,15 @@ public sealed class PreparedAreaCacheTests
             Assert.True(route.Metrics.WeightedCost >= 0);
             Assert.Equal(0, route.Metrics.ApprovedWaterCrossings);
         });
-        if (changed.PreferOverheadGasCrossings)
+        if (change is "gas")
         {
+            Assert.Equal(Snapshot(ordinary), Snapshot(updated));
+        }
+
+        if (change is "gas" or "both")
+        {
+            Assert.Contains(ordinary, route => route.GasPipelineCandidateIds!.Contains(3));
             Assert.Equal(3, Assert.Single(updated[0].GasPipelineCandidateIds!));
-            Assert.Empty(ordinary[0].GasPipelineCandidateIds!);
-            Assert.True(updated[0].Metrics.WeightedCost < ordinary.First(route => route.GasPipelineCandidateIds!.Contains(3)).Metrics.WeightedCost);
         }
         // These are actual repository query receipts, alongside complete output
         // comparisons. No route/evaluator/cache implementation is mocked.

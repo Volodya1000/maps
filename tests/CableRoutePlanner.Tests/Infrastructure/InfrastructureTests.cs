@@ -87,6 +87,20 @@ public sealed class InfrastructureTests
     }
 
     [Fact]
+    public void LegacyDisabledGasPreferenceIsMigratedToAlwaysOn()
+    {
+        using var fixture = new TemporaryDirectory();
+        string path = Path.Combine(fixture.DirectoryPath, "settings.json");
+        File.WriteAllText(path, "{\"PreferOverheadGasCrossings\":false}");
+
+        var store = new JsonSettingsStore(path);
+
+        Assert.True(store.Load().PreferOverheadGasCrossings);
+        store.Save(store.Load());
+        Assert.Contains("\"PreferOverheadGasCrossings\":true", File.ReadAllText(path));
+    }
+
+    [Fact]
     public void MissingSettingsLoadDefaultsButMalformedValuesAreReported()
     {
         // Arrange

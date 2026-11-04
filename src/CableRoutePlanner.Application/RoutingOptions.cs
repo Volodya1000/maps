@@ -4,7 +4,7 @@ public sealed record RoutingOptions(
     double CellSizeMetres = 25,
     int MaxNodes = 100000,
     double ReserveFraction = 0.10,
-    bool PreferOverheadGasCrossings = false,
+    bool PreferOverheadGasCrossings = true,
     double MaxRouteLengthMetres = 1_000_000)
 {
     public const double MinCellSizeMetres = 5;

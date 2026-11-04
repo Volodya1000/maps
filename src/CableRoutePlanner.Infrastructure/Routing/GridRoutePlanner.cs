@@ -32,7 +32,7 @@ public sealed class GridRoutePlanner(
     /// <param name="points">Geographic waypoints inside the package coverage.</param>
     /// <param name="options">Validated grid/resource settings and inclusive route-length limit.</param>
     /// <param name="cancellationToken">Cancels preparation or search without publishing partial results.</param>
-    /// <returns>Read-only alternatives in profile order, stably prioritizing gas when requested.</returns>
+    /// <returns>Read-only alternatives in profile order, stably prioritizing mapped gas crossings.</returns>
     /// <exception cref="PlanningException">Input, resource limits or every profile prevent a usable route.</exception>
     /// <exception cref="OperationCanceledException">The calculation was cancelled.</exception>
     public async Task<IReadOnlyList<RouteAlternative>> PlanAsync(
