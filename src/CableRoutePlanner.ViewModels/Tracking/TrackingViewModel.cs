@@ -26,6 +26,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private LocationMeasurement? _currentLocation;
     private HeadingMeasurement? _currentHeading;
     private RouteProgressState? _progress;
+    private bool? _isLocationInsideCoverage;
 
     public TrackingViewModel(
         ILocationService locationService,
@@ -57,8 +58,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
         if (_isLocationEnabled)
         {
-            _locationService.ResumeUpdates();
-            _headingService.ResumeUpdates();
+            _ = RestoreEnabledLocationAsync();
         }
     }
 
@@ -102,10 +102,16 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public bool IsTraversalActive => Progress?.Status == ProgressTrackingStatus.Active;
 
+    public bool HasRoute => _route is not null;
+
     public string ProgressText => Progress is not { } progress
         ? "Обход не начат."
         : $"Пройдено {progress.CoveredDistanceMetres:N0} м из {progress.TotalDistanceMetres:N0} м · "
             + $"осталось {progress.RemainingDistanceMetres:N0} м · {progress.CoveragePercent:N0}%";
+
+    public string CoverageStatus => _isLocationInsideCoverage == false
+        ? "Местоположение вне покрытия офлайн-карты. GPS-точка показана без подмены координат."
+        : "";
 
     public ReactiveCommand<Unit, Unit> Start { get; }
 
@@ -130,8 +136,10 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
         LocationServiceState state = await _locationService.EnableAsync(cancellationToken).ConfigureAwait(false);
         HandleLocationState(state);
-        IsLocationEnabled = state.IsEnabled;
-        _preferencesStore.Save(new LocationPreferences(state.IsEnabled));
+        bool permissionWasDenied = state.Permission is LocationPermissionState.Denied
+            or LocationPermissionState.PermanentlyDenied;
+        IsLocationEnabled = !permissionWasDenied;
+        _preferencesStore.Save(new LocationPreferences(!permissionWasDenied));
         if (state.IsEnabled)
         {
             _locationService.ResumeUpdates();
@@ -154,6 +162,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         _route = route;
         _tracker = null;
         Progress = null;
+        this.RaisePropertyChanged(nameof(HasRoute));
         if (route is null)
         {
             return;
@@ -232,6 +241,48 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public void OpenSystemLocationSettings() => _locationService.OpenSystemSettings();
 
+    public void SetCoverage(bool? isInsideCoverage)
+    {
+        if (_isLocationInsideCoverage == isInsideCoverage)
+        {
+            return;
+        }
+
+        _isLocationInsideCoverage = isInsideCoverage;
+        this.RaisePropertyChanged(nameof(CoverageStatus));
+    }
+
+    private async Task RestoreEnabledLocationAsync()
+    {
+        try
+        {
+            LocationServiceState state = await _locationService.EnableAsync(CancellationToken.None);
+            if (_disposed)
+            {
+                return;
+            }
+
+            HandleLocationState(state);
+            bool permissionWasDenied = state.Permission is LocationPermissionState.Denied
+                or LocationPermissionState.PermanentlyDenied;
+            IsLocationEnabled = !permissionWasDenied;
+            if (state.IsEnabled)
+            {
+                _locationService.ResumeUpdates();
+                _headingService.ResumeUpdates();
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            LocationState = new LocationServiceState(
+                false,
+                LocationPermissionState.Denied,
+                SystemLocationState.Unknown,
+                false,
+                $"Не удалось восстановить геолокацию: {ex.Message}");
+        }
+    }
+
     private void HandleLocation(LocationMeasurement measurement)
     {
         if (_disposed || !IsLocationEnabled)
@@ -251,6 +302,13 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private void HandleLocationState(LocationServiceState state)
     {
         LocationState = state;
+        if (_isLocationEnabled && (state.Permission is LocationPermissionState.Denied
+            or LocationPermissionState.PermanentlyDenied))
+        {
+            IsLocationEnabled = false;
+            _preferencesStore.Save(new LocationPreferences(false));
+            _headingService.PauseUpdates();
+        }
         this.RaisePropertyChanged(nameof(IsLocationSupported));
     }
 

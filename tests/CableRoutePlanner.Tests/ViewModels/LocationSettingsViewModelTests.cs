@@ -52,7 +52,7 @@ public sealed class LocationSettingsViewModelTests : ReactiveTestScope
 
         await viewModel.SetLocationEnabledAsync(true);
 
-        Assert.False(viewModel.ShowLocation);
+        Assert.True(viewModel.ShowLocation);
         Assert.Contains("Включите", viewModel.LocationStatus);
     }
 

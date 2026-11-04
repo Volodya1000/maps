@@ -42,6 +42,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         BindButton(ZoomInButton, adapter.ZoomIn);
         BindButton(ZoomOutButton, adapter.ZoomOut);
         BindButton(NorthButton, adapter.ResetNorth);
+        BindButton(LocationButton, adapter.CenterOnLocation);
         adapter.InitializeViewport();
         adapter.SetPoints(viewModel.Points.ToArray());
         adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);

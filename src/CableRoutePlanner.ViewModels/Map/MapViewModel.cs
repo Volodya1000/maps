@@ -111,6 +111,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public bool IsLocationSupported => _tracking?.IsLocationSupported == true;
 
+    public string LocationCoverageStatus => _tracking?.CoverageStatus ?? "";
+
+    public bool HasLocationCoverageWarning => !string.IsNullOrWhiteSpace(LocationCoverageStatus);
+
     public WaypointRow? SelectedPoint
     {
         get => _selectedPoint;
@@ -296,6 +300,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         _calculations = calculations;
         _clipboard = clipboard;
         _tracking = tracking;
+        if (_tracking is not null)
+        {
+            _tracking.PropertyChanged += TrackingPropertyChanged;
+        }
 
         _canBuild = this.WhenAnyValue(
             x => x.PointCount,
@@ -368,6 +376,15 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 UpdateRoutePresentation(route);
             })
             .DisposeWith(_lifetime);
+    }
+
+    private void TrackingPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(TrackingViewModel.CoverageStatus))
+        {
+            this.RaisePropertyChanged(nameof(LocationCoverageStatus));
+            this.RaisePropertyChanged(nameof(HasLocationCoverageWarning));
+        }
     }
 
     private async Task AddAtAsync(GeoCoordinate coordinate)
@@ -677,6 +694,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         _disposed = true;
         _calculations.Dispose();
         _mapLoader.Invalidate();
+        if (_tracking is not null)
+        {
+            _tracking.PropertyChanged -= TrackingPropertyChanged;
+        }
         _lifetime.Dispose();
     }
 }

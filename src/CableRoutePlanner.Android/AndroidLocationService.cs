@@ -122,7 +122,23 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
 
     public void ResumeUpdates()
     {
-        if (!_disposed && _state.IsEnabled && HasAnyLocationPermission())
+        if (_disposed || !_state.IsEnabled)
+        {
+            return;
+        }
+
+        if (!HasAnyLocationPermission())
+        {
+            Publish(new LocationServiceState(
+                false,
+                PermissionState(),
+                SystemLocationState.Unknown,
+                false,
+                "Доступ к местоположению отозван. Разрешите его в настройках приложения Android."));
+            return;
+        }
+
+        if (_state.IsEnabled)
         {
             StartIfProviderEnabled();
         }
@@ -175,11 +191,15 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             _updatesActive = true;
         }
 
+        string? message = PermissionState() == LocationPermissionState.Approximate
+            ? "Используется приблизительное местоположение."
+            : null;
         return Publish(new LocationServiceState(
             true,
             PermissionState(),
             SystemLocationState.Enabled,
-            true));
+            true,
+            message));
     }
 
     private void StopUpdates()

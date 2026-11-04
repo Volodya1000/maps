@@ -63,11 +63,30 @@
                     </Canvas>
                 </Border>
             </Button>
+            <Button
+                x:Name="LocationButton"
+                Classes="location-button"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                IsVisible="{Binding IsLocationSupported}"
+                ToolTip.Tip="Показать моё местоположение"
+                AutomationProperties.Name="Показать моё местоположение">
+                <Border Classes="location-face">
+                    <TextBlock
+                        Classes="location-glyph"
+                        Text="◎" />
+                </Border>
+            </Button>
             <Border
                 Grid.Row="1"
                 Classes="map-footer">
                 <StackPanel>
                     <TextBlock Classes="map-notice" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
+                    <TextBlock
+                        Classes="map-notice"
+                        Text="{Binding LocationCoverageStatus}"
+                        IsVisible="{Binding HasLocationCoverageWarning}"
+                        TextWrapping="Wrap" />
                     <TextBlock
                         x:Name="AttributionCredit"
                         Classes="map-attribution"
@@ -189,6 +208,42 @@
                             Text="Круг — пересечение; линия — общий участок."
                             TextWrapping="Wrap" />
                     </StackPanel>
+                    <Border
+                        x:Name="TrackingPanel"
+                        Classes="tracking-panel"
+                        IsVisible="{Binding Tracking.HasRoute}">
+                        <StackPanel Spacing="6">
+                            <TextBlock
+                                Classes="section-heading"
+                                Text="Обход трассы" />
+                            <TextBlock
+                                Classes="tracking-progress"
+                                Text="{Binding Tracking.ProgressText}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                Classes="view-hint"
+                                Text="{Binding Tracking.LocationState.Message}"
+                                TextWrapping="Wrap" />
+                            <WrapPanel>
+                                <Button
+                                    x:Name="StartTraversalButton"
+                                    Command="{Binding Tracking.Start}"
+                                    Content="Начать обход" />
+                                <Button
+                                    x:Name="PauseTraversalButton"
+                                    Command="{Binding Tracking.Pause}"
+                                    Content="Пауза" />
+                                <Button
+                                    x:Name="ResumeTraversalButton"
+                                    Command="{Binding Tracking.Resume}"
+                                    Content="Продолжить" />
+                                <Button
+                                    x:Name="FinishTraversalButton"
+                                    Command="{Binding Tracking.Finish}"
+                                    Content="Завершить" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
                     <TextBlock
                         Classes="route-metrics"
                         Text="{Binding MetricsText}" />

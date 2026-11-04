@@ -35,6 +35,19 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
     }
 
     [Fact]
+    public void PreviouslyEnabledLocationIsRestoredWithoutASecondUserAction()
+    {
+        FakeLocation location = new();
+        MemoryLocationPreferences preferences = new();
+        preferences.Save(new LocationPreferences(true));
+
+        using TrackingViewModel viewModel = CreateViewModel(location, preferences);
+
+        Assert.True(viewModel.IsLocationEnabled);
+        Assert.Equal(1, location.EnableCalls);
+    }
+
+    [Fact]
     public async Task DisablingLocationStopsUpdatesWithoutChangingRoutingOptions()
     {
         FakeLocation location = new();
@@ -71,6 +84,26 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         Assert.Equal(400, restored.Progress!.CoveredDistanceMetres, 2);
         restored.ResumeTraversal();
         Assert.True(restored.IsTraversalActive);
+    }
+
+    [Fact]
+    public async Task ActiveSessionRestoresPausedUntilUserExplicitlyResumes()
+    {
+        FakeLocation location = new();
+        MemoryTrackingSessions sessions = new();
+        using TrackingViewModel viewModel = CreateViewModel(location, sessions: sessions);
+        RouteAlternative route = Route();
+        viewModel.SetRoute(route);
+        await viewModel.SetLocationEnabledAsync(true);
+        viewModel.StartTraversal();
+        location.Emit(Fix(0, Start.AddSeconds(1)));
+        location.Emit(Fix(400, Start.AddSeconds(30)));
+
+        using TrackingViewModel restored = CreateViewModel(location, sessions: sessions);
+        restored.SetRoute(route);
+
+        Assert.False(restored.IsTraversalActive);
+        Assert.Equal(400, restored.Progress!.CoveredDistanceMetres, 2);
     }
 
     [Fact]

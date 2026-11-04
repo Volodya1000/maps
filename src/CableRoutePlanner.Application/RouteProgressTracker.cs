@@ -50,7 +50,12 @@ public sealed class RouteProgressTracker
         }
 
         _coveredIntervals.AddRange(NormalizeIntervals(snapshot.CoveredIntervals));
-        _status = snapshot.Status;
+        // A process restart is a tracking gap. Even if the last atomic snapshot was
+        // written while active, the user must explicitly resume before a new pair of
+        // fixes can contribute to progress.
+        _status = snapshot.Status == ProgressTrackingStatus.Active
+            ? ProgressTrackingStatus.Paused
+            : snapshot.Status;
         return BuildState();
     }
 

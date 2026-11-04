@@ -49,7 +49,12 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
 
     public string LocationStatus => _tracking?.LocationState.Message ?? "";
 
-    public ReactiveCommand<bool, Unit> SetLocationEnabled
+    public ReactiveCommand<Unit, Unit> ToggleLocation
+    {
+        get; private set;
+    }
+
+    public ReactiveCommand<Unit, Unit> OpenLocationSettings
     {
         get; private set;
     }
@@ -101,14 +106,16 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         this.WhenAnyValue(x => x.CellSize, x => x.ReservePercent, x => x.MaxRouteLengthMetres)
             .Subscribe(_ => NotifyChanges()).DisposeWith(_lifetime);
 
-    [MemberNotNull(nameof(Save), nameof(ResetDefaults), nameof(SetLocationEnabled))]
+    [MemberNotNull(nameof(Save), nameof(ResetDefaults), nameof(ToggleLocation), nameof(OpenLocationSettings))]
     private void InitializeCommands()
     {
         Save = ReactiveCommand.Create(SaveSettings, this.WhenAnyValue(x => x.CanSave))
             .DisposeWith(_lifetime);
         ResetDefaults = ReactiveCommand.Create(ResetSettings, this.WhenAnyValue(x => x.CanReset))
             .DisposeWith(_lifetime);
-        SetLocationEnabled = ReactiveCommand.CreateFromTask<bool>(SetLocationEnabledAsync)
+        ToggleLocation = ReactiveCommand.CreateFromTask(() => SetLocationEnabledAsync(!ShowLocation))
+            .DisposeWith(_lifetime);
+        OpenLocationSettings = ReactiveCommand.Create(() => _tracking?.OpenSystemLocationSettings())
             .DisposeWith(_lifetime);
     }
 
@@ -130,6 +137,8 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
             Status = $"Ошибка включения геолокации: {ex.Message}";
         }
     }
+
+    public bool HasLocationStatus => !string.IsNullOrWhiteSpace(LocationStatus);
 
     public void Reload()
     {
@@ -214,6 +223,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
     {
         this.RaisePropertyChanged(nameof(IsLocationSupported));
         this.RaisePropertyChanged(nameof(LocationStatus));
+        this.RaisePropertyChanged(nameof(HasLocationStatus));
     }
 
     public void Dispose()

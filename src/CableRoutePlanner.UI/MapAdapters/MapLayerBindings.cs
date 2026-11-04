@@ -29,12 +29,18 @@ internal static class MapLayerBindings
         if (viewModel.Tracking is { } tracking)
         {
             tracking.WhenAnyValue(vm => vm.CurrentLocation, vm => vm.CurrentHeading)
-                .Subscribe(_ => adapter.SetLocation(
-                    tracking.CurrentLocation,
-                    tracking.CurrentHeading,
-                    viewModel.DataInfo.Contains(tracking.CurrentLocation?.Coordinate ?? default)))
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(_ =>
+                {
+                    bool? insideCoverage = tracking.CurrentLocation is { } location
+                        ? viewModel.DataInfo.Contains(location.Coordinate)
+                        : null;
+                    tracking.SetCoverage(insideCoverage);
+                    adapter.SetLocation(tracking.CurrentLocation, tracking.CurrentHeading, insideCoverage == true);
+                })
                 .DisposeWith(lifetime);
             tracking.WhenAnyValue(vm => vm.Progress)
+                .ObserveOn(RxApp.MainThreadScheduler)
                 .Subscribe(adapter.SetProgress)
                 .DisposeWith(lifetime);
             adapter.ManualCameraUsed += tracking.DisableFollowing;

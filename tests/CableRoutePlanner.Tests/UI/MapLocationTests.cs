@@ -71,6 +71,33 @@ public sealed class MapLocationTests
     }
 
     [Avalonia.Headless.XUnit.AvaloniaFact]
+    public void HeadingSectorAccountsForCurrentMapRotation()
+    {
+        Mapsui.UI.Avalonia.MapControl control = new();
+        using MapsuiMapAdapter adapter = new(control, new(27, 54, 28, 55));
+        LocationMeasurement location = new(new(54.5, 27.5), 25, Timestamp);
+        HeadingMeasurement heading = new(0, true, Timestamp);
+
+        adapter.SetLocation(location, heading, true);
+        Mapsui.Layers.MemoryLayer layer = Assert.Single(
+            control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(), item => item.Name == "Моё местоположение");
+        NetTopologySuite.Geometries.Coordinate before = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features,
+            feature => feature is Mapsui.Nts.GeometryFeature geometryFeature
+                && geometryFeature.Geometry is NetTopologySuite.Geometries.Polygon polygon
+                && polygon.ExteriorRing.NumPoints == 15)).Geometry!.Coordinates[1];
+
+        control.Map.Navigator.RotateTo(90, 0);
+        adapter.SetLocation(location, heading, true);
+        NetTopologySuite.Geometries.Coordinate after = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features,
+            feature => feature is Mapsui.Nts.GeometryFeature geometryFeature
+                && geometryFeature.Geometry is NetTopologySuite.Geometries.Polygon polygon
+                && polygon.ExteriorRing.NumPoints == 15)).Geometry!.Coordinates[1];
+
+        Assert.NotEqual(before.X, after.X);
+        Assert.NotEqual(before.Y, after.Y);
+    }
+
+    [Avalonia.Headless.XUnit.AvaloniaFact]
     public void FirstFixDoesNotMoveCameraButExplicitCenterEnablesFollow()
     {
         Mapsui.UI.Avalonia.MapControl control = new();

@@ -96,6 +96,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private LocationMeasurement? _lastLocation;
 
+    private HeadingMeasurement? _lastHeading;
+
+    private bool _lastLocationInsideCoverage;
+
     private readonly MRect _extent;
 
     private readonly MapsuiPointerInteraction _pointerInteraction;
@@ -486,6 +490,14 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         bool isInsideCoverage)
     {
         _lastLocation = location;
+        _lastHeading = heading;
+        _lastLocationInsideCoverage = isInsideCoverage;
+        RenderLocation(isInsideCoverage);
+    }
+
+    private void RenderLocation(bool isInsideCoverage)
+    {
+        LocationMeasurement? location = _lastLocation;
         if (location is null)
         {
             _location.Features = Array.Empty<IFeature>();
@@ -507,10 +519,14 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             features.Add(accuracy);
         }
 
-        if (heading is { IsReliable: true } reliable)
+        if (_lastHeading is { IsReliable: true } reliable)
         {
             double radius = Math.Max(location.AccuracyMetres * 1.8, 45);
-            GeometryFeature sector = new(CreateHeadingSector(center, reliable.Degrees, radius));
+            double mapBearing = HeadingSmoother.ToMapBearing(
+                reliable.Degrees,
+                _control.Map.Navigator.Viewport.Rotation,
+                0);
+            GeometryFeature sector = new(CreateHeadingSector(center, mapBearing, radius));
             sector.Styles.Add(new VectorStyle
             {
                 Fill = new Brush(new Color(32, 112, 220, 70)),
@@ -606,6 +622,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     private void SetRotation(double rotation)
     {
         _control.Map.Navigator.RotateTo(rotation, 0);
+        RenderLocation(_lastLocationInsideCoverage);
         // Navigator updates its state immediately, but Avalonia may retain the previous
         // raster frame until the next pointer event unless graphics are invalidated.
         _control.RefreshGraphics();
