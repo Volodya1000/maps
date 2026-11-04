@@ -64,7 +64,7 @@ public sealed class GridRoutePlanner(
             Math.Max(requested.South, coverage.South),
             Math.Min(requested.East, coverage.East),
             Math.Min(requested.North, coverage.North));
-        PreparedRoutingArea area = await _areas.GetAsync(bounds, options.CellSizeMetres, cancellationToken, options.PreferOverheadGasCrossings);
+        PreparedRoutingArea area = await _areas.GetAsync(bounds, cancellationToken);
         RoutingLog.PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds);
 
         Stopwatch calculationTimer = Stopwatch.StartNew();
