@@ -39,6 +39,12 @@ internal sealed class PreparedTerrainData
         Coverage = coverage is null ? null : PreparedGeometryFactory.Prepare(coverage);
         FullyCoveredArea = fullyCoveredArea;
         Projection = projection;
+        foreach (MapFeature feature in features)
+        {
+            // Validate even objects outside a tested segment. Unsupported data must
+            // not look like a successful route through an implicitly neutral type.
+            _ = TerrainTraversalPolicy.For(feature.Kind);
+        }
         var reader = new WKBReader();
         ProjectedMapFeature[] input = features.Select(
             f => new ProjectedMapFeature(f, projection.Forward(reader.Read(f.Wkb)))).ToArray();

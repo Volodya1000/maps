@@ -54,14 +54,18 @@ internal sealed class TerrainEvaluator
                 continue;
             }
 
-            if (!_rules.TryGet(obstacle.Kind, out ITerrainRule? rule))
-            {
-                continue;
-            }
-
+            ITerrainRule rule = _rules.Get(obstacle.Kind);
             if (rule.Blocks)
             {
                 return null;
+            }
+
+            // Explicitly registered passive objects need no overlay operation.
+            // Gas candidates contribute only through their local road match below.
+            if (TerrainTraversalPolicy.For(obstacle.Kind) == TerrainTraversalRule.Neutral
+                || obstacle.Kind == TerrainKind.GasPipelineCrossingCandidate)
+            {
+                continue;
             }
 
             Geometry intersection = obstacle.PreparedGeometry.Covers(line)

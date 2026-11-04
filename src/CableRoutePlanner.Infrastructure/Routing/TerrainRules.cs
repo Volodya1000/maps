@@ -27,12 +27,33 @@ internal sealed class TerrainContribution
     public SortedSet<long> BridgeCandidates { get; } = [];
 }
 
-internal sealed class TerrainRules(IEnumerable<ITerrainRule>? rules = null)
+/// <summary>Complete registry of geometric contributions, checked against Domain traversal policy before use.</summary>
+internal sealed class TerrainRules
 {
-    private readonly Dictionary<TerrainKind, ITerrainRule> _byKind = (rules ?? Defaults)
-        .ToDictionary(rule => rule.Kind);
+    private readonly Dictionary<TerrainKind, ITerrainRule> _byKind;
 
-    public bool TryGet(TerrainKind kind, out ITerrainRule rule) => _byKind.TryGetValue(kind, out rule!);
+    public TerrainRules(IEnumerable<ITerrainRule>? rules = null)
+    {
+        _byKind = (rules ?? Defaults).ToDictionary(rule => rule.Kind);
+        foreach (TerrainKind kind in Enum.GetValues<TerrainKind>())
+        {
+            if (!_byKind.ContainsKey(kind))
+            {
+                throw new ArgumentOutOfRangeException(nameof(rules), kind, "Для типа местности не зарегистрировано геометрическое правило.");
+            }
+        }
+
+        foreach (ITerrainRule rule in _byKind.Values)
+        {
+            bool mustBlock = TerrainTraversalPolicy.For(rule.Kind) == TerrainTraversalRule.Blocked;
+            if (rule.Blocks != mustBlock)
+            {
+                throw new ArgumentOutOfRangeException(nameof(rules), rule.Kind, "Признак Blocks противоречит предметному правилу проходимости.");
+            }
+        }
+    }
+
+    public ITerrainRule Get(TerrainKind kind) => _byKind[kind];
 
     public static IEnumerable<Point> PointComponents(Geometry geometry)
     {
@@ -58,19 +79,23 @@ internal sealed class TerrainRules(IEnumerable<ITerrainRule>? rules = null)
 
     private static readonly ITerrainRule[] Defaults =
     [
-        new BlockingTerrainRule(TerrainKind.Marsh),
-        new BlockingTerrainRule(TerrainKind.Lake),
-        new BlockingTerrainRule(TerrainKind.River),
-        new BlockingTerrainRule(TerrainKind.Building),
+        new TraversalOnlyRule(TerrainKind.Marsh),
+        new TraversalOnlyRule(TerrainKind.Lake),
+        new TraversalOnlyRule(TerrainKind.River),
+        new TraversalOnlyRule(TerrainKind.Building),
         new LengthTerrainRule(TerrainKind.Forest, (length, contribution) => contribution.Forest += length),
         new LengthTerrainRule(TerrainKind.Field, (length, contribution) => contribution.Field += length),
         new LengthTerrainRule(TerrainKind.Clearing, (length, contribution) => contribution.Clearing += length),
         new PointCrossingRule(TerrainKind.Road, contribution => contribution.Roads),
         new IdentifierRule(TerrainKind.ApprovedCrossing, contribution => contribution.Crossings),
-        new IdentifierRule(TerrainKind.BridgeCandidate, contribution => contribution.BridgeCandidates)
+        new IdentifierRule(TerrainKind.BridgeCandidate, contribution => contribution.BridgeCandidates),
+        new TraversalOnlyRule(TerrainKind.Settlement),
+        new TraversalOnlyRule(TerrainKind.OverheadGasPipeline),
+        // Local gas permission and identifiers come from GasCrossingIndex, not from mere intersection.
+        new TraversalOnlyRule(TerrainKind.GasPipelineCrossingCandidate)
     ];
 
-    private sealed class BlockingTerrainRule(TerrainKind kind) : ITerrainRule
+    private sealed class TraversalOnlyRule(TerrainKind kind) : ITerrainRule
     {
         public TerrainKind Kind => kind;
 
