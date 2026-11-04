@@ -37,7 +37,7 @@ public sealed class JsonTrackingSessionStore(string path) : ITrackingSessionStor
             return snapshot;
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException
-            or FormatException)
+            or FormatException or ArgumentException)
         {
             throw new PlanningException("Файл сессии обхода повреждён.", ex);
         }

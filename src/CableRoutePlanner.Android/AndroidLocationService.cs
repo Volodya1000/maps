@@ -121,7 +121,7 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             canAskAgain
                 ? "Доступ к местоположению отклонён. Его можно запросить снова из настроек приложения."
                 : "Доступ запрещён. Разрешите местоположение в настройках приложения Android."));
-        _permissionRequested = canAskAgain;
+        _permissionRequested = !canAskAgain;
         TaskCompletionSource<LocationServiceState>? deniedRequest = _permissionRequest;
         _permissionRequest = null;
         deniedRequest?.TrySetResult(state);
@@ -143,6 +143,15 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
         if (!_disposed)
         {
             StopUpdates();
+            if (_state.IsEnabled)
+            {
+                Publish(new LocationServiceState(
+                    true,
+                    PermissionState(),
+                    SystemLocationState.Enabled,
+                    true,
+                    "Обновление геолокации приостановлено вместе с приложением."));
+            }
         }
     }
 
@@ -172,7 +181,17 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
 
     public void OpenSystemSettings()
     {
-        Intent intent = new(global::Android.Provider.Settings.ActionLocationSourceSettings);
+        Intent intent;
+        if (_state.Permission is LocationPermissionState.Denied or LocationPermissionState.PermanentlyDenied)
+        {
+            intent = new(global::Android.Provider.Settings.ActionApplicationDetailsSettings);
+            intent.SetData(global::Android.Net.Uri.Parse($"package:{_activity.PackageName}"));
+        }
+        else
+        {
+            intent = new(global::Android.Provider.Settings.ActionLocationSourceSettings);
+        }
+
         _activity.StartActivity(intent);
     }
 
@@ -295,12 +314,18 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
         DateTimeOffset reference = _lastLocationUtc ?? _updatesStartedUtc ?? DateTimeOffset.UtcNow;
         if (DateTimeOffset.UtcNow - reference > TimeSpan.FromSeconds(30))
         {
-            Publish(new LocationServiceState(
-                true,
-                PermissionState(),
-                SystemLocationState.Enabled,
-                true,
-                "GPS-сигнал временно отсутствует или координаты устарели."));
+            _activity.RunOnUiThread(() =>
+            {
+                if (!_disposed && _updatesActive)
+                {
+                    Publish(new LocationServiceState(
+                        true,
+                        PermissionState(),
+                        SystemLocationState.Enabled,
+                        true,
+                        "GPS-сигнал временно отсутствует или координаты устарели."));
+                }
+            });
         }
     }
 
@@ -308,24 +333,28 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
     {
         public void OnLocationChanged(Location? location)
         {
-            if (location is not null)
+            if (location is not null && owner._updatesActive)
             {
                 owner.PublishLocation(location);
             }
         }
 
-        public void OnProviderDisabled(string? provider) => owner.Publish(new LocationServiceState(
-            false,
-            owner.PermissionState(),
-            SystemLocationState.Disabled,
-            false,
-            "Системная геолокация выключена. Включите её в настройках Android."));
+        public void OnProviderDisabled(string? provider)
+        {
+            owner.StopUpdates();
+            owner.Publish(new LocationServiceState(
+                false,
+                owner.PermissionState(),
+                SystemLocationState.Disabled,
+                false,
+                "Системная геолокация выключена. Включите её в настройках Android."));
+        }
 
         public void OnProviderEnabled(string? provider) => owner.StartIfProviderEnabled();
 
         public void OnStatusChanged(string? provider, Availability status, Bundle? extras)
         {
-            if (status != Availability.Available)
+            if (status != Availability.Available && owner._updatesActive)
             {
                 owner.Publish(new LocationServiceState(
                     true,

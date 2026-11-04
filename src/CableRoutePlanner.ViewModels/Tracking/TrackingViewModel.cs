@@ -15,6 +15,10 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private readonly ITrackingSessionStore _sessionStore;
     private readonly Func<DateTimeOffset> _clock;
     private readonly CompositeDisposable _lifetime = new();
+    private readonly object _saveGate = new();
+    private RouteProgressSnapshot? _pendingSnapshot;
+    private Task _saveWorker = Task.CompletedTask;
+    private bool _saveWorkerActive;
     private RouteProgressTracker? _tracker;
     private RouteAlternative? _route;
     private Guid _sessionId;
@@ -131,6 +135,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
             _preferencesStore.Save(new LocationPreferences(false));
             _locationService.Disable();
             _headingService.PauseUpdates();
+            ClearLocationDisplay();
             return;
         }
 
@@ -140,6 +145,10 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
             or LocationPermissionState.PermanentlyDenied;
         IsLocationEnabled = !permissionWasDenied;
         _preferencesStore.Save(new LocationPreferences(!permissionWasDenied));
+        if (permissionWasDenied)
+        {
+            ClearLocationDisplay();
+        }
         if (state.IsEnabled)
         {
             _locationService.ResumeUpdates();
@@ -283,6 +292,13 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         }
     }
 
+    private void ClearLocationDisplay()
+    {
+        CurrentLocation = null;
+        CurrentHeading = null;
+        SetCoverage(null);
+    }
+
     private void HandleLocation(LocationMeasurement measurement)
     {
         if (_disposed || !IsLocationEnabled)
@@ -294,7 +310,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         if (_tracker is not null && IsTraversalActive)
         {
             Progress = _tracker.Accept(measurement, _clock());
-            SaveSession();
+            QueueSessionSave();
             NotifyProgressChanged();
         }
     }
@@ -308,6 +324,15 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
             IsLocationEnabled = false;
             _preferencesStore.Save(new LocationPreferences(false));
             _headingService.PauseUpdates();
+            ClearLocationDisplay();
+        }
+        else if (!state.IsEnabled && state.SystemLocation == SystemLocationState.Disabled)
+        {
+            ClearLocationDisplay();
+        }
+        else if (state.Message == "Обновление геолокации приостановлено вместе с приложением.")
+        {
+            ClearLocationDisplay();
         }
         this.RaisePropertyChanged(nameof(IsLocationSupported));
     }
@@ -316,7 +341,73 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     {
         if (_tracker is not null)
         {
-            _sessionStore.Save(_tracker.CreateSnapshot(_sessionId, _startedUtc, _clock()));
+            RouteProgressSnapshot snapshot = _tracker.CreateSnapshot(_sessionId, _startedUtc, _clock());
+            Task worker;
+            lock (_saveGate)
+            {
+                worker = _saveWorker;
+            }
+
+            worker.GetAwaiter().GetResult();
+            lock (_saveGate)
+            {
+                _pendingSnapshot = null;
+            }
+
+            SaveSnapshotSafely(snapshot);
+        }
+    }
+
+    private void QueueSessionSave()
+    {
+        if (_tracker is null)
+        {
+            return;
+        }
+
+        RouteProgressSnapshot snapshot = _tracker.CreateSnapshot(_sessionId, _startedUtc, _clock());
+        lock (_saveGate)
+        {
+            _pendingSnapshot = snapshot;
+            if (_saveWorkerActive)
+            {
+                return;
+            }
+
+            _saveWorkerActive = true;
+            _saveWorker = Task.Run(DrainSessionSaves);
+        }
+    }
+
+    private void DrainSessionSaves()
+    {
+        while (true)
+        {
+            RouteProgressSnapshot? snapshot;
+            lock (_saveGate)
+            {
+                snapshot = _pendingSnapshot;
+                _pendingSnapshot = null;
+                if (snapshot is null)
+                {
+                    _saveWorkerActive = false;
+                    return;
+                }
+            }
+
+            SaveSnapshotSafely(snapshot);
+        }
+    }
+
+    private void SaveSnapshotSafely(RouteProgressSnapshot snapshot)
+    {
+        try
+        {
+            _sessionStore.Save(snapshot);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Не удалось сохранить сессию обхода: {ex.Message}");
         }
     }
 
