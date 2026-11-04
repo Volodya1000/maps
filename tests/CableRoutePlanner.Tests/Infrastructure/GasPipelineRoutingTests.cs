@@ -8,16 +8,14 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class GasPipelineRoutingTests : ReactiveTestScope
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task BuildSelectsGasCrossingOnlyWhenPreferenceIsEnabled(bool preferGas)
+    [Fact]
+    public async Task BuildUsesGasCrossingWhenRoadHasNoBridge()
     {
         MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
         MapFeature candidate = TestData.Line(2, TerrainKind.GasPipelineCrossingCandidate,
             (160, 138), (160, 150), (160, 162));
         var store = new MemorySettings();
-        store.Save(TestData.Options with { PreferOverheadGasCrossings = preferGas });
+        store.Save(TestData.Options);
         using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
             new PlanningSession(TestData.Planner(road, candidate), TestData.AllowAllValidator),
             new MapAreaLoader(new MemoryData(road, candidate)), store, new MemoryClipboard());
@@ -27,21 +25,10 @@ public sealed class GasPipelineRoutingTests : ReactiveTestScope
         await vm.BuildRoutes.Execute();
 
         RouteAlternative selected = Assert.IsType<RouteAlternative>(vm.SelectedRoute);
-        Assert.Equal(preferGas ? 1 : 0, selected.Metrics.PotentialGasPipelineCrossings);
-        if (preferGas)
-        {
-            Assert.Equal(new long[] { 2 }, selected.GasPipelineCandidateIds);
-            Assert.Contains(selected.RoadContacts!, contact =>
-                contact.Geometry.Any(point => point.DistanceTo(TestData.P(160, 150)) < 1));
-            RouteAlternative ground = Assert.Single(vm.Alternatives,
-                route => route.Metrics.PotentialGasPipelineCrossings == 0);
-            await vm.ChooseRoute.Execute(ground.Id);
-            Assert.Same(ground, vm.SelectedRoute);
-        }
-        else
-        {
-            Assert.Equal(2, selected.Geometry.Count);
-        }
+        Assert.Equal(1, selected.Metrics.PotentialGasPipelineCrossings);
+        Assert.Equal(new long[] { 2 }, selected.GasPipelineCandidateIds);
+        Assert.Contains(selected.RoadContacts!, contact =>
+            contact.Geometry.Any(point => point.DistanceTo(TestData.P(160, 150)) < 1));
     }
 
     [Theory]
@@ -71,13 +58,11 @@ public sealed class GasPipelineRoutingTests : ReactiveTestScope
             (100, 138), (100, 150), (100, 162));
         MapFeature building = TestData.Polygon(3, TerrainKind.Building, 90, 130, 110, 170);
 
-        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(road, candidate, building).PlanAsync(
+        PlanningException error = await Assert.ThrowsAsync<PlanningException>(() => TestData.Planner(road, candidate, building).PlanAsync(
             [TestData.P(230, 100), TestData.P(280, 200)],
-            TestData.Options with { PreferOverheadGasCrossings = true }, CancellationToken.None);
+            TestData.Options with { PreferOverheadGasCrossings = true }, CancellationToken.None));
 
-        Assert.NotEmpty(routes);
-        Assert.All(routes, route => Assert.Equal(0, route.Metrics.PotentialGasPipelineCrossings));
-        Assert.Equal(2, routes[0].Geometry.Count);
+        Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
     }
 
     [Fact]
@@ -89,7 +74,7 @@ public sealed class GasPipelineRoutingTests : ReactiveTestScope
         IRoutePlanner planner = TestData.Planner(road, candidate);
         GeoCoordinate[] points = [TestData.P(40, 100), TestData.P(280, 200)];
         IReadOnlyList<RouteAlternative> ordinary = await planner.PlanAsync(points, TestData.Options, CancellationToken.None);
-        Assert.All(ordinary, route => Assert.Equal(0, route.Metrics.PotentialGasPipelineCrossings));
+        Assert.Contains(ordinary, route => route.Metrics.PotentialGasPipelineCrossings > 0);
         IReadOnlyList<RouteAlternative> preferred = await planner.PlanAsync(points,
             TestData.Options with { PreferOverheadGasCrossings = true }, CancellationToken.None);
         RouteAlternative viaGas = Assert.Single(preferred, route => route.Metrics.PotentialGasPipelineCrossings > 0);

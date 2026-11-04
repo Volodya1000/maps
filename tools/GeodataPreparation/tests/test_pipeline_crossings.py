@@ -77,7 +77,8 @@ class PipelineCrossingTests(unittest.TestCase):
                 check=True,
                 capture_output=True,
             )
-            with sqlite3.connect(output / "geodata.sqlite") as connection:
+            connection = sqlite3.connect(output / "geodata.sqlite")
+            try:
                 counts = dict(
                     connection.execute(
                         "SELECT kind,count(*) FROM features GROUP BY kind"
@@ -87,3 +88,5 @@ class PipelineCrossingTests(unittest.TestCase):
                 self.assertEqual(1, counts["GasPipelineCrossingCandidate"])
                 self.assertEqual(1, counts["Road"])
                 self.assertNotIn("ApprovedCrossing", counts)
+            finally:
+                connection.close()

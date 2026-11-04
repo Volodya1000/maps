@@ -11,6 +11,52 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class SettingsTests : ReactiveTestScope
 {
+    [Theory]
+    [InlineData(1)]
+    [InlineData(10_000_000)]
+    public async Task RouteLengthBoundsSaveAndReloadWithoutLosingOtherOptions(decimal length)
+    {
+        using var fixture = new TemporaryDirectory();
+        JsonSettingsStore store = new(Path.Combine(fixture.DirectoryPath, "settings.json"));
+        store.Save(TestData.Options with { MaxNodes = 12_345, PreferOverheadGasCrossings = true });
+        using var vm = new SettingsViewModel(new NavigationHost(), store);
+        Assert.False(vm.CanSave);
+
+        vm.MaxRouteLengthMetres = length;
+
+        Assert.True(vm.HasChanges);
+        Assert.True(vm.CanSave);
+        Assert.True(await vm.Save.CanExecute.FirstAsync());
+        await vm.Save.Execute();
+        Assert.False(vm.HasChanges);
+        Assert.False(vm.CanSave);
+        Assert.False(await vm.Save.CanExecute.FirstAsync());
+        Assert.Equal((double)length, store.Load().MaxRouteLengthMetres);
+        Assert.Equal(12_345, store.Load().MaxNodes);
+        Assert.True(store.Load().PreferOverheadGasCrossings);
+        vm.MaxRouteLengthMetres = 77;
+        vm.Reload();
+        Assert.Equal(length, vm.MaxRouteLengthMetres);
+        Assert.False(vm.HasChanges);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(10_000_001)]
+    public async Task EmptyAndOutOfRangeRouteLengthDisablesSave(int? length)
+    {
+        using var vm = new SettingsViewModel(new NavigationHost(), new MemorySettings());
+        vm.MaxRouteLengthMetres = length;
+        Assert.True(vm.HasChanges);
+        Assert.False(vm.CanSave);
+        Assert.False(await vm.Save.CanExecute.FirstAsync());
+
+        vm.MaxRouteLengthMetres = 500;
+        Assert.True(vm.CanSave);
+        Assert.True(await vm.Save.CanExecute.FirstAsync());
+    }
+
     [Fact]
     public async Task SaveTracksPersistedValuesAndReturningToOriginalClearsChanges()
     {
@@ -18,6 +64,7 @@ public sealed class SettingsTests : ReactiveTestScope
         using var vm = new SettingsViewModel(new NavigationHost(), store);
         Assert.Equal(20m, vm.CellSize);
         Assert.Equal(10m, vm.ReservePercent);
+        Assert.Equal(1_000_000m, vm.MaxRouteLengthMetres);
         Assert.False(vm.HasChanges);
         Assert.False(await vm.Save.CanExecute.FirstAsync());
         vm.CellSize = 35;
@@ -32,6 +79,10 @@ public sealed class SettingsTests : ReactiveTestScope
         vm.ReservePercent = 10;
         Assert.True(vm.HasChanges);
         vm.ReservePercent = 15;
+        Assert.False(vm.HasChanges);
+        vm.MaxRouteLengthMetres = 250_000;
+        await vm.Save.Execute();
+        Assert.Equal(250_000, store.Options.MaxRouteLengthMetres);
         Assert.False(vm.HasChanges);
         vm.CellSize = null;
         Assert.True(vm.HasChanges);
@@ -81,6 +132,10 @@ public sealed class SettingsTests : ReactiveTestScope
 
         Assert.False(vm.CanReset);
         Assert.Equal(new RoutingOptions().CellSizeMetres, store.Load().CellSizeMetres);
+        Assert.Equal((decimal)new RoutingOptions().MaxRouteLengthMetres, vm.MaxRouteLengthMetres);
+        Assert.Equal(new RoutingOptions().MaxRouteLengthMetres, store.Load().MaxRouteLengthMetres);
+        Assert.False(vm.HasChanges);
+        Assert.False(vm.CanSave);
         Assert.Contains("сброшены", vm.Status);
 
         vm.CellSize = 30;

@@ -356,6 +356,10 @@ public sealed class UiTests
         NumericUpDown[] inputs = view.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
         Assert.Equal(20m, inputs[0].Value);
         Assert.Equal(10m, inputs[1].Value);
+        Assert.Equal((decimal)new RoutingOptions().MaxRouteLengthMetres, inputs[2].Value);
+        Assert.Equal((decimal)RoutingOptions.MinRouteLengthMetres, inputs[2].Minimum);
+        Assert.Equal((decimal)RoutingOptions.MaxRouteLengthLimitMetres, inputs[2].Maximum);
+        Assert.Contains(view.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == vm.RouteLengthRangeText);
         Assert.NotEmpty(inputs[0].GetVisualDescendants().OfType<TextBox>().Single().Text!);
         Assert.NotEmpty(inputs[1].GetVisualDescendants().OfType<TextBox>().Single().Text!);
         Button save = view.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, "Сохранить"));
@@ -367,6 +371,14 @@ public sealed class UiTests
         Assert.False(save.IsEffectivelyEnabled);
         inputs[1].Value = 15;
         await vm.Save.Execute();
+        Assert.False(save.IsEffectivelyEnabled);
+        inputs[2].Value = null;
+        Assert.Null(vm.MaxRouteLengthMetres);
+        Assert.False(save.IsEffectivelyEnabled);
+        inputs[2].Value = inputs[2].Minimum;
+        Assert.True(save.IsEffectivelyEnabled);
+        await vm.Save.Execute();
+        Assert.Equal((decimal)RoutingOptions.MinRouteLengthMetres, vm.MaxRouteLengthMetres);
         Assert.False(save.IsEffectivelyEnabled);
         window.Close();
     }

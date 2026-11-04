@@ -54,6 +54,9 @@ public sealed class CoverageRoutingTests
             [TestData.P(50, 500), TestData.P(300, 500)], TestData.Options, default));
 
         Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
+        Assert.Equal(3, error.SearchFailures.Count);
+        Assert.All(error.SearchFailures, failure => Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, failure.Error.Reason));
+        Assert.Same(error.SearchFailures[0].Error, error.InnerException);
     }
 
     [Fact]

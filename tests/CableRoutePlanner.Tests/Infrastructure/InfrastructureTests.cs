@@ -113,14 +113,14 @@ public sealed class InfrastructureTests
     }
 
     [Fact]
-    public async Task RealOsmRouteIsComputedFromPackage()
+    public async Task RealOsmRoadCrossingWithoutMappedTransitionIsRejected()
     {
         var data = new SqliteGeodataRepository(TestData.RealData);
         var planner = new GridRoutePlanner(data, new GridGenerator(), new AStarGridPathfinder(),
             NullLogger<GridRoutePlanner>.Instance);
-        // OSM service road in the real Novinki area; endpoints chosen on mapped free ground.
-        IReadOnlyList<RouteAlternative> result = await planner.PlanAsync([new(53.9490, 27.5180), new(53.9500, 27.5190)], new(25), default);
-        Assert.NotEmpty(result);
-        Assert.All(result, r => Assert.InRange(r.Metrics.LengthMetres, 110, 2000));
+        // The selected real-package segment has no mapped bridge or gas-pipeline transition.
+        PlanningException error = await Assert.ThrowsAsync<PlanningException>(() => planner.PlanAsync(
+            [new(53.9490, 27.5180), new(53.9500, 27.5190)], new(25), default));
+        Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
     }
 }

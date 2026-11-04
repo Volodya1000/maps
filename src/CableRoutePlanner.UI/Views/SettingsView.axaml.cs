@@ -16,6 +16,8 @@ public partial class SettingsView : ReactiveUserControl<SettingsViewModel>
         {
             this.Bind(ViewModel, vm => vm.CellSize, view => view.CellSizeInput.Value).DisposeWith(lifetime);
             this.Bind(ViewModel, vm => vm.ReservePercent, view => view.ReserveInput.Value).DisposeWith(lifetime);
+            this.Bind(ViewModel, vm => vm.MaxRouteLengthMetres, view => view.MaxRouteLengthInput.Value)
+                .DisposeWith(lifetime);
         });
     }
 }

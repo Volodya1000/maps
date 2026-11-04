@@ -52,16 +52,17 @@ public sealed class RoadContactTests
     public async Task PlannerPublishesContactsForFinalGeometryIncludingBridgeAxis()
     {
         MapFeature road = TestData.Line(1, TerrainKind.Road, (100, -100), (100, 500));
-        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(road).PlanAsync(
+        MapFeature bridge = TestData.Line(2, TerrainKind.BridgeCandidate, (80, 150), (120, 150));
+        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(road, bridge).PlanAsync(
             [TestData.P(20, 150), TestData.P(280, 150)], TestData.Options, CancellationToken.None);
         RouteAlternative shortest = Assert.Single(routes, route => route.Name == "Короче");
-        RouteRoadContact contact = Assert.Single(shortest.RoadContacts!);
+        RouteRoadContact contact = Assert.Single(shortest.RoadContacts!, item => item.RoadId == 1);
         Assert.Equal(RoadContactKind.Crossing, contact.Kind);
         Assert.True(Assert.Single(contact.Geometry).DistanceTo(TestData.P(100, 150)) < 0.01);
 
-        MapFeature bridge = TestData.Line(2, TerrainKind.BridgeCandidate, (80, 0), (120, 0));
         LocalProjection projection = new(TestData.P(0, 0));
-        var analyzer = new RoadContactAnalyzer([bridge], projection);
+        MapFeature bridgeAxis = TestData.Line(2, TerrainKind.BridgeCandidate, (80, 0), (120, 0));
+        var analyzer = new RoadContactAnalyzer([bridgeAxis], projection);
         RouteRoadContact shared = Assert.Single(analyzer.Analyze(
             [projection.Forward(TestData.P(80, 0)), projection.Forward(TestData.P(120, 0))]));
         Assert.Equal(RoadContactKind.SharedSection, shared.Kind);

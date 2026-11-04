@@ -20,11 +20,11 @@ internal sealed class TerrainContribution
 
     public double Clearing;
 
-    public List<long> Roads { get; } = [];
+    public SortedSet<long> Roads { get; } = [];
 
-    public List<long> Crossings { get; } = [];
+    public SortedSet<long> Crossings { get; } = [];
 
-    public List<long> BridgeCandidates { get; } = [];
+    public SortedSet<long> BridgeCandidates { get; } = [];
 }
 
 internal sealed class TerrainRules(IEnumerable<ITerrainRule>? rules = null)
@@ -33,6 +33,28 @@ internal sealed class TerrainRules(IEnumerable<ITerrainRule>? rules = null)
         .ToDictionary(rule => rule.Kind);
 
     public bool TryGet(TerrainKind kind, out ITerrainRule rule) => _byKind.TryGetValue(kind, out rule!);
+
+    public static IEnumerable<Point> PointComponents(Geometry geometry)
+    {
+        if (geometry.IsEmpty)
+        {
+            yield break;
+        }
+        if (geometry is Point point)
+        {
+            yield return point;
+        }
+        else if (geometry is GeometryCollection collection)
+        {
+            foreach (Geometry part in collection.Geometries)
+            {
+                foreach (Point component in PointComponents(part))
+                {
+                    yield return component;
+                }
+            }
+        }
+    }
 
     private static readonly ITerrainRule[] Defaults =
     [
@@ -75,7 +97,7 @@ internal sealed class TerrainRules(IEnumerable<ITerrainRule>? rules = null)
 
     private sealed class PointCrossingRule(
         TerrainKind kind,
-        Func<TerrainContribution, List<long>> ids) : ITerrainRule
+        Func<TerrainContribution, SortedSet<long>> ids) : ITerrainRule
     {
         public TerrainKind Kind => kind;
 
@@ -83,7 +105,7 @@ internal sealed class TerrainRules(IEnumerable<ITerrainRule>? rules = null)
 
         public void Apply(Geometry intersection, long featureId, TerrainContribution contribution)
         {
-            if (intersection.Dimension == Dimension.Point)
+            if (PointComponents(intersection).Any())
             {
                 ids(contribution).Add(featureId);
             }
@@ -92,7 +114,7 @@ internal sealed class TerrainRules(IEnumerable<ITerrainRule>? rules = null)
 
     private sealed class IdentifierRule(
         TerrainKind kind,
-        Func<TerrainContribution, List<long>> ids) : ITerrainRule
+        Func<TerrainContribution, SortedSet<long>> ids) : ITerrainRule
     {
         public TerrainKind Kind => kind;
 

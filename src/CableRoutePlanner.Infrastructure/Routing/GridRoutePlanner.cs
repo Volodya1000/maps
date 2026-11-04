@@ -45,7 +45,7 @@ public sealed class GridRoutePlanner(
     private static readonly Action<ILogger, string, PlanningErrorReason, Exception?> ProfileUnavailableLog =
         LoggerMessage.Define<string, PlanningErrorReason>(LogLevel.Information,
             new EventId(4, nameof(ProfileUnavailableLog)),
-            "Profile {Profile} is unavailable in the search graph ({Reason}); retaining validated alternatives");
+            "Profile {Profile} is unavailable ({Reason})");
 
     public async Task<IReadOnlyList<RouteAlternative>> PlanAsync(
         IReadOnlyList<GeoCoordinate> points,
@@ -139,6 +139,7 @@ public sealed class GridRoutePlanner(
         }
 
         var result = new List<RouteAlternative>();
+        List<ProfileSearchFailure> failures = [];
         foreach (CostProfile profile in CostProfile.Defaults)
         {
             ct.ThrowIfCancellationRequested();
@@ -148,12 +149,13 @@ public sealed class GridRoutePlanner(
             {
                 route = _geometryBuilder.Build(points, projection, evaluator, mesh, profile, GridEdge, ct);
             }
-            catch (PlanningException error) when (result.Count > 0 && error.Reason is
+            catch (PlanningException error) when (error.Reason is
                 PlanningErrorReason.GridConnectionUnavailable or PlanningErrorReason.NoRouteInSearchArea)
             {
-                // Preserve a fully validated earlier profile when the coarse graph
-                // cannot represent this profile. Cancellation and other errors still propagate.
-                ProfileUnavailableLog(logger, profile.Name, error.Reason, null);
+                // Try other profiles, retaining the actual diagnostic even if no
+                // earlier profile succeeded. Unexpected exceptions still propagate.
+                failures.Add(new(profile.Name, error));
+                ProfileUnavailableLog(logger, profile.Name, error.Reason, error);
                 continue;
             }
 
@@ -179,6 +181,21 @@ public sealed class GridRoutePlanner(
                 crossings.UnionWith(edge.Crossings);
                 bridgeCandidates.UnionWith(edge.BridgeCandidates);
                 gasCandidates.UnionWith(edge.GasCandidates);
+            }
+
+            if (length > options.MaxRouteLengthMetres)
+            {
+                PlanningException error = new(
+                    $"Маршрут длиной {length:F0} м превышает заданный максимум "
+                    + $"{options.MaxRouteLengthMetres:F0} м.",
+                    PlanningErrorReason.RouteLengthLimitExceeded)
+                {
+                    ActualRouteLengthMetres = length,
+                    MaximumRouteLengthMetres = options.MaxRouteLengthMetres
+                };
+                failures.Add(new(profile.Name, error));
+                ProfileUnavailableLog(logger, profile.Name, error.Reason, error);
+                continue;
             }
 
             // A nearby aerial candidate and a ground crossing are meaningful choices,
@@ -209,6 +226,28 @@ public sealed class GridRoutePlanner(
                         .Select(projection.Inverse).ToArray()),
                     evaluator.RoadContacts(route, ct),
                     Array.AsReadOnly(gasCandidates.Order().ToArray())));
+        }
+
+        if (result.Count == 0)
+        {
+            // Prefer proof of a valid over-limit route, then a specific graph
+            // connection diagnostic, then the first exhausted-search diagnostic.
+            // Stable profile order breaks ties; retain every failure for consumers.
+            PlanningException selected = failures.Select(failure => failure.Error)
+                .OrderBy(error => error.Reason switch
+                {
+                    PlanningErrorReason.RouteLengthLimitExceeded => 0,
+                    PlanningErrorReason.GridConnectionUnavailable => 1,
+                    _ => 2
+                })
+                .ThenBy(error => error.ActualRouteLengthMetres ?? double.PositiveInfinity)
+                .First();
+            throw new PlanningException(selected.Message, selected.Reason, selected.TerrainKind, selected)
+            {
+                ActualRouteLengthMetres = selected.ActualRouteLengthMetres,
+                MaximumRouteLengthMetres = selected.MaximumRouteLengthMetres,
+                SearchFailures = failures.AsReadOnly()
+            };
         }
 
         SearchCompletedLog(logger, result.Count, mesh.Nodes.Length, gridEdgeEvaluations, null);
