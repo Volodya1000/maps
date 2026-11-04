@@ -12,15 +12,18 @@ internal sealed class RouteGeometryBuilder
     private readonly GridMesh _mesh;
     private readonly TerrainEvaluator _evaluator;
     private readonly LocalProjection _projection;
+    private readonly RouteGeometryPostProcessor _postProcessor;
 
     public GridEdgeEvaluationCache Edges { get; }
 
-    public RouteGeometryBuilder(IGridPathfinder pathfinder, GridMesh mesh, TerrainEvaluator evaluator, LocalProjection projection)
+    public RouteGeometryBuilder(IGridPathfinder pathfinder, GridMesh mesh, TerrainEvaluator evaluator,
+        LocalProjection projection, RouteGeometryPostProcessor postProcessor)
     {
         _pathfinder = pathfinder;
         _mesh = mesh;
         _evaluator = evaluator;
         _projection = projection;
+        _postProcessor = postProcessor;
         Edges = new(mesh, evaluator);
     }
 
@@ -66,7 +69,7 @@ internal sealed class RouteGeometryBuilder
             }
             // Smooth the grid path first, then impose the mapped bridge alignment.
             // The latter remains part of the engineering geometry and is not collapsed.
-            part = _evaluator.AlignBridgeCrossings(_evaluator.SimplifyPath(part, profile), profile);
+            part = _postProcessor.AlignBridgeCrossings(_postProcessor.SimplifyPath(part, profile), profile);
             if (route.Count > 0)
             {
                 part.RemoveAt(0);

@@ -112,17 +112,18 @@ public sealed class GridRoutePlanner(
         CancellationToken ct)
     {
         LocalProjection projection = area.Projection;
-        TerrainEvaluator evaluator = area.Evaluator;
+        TerrainEvaluator evaluator = new(area.Terrain, preferGas: options.PreferOverheadGasCrossings);
+        RouteGeometryPostProcessor postProcessor = new(evaluator, area.Terrain);
         GridMesh mesh = gridGenerator.Generate(bounds, options, projection);
         Coordinate maximum = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
         mesh = mesh with
         {
             // A portal outside the queried area could bypass obstacles we never loaded.
-            Portals = evaluator.GetTransitionPortals().Where(portal => portal.Coordinates.All(point =>
+            Portals = area.Terrain.TransitionPortals.Where(portal => portal.Coordinates.All(point =>
                 point.X >= mesh.Minimum.X && point.Y >= mesh.Minimum.Y
                 && point.X <= maximum.X && point.Y <= maximum.Y)).ToArray()
         };
-        RouteGeometryBuilder geometryBuilder = new(pathfinder, mesh, evaluator, projection);
+        RouteGeometryBuilder geometryBuilder = new(pathfinder, mesh, evaluator, projection, postProcessor);
 
         var result = new List<RouteAlternative>();
         List<ProfileSearchFailure> failures = [];
@@ -208,9 +209,9 @@ public sealed class GridRoutePlanner(
                         cost,
                         null,
                         gasCandidates.Count),
-                    Array.AsReadOnly(evaluator.BridgeTransitionPoints(route)
+                    Array.AsReadOnly(postProcessor.BridgeTransitionPoints(route)
                         .Select(projection.Inverse).ToArray()),
-                    evaluator.RoadContacts(route, ct),
+                    area.Terrain.RoadContacts.Analyze(route, ct),
                     Array.AsReadOnly(gasCandidates.Order().ToArray())));
         }
 

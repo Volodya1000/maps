@@ -1,10 +1,7 @@
-using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
-using CableRoutePlanner.Infrastructure.Geography;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Prepared;
 using NetTopologySuite.Index.Strtree;
-using NetTopologySuite.IO;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
 
@@ -18,17 +15,16 @@ internal sealed class GasCrossingIndex
     public IReadOnlyList<GridPortal> Portals { get; }
     public bool HasCandidates => Portals.Count > 0;
 
-    public GasCrossingIndex(IReadOnlyList<MapFeature> features, LocalProjection projection)
+    public GasCrossingIndex(IEnumerable<ProjectedMapFeature> features)
     {
         List<GridPortal> portals = [];
-        var reader = new WKBReader();
-        foreach (MapFeature feature in features.Where(feature => feature.Kind == TerrainKind.GasPipelineCrossingCandidate))
+        foreach (ProjectedMapFeature feature in features.Where(feature => feature.Feature.Kind == TerrainKind.GasPipelineCrossingCandidate))
         {
-            Geometry span = projection.Forward(reader.Read(feature.Wkb));
+            Geometry span = feature.Geometry;
             if (span is not LineString || span.IsEmpty)
             { continue; }
             Geometry corridor = span.Buffer(AlignmentToleranceMetres);
-            _index.Insert(corridor.EnvelopeInternal, new Candidate(feature.Id, span, PreparedGeometryFactory.Prepare(corridor)));
+            _index.Insert(corridor.EnvelopeInternal, new Candidate(feature.Feature.Id, span, PreparedGeometryFactory.Prepare(corridor)));
             portals.Add(new GridPortal(span.Coordinates));
         }
         _index.Build();

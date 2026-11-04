@@ -98,7 +98,8 @@ public sealed class RoutingTests(ITestOutputHelper output)
             new(200, 30)
         ];
 
-        List<Coordinate> aligned = evaluator.AlignBridgeCrossings(route, profile);
+        RouteGeometryPostProcessor postProcessor = new(evaluator, evaluator.Terrain);
+        List<Coordinate> aligned = postProcessor.AlignBridgeCrossings(route, profile);
 
         Assert.Contains(aligned, point => point.Distance(route[1]) < 0.5);
         for (int index = 1; index < aligned.Count; index++)
