@@ -15,6 +15,7 @@ public sealed class RouteProgressTracker
     private Projection? _intervalStart;
     private ProgressTrackingStatus _status = ProgressTrackingStatus.Ready;
     private LocationQuality _locationQuality = LocationQuality.Unknown;
+    private ProgressRejectionReason _rejectionReason;
 
     public RouteProgressTracker(RouteProgressConfiguration? configuration = null)
     {
@@ -34,6 +35,7 @@ public sealed class RouteProgressTracker
         _previousProjection = null;
         _status = ProgressTrackingStatus.Ready;
         _locationQuality = LocationQuality.Unknown;
+        _rejectionReason = ProgressRejectionReason.None;
         return BuildState();
     }
 
@@ -97,6 +99,8 @@ public sealed class RouteProgressTracker
             return BuildState();
         }
 
+        _rejectionReason = ProgressRejectionReason.None;
+
         if (!IsCredible(measurement, nowUtc, out LocationQuality quality))
         {
             _locationQuality = quality;
@@ -108,6 +112,7 @@ public sealed class RouteProgressTracker
         Projection? projection = FindProjection(measurement.Coordinate);
         if (projection is null)
         {
+            _rejectionReason = ProgressRejectionReason.OffRoute;
             _locationQuality = LocationQuality.Invalid;
             _previousMeasurement = null;
             _previousProjection = null;
@@ -126,6 +131,8 @@ public sealed class RouteProgressTracker
         TimeSpan elapsed = measurement.TimestampUtc - previousMeasurement.TimestampUtc;
         if (elapsed <= TimeSpan.Zero || elapsed > _configuration.EffectiveMaxConsecutiveGap)
         {
+            _rejectionReason = elapsed <= TimeSpan.Zero
+                ? ProgressRejectionReason.NonIncreasingTimestamp : ProgressRejectionReason.SignalGap;
             _previousMeasurement = measurement;
             _previousProjection = projection;
             _intervalStart = projection;
@@ -144,6 +151,7 @@ public sealed class RouteProgressTracker
             _configuration.StationaryDistanceMetres));
         if (routeDistance > Math.Max(allowedDistance, _configuration.StationaryDistanceMetres))
         {
+            _rejectionReason = ProgressRejectionReason.ImplausibleJump;
             _previousMeasurement = null;
             _previousProjection = null;
             _locationQuality = LocationQuality.Invalid;
@@ -198,7 +206,8 @@ public sealed class RouteProgressTracker
             percent,
             BuildCoveredGeometry(intervals),
             _status,
-            _locationQuality);
+            _locationQuality,
+            _rejectionReason);
     }
 
     private bool IsCredible(LocationMeasurement measurement, DateTimeOffset nowUtc, out LocationQuality quality)
@@ -208,12 +217,15 @@ public sealed class RouteProgressTracker
             || measurement.AccuracyMetres < 0
             || measurement.AccuracyMetres > _configuration.MaxAccuracyMetres)
         {
+            _rejectionReason = ProgressRejectionReason.PoorAccuracy;
             return false;
         }
 
         TimeSpan age = nowUtc - measurement.TimestampUtc;
         if (age < TimeSpan.Zero || age > _configuration.EffectiveMaxMeasurementAge)
         {
+            _rejectionReason = age < TimeSpan.Zero
+                ? ProgressRejectionReason.FutureTimestamp : ProgressRejectionReason.StaleTimestamp;
             quality = age > TimeSpan.Zero ? LocationQuality.Stale : LocationQuality.Invalid;
             return false;
         }
@@ -221,6 +233,7 @@ public sealed class RouteProgressTracker
         if (measurement.SpeedMetresPerSecond is { } speed
             && (!double.IsFinite(speed) || speed < 0 || speed > _configuration.MaxSpeedMetresPerSecond))
         {
+            _rejectionReason = ProgressRejectionReason.InvalidSpeed;
             return false;
         }
 

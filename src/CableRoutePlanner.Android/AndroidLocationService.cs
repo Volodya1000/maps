@@ -294,9 +294,14 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             return;
         }
 
-        DateTimeOffset timestamp = location.Time > 0
-            ? DateTimeOffset.FromUnixTimeMilliseconds(location.Time)
-            : DateTimeOffset.UtcNow;
+        // Location.Time uses the provider's UTC clock, which may be ahead of the
+        // device clock even for a fresh fix. Android's elapsed time includes deep
+        // sleep and measures fix age without depending on clock synchronisation.
+        long receivedElapsedNanos = SystemClock.ElapsedRealtimeNanos();
+        DateTimeOffset timestamp = LocationMeasurementClock.GetTimestamp(
+            DateTimeOffset.UtcNow,
+            TimeSpan.FromTicks(receivedElapsedNanos / 100),
+            TimeSpan.FromTicks(location.ElapsedRealtimeNanos / 100));
         double? speed = location.HasSpeed ? location.Speed : null;
         bool approximate = PermissionState() == LocationPermissionState.Approximate;
         _lastLocationUtc = timestamp;

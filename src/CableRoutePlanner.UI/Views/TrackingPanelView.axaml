@@ -16,6 +16,10 @@
                 Text="{Binding TrackingStatusText}"
                 TextWrapping="Wrap" />
             <TextBlock
+                Classes="view-hint"
+                Text="{Binding GpsDiagnosticText}"
+                TextWrapping="Wrap" />
+            <TextBlock
                 Classes="tracking-progress"
                 Text="{Binding ProgressText}"
                 TextWrapping="Wrap" />

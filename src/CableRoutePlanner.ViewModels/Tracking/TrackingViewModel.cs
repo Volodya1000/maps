@@ -10,6 +10,7 @@ namespace CableRoutePlanner.ViewModels;
 
 public sealed class TrackingViewModel : ReactiveObject, IDisposable
 {
+    private static readonly RouteProgressConfiguration TrackingConfiguration = new();
     private readonly ILocationService _locationService;
     private readonly IHeadingService _headingService;
     private readonly ILocationPreferencesStore _preferencesStore;
@@ -87,12 +88,47 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         : $"Пройдено {progress.CoveredDistanceMetres:N0} м из {progress.TotalDistanceMetres:N0} м · "
             + $"осталось {progress.RemainingDistanceMetres:N0} м · {progress.CoveragePercent:N0}%";
 
-    public string CompactProgressText => Progress is not { } progress
+    public string CompactProgressText => Progress is not { } progress || progress.Status == ProgressTrackingStatus.Ready
         ? "Прокладка: не начата"
-        : $"Прокладка: {progress.CoveragePercent:N0}% · {progress.CoveredDistanceMetres:N0}/{progress.TotalDistanceMetres:N0} м";
+        : $"Прокладка: {CompactTrackingState}{progress.CoveragePercent:N0}% · {progress.CoveredDistanceMetres:N0}/{progress.TotalDistanceMetres:N0} м";
+
+    private string CompactTrackingState => Progress?.Status switch
+    {
+        ProgressTrackingStatus.Paused => "пауза · ",
+        ProgressTrackingStatus.Completed => "завершена · ",
+        ProgressTrackingStatus.Active when LocationState.FixState == LocationFixState.Stale => "нет свежего GPS · ",
+        _ => Progress?.RejectionReason switch
+        {
+            ProgressRejectionReason.PoorAccuracy => "точность GPS · ",
+            ProgressRejectionReason.FutureTimestamp or ProgressRejectionReason.NonIncreasingTimestamp => "время GPS · ",
+            ProgressRejectionReason.StaleTimestamp or ProgressRejectionReason.SignalGap => "нет свежего GPS · ",
+            ProgressRejectionReason.OffRoute => "вне трассы · ",
+            ProgressRejectionReason.InvalidSpeed or ProgressRejectionReason.ImplausibleJump => "скачок GPS · ",
+            _ => ""
+        }
+    };
+
+    [Reactive] public string GpsDiagnosticText { get; private set; } = "GPS-измерения ещё не поступили.";
+
+    private string RejectionDescription => Progress?.RejectionReason switch
+    {
+        ProgressRejectionReason.PoorAccuracy => $"Точность GPS ±{CurrentLocation?.AccuracyMetres:N0} м; требуется не хуже ±{TrackingConfiguration.MaxAccuracyMetres:N0} м.",
+        ProgressRejectionReason.FutureTimestamp => "Время GPS опережает часы приложения; измерение отклонено.",
+        ProgressRejectionReason.StaleTimestamp => "GPS-измерение устарело; ожидаются свежие координаты.",
+        ProgressRejectionReason.NonIncreasingTimestamp => "GPS-время повторяется или идёт назад; участок не засчитан.",
+        ProgressRejectionReason.SignalGap => "Разрыв GPS-сигнала. Учёт продолжится по новым последовательным измерениям.",
+        ProgressRejectionReason.OffRoute => $"GPS-точка дальше {TrackingConfiguration.ProjectionToleranceMetres:N0} м от трассы.",
+        ProgressRejectionReason.InvalidSpeed => $"Скорость GPS недостоверна; допустимо до {TrackingConfiguration.MaxSpeedMetresPerSecond:N0} м/с.",
+        ProgressRejectionReason.ImplausibleJump => "Обнаружен скачок GPS или неоднозначный переход между участками трассы.",
+        _ => ""
+    };
 
     public string TrackingStatusText => Progress?.Status switch
     {
+        ProgressTrackingStatus.Active when LocationState.FixState == LocationFixState.Stale =>
+            "Прокладка начата. GPS-сигнал потерян; ожидаются свежие координаты.",
+        ProgressTrackingStatus.Active when Progress.RejectionReason != ProgressRejectionReason.None =>
+            "Прокладка начата. " + RejectionDescription,
         ProgressTrackingStatus.Active => Progress.LocationQuality switch
         {
             LocationQuality.Invalid => "Прокладка начата. GPS-измерение неточное или вне трассы; прогресс не засчитан.",
@@ -172,7 +208,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
             return;
         }
 
-        RouteProgressTracker tracker = new();
+        RouteProgressTracker tracker = new(TrackingConfiguration);
         RouteProgressState initial = tracker.Begin(route);
         RouteProgressSnapshot? saved = null;
         try
@@ -310,6 +346,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         }
 
         CurrentLocation = measurement;
+        GpsDiagnosticText = $"GPS: точность ±{measurement.AccuracyMetres:N0} м · возраст {(_clock() - measurement.TimestampUtc).TotalSeconds:N1} с";
         if (_tracker is not null && IsTraversalActive)
         {
             Progress = _tracker.Accept(measurement, _clock());
@@ -346,6 +383,8 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
             _headingService.ResumeUpdates();
         }
         this.RaisePropertyChanged(nameof(IsLocationSupported));
+        this.RaisePropertyChanged(nameof(CompactProgressText));
+        this.RaisePropertyChanged(nameof(TrackingStatusText));
     }
 
     private void SaveSession()

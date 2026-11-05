@@ -8,6 +8,25 @@ public sealed class RouteProgressTrackerTests
 {
     private static readonly DateTimeOffset Start = new(2026, 11, 4, 12, 0, 0, TimeSpan.Zero);
 
+    [Theory]
+    [InlineData(100, 0, 0, 0, ProgressRejectionReason.PoorAccuracy)]
+    [InlineData(5, 1, 0, 0, ProgressRejectionReason.FutureTimestamp)]
+    [InlineData(5, -600, 0, 0, ProgressRejectionReason.StaleTimestamp)]
+    [InlineData(5, 0, 100, 0, ProgressRejectionReason.InvalidSpeed)]
+    [InlineData(5, 0, 0, 500, ProgressRejectionReason.OffRoute)]
+    public void RejectedFixReportsTheExactReasonWithoutIncreasingCoverage(
+        double accuracy, int secondsOffset, double speed, double offsetMetres, ProgressRejectionReason reason)
+    {
+        RouteProgressTracker tracker = StartTracker([Metres(0), Metres(1_000)]);
+        RouteProgressState state = tracker.Accept(
+            Fix(100, accuracy, Start.AddSeconds(secondsOffset), y: offsetMetres, speed: speed), Start);
+
+        Assert.Equal(reason, state.RejectionReason);
+        Assert.Equal(0, state.CoveredDistanceMetres);
+        RouteProgressState recovered = tracker.Accept(Fix(100, 5, Start.AddSeconds(1)), Start.AddSeconds(1));
+        Assert.Equal(ProgressRejectionReason.None, recovered.RejectionReason);
+    }
+
     [Fact]
     public void WalkingWithOneMetreFixesAccumulatesProgress()
     {

@@ -132,6 +132,19 @@ public enum ProgressTrackingStatus
     Completed
 }
 
+public enum ProgressRejectionReason
+{
+    None,
+    PoorAccuracy,
+    FutureTimestamp,
+    StaleTimestamp,
+    InvalidSpeed,
+    OffRoute,
+    NonIncreasingTimestamp,
+    SignalGap,
+    ImplausibleJump
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public readonly record struct ProgressInterval(double StartMetres, double EndMetres)
 {
@@ -163,7 +176,8 @@ public sealed record RouteProgressState(
     double CoveragePercent,
     IReadOnlyList<IReadOnlyList<GeoCoordinate>> CoveredGeometry,
     ProgressTrackingStatus Status,
-    LocationQuality LocationQuality);
+    LocationQuality LocationQuality,
+    ProgressRejectionReason RejectionReason = ProgressRejectionReason.None);
 
 public sealed record RouteProgressSnapshot(
     Guid SessionId,

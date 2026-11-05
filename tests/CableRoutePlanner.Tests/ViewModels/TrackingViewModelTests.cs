@@ -11,6 +11,37 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
     private static readonly DateTimeOffset Start = new(2026, 11, 4, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
+    public async Task RejectedFixExplainsItsSpecificReasonInCollapsedProgress()
+    {
+        FakeLocation location = new();
+        using TrackingViewModel viewModel = CreateViewModel(location);
+        viewModel.SetRoute(Route());
+        await viewModel.SetLocationEnabledAsync(true);
+        viewModel.StartTraversal();
+        location.Emit(Fix(10, Start.AddSeconds(1)) with { AccuracyMetres = 100 });
+
+        Assert.Equal(ProgressRejectionReason.PoorAccuracy, viewModel.Progress!.RejectionReason);
+        Assert.Contains("точность", viewModel.CompactProgressText);
+        Assert.Contains("100", viewModel.TrackingStatusText);
+        Assert.Equal(0, viewModel.Progress.CoveredDistanceMetres);
+    }
+
+    [Fact]
+    public async Task FutureFixIsNotConfusedWithPoorAccuracyOrOffRoute()
+    {
+        FakeLocation location = new();
+        using TrackingViewModel viewModel = CreateViewModel(location);
+        viewModel.SetRoute(Route());
+        await viewModel.SetLocationEnabledAsync(true);
+        viewModel.StartTraversal();
+        location.Emit(Fix(10, Start.AddHours(1)));
+
+        Assert.Equal(ProgressRejectionReason.FutureTimestamp, viewModel.Progress!.RejectionReason);
+        Assert.Contains("время GPS", viewModel.CompactProgressText);
+        Assert.Equal(0, viewModel.Progress.CoveredDistanceMetres);
+    }
+
+    [Fact]
     public async Task FrequentWalkingFixesUpdateAndPersistCableLayingProgress()
     {
         FakeLocation location = new();
