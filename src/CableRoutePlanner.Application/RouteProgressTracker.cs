@@ -1,6 +1,3 @@
-using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 using System.Runtime.InteropServices;
 using CableRoutePlanner.Domain;
 
@@ -44,7 +41,7 @@ public sealed class RouteProgressTracker
         ArgumentNullException.ThrowIfNull(snapshot);
         RouteProgressState state = Begin(route);
         if (!string.Equals(snapshot.RouteFingerprint, state.RouteFingerprint, StringComparison.Ordinal)
-            || !GeometryEquals(snapshot.Geometry, route.Geometry))
+            || !RouteProgressGeometry.Matches(snapshot.Geometry, route.Geometry))
         {
             return state;
         }
@@ -178,7 +175,7 @@ public sealed class RouteProgressTracker
 
     private RouteProgressState BuildState()
     {
-        string fingerprint = _route is null ? "" : Fingerprint(_route.Geometry);
+        string fingerprint = _route is null ? "" : RouteProgressGeometry.Fingerprint(_route.Geometry);
         double total = _cumulativeLengths.Length == 0 ? 0 : _cumulativeLengths[^1];
         IReadOnlyList<ProgressInterval> intervals = NormalizeIntervals(_coveredIntervals);
         double covered = intervals.Sum(interval => interval.LengthMetres);
@@ -357,7 +354,10 @@ public sealed class RouteProgressTracker
             GeoCoordinate end = geometry[index + 1];
             LocalPoint startLocal = index == 0 ? previous : ToLocal(start, latitude);
             LocalPoint endLocal = ToLocal(end, latitude);
-            double length = Distance(startLocal, endLocal);
+            // Keep route-distance units identical to persistence validation and GPS
+            // displacement checks. The local projection is only for choosing a point
+            // on a segment, not for measuring the segment itself.
+            double length = start.DistanceTo(end);
             if (length <= 0.001)
             {
                 continue;
@@ -400,23 +400,6 @@ public sealed class RouteProgressTracker
         }
 
         return result;
-    }
-
-    private static bool GeometryEquals(IReadOnlyList<GeoCoordinate> left, IReadOnlyList<GeoCoordinate> right) =>
-        left.Count == right.Count && left.Zip(right).All(pair => pair.First == pair.Second);
-
-    private static string Fingerprint(IReadOnlyList<GeoCoordinate> geometry)
-    {
-        StringBuilder text = new();
-        foreach (GeoCoordinate coordinate in geometry)
-        {
-            text.Append(coordinate.Latitude.ToString("R", CultureInfo.InvariantCulture));
-            text.Append(',');
-            text.Append(coordinate.Longitude.ToString("R", CultureInfo.InvariantCulture));
-            text.Append(';');
-        }
-
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString())));
     }
 
     private static LocalPoint ToLocal(GeoCoordinate coordinate, double referenceLatitude)

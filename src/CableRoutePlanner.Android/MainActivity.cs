@@ -51,7 +51,6 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
     {
         base.OnResume();
         _locationService?.ResumeUpdates();
-        _headingService?.ResumeUpdates();
     }
 
     protected override void OnPause()

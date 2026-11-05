@@ -92,4 +92,36 @@ public sealed class LocationPersistenceTests
 
         Assert.Throws<PlanningException>(() => new JsonTrackingSessionStore(path).Load());
     }
+
+    [Fact]
+    public void FullyCoveredRouteRoundTripsAtExactlyOneHundredPercent()
+    {
+        using TemporaryDirectory directory = new();
+        string path = Path.Combine(directory.DirectoryPath, "tracking.json");
+        GeoCoordinate[] geometry = [new(53.9, 27.4), new(53.9, 27.5)];
+        RouteAlternative route = new(
+            Guid.NewGuid(),
+            "Длинный прямой участок",
+            geometry,
+            new RouteMetrics(6_500, 0, 6_500, 0, 0, 0, 6_500, null));
+        DateTimeOffset start = new(2026, 11, 5, 12, 0, 0, TimeSpan.Zero);
+        RouteProgressTracker tracker = new(new RouteProgressConfiguration(
+            MaxSpeedMetresPerSecond: 200,
+            MaxConsecutiveGap: TimeSpan.FromMinutes(10)));
+        tracker.Begin(route);
+        tracker.Resume();
+        tracker.Accept(new LocationMeasurement(geometry[0], 1, start), start);
+        RouteProgressState state = tracker.Accept(
+            new LocationMeasurement(geometry[1], 1, start.AddMinutes(1)), start.AddMinutes(1));
+        RouteProgressSnapshot snapshot = tracker.CreateSnapshot(Guid.NewGuid(), start, start.AddMinutes(1));
+
+        Assert.Equal(100, state.CoveragePercent, 6);
+
+        JsonTrackingSessionStore store = new(path);
+        store.Save(snapshot);
+        RouteProgressSnapshot? loaded = new JsonTrackingSessionStore(path).Load();
+
+        Assert.NotNull(loaded);
+        Assert.Equal(snapshot.CoveredIntervals, loaded.CoveredIntervals);
+    }
 }

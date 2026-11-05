@@ -37,6 +37,8 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         MapGestureBindings.Bind(viewModel, adapter, bindings);
         MapLayerBindings.Bind(viewModel, adapter, bindings);
         _sheet.Bind(SheetHandleButton, this, AdaptLayout).DisposeWith(bindings);
+        viewModel.Tracking?.WhenAnyValue(vm => vm.CompactProgressText)
+            .Subscribe(_ => AdaptLayout()).DisposeWith(bindings);
         adapter.NorthIndicatorRotationChangedStream
             .Subscribe(angle => _northArrowRotation.Angle = angle).DisposeWith(bindings);
         BindButton(ZoomInButton, adapter.ZoomIn);
@@ -59,6 +61,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
     private void AdaptLayout()
     {
+        MapViewModel? viewModel = ViewModel;
         BottomSheetLayout layout = BottomSheetLayout.Create(Bounds.Width, Bounds.Height, _sheet.IsExpanded);
         bool narrow = layout.IsNarrow;
         Layout.ColumnDefinitions = new(narrow ? "*" : "*,350");
@@ -73,7 +76,9 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             : Avalonia.Layout.VerticalAlignment.Stretch;
         SheetHandleButton.IsVisible = narrow;
         SidePanelContent.IsVisible = !narrow || _sheet.IsExpanded;
-        SheetHandleText.Text = layout.HandleText;
+        SheetHandleText.Text = narrow && !_sheet.IsExpanded && viewModel?.Tracking is { HasRoute: true } tracking
+            ? tracking.CompactProgressText
+            : layout.HandleText;
 
         if (narrow)
         {

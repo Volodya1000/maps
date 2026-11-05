@@ -158,13 +158,82 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         Assert.False(viewModel.IsFollowing);
     }
 
+    [Fact]
+    public async Task StaleLocationStateHidesTheLastFixAndRemainsExplicitlyObservable()
+    {
+        FakeLocation location = new();
+        using TrackingViewModel viewModel = CreateViewModel(location);
+        await viewModel.SetLocationEnabledAsync(true);
+        location.Emit(Fix(100, Start.AddSeconds(1)));
+
+        location.EmitState(new LocationServiceState(
+            true,
+            LocationPermissionState.Fine,
+            SystemLocationState.Enabled,
+            true,
+            "GPS-сигнал временно отсутствует.",
+            LocationFixState.Stale));
+
+        Assert.Null(viewModel.CurrentLocation);
+        Assert.Equal(LocationFixState.Stale, viewModel.LocationState.FixState);
+    }
+
+    [Fact]
+    public async Task ProviderRecoveryResumesHeadingOnlyWhenLocationSettingIsEnabled()
+    {
+        FakeLocation location = new();
+        FakeHeading heading = new();
+        using TrackingViewModel viewModel = CreateViewModel(location, heading: heading);
+
+        await viewModel.SetLocationEnabledAsync(true);
+        location.EmitState(LocationServiceState.Enabled);
+        Assert.Equal(2, heading.ResumeCalls);
+
+        await viewModel.SetLocationEnabledAsync(false);
+        location.EmitState(LocationServiceState.Enabled);
+
+        Assert.Equal(2, heading.ResumeCalls);
+        Assert.True(heading.PauseCalls > 0);
+    }
+
+    [Fact]
+    public void TraversalActionsMatchTheCurrentLifecycleState()
+    {
+        using TrackingViewModel viewModel = CreateViewModel(new FakeLocation());
+        viewModel.SetRoute(Route());
+
+        Assert.True(viewModel.CanStartTraversal);
+        Assert.False(viewModel.CanPauseTraversal);
+        Assert.False(viewModel.CanResumeTraversal);
+        Assert.False(viewModel.CanFinishTraversal);
+
+        viewModel.StartTraversal();
+        Assert.False(viewModel.CanStartTraversal);
+        Assert.True(viewModel.CanPauseTraversal);
+        Assert.False(viewModel.CanResumeTraversal);
+        Assert.True(viewModel.CanFinishTraversal);
+
+        viewModel.PauseTraversal();
+        Assert.False(viewModel.CanStartTraversal);
+        Assert.False(viewModel.CanPauseTraversal);
+        Assert.True(viewModel.CanResumeTraversal);
+        Assert.True(viewModel.CanFinishTraversal);
+
+        viewModel.FinishTraversal();
+        Assert.False(viewModel.CanStartTraversal);
+        Assert.False(viewModel.CanPauseTraversal);
+        Assert.False(viewModel.CanResumeTraversal);
+        Assert.False(viewModel.CanFinishTraversal);
+    }
+
     private static TrackingViewModel CreateViewModel(
         FakeLocation location,
         MemoryLocationPreferences? preferences = null,
-        MemoryTrackingSessions? sessions = null) =>
+        MemoryTrackingSessions? sessions = null,
+        FakeHeading? heading = null) =>
         new(
             location,
-            new FakeHeading(),
+            heading ?? new FakeHeading(),
             preferences ?? new MemoryLocationPreferences(),
             sessions ?? new MemoryTrackingSessions(),
             () => Start.AddMinutes(1));
@@ -221,6 +290,11 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         public void ResumeUpdates() { }
         public void OpenSystemSettings() { }
         public void Emit(LocationMeasurement measurement) => _measurements.OnNext(measurement);
+        public void EmitState(LocationServiceState state)
+        {
+            State = state;
+            _states.OnNext(state);
+        }
         public void Dispose() { _measurements.Dispose(); _states.Dispose(); }
     }
 
@@ -228,8 +302,10 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
     {
         public bool IsSupported => true;
         public IObservable<HeadingMeasurement> Measurements { get; } = new Subject<HeadingMeasurement>();
-        public void PauseUpdates() { }
-        public void ResumeUpdates() { }
+        public int PauseCalls { get; private set; }
+        public int ResumeCalls { get; private set; }
+        public void PauseUpdates() => PauseCalls++;
+        public void ResumeUpdates() => ResumeCalls++;
         public void Dispose() { }
     }
 

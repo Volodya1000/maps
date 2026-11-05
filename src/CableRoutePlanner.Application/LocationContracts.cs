@@ -33,12 +33,21 @@ public enum SystemLocationState
     Disabled
 }
 
+public enum LocationFixState
+{
+    None,
+    Searching,
+    Fresh,
+    Stale
+}
+
 public sealed record LocationServiceState(
     bool IsEnabled,
     LocationPermissionState Permission,
     SystemLocationState SystemLocation,
     bool IsSearching,
-    string? Message = null)
+    string? Message = null,
+    LocationFixState FixState = LocationFixState.None)
 {
     public static LocationServiceState Disabled { get; } = new(
         false,
@@ -50,7 +59,9 @@ public sealed record LocationServiceState(
         true,
         LocationPermissionState.Fine,
         SystemLocationState.Enabled,
-        false);
+        true,
+        "Ожидание GPS-сигнала…",
+        LocationFixState.Searching);
 }
 
 public interface ILocationService : IDisposable
@@ -197,6 +208,8 @@ public sealed class HeadingSmoother
         _lastHeading = smoothed;
         return smoothed;
     }
+
+    public void Reset() => _lastHeading = null;
 
     public static double ToMapBearing(double headingDegrees, double mapRotationDegrees, double displayRotationDegrees) =>
         Normalize(headingDegrees - mapRotationDegrees - displayRotationDegrees);

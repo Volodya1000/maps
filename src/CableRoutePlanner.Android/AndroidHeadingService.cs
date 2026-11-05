@@ -37,6 +37,9 @@ internal sealed class AndroidHeadingService : Java.Lang.Object, IHeadingService,
             _sensorManager.UnregisterListener(this);
             _registered = false;
         }
+
+        _reliable = false;
+        _smoother.Reset();
     }
 
     public void ResumeUpdates()
@@ -47,12 +50,19 @@ internal sealed class AndroidHeadingService : Java.Lang.Object, IHeadingService,
         }
     }
 
-    public void OnAccuracyChanged(Sensor? sensor, SensorStatus accuracy) =>
-        _reliable = accuracy is not SensorStatus.Unreliable and not SensorStatus.NoContact;
+    public void OnAccuracyChanged(Sensor? sensor, SensorStatus accuracy)
+    {
+        if (!_disposed)
+        {
+            // Low/medium accuracy is commonly reported while the magnetometer is
+            // recalibrating; do not render an apparently precise but wrong sector.
+            _reliable = accuracy == SensorStatus.AccuracyHigh;
+        }
+    }
 
     public void OnSensorChanged(SensorEvent? sensorEvent)
     {
-        if (_disposed || sensorEvent?.Values is null || sensorEvent.Values.Count < 3)
+        if (_disposed || !_registered || sensorEvent?.Values is null || sensorEvent.Values.Count < 3)
         {
             return;
         }

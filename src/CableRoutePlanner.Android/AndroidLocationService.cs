@@ -24,6 +24,7 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
     private TaskCompletionSource<LocationServiceState>? _permissionRequest;
     private LocationServiceState _state = LocationServiceState.Disabled;
     private bool _permissionRequested;
+    private bool _featureEnabled;
     private bool _updatesActive;
     private bool _disposed;
     private DateTimeOffset? _updatesStartedUtc;
@@ -48,6 +49,7 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
     public async Task<LocationServiceState> EnableAsync(CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        _featureEnabled = true;
         if (HasAnyLocationPermission())
         {
             return StartIfProviderEnabled();
@@ -78,6 +80,7 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         cancellationToken.ThrowIfCancellationRequested();
+        _featureEnabled = true;
         if (!HasAnyLocationPermission())
         {
             return Task.FromResult(Publish(new LocationServiceState(
@@ -113,6 +116,7 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
         LocationPermissionState permission = canAskAgain
             ? LocationPermissionState.Denied
             : LocationPermissionState.PermanentlyDenied;
+        _featureEnabled = false;
         LocationServiceState state = Publish(new LocationServiceState(
             false,
             permission,
@@ -134,6 +138,7 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             return;
         }
 
+        _featureEnabled = false;
         StopUpdates();
         Publish(LocationServiceState.Disabled);
     }
@@ -150,14 +155,15 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
                     PermissionState(),
                     SystemLocationState.Enabled,
                     true,
-                    "Обновление геолокации приостановлено вместе с приложением."));
+                    "Обновление геолокации приостановлено вместе с приложением.",
+                    LocationFixState.None));
             }
         }
     }
 
     public void ResumeUpdates()
     {
-        if (_disposed || !_state.IsEnabled)
+        if (_disposed || !_featureEnabled)
         {
             return;
         }
@@ -173,10 +179,7 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             return;
         }
 
-        if (_state.IsEnabled)
-        {
-            StartIfProviderEnabled();
-        }
+        StartIfProviderEnabled();
     }
 
     public void OpenSystemSettings()
@@ -222,7 +225,8 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
                 PermissionState(),
                 SystemLocationState.Disabled,
                 false,
-                "Системная геолокация выключена. Включите её в настройках Android."));
+                "Системная геолокация выключена. Включите её в настройках Android.",
+                LocationFixState.None));
         }
 
         if (!_updatesActive)
@@ -247,7 +251,8 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             PermissionState(),
             SystemLocationState.Enabled,
             true,
-            message));
+            message,
+            LocationFixState.Searching));
     }
 
     private void StopUpdates()
@@ -306,7 +311,8 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
             PermissionState(),
             SystemLocationState.Enabled,
             false,
-            approximate ? "Используется приблизительное местоположение." : null));
+            approximate ? "Используется приблизительное местоположение." : null,
+            LocationFixState.Fresh));
     }
 
     private void CheckStale(object? state)
@@ -328,7 +334,8 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
                         PermissionState(),
                         SystemLocationState.Enabled,
                         true,
-                        "GPS-сигнал временно отсутствует или координаты устарели."));
+                        "GPS-сигнал временно отсутствует или координаты устарели.",
+                        LocationFixState.Stale));
                 }
             });
         }
@@ -362,7 +369,7 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
 
         public void OnProviderEnabled(string? provider)
         {
-            if (!owner._disposed)
+            if (!owner._disposed && owner._featureEnabled)
             {
                 owner.StartIfProviderEnabled();
             }
@@ -377,7 +384,8 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
                     owner.PermissionState(),
                     SystemLocationState.Enabled,
                     true,
-                    "GPS-сигнал временно недоступен."));
+                    "GPS-сигнал временно недоступен.",
+                    LocationFixState.Stale));
             }
         }
     }

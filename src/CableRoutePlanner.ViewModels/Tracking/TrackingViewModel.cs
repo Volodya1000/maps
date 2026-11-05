@@ -13,12 +13,9 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private readonly IHeadingService _headingService;
     private readonly ILocationPreferencesStore _preferencesStore;
     private readonly ITrackingSessionStore _sessionStore;
+    private readonly TrackingSessionWriter _sessionWriter;
     private readonly Func<DateTimeOffset> _clock;
     private readonly CompositeDisposable _lifetime = new();
-    private readonly object _saveGate = new();
-    private RouteProgressSnapshot? _pendingSnapshot;
-    private Task _saveWorker = Task.CompletedTask;
-    private bool _saveWorkerActive;
     private RouteProgressTracker? _tracker;
     private RouteAlternative? _route;
     private Guid _sessionId;
@@ -44,6 +41,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         _headingService = headingService ?? throw new ArgumentNullException(nameof(headingService));
         _preferencesStore = preferencesStore ?? throw new ArgumentNullException(nameof(preferencesStore));
         _sessionStore = sessionStore ?? throw new ArgumentNullException(nameof(sessionStore));
+        _sessionWriter = new TrackingSessionWriter(_sessionStore, HandlePersistenceFailure);
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         _locationState = _locationService.State;
         _isLocationEnabled = _locationService.IsSupported && _preferencesStore.Load().IsEnabled;
@@ -55,10 +53,10 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
             CurrentHeading = heading;
         }).DisposeWith(_lifetime);
 
-        Start = ReactiveCommand.Create(StartTraversal);
-        Pause = ReactiveCommand.Create(PauseTraversal);
-        Resume = ReactiveCommand.Create(ResumeTraversal);
-        Finish = ReactiveCommand.Create(FinishTraversal);
+        Start = ReactiveCommand.Create(StartTraversal, this.WhenAnyValue(vm => vm.CanStartTraversal));
+        Pause = ReactiveCommand.Create(PauseTraversal, this.WhenAnyValue(vm => vm.CanPauseTraversal));
+        Resume = ReactiveCommand.Create(ResumeTraversal, this.WhenAnyValue(vm => vm.CanResumeTraversal));
+        Finish = ReactiveCommand.Create(FinishTraversal, this.WhenAnyValue(vm => vm.CanFinishTraversal));
         ToggleFollowCommand = ReactiveCommand.Create(ToggleFollow);
 
         if (_isLocationEnabled)
@@ -107,12 +105,24 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public bool IsTraversalActive => Progress?.Status == ProgressTrackingStatus.Active;
 
+    public bool CanStartTraversal => Progress?.Status == ProgressTrackingStatus.Ready;
+
+    public bool CanPauseTraversal => Progress?.Status == ProgressTrackingStatus.Active;
+
+    public bool CanResumeTraversal => Progress?.Status == ProgressTrackingStatus.Paused;
+
+    public bool CanFinishTraversal => Progress?.Status is ProgressTrackingStatus.Active or ProgressTrackingStatus.Paused;
+
     public bool HasRoute => _route is not null;
 
     public string ProgressText => Progress is not { } progress
         ? "Обход не начат."
         : $"Пройдено {progress.CoveredDistanceMetres:N0} м из {progress.TotalDistanceMetres:N0} м · "
             + $"осталось {progress.RemainingDistanceMetres:N0} м · {progress.CoveragePercent:N0}%";
+
+    public string CompactProgressText => Progress is not { } progress
+        ? "Обход: не начат"
+        : $"Обход: {progress.CoveragePercent:N0}% · {progress.CoveredDistanceMetres:N0}/{progress.TotalDistanceMetres:N0} м";
 
     public string CoverageStatus => _isLocationInsideCoverage == false
         ? "Местоположение вне покрытия офлайн-карты. GPS-точка показана без подмены координат."
@@ -145,10 +155,10 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         }
 
         LocationServiceState state = await _locationService.EnableAsync(cancellationToken);
-        HandleLocationState(state);
         bool permissionWasDenied = state.Permission is LocationPermissionState.Denied
             or LocationPermissionState.PermanentlyDenied;
         IsLocationEnabled = !permissionWasDenied;
+        HandleLocationState(state);
         _preferencesStore.Save(new LocationPreferences(!permissionWasDenied));
         if (permissionWasDenied)
         {
@@ -157,7 +167,6 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         if (state.IsEnabled)
         {
             _locationService.ResumeUpdates();
-            _headingService.ResumeUpdates();
         }
     }
 
@@ -212,7 +221,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public void StartTraversal()
     {
-        if (_route is null || _tracker is null || Progress?.Status == ProgressTrackingStatus.Completed)
+        if (!CanStartTraversal || _tracker is null)
         {
             return;
         }
@@ -224,7 +233,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public void PauseTraversal()
     {
-        if (_tracker is null || Progress?.Status != ProgressTrackingStatus.Active)
+        if (!CanPauseTraversal || _tracker is null)
         {
             return;
         }
@@ -236,7 +245,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public void ResumeTraversal()
     {
-        if (_tracker is null || Progress?.Status != ProgressTrackingStatus.Paused)
+        if (!CanResumeTraversal || _tracker is null)
         {
             return;
         }
@@ -248,7 +257,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public void FinishTraversal()
     {
-        if (_tracker is null)
+        if (!CanFinishTraversal || _tracker is null)
         {
             return;
         }
@@ -292,7 +301,6 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
             if (state.IsEnabled)
             {
                 _locationService.ResumeUpdates();
-                _headingService.ResumeUpdates();
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -344,9 +352,17 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         {
             ClearLocationDisplay();
         }
-        else if (state.Message == "Обновление геолокации приостановлено вместе с приложением.")
+        else if (state.FixState is LocationFixState.Stale or LocationFixState.Searching
+            || state.IsSearching && state.FixState == LocationFixState.None)
         {
             ClearLocationDisplay();
+        }
+
+        bool paused = state.IsSearching && state.FixState == LocationFixState.None;
+        if (!_disposed && IsLocationEnabled && state.IsEnabled && !paused
+            && state.FixState != LocationFixState.None)
+        {
+            _headingService.ResumeUpdates();
         }
         this.RaisePropertyChanged(nameof(IsLocationSupported));
     }
@@ -356,19 +372,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         if (_tracker is not null)
         {
             RouteProgressSnapshot snapshot = _tracker.CreateSnapshot(_sessionId, _startedUtc, _clock());
-            Task worker;
-            lock (_saveGate)
-            {
-                worker = _saveWorker;
-            }
-
-            worker.GetAwaiter().GetResult();
-            lock (_saveGate)
-            {
-                _pendingSnapshot = null;
-            }
-
-            SaveSnapshotSafely(snapshot);
+            _sessionWriter.SaveImmediately(snapshot);
         }
     }
 
@@ -380,50 +384,13 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         }
 
         RouteProgressSnapshot snapshot = _tracker.CreateSnapshot(_sessionId, _startedUtc, _clock());
-        lock (_saveGate)
-        {
-            _pendingSnapshot = snapshot;
-            if (_saveWorkerActive)
-            {
-                return;
-            }
-
-            _saveWorkerActive = true;
-            _saveWorker = Task.Run(DrainSessionSaves);
-        }
+        _sessionWriter.Queue(snapshot);
     }
 
-    private void DrainSessionSaves()
+    private void HandlePersistenceFailure(Exception exception)
     {
-        while (true)
-        {
-            RouteProgressSnapshot? snapshot;
-            lock (_saveGate)
-            {
-                snapshot = _pendingSnapshot;
-                _pendingSnapshot = null;
-                if (snapshot is null)
-                {
-                    _saveWorkerActive = false;
-                    return;
-                }
-            }
-
-            SaveSnapshotSafely(snapshot);
-        }
-    }
-
-    private void SaveSnapshotSafely(RouteProgressSnapshot snapshot)
-    {
-        try
-        {
-            _sessionStore.Save(snapshot);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Не удалось сохранить сессию обхода: {ex.Message}");
-            ReportPersistenceError("Не удалось сохранить прогресс обхода. Проверьте свободное место в памяти устройства.");
-        }
+        Console.Error.WriteLine($"Не удалось сохранить сессию обхода: {exception.Message}");
+        ReportPersistenceError("Не удалось сохранить прогресс обхода. Проверьте свободное место в памяти устройства.");
     }
 
     private void ReportPersistenceError(string message)
@@ -445,7 +412,12 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private void NotifyProgressChanged()
     {
         this.RaisePropertyChanged(nameof(IsTraversalActive));
+        this.RaisePropertyChanged(nameof(CanStartTraversal));
+        this.RaisePropertyChanged(nameof(CanPauseTraversal));
+        this.RaisePropertyChanged(nameof(CanResumeTraversal));
+        this.RaisePropertyChanged(nameof(CanFinishTraversal));
         this.RaisePropertyChanged(nameof(ProgressText));
+        this.RaisePropertyChanged(nameof(CompactProgressText));
     }
 
     private static bool IsSnapshotForRoute(
@@ -453,8 +425,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         RouteProgressState initial,
         RouteAlternative route) =>
         string.Equals(snapshot.RouteFingerprint, initial.RouteFingerprint, StringComparison.Ordinal)
-        && snapshot.Geometry.Count == route.Geometry.Count
-        && snapshot.Geometry.Zip(route.Geometry).All(pair => pair.First == pair.Second);
+        && RouteProgressGeometry.Matches(snapshot.Geometry, route.Geometry);
 
     public void Dispose()
     {
@@ -471,6 +442,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         }
 
         _lifetime.Dispose();
+        _sessionWriter.Dispose();
         Start.Dispose();
         Pause.Dispose();
         Resume.Dispose();

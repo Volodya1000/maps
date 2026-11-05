@@ -293,4 +293,16 @@ public sealed class HeadingSmootherTests
 
         Assert.Null(smoother.Update(90, false));
     }
+
+    [Fact]
+    public void ResetStartsAHeadingSessionWithoutThePreviousFilterState()
+    {
+        HeadingSmoother smoother = new(0.25);
+
+        smoother.Update(0, true);
+        smoother.Update(90, true);
+        smoother.Reset();
+
+        Assert.Equal(180, smoother.Update(180, true));
+    }
 }

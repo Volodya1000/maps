@@ -233,18 +233,22 @@
                                 <Button
                                     x:Name="StartTraversalButton"
                                     Command="{Binding Tracking.Start}"
+                                    IsVisible="{Binding Tracking.CanStartTraversal}"
                                     Content="Начать обход" />
                                 <Button
                                     x:Name="PauseTraversalButton"
                                     Command="{Binding Tracking.Pause}"
+                                    IsVisible="{Binding Tracking.CanPauseTraversal}"
                                     Content="Пауза" />
                                 <Button
                                     x:Name="ResumeTraversalButton"
                                     Command="{Binding Tracking.Resume}"
+                                    IsVisible="{Binding Tracking.CanResumeTraversal}"
                                     Content="Продолжить" />
                                 <Button
                                     x:Name="FinishTraversalButton"
                                     Command="{Binding Tracking.Finish}"
+                                    IsVisible="{Binding Tracking.CanFinishTraversal}"
                                     Content="Завершить" />
                             </WrapPanel>
                         </StackPanel>

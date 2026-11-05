@@ -72,7 +72,7 @@ public sealed class JsonTrackingSessionStore(string path) : ITrackingSessionStor
             throw new InvalidOperationException("Недопустимая структура сессии обхода.");
         }
 
-        double total = snapshot.Geometry.Zip(snapshot.Geometry.Skip(1), (first, second) => first.DistanceTo(second)).Sum();
+        double total = RouteProgressGeometry.CalculateLength(snapshot.Geometry);
         if (!double.IsFinite(total) || total <= 0
             || snapshot.CoveredIntervals.Any(interval =>
                 !double.IsFinite(interval.StartMetres)

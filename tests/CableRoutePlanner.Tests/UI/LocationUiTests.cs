@@ -1,8 +1,10 @@
+using Avalonia;
 using System.Reactive.Subjects;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Input.Raw;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using CableRoutePlanner.Application;
@@ -55,7 +57,7 @@ public sealed class LocationUiTests
     }
 
     [AvaloniaFact]
-    public void AndroidMapShowsLocationAndTraversalControls()
+    public async Task AndroidMapShowsOnlyValidTraversalActionsAndCompactCollapsedProgress()
     {
         using TrackingViewModel tracking = CreateTracking();
         using MapViewModel viewModel = TestData.CreateMapViewModel(
@@ -80,10 +82,30 @@ public sealed class LocationUiTests
 
         Assert.True(view.FindControl<Button>("LocationButton")!.IsEffectivelyVisible);
         Assert.True(view.FindControl<Control>("TrackingPanel")!.IsEffectivelyVisible);
-        Assert.NotNull(view.FindControl<Button>("StartTraversalButton"));
-        Assert.NotNull(view.FindControl<Button>("PauseTraversalButton"));
-        Assert.NotNull(view.FindControl<Button>("ResumeTraversalButton"));
-        Assert.NotNull(view.FindControl<Button>("FinishTraversalButton"));
+        Button start = view.FindControl<Button>("StartTraversalButton")!;
+        Button pause = view.FindControl<Button>("PauseTraversalButton")!;
+        Button resume = view.FindControl<Button>("ResumeTraversalButton")!;
+        Button finish = view.FindControl<Button>("FinishTraversalButton")!;
+        Assert.True(start.IsEffectivelyVisible);
+        Assert.False(pause.IsEffectivelyVisible);
+        Assert.False(resume.IsEffectivelyVisible);
+        Assert.False(finish.IsEffectivelyVisible);
+
+        await tracking.Start.Execute(Unit.Default).ToTask();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.False(start.IsEffectivelyVisible);
+        Assert.True(pause.IsEffectivelyVisible);
+        Assert.False(resume.IsEffectivelyVisible);
+        Assert.True(finish.IsEffectivelyVisible);
+
+        Border handle = view.FindControl<Border>("SheetHandleButton")!;
+        using HeadlessTouch touch = new(window);
+        Point startPoint = await touch.TargetAsync(handle);
+        Point endPoint = startPoint + new Point(0, 80);
+        touch.Send(Avalonia.Input.Raw.RawPointerEventType.TouchBegin, startPoint);
+        touch.Send(Avalonia.Input.Raw.RawPointerEventType.TouchUpdate, endPoint);
+        touch.Send(Avalonia.Input.Raw.RawPointerEventType.TouchEnd, endPoint);
+        Assert.Contains("Обход:", view.FindControl<TextBlock>("SheetHandleText")!.Text);
         window.Close();
     }
 
