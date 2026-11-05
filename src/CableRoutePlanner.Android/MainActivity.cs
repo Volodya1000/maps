@@ -21,6 +21,9 @@ namespace CableRoutePlanner.Android;
     ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
 public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
 {
+    private AndroidLocationService? _locationService;
+    private AndroidHeadingService? _headingService;
+
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
     {
         string directory = Path.Combine(FilesDir!.AbsolutePath, "Data");
@@ -31,6 +34,10 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
             services.AddLogging(logging => logging.AddConsole());
             services.AddInfrastructure();
             services.AddPersistence(directory, Path.Combine(FilesDir!.AbsolutePath, "settings.json"));
+            _locationService = new AndroidLocationService(this);
+            _headingService = new AndroidHeadingService(this);
+            services.AddSingleton<ILocationService>(_locationService);
+            services.AddSingleton<IHeadingService>(_headingService);
             services.AddSingleton<IPlanningSession, PlanningSession>();
             services.AddPresentation((progress, ct) => PrepareDataAsync(directory, progress, ct));
             IServiceProvider provider = services.BuildServiceProvider(
@@ -38,6 +45,31 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
             PresentationServiceCollectionExtensions.ConfigureApplication(
                 (PlannerApplication)b.Instance!, provider, directory);
         }).UseReactiveUI();
+    }
+
+    protected override void OnResume()
+    {
+        base.OnResume();
+        _locationService?.ResumeUpdates();
+    }
+
+    protected override void OnPause()
+    {
+        _locationService?.PauseUpdates();
+        _headingService?.PauseUpdates();
+        base.OnPause();
+    }
+
+    public override void OnRequestPermissionsResult(
+        int requestCode,
+        string[] permissions,
+        Permission[] grantResults)
+    {
+        base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 4101)
+        {
+            _locationService?.OnRequestPermissionsResult();
+        }
     }
 
     private async Task PrepareDataAsync(string directory, IProgress<string> progress, CancellationToken ct)

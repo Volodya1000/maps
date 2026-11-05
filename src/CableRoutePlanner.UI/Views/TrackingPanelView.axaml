@@ -1,0 +1,59 @@
+<rx:ReactiveUserControl
+    x:Class="CableRoutePlanner.UI.Views.TrackingPanelView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:rx="using:Avalonia.ReactiveUI"
+    xmlns:vm="using:CableRoutePlanner.ViewModels"
+    x:DataType="vm:TrackingViewModel"
+    x:TypeArguments="vm:TrackingViewModel">
+    <Border Classes="tracking-panel">
+        <StackPanel Spacing="6">
+            <TextBlock
+                Classes="section-heading"
+                Text="Прокладка кабеля" />
+            <TextBlock
+                Classes="view-hint"
+                Text="{Binding TrackingStatusText}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Classes="view-hint"
+                Text="{Binding GpsDiagnosticText}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Classes="tracking-progress"
+                Text="{Binding ProgressText}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Classes="view-hint"
+                Text="{Binding LocationState.Message}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Classes="view-hint"
+                Text="{Binding PersistenceStatus}"
+                IsVisible="{Binding HasPersistenceError}"
+                TextWrapping="Wrap" />
+            <WrapPanel>
+                <Button
+                    x:Name="StartTraversalButton"
+                    Command="{Binding Start}"
+                    IsVisible="{Binding CanStartTraversal}"
+                    Content="Начать прокладку кабеля" />
+                <Button
+                    x:Name="PauseTraversalButton"
+                    Command="{Binding Pause}"
+                    IsVisible="{Binding CanPauseTraversal}"
+                    Content="Пауза" />
+                <Button
+                    x:Name="ResumeTraversalButton"
+                    Command="{Binding Resume}"
+                    IsVisible="{Binding CanResumeTraversal}"
+                    Content="Продолжить" />
+                <Button
+                    x:Name="FinishTraversalButton"
+                    Command="{Binding Finish}"
+                    IsVisible="{Binding CanFinishTraversal}"
+                    Content="Завершить" />
+            </WrapPanel>
+        </StackPanel>
+    </Border>
+</rx:ReactiveUserControl>

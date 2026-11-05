@@ -1,0 +1,49 @@
+<rx:ReactiveUserControl
+    x:Class="CableRoutePlanner.UI.Views.RouteChoicesView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CableRoutePlanner.UI.Views"
+    xmlns:rx="using:Avalonia.ReactiveUI"
+    xmlns:vm="using:CableRoutePlanner.ViewModels"
+    x:DataType="vm:MapViewModel"
+    x:TypeArguments="vm:MapViewModel">
+    <StackPanel IsVisible="{Binding HasRoute}" Spacing="12">
+        <Border Classes="route-divider" />
+        <TextBlock
+            Classes="alternatives-heading"
+            Text="Альтернативы"
+            IsVisible="{Binding HasAlternatives}" />
+        <ItemsControl
+            x:Name="RouteChoices"
+            ItemsSource="{Binding RouteChoices}"
+            IsVisible="{Binding HasAlternatives}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:RouteChoice">
+                    <Button
+                        Classes="route-choice"
+                        Classes.selected="{Binding IsSelected}"
+                        Command="{Binding $parent[local:RouteChoicesView].ViewModel.ChooseRoute}"
+                        CommandParameter="{Binding Id}">
+                        <StackPanel Spacing="4">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock
+                                    Classes="route-choice-name"
+                                    Text="{Binding Name}" />
+                                <TextBlock
+                                    Classes="route-choice-length"
+                                    Grid.Column="1"
+                                    Text="{Binding LengthText}" />
+                            </Grid>
+                            <WrapPanel>
+                                <Border Classes="metric-badge forest"><TextBlock Text="{Binding ForestText}" /></Border>
+                                <Border Classes="metric-badge field"><TextBlock Text="{Binding FieldText}" /></Border>
+                                <Border Classes="metric-badge bridge"><TextBlock Text="{Binding BridgesText}" /></Border>
+                                <Border Classes="metric-badge pipeline" IsVisible="{Binding HasGas}" ToolTip.Tip="Кандидаты воздушных переходов; согласование не подтверждено"><TextBlock Text="{Binding GasText}" /></Border>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Button>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</rx:ReactiveUserControl>

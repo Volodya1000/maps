@@ -12,9 +12,11 @@ namespace CableRoutePlanner.ViewModels;
 public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDisposable
 {
     private readonly ISettingsStore _store;
+    private readonly TrackingViewModel? _tracking;
     private readonly CompositeDisposable _lifetime = new();
     private RoutingOptions _saved = new();
     private bool _loadFailed;
+    private bool _showLocation;
 
     public string UrlPathSegment => "Настройки";
     public IScreen HostScreen { get; }
@@ -36,6 +38,26 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         get; set;
     }
     [Reactive] public string Status { get; private set; } = "";
+
+    public bool IsLocationSupported => _tracking?.IsLocationSupported == true;
+
+    public bool ShowLocation
+    {
+        get => _showLocation;
+        private set => this.RaiseAndSetIfChanged(ref _showLocation, value);
+    }
+
+    public string LocationStatus => _tracking?.LocationState.Message ?? "";
+
+    public ReactiveCommand<Unit, Unit> ToggleLocation
+    {
+        get; private set;
+    }
+
+    public ReactiveCommand<Unit, Unit> OpenLocationSettings
+    {
+        get; private set;
+    }
 
     public decimal MinimumRouteLengthMetres { get; } = (decimal)RoutingOptions.MinRouteLengthMetres;
 
@@ -65,27 +87,58 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         get; private set;
     }
 
-    public SettingsViewModel(IScreen screen, ISettingsStore store)
+    public SettingsViewModel(IScreen screen, ISettingsStore store, TrackingViewModel? tracking = null)
     {
         HostScreen = screen;
         _store = store;
+        _tracking = tracking;
+        ShowLocation = tracking?.IsLocationEnabled == true;
         Reload();
         SetupSubscriptions();
         InitializeCommands();
+        if (_tracking is not null)
+        {
+            _tracking.PropertyChanged += TrackingPropertyChanged;
+        }
     }
 
     private void SetupSubscriptions() =>
         this.WhenAnyValue(x => x.CellSize, x => x.ReservePercent, x => x.MaxRouteLengthMetres)
             .Subscribe(_ => NotifyChanges()).DisposeWith(_lifetime);
 
-    [MemberNotNull(nameof(Save), nameof(ResetDefaults))]
+    [MemberNotNull(nameof(Save), nameof(ResetDefaults), nameof(ToggleLocation), nameof(OpenLocationSettings))]
     private void InitializeCommands()
     {
         Save = ReactiveCommand.Create(SaveSettings, this.WhenAnyValue(x => x.CanSave))
             .DisposeWith(_lifetime);
         ResetDefaults = ReactiveCommand.Create(ResetSettings, this.WhenAnyValue(x => x.CanReset))
             .DisposeWith(_lifetime);
+        ToggleLocation = ReactiveCommand.CreateFromTask(() => SetLocationEnabledAsync(!ShowLocation))
+            .DisposeWith(_lifetime);
+        OpenLocationSettings = ReactiveCommand.Create(() => _tracking?.OpenSystemLocationSettings())
+            .DisposeWith(_lifetime);
     }
+
+    public async Task SetLocationEnabledAsync(bool enabled)
+    {
+        if (_tracking is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _tracking.SetLocationEnabledAsync(enabled);
+            ShowLocation = _tracking.IsLocationEnabled;
+            LocationStatusChanged();
+        }
+        catch (Exception ex)
+        {
+            Status = $"Ошибка включения геолокации: {ex.Message}";
+        }
+    }
+
+    public bool HasLocationStatus => !string.IsNullOrWhiteSpace(LocationStatus);
 
     public void Reload()
     {
@@ -156,5 +209,30 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         this.RaisePropertyChanged(nameof(CanReset));
     }
 
-    public void Dispose() => _lifetime.Dispose();
+    private void TrackingPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TrackingViewModel.IsLocationEnabled)
+            or nameof(TrackingViewModel.LocationState))
+        {
+            ShowLocation = _tracking?.IsLocationEnabled == true;
+            LocationStatusChanged();
+        }
+    }
+
+    private void LocationStatusChanged()
+    {
+        this.RaisePropertyChanged(nameof(IsLocationSupported));
+        this.RaisePropertyChanged(nameof(LocationStatus));
+        this.RaisePropertyChanged(nameof(HasLocationStatus));
+    }
+
+    public void Dispose()
+    {
+        if (_tracking is not null)
+        {
+            _tracking.PropertyChanged -= TrackingPropertyChanged;
+        }
+
+        _lifetime.Dispose();
+    }
 }

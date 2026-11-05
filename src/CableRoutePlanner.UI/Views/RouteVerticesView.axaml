@@ -1,0 +1,59 @@
+<rx:ReactiveUserControl
+    x:Class="CableRoutePlanner.UI.Views.RouteVerticesView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CableRoutePlanner.UI.Views"
+    xmlns:rx="using:Avalonia.ReactiveUI"
+    xmlns:vm="using:CableRoutePlanner.ViewModels"
+    x:DataType="vm:MapViewModel"
+    x:TypeArguments="vm:MapViewModel">
+    <Expander
+        IsExpanded="False"
+        IsVisible="{Binding HasRoute}">
+        <Expander.Header>
+            <TextBlock
+                Classes="route-vertices-heading"
+                Text="Точки прокладки кабеля" />
+        </Expander.Header>
+        <StackPanel Margin="0,8,0,0" Spacing="4">
+            <CheckBox IsChecked="{Binding ShowAllRouteVertices}"
+                Content="Все промежуточные точки на карте"
+                ToolTip.Tip="Без переключателя точки одного участка появляются вместе при приближении. Выбор точки раскрывает весь участок на карте." />
+            <ItemsControl ItemsSource="{Binding VisibleRouteVertices}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:RouteVertexRow">
+                        <Border Classes="route-vertex-row" Classes.child="{Binding IsChild}">
+                            <Grid ColumnDefinitions="32,*">
+                                <Button
+                                    IsVisible="{Binding HasChildren}"
+                                    AutomationProperties.Name="Раскрыть или свернуть промежуточные вершины"
+                                    Command="{Binding $parent[local:RouteVerticesView].ViewModel.ToggleRouteLeg}"
+                                    CommandParameter="{Binding LegIndex}">
+                                    <Grid Width="16" Height="16">
+                                        <Path Classes="vertex-chevron" Data="M 4,2 L 10,8 L 4,14" IsVisible="{Binding !IsExpanded}" />
+                                        <Path Classes="vertex-chevron" Data="M 2,4 L 8,10 L 14,4" IsVisible="{Binding IsExpanded}" />
+                                    </Grid>
+                                </Button>
+                                <Button Grid.Column="1" Classes="vertex-select"
+                                    Classes.selected="{Binding IsSelected}"
+                                    Command="{Binding $parent[local:RouteVerticesView].ViewModel.SelectRouteVertex}"
+                                    CommandParameter="{Binding Number}">
+                                    <Grid ColumnDefinitions="64,*">
+                                        <TextBlock Text="{Binding DisplayLabel}" />
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Classes="vertex-coordinate" Text="{Binding Display}" />
+                                            <TextBlock Classes="view-hint" Text="{Binding KindText}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button
+                Command="{Binding CopyRouteVertex}"
+                Content="{Binding CopyRouteVertexText}" />
+        </StackPanel>
+    </Expander>
+</rx:ReactiveUserControl>

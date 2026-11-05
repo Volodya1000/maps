@@ -72,6 +72,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private readonly IClipboardService _clipboard;
 
+    private readonly TrackingViewModel? _tracking;
+
     private readonly CompositeDisposable _lifetime = new();
 
     private readonly ObservableAsPropertyHelper<bool> _canBuild;
@@ -104,6 +106,16 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public IReadOnlyList<MapFeature> Features { get; private set; } = Array.Empty<MapFeature>();
 
     public DataPackageInfo DataInfo => _mapLoader.Info;
+
+    public TrackingViewModel? Tracking => _tracking;
+
+    public bool IsLocationSupported => _tracking?.IsLocationSupported == true;
+
+    public string LocationCoverageStatus => _tracking?.CoverageStatus ?? "";
+
+    public bool HasLocationCoverageWarning => !string.IsNullOrWhiteSpace(LocationCoverageStatus);
+
+    public bool ShowTrackingPanel => IsLocationSupported && HasRoute;
 
     public WaypointRow? SelectedPoint
     {
@@ -281,13 +293,19 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         IPlanningSession session,
         IMapAreaLoader mapLoader,
         IRouteCalculationService calculations,
-        IClipboardService clipboard)
+        IClipboardService clipboard,
+        TrackingViewModel? tracking = null)
     {
         HostScreen = screen;
         _session = session;
         _mapLoader = mapLoader;
         _calculations = calculations;
         _clipboard = clipboard;
+        _tracking = tracking;
+        if (_tracking is not null)
+        {
+            _tracking.PropertyChanged += TrackingPropertyChanged;
+        }
 
         _canBuild = this.WhenAnyValue(
             x => x.PointCount,
@@ -356,9 +374,20 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             .Subscribe(route =>
             {
                 this.RaisePropertyChanged(nameof(HasRoute));
+                this.RaisePropertyChanged(nameof(ShowTrackingPanel));
+                _tracking?.SetRoute(route);
                 UpdateRoutePresentation(route);
             })
             .DisposeWith(_lifetime);
+    }
+
+    private void TrackingPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(TrackingViewModel.CoverageStatus))
+        {
+            this.RaisePropertyChanged(nameof(LocationCoverageStatus));
+            this.RaisePropertyChanged(nameof(HasLocationCoverageWarning));
+        }
     }
 
     private async Task AddAtAsync(GeoCoordinate coordinate)
@@ -668,6 +697,10 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         _disposed = true;
         _calculations.Dispose();
         _mapLoader.Invalidate();
+        if (_tracking is not null)
+        {
+            _tracking.PropertyChanged -= TrackingPropertyChanged;
+        }
         _lifetime.Dispose();
     }
 }

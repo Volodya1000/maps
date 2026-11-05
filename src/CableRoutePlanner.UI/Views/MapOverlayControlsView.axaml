@@ -1,0 +1,89 @@
+<rx:ReactiveUserControl
+    x:Class="CableRoutePlanner.UI.Views.MapOverlayControlsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:rx="using:Avalonia.ReactiveUI"
+    xmlns:vm="using:CableRoutePlanner.ViewModels"
+    x:DataType="vm:MapViewModel"
+    x:TypeArguments="vm:MapViewModel">
+    <Grid RowDefinitions="*,Auto">
+        <Border
+            Classes="map-toolbar"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top">
+            <StackPanel
+                Orientation="Horizontal"
+                Spacing="8">
+                <ToggleButton
+                    Content="Добавлять точки"
+                    IsChecked="{Binding AddMode}" />
+                <Button
+                    x:Name="ZoomInButton"
+                    Content="+"
+                    Click="ZoomInClicked" />
+                <Button
+                    x:Name="ZoomOutButton"
+                    Content="−"
+                    Click="ZoomOutClicked" />
+            </StackPanel>
+        </Border>
+        <Button
+            x:Name="NorthButton"
+            Classes="north-button"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            ToolTip.Tip="Вернуть карту к северу"
+            AutomationProperties.Name="Вернуть карту к северу"
+            Click="ResetNorthClicked">
+            <Border Classes="compass-face">
+                <!-- The compass face stays fixed; only the needle rotates. -->
+                <Canvas
+                    x:Name="NorthArrow"
+                    Classes="compass-needle"
+                    RenderTransformOrigin="50%,50%">
+                    <Polygon Classes="compass-north" Points="23,6 14,22 32,22" />
+                    <Polygon Classes="compass-south" Points="23,40 14,24 32,24" />
+                    <Ellipse
+                        Classes="compass-center"
+                        Width="5"
+                        Height="5"
+                        Canvas.Left="20.5"
+                        Canvas.Top="20.5" />
+                </Canvas>
+            </Border>
+        </Button>
+        <Button
+            x:Name="LocationButton"
+            Classes="location-button"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            IsVisible="{Binding IsLocationSupported}"
+            ToolTip.Tip="Показать моё местоположение"
+            AutomationProperties.Name="Показать моё местоположение"
+            Click="CenterLocationClicked">
+            <Border Classes="location-face">
+                <TextBlock
+                    Classes="location-glyph"
+                    Text="◎" />
+            </Border>
+        </Button>
+        <Border
+            Grid.Row="1"
+            Classes="map-footer">
+            <StackPanel>
+                <TextBlock Classes="map-notice" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
+                <TextBlock
+                    Classes="map-notice"
+                    Text="{Binding LocationCoverageStatus}"
+                    IsVisible="{Binding HasLocationCoverageWarning}"
+                    TextWrapping="Wrap" />
+                <TextBlock
+                    x:Name="AttributionCredit"
+                    Classes="map-attribution"
+                    Text="ⓘ"
+                    AutomationProperties.Name="© OpenStreetMap contributors · ODbL 1.0"
+                    ToolTip.Tip="© OpenStreetMap contributors · ODbL 1.0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</rx:ReactiveUserControl>

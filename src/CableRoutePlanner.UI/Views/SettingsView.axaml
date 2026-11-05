@@ -13,8 +13,38 @@
             HorizontalAlignment="Stretch"
             Spacing="16">
             <TextBlock
+                x:Name="SettingsTitle"
                 Classes="settings-title"
-                Text="Настройки расчёта" />
+                Text="Настройки" />
+            <StackPanel
+                x:Name="LocationSection"
+                IsVisible="{Binding IsLocationSupported}"
+                Spacing="8">
+                <TextBlock
+                    Classes="section-heading"
+                    Text="Местоположение" />
+                <TextBlock
+                    Text="Координаты определяются автоматически только после вашего согласия. Настройка применяется сразу."
+                    TextWrapping="Wrap" />
+                <ToggleSwitch
+                    x:Name="LocationToggle"
+                    AutomationProperties.Name="Показывать моё местоположение"
+                    Command="{Binding ToggleLocation}"
+                    Content="Показывать моё местоположение"
+                    IsChecked="{Binding ShowLocation, Mode=OneWay}" />
+                <TextBlock
+                    Text="{Binding LocationStatus}"
+                    TextWrapping="Wrap"
+                    IsVisible="{Binding HasLocationStatus}" />
+                <Button
+                    Command="{Binding OpenLocationSettings}"
+                    Content="Открыть настройки геолокации Android"
+                    IsVisible="{Binding HasLocationStatus}" />
+            </StackPanel>
+            <Border Classes="route-divider" />
+            <TextBlock
+                Classes="section-heading"
+                Text="Расчёт маршрутов" />
             <TextBlock Text="Размер ячейки сетки, м (5–200)" />
             <NumericUpDown
                 x:Name="CellSizeInput"

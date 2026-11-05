@@ -26,6 +26,26 @@ internal static class MapLayerBindings
         viewModel.WhenAnyValue(vm => vm.SelectedRouteVertex, vm => vm.ShowAllRouteVertices)
             .Subscribe(_ => adapter.SetRouteVertices(viewModel.RouteVertices.ToArray(), viewModel.ShowAllRouteVertices)).DisposeWith(lifetime);
         viewModel.WhenAnyValue(vm => vm.AddMode).Subscribe(adapter.SetAddMode).DisposeWith(lifetime);
+        if (viewModel.Tracking is { } tracking)
+        {
+            tracking.WhenAnyValue(vm => vm.CurrentLocation, vm => vm.CurrentHeading)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(_ =>
+                {
+                    bool? insideCoverage = tracking.CurrentLocation is { } location
+                        ? viewModel.DataInfo.Contains(location.Coordinate)
+                        : null;
+                    tracking.SetCoverage(insideCoverage);
+                    adapter.SetLocation(tracking.CurrentLocation, tracking.CurrentHeading, insideCoverage == true);
+                })
+                .DisposeWith(lifetime);
+            tracking.WhenAnyValue(vm => vm.Progress)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(adapter.SetProgress)
+                .DisposeWith(lifetime);
+            adapter.ManualCameraUsed += tracking.DisableFollowing;
+            Disposable.Create(() => adapter.ManualCameraUsed -= tracking.DisableFollowing).DisposeWith(lifetime);
+        }
         viewModel.WhenAnyValue(vm => vm.MapVersion)
             .Select(_ => Observable.FromAsync(() => adapter.SetFeaturesAsync(viewModel.Features))
                 .ObserveOn(RxApp.MainThreadScheduler)

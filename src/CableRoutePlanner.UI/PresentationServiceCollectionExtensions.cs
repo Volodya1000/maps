@@ -4,6 +4,7 @@ using CableRoutePlanner.UI.MapAdapters;
 using CableRoutePlanner.UI.Views;
 using CableRoutePlanner.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ReactiveUI;
 
 namespace CableRoutePlanner.UI;
@@ -23,6 +24,9 @@ public static class PresentationServiceCollectionExtensions
         {
             services.AddSingleton(clipboard);
         }
+        services.TryAddSingleton<ILocationService>(_ => new DisabledLocationService());
+        services.TryAddSingleton<IHeadingService>(_ => new DisabledHeadingService());
+        services.AddSingleton<TrackingViewModel>();
         services.AddSingleton<IScreen, NavigationHost>();
         services.AddSingleton<IMapAreaLoader, MapAreaLoader>();
         services.AddSingleton<IRouteCalculationService>(provider => new RouteCalculationService(

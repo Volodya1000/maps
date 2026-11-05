@@ -12,6 +12,10 @@ public static class PersistenceServiceCollectionExtensions
     {
         services.AddSingleton<IGeodataRepository>(_ => new SqliteGeodataRepository(dataDirectory));
         services.AddSingleton<ISettingsStore>(_ => new JsonSettingsStore(settingsPath));
+        services.AddSingleton<ILocationPreferencesStore>(_ => new JsonLocationPreferencesStore(
+            Path.Combine(dataDirectory, "location-settings.json")));
+        services.AddSingleton<ITrackingSessionStore>(_ => new JsonTrackingSessionStore(
+            Path.Combine(dataDirectory, "tracking-session.json")));
         return services;
     }
 }

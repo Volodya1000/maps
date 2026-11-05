@@ -23,8 +23,10 @@ internal sealed class MemoryData(params MapFeature[] features) : IGeodataReposit
 internal static class TestData
 {
     public static MapViewModel CreateMapViewModel(ReactiveUI.IScreen screen, IPlanningSession session,
-        IMapAreaLoader loader, ISettingsStore settings, IClipboardService clipboard) =>
-        new(screen, session, loader, new RouteCalculationService(session, settings, () => loader.Info.Bounds), clipboard);
+        IMapAreaLoader loader, ISettingsStore settings, IClipboardService clipboard,
+        TrackingViewModel? tracking = null) =>
+        new(screen, session, loader, new RouteCalculationService(session, settings, () => loader.Info.Bounds), clipboard,
+            tracking);
 
     public static IPointPlacementValidator AllowAllValidator { get; } = new AllowAllPointPlacementValidator();
 
