@@ -12,7 +12,7 @@ internal sealed class TrackingSessionWriter(
     private bool _workerActive;
     private bool _disposed;
 
-    public void Queue(RouteProgressSnapshot snapshot)
+    public void QueueSave(RouteProgressSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         lock (_gate)

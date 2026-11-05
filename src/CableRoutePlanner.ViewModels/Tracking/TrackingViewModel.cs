@@ -4,6 +4,7 @@ using System.Reactive.Disposables;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using ReactiveUI;
+using ReactiveUI.Fody.Helpers;
 
 namespace CableRoutePlanner.ViewModels;
 
@@ -13,7 +14,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private readonly IHeadingService _headingService;
     private readonly ILocationPreferencesStore _preferencesStore;
     private readonly ITrackingSessionStore _sessionStore;
-    private readonly TrackingSessionWriter _sessionWriter;
+    private readonly TrackingSessionWriter _sessionSaver;
     private readonly Func<DateTimeOffset> _clock;
     private readonly CompositeDisposable _lifetime = new();
     private RouteProgressTracker? _tracker;
@@ -21,14 +22,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private Guid _sessionId;
     private DateTimeOffset _startedUtc;
     private bool _disposed;
-    private bool _isLocationEnabled;
-    private bool _isFollowing;
-    private LocationServiceState _locationState;
-    private LocationMeasurement? _currentLocation;
-    private HeadingMeasurement? _currentHeading;
-    private RouteProgressState? _progress;
     private bool? _isLocationInsideCoverage;
-    private string _persistenceStatus = "";
 
     public TrackingViewModel(
         ILocationService locationService,
@@ -41,17 +35,14 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         _headingService = headingService ?? throw new ArgumentNullException(nameof(headingService));
         _preferencesStore = preferencesStore ?? throw new ArgumentNullException(nameof(preferencesStore));
         _sessionStore = sessionStore ?? throw new ArgumentNullException(nameof(sessionStore));
-        _sessionWriter = new TrackingSessionWriter(_sessionStore, HandlePersistenceFailure);
+        _sessionSaver = new TrackingSessionWriter(_sessionStore, HandlePersistenceFailure);
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
-        _locationState = _locationService.State;
-        _isLocationEnabled = _locationService.IsSupported && _preferencesStore.Load().IsEnabled;
+        LocationState = _locationService.State;
+        IsLocationEnabled = _locationService.IsSupported && _preferencesStore.Load().IsEnabled;
 
         _locationService.Measurements.Subscribe(HandleLocation).DisposeWith(_lifetime);
         _locationService.States.Subscribe(HandleLocationState).DisposeWith(_lifetime);
-        _headingService.Measurements.Subscribe(heading =>
-        {
-            CurrentHeading = heading;
-        }).DisposeWith(_lifetime);
+        _headingService.Measurements.Subscribe(heading => CurrentHeading = heading).DisposeWith(_lifetime);
 
         Start = ReactiveCommand.Create(StartTraversal, this.WhenAnyValue(vm => vm.CanStartTraversal));
         Pause = ReactiveCommand.Create(PauseTraversal, this.WhenAnyValue(vm => vm.CanPauseTraversal));
@@ -59,7 +50,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         Finish = ReactiveCommand.Create(FinishTraversal, this.WhenAnyValue(vm => vm.CanFinishTraversal));
         ToggleFollowCommand = ReactiveCommand.Create(ToggleFollow);
 
-        if (_isLocationEnabled)
+        if (IsLocationEnabled)
         {
             _ = RestoreEnabledLocationAsync();
         }
@@ -67,41 +58,17 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
 
     public bool IsLocationSupported => _locationService.IsSupported;
 
-    public bool IsLocationEnabled
-    {
-        get => _isLocationEnabled;
-        private set => this.RaiseAndSetIfChanged(ref _isLocationEnabled, value);
-    }
+    [Reactive] public bool IsLocationEnabled { get; private set; }
 
-    public LocationServiceState LocationState
-    {
-        get => _locationState;
-        private set => this.RaiseAndSetIfChanged(ref _locationState, value);
-    }
+    [Reactive] public LocationServiceState LocationState { get; private set; } = LocationServiceState.Disabled;
 
-    public LocationMeasurement? CurrentLocation
-    {
-        get => _currentLocation;
-        private set => this.RaiseAndSetIfChanged(ref _currentLocation, value);
-    }
+    [Reactive] public LocationMeasurement? CurrentLocation { get; private set; }
 
-    public HeadingMeasurement? CurrentHeading
-    {
-        get => _currentHeading;
-        private set => this.RaiseAndSetIfChanged(ref _currentHeading, value);
-    }
+    [Reactive] public HeadingMeasurement? CurrentHeading { get; private set; }
 
-    public RouteProgressState? Progress
-    {
-        get => _progress;
-        private set => this.RaiseAndSetIfChanged(ref _progress, value);
-    }
+    [Reactive] public RouteProgressState? Progress { get; private set; }
 
-    public bool IsFollowing
-    {
-        get => _isFollowing;
-        private set => this.RaiseAndSetIfChanged(ref _isFollowing, value);
-    }
+    [Reactive] public bool IsFollowing { get; private set; }
 
     public bool IsTraversalActive => Progress?.Status == ProgressTrackingStatus.Active;
 
@@ -128,7 +95,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         ? "Местоположение вне покрытия офлайн-карты. GPS-точка показана без подмены координат."
         : "";
 
-    public string PersistenceStatus => _persistenceStatus;
+    [Reactive] public string PersistenceStatus { get; private set; } = "";
 
     public bool HasPersistenceError => !string.IsNullOrWhiteSpace(PersistenceStatus);
 
@@ -340,7 +307,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private void HandleLocationState(LocationServiceState state)
     {
         LocationState = state;
-        if (_isLocationEnabled && (state.Permission is LocationPermissionState.Denied
+        if (IsLocationEnabled && (state.Permission is LocationPermissionState.Denied
             or LocationPermissionState.PermanentlyDenied))
         {
             IsLocationEnabled = false;
@@ -372,7 +339,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         if (_tracker is not null)
         {
             RouteProgressSnapshot snapshot = _tracker.CreateSnapshot(_sessionId, _startedUtc, _clock());
-            _sessionWriter.SaveImmediately(snapshot);
+            _sessionSaver.SaveImmediately(snapshot);
         }
     }
 
@@ -384,7 +351,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         }
 
         RouteProgressSnapshot snapshot = _tracker.CreateSnapshot(_sessionId, _startedUtc, _clock());
-        _sessionWriter.Queue(snapshot);
+        _sessionSaver.QueueSave(snapshot);
     }
 
     private void HandlePersistenceFailure(Exception exception)
@@ -402,8 +369,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
                 return Disposable.Empty;
             }
 
-            _persistenceStatus = message;
-            this.RaisePropertyChanged(nameof(PersistenceStatus));
+            PersistenceStatus = message;
             this.RaisePropertyChanged(nameof(HasPersistenceError));
             return Disposable.Empty;
         });
@@ -442,7 +408,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         }
 
         _lifetime.Dispose();
-        _sessionWriter.Dispose();
+        _sessionSaver.Dispose();
         Start.Dispose();
         Pause.Dispose();
         Resume.Dispose();
