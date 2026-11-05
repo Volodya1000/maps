@@ -4,6 +4,7 @@ using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.UI.MapAdapters;
 using Mapsui;
+using Mapsui.Extensions;
 using Mapsui.Nts;
 using Mapsui.Projections;
 using Xunit;
@@ -70,8 +71,12 @@ public sealed class MapLocationTests
         Assert.Single(location.Features, feature => feature.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any());
     }
 
-    [Avalonia.Headless.XUnit.AvaloniaFact]
-    public void HeadingSectorAccountsForCurrentMapRotation()
+    [Avalonia.Headless.XUnit.AvaloniaTheory]
+    [InlineData(0)]
+    [InlineData(90)]
+    [InlineData(180)]
+    [InlineData(270)]
+    public void HeadingSectorKeepsItsGeographicBearingWhenMapRotates(double rotation)
     {
         Mapsui.UI.Avalonia.MapControl control = new();
         using MapsuiMapAdapter adapter = new(control, new(27, 54, 28, 55));
@@ -86,15 +91,20 @@ public sealed class MapLocationTests
                 && geometryFeature.Geometry is NetTopologySuite.Geometries.Polygon polygon
                 && polygon.ExteriorRing.NumPoints == 15)).Geometry!.Coordinates[1];
 
-        control.Map.Navigator.RotateTo(90, 0);
+        control.Map.Navigator.RotateTo(rotation, 0);
         adapter.SetLocation(location, heading, true);
         NetTopologySuite.Geometries.Coordinate after = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features,
             feature => feature is Mapsui.Nts.GeometryFeature geometryFeature
                 && geometryFeature.Geometry is NetTopologySuite.Geometries.Polygon polygon
                 && polygon.ExteriorRing.NumPoints == 15)).Geometry!.Coordinates[1];
 
-        Assert.NotEqual(before.X, after.X);
-        Assert.NotEqual(before.Y, after.Y);
+        Assert.Equal(before.X, after.X, 6);
+        Assert.Equal(before.Y, after.Y, 6);
+        Viewport viewport = control.Map.Navigator.Viewport;
+        MPoint expectedScreen = viewport.WorldToScreen(before.X, before.Y);
+        MPoint actualScreen = viewport.WorldToScreen(after.X, after.Y);
+        Assert.Equal(expectedScreen.X, actualScreen.X, 6);
+        Assert.Equal(expectedScreen.Y, actualScreen.Y, 6);
     }
 
     [Avalonia.Headless.XUnit.AvaloniaFact]

@@ -83,13 +83,27 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     public bool HasRoute => _route is not null;
 
     public string ProgressText => Progress is not { } progress
-        ? "Обход не начат."
+        ? "Прокладка кабеля не начата."
         : $"Пройдено {progress.CoveredDistanceMetres:N0} м из {progress.TotalDistanceMetres:N0} м · "
             + $"осталось {progress.RemainingDistanceMetres:N0} м · {progress.CoveragePercent:N0}%";
 
     public string CompactProgressText => Progress is not { } progress
-        ? "Обход: не начат"
-        : $"Обход: {progress.CoveragePercent:N0}% · {progress.CoveredDistanceMetres:N0}/{progress.TotalDistanceMetres:N0} м";
+        ? "Прокладка: не начата"
+        : $"Прокладка: {progress.CoveragePercent:N0}% · {progress.CoveredDistanceMetres:N0}/{progress.TotalDistanceMetres:N0} м";
+
+    public string TrackingStatusText => Progress?.Status switch
+    {
+        ProgressTrackingStatus.Active => Progress.LocationQuality switch
+        {
+            LocationQuality.Invalid => "Прокладка начата. GPS-измерение неточное или вне трассы; прогресс не засчитан.",
+            LocationQuality.Stale => "Прокладка начата. Ожидание свежих GPS-координат.",
+            LocationQuality.Unknown => "Прокладка начата. Ожидание GPS-измерений.",
+            _ => "Прокладка начата. Учитываются пройденные участки трассы."
+        },
+        ProgressTrackingStatus.Paused => "Прокладка приостановлена.",
+        ProgressTrackingStatus.Completed => "Прокладка завершена.",
+        _ => "Прокладка ещё не начата."
+    };
 
     public string CoverageStatus => _isLocationInsideCoverage == false
         ? "Местоположение вне покрытия офлайн-карты. GPS-точка показана без подмены координат."
@@ -384,6 +398,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         this.RaisePropertyChanged(nameof(CanFinishTraversal));
         this.RaisePropertyChanged(nameof(ProgressText));
         this.RaisePropertyChanged(nameof(CompactProgressText));
+        this.RaisePropertyChanged(nameof(TrackingStatusText));
     }
 
     private static bool IsSnapshotForRoute(

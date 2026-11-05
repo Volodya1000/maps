@@ -522,11 +522,9 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         if (_lastHeading is { IsReliable: true } reliable)
         {
             double radius = Math.Max(location.AccuracyMetres * 1.8, 45);
-            double mapBearing = HeadingSmoother.ToMapBearing(
-                reliable.Degrees,
-                _control.Map.Navigator.Viewport.Rotation,
-                0);
-            GeometryFeature sector = new(CreateHeadingSector(center, mapBearing, radius));
+            // The sector is world geometry. Mapsui applies viewport rotation when
+            // rendering it, just as it does for the route and the north direction.
+            GeometryFeature sector = new(CreateHeadingSector(center, reliable.Degrees, radius));
             sector.Styles.Add(new VectorStyle
             {
                 Fill = new Brush(new Color(32, 112, 220, 70)),

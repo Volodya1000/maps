@@ -59,7 +59,9 @@ public sealed class LocationUiTests
     [AvaloniaFact]
     public async Task AndroidMapShowsOnlyValidTraversalActionsAndCompactCollapsedProgress()
     {
-        using TrackingViewModel tracking = CreateTracking();
+        UiLocationService location = new();
+        using TrackingViewModel tracking = new(location, new UiHeadingService(),
+            new UiLocationPreferences(), new UiTrackingSessions());
         using MapViewModel viewModel = TestData.CreateMapViewModel(
             new NavigationHost(),
             new Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
@@ -76,8 +78,8 @@ public sealed class LocationUiTests
         viewModel.SelectedRoute = new RouteAlternative(
             Guid.NewGuid(),
             "Маршрут",
-            [TestData.P(0, 0), TestData.P(100, 0)],
-            new RouteMetrics(100, 100, 0, 0, 0, 0, 100, null));
+            [TestData.P(0, 0), TestData.P(45, 0)],
+            new RouteMetrics(45, 45, 0, 0, 0, 0, 45, null));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
         Button locationButton = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "LocationButton");
@@ -92,21 +94,37 @@ public sealed class LocationUiTests
         Assert.False(resume.IsEffectivelyVisible);
         Assert.False(finish.IsEffectivelyVisible);
 
-        await tracking.Start.Execute(Unit.Default).ToTask();
+        Assert.Equal("Начать прокладку кабеля", start.Content);
+        await tracking.SetLocationEnabledAsync(true);
+        using HeadlessTouch touch = new(window);
+        Point buttonPoint = await touch.TargetAsync(start);
+        touch.Send(RawPointerEventType.TouchBegin, buttonPoint);
+        touch.Send(RawPointerEventType.TouchEnd, buttonPoint);
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.True(tracking.IsTraversalActive);
         Assert.False(start.IsEffectivelyVisible);
         Assert.True(pause.IsEffectivelyVisible);
         Assert.False(resume.IsEffectivelyVisible);
         Assert.True(finish.IsEffectivelyVisible);
 
+        DateTimeOffset started = DateTimeOffset.UtcNow.AddMinutes(-1);
+        for (int metre = 0; metre <= 45; metre++)
+        {
+            location.Emit(new LocationMeasurement(TestData.P(metre, 0), 1, started.AddSeconds(metre)));
+        }
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.Equal(100, tracking.Progress!.CoveragePercent, 2);
+        Mapsui.UI.Avalonia.MapControl map = view.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
+        Assert.NotEmpty(map.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>()
+            .Single(layer => layer.Name == "Пройденный маршрут").Features);
+
         Border handle = view.FindControl<Border>("SheetHandleButton")!;
-        using HeadlessTouch touch = new(window);
         Point startPoint = await touch.TargetAsync(handle);
         Point endPoint = startPoint + new Point(0, 80);
         touch.Send(Avalonia.Input.Raw.RawPointerEventType.TouchBegin, startPoint);
         touch.Send(Avalonia.Input.Raw.RawPointerEventType.TouchUpdate, endPoint);
         touch.Send(Avalonia.Input.Raw.RawPointerEventType.TouchEnd, endPoint);
-        Assert.Contains("Обход:", view.FindControl<TextBlock>("SheetHandleText")!.Text);
+        Assert.Contains("Прокладка:", view.FindControl<TextBlock>("SheetHandleText")!.Text);
         window.Close();
     }
 
@@ -160,6 +178,8 @@ public sealed class LocationUiTests
         public void PauseUpdates() { }
         public void ResumeUpdates() { }
         public void OpenSystemSettings() { }
+        public void Emit(LocationMeasurement measurement) =>
+            ((Subject<LocationMeasurement>)Measurements).OnNext(measurement);
         public void Dispose() { }
     }
 

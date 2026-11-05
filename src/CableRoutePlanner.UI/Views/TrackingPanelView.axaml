@@ -10,7 +10,11 @@
         <StackPanel Spacing="6">
             <TextBlock
                 Classes="section-heading"
-                Text="Обход трассы" />
+                Text="Прокладка кабеля" />
+            <TextBlock
+                Classes="view-hint"
+                Text="{Binding TrackingStatusText}"
+                TextWrapping="Wrap" />
             <TextBlock
                 Classes="tracking-progress"
                 Text="{Binding ProgressText}"
@@ -29,7 +33,7 @@
                     x:Name="StartTraversalButton"
                     Command="{Binding Start}"
                     IsVisible="{Binding CanStartTraversal}"
-                    Content="Начать обход" />
+                    Content="Начать прокладку кабеля" />
                 <Button
                     x:Name="PauseTraversalButton"
                     Command="{Binding Pause}"

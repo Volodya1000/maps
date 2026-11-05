@@ -12,6 +12,7 @@ public sealed class RouteProgressTracker
     private double[] _cumulativeLengths = [];
     private LocationMeasurement? _previousMeasurement;
     private Projection? _previousProjection;
+    private Projection? _intervalStart;
     private ProgressTrackingStatus _status = ProgressTrackingStatus.Ready;
     private LocationQuality _locationQuality = LocationQuality.Unknown;
 
@@ -118,6 +119,7 @@ public sealed class RouteProgressTracker
         {
             _previousMeasurement = measurement;
             _previousProjection = projection;
+            _intervalStart = projection;
             return BuildState();
         }
 
@@ -126,6 +128,7 @@ public sealed class RouteProgressTracker
         {
             _previousMeasurement = measurement;
             _previousProjection = projection;
+            _intervalStart = projection;
             return BuildState();
         }
 
@@ -147,11 +150,16 @@ public sealed class RouteProgressTracker
             return BuildState();
         }
 
-        if (routeDistance >= _configuration.StationaryDistanceMetres)
+        // Validate every consecutive pair above, but retain the interval anchor
+        // across small steps. Otherwise frequent walking fixes never reach 3 m.
+        Projection intervalStart = _intervalStart ?? previousProjection;
+        if (Math.Abs(projection.PositionMetres - intervalStart.PositionMetres)
+            >= _configuration.StationaryDistanceMetres)
         {
             AddInterval(new ProgressInterval(
-                Math.Min(previousProjection.PositionMetres, projection.PositionMetres),
-                Math.Max(previousProjection.PositionMetres, projection.PositionMetres)));
+                Math.Min(intervalStart.PositionMetres, projection.PositionMetres),
+                Math.Max(intervalStart.PositionMetres, projection.PositionMetres)));
+            _intervalStart = projection;
         }
 
         _previousMeasurement = measurement;

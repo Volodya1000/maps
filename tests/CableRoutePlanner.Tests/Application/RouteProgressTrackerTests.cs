@@ -9,6 +9,49 @@ public sealed class RouteProgressTrackerTests
     private static readonly DateTimeOffset Start = new(2026, 11, 4, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
+    public void WalkingWithOneMetreFixesAccumulatesProgress()
+    {
+        RouteProgressTracker tracker = StartTracker([Metres(0), Metres(45)]);
+        for (int metre = 0; metre <= 45; metre++)
+        {
+            tracker.Accept(Fix(metre, 1, Start.AddSeconds(metre)), Start.AddSeconds(metre));
+        }
+
+        Assert.Equal(45, tracker.CreateSnapshot(Guid.NewGuid(), Start, Start).CoveredIntervals
+            .Sum(interval => interval.LengthMetres), 2);
+    }
+
+    [Fact]
+    public void SmallStationaryJitterDoesNotAccumulateDistance()
+    {
+        RouteProgressTracker tracker = StartTracker([Metres(0), Metres(45)]);
+        RouteProgressState? state = null;
+        for (int second = 0; second < 60; second++)
+        {
+            state = tracker.Accept(Fix(10 + second % 2, 1, Start.AddSeconds(second)), Start.AddSeconds(second));
+        }
+
+        Assert.Equal(0, state!.CoveredDistanceMetres);
+    }
+
+    [Fact]
+    public void SmallStepsAcrossSignalGapDoNotConnectUnobservedSections()
+    {
+        RouteProgressTracker tracker = StartTracker([Metres(0), Metres(1_000)]);
+        tracker.Accept(Fix(0, 1, Start), Start);
+        tracker.Accept(Fix(1, 1, Start.AddSeconds(1)), Start.AddSeconds(1));
+        RouteProgressState? state = null;
+        for (int metre = 700; metre <= 712; metre++)
+        {
+            DateTimeOffset timestamp = Start.AddMinutes(5).AddSeconds(metre - 700);
+            state = tracker.Accept(Fix(metre, 1, timestamp), timestamp);
+        }
+
+        Assert.InRange(state!.CoveredDistanceMetres, 9, 12.01);
+        Assert.All(state.CoveredIntervals, interval => Assert.True(interval.StartMetres >= 699.99));
+    }
+
+    [Fact]
     public void TwoPointRouteCountsOnlyTheCredibleIntervalBetweenFixes()
     {
         RouteProgressTracker tracker = StartTracker([Metres(0), Metres(1_000)]);

@@ -11,6 +11,27 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
     private static readonly DateTimeOffset Start = new(2026, 11, 4, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
+    public async Task FrequentWalkingFixesUpdateAndPersistCableLayingProgress()
+    {
+        FakeLocation location = new();
+        MemoryTrackingSessions sessions = new();
+        using TrackingViewModel viewModel = CreateViewModel(location, sessions: sessions);
+        viewModel.SetRoute(Route(45));
+        await viewModel.SetLocationEnabledAsync(true);
+        viewModel.StartTraversal();
+        for (int metre = 0; metre <= 45; metre++)
+        {
+            location.Emit(Fix(metre, Start.AddSeconds(metre)));
+        }
+        viewModel.PauseTraversal();
+
+        Assert.Equal(45, viewModel.Progress!.CoveredDistanceMetres, 2);
+        Assert.Equal(100, viewModel.Progress.CoveragePercent, 2);
+        Assert.NotEmpty(viewModel.Progress.CoveredGeometry);
+        Assert.Equal(45, sessions.Value!.CoveredIntervals.Sum(interval => interval.LengthMetres), 2);
+    }
+
+    [Fact]
     public void LocationIsDisabledByDefaultAndDoesNotStartTheService()
     {
         FakeLocation location = new();
