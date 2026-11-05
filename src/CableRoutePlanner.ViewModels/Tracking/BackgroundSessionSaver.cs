@@ -2,7 +2,7 @@ using CableRoutePlanner.Application;
 
 namespace CableRoutePlanner.ViewModels;
 
-internal sealed class TrackingSessionWriter(
+internal sealed class BackgroundSessionSaver(
     ITrackingSessionStore store,
     Action<Exception> onError) : IDisposable
 {

@@ -14,7 +14,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
     private readonly IHeadingService _headingService;
     private readonly ILocationPreferencesStore _preferencesStore;
     private readonly ITrackingSessionStore _sessionStore;
-    private readonly TrackingSessionWriter _sessionSaver;
+    private readonly BackgroundSessionSaver _sessionSaver;
     private readonly Func<DateTimeOffset> _clock;
     private readonly CompositeDisposable _lifetime = new();
     private RouteProgressTracker? _tracker;
@@ -35,7 +35,7 @@ public sealed class TrackingViewModel : ReactiveObject, IDisposable
         _headingService = headingService ?? throw new ArgumentNullException(nameof(headingService));
         _preferencesStore = preferencesStore ?? throw new ArgumentNullException(nameof(preferencesStore));
         _sessionStore = sessionStore ?? throw new ArgumentNullException(nameof(sessionStore));
-        _sessionSaver = new TrackingSessionWriter(_sessionStore, HandlePersistenceFailure);
+        _sessionSaver = new BackgroundSessionSaver(_sessionStore, HandlePersistenceFailure);
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         LocationState = _locationService.State;
         IsLocationEnabled = _locationService.IsSupported && _preferencesStore.Load().IsEnabled;
