@@ -4,12 +4,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:rx="using:Avalonia.ReactiveUI"
     xmlns:vm="using:CableRoutePlanner.ViewModels"
-    x:DataType="vm:MapViewModel"
-    x:TypeArguments="vm:MapViewModel">
-    <Border
-        Classes="tracking-panel"
-        DataContext="{Binding Tracking}"
-        x:DataType="vm:TrackingViewModel">
+    x:DataType="vm:TrackingViewModel"
+    x:TypeArguments="vm:TrackingViewModel">
+    <Border Classes="tracking-panel">
         <StackPanel Spacing="6">
             <TextBlock
                 Classes="section-heading"

@@ -99,10 +99,11 @@
                             Text="Круг — пересечение; линия — общий участок."
                             TextWrapping="Wrap" />
                     </StackPanel>
-                    <local:TrackingPanelView
-                        x:Name="TrackingPanel"
-                        DataContext="{Binding}"
-                        IsVisible="{Binding ShowTrackingPanel}" />
+                    <Panel IsVisible="{Binding ShowTrackingPanel}">
+                        <local:TrackingPanelView
+                            x:Name="TrackingPanel"
+                            DataContext="{Binding Tracking}" />
+                    </Panel>
                     <TextBlock
                         Classes="route-metrics"
                         Text="{Binding MetricsText}" />
