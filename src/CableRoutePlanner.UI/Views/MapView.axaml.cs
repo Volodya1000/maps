@@ -2,8 +2,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.ReactiveUI;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.UI.Behaviors;
@@ -15,7 +13,6 @@ namespace CableRoutePlanner.UI.Views;
 
 public partial class MapView : ReactiveUserControl<MapViewModel>
 {
-    private readonly RotateTransform _northArrowRotation = new();
     private readonly BottomSheetController _sheet = new();
     private readonly Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter> _adapterFactory;
 
@@ -23,7 +20,6 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
     {
         _adapterFactory = adapterFactory;
         InitializeComponent();
-        NorthArrow.RenderTransform = _northArrowRotation;
         this.WhenActivated(Activate);
         SizeChanged += OnSizeChanged;
     }
@@ -39,22 +35,25 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         _sheet.Bind(SheetHandleButton, this, AdaptLayout).DisposeWith(bindings);
         viewModel.Tracking?.WhenAnyValue(vm => vm.CompactProgressText)
             .Subscribe(_ => AdaptLayout()).DisposeWith(bindings);
+        MapOverlay.ZoomInRequested += adapter.ZoomIn;
+        MapOverlay.ZoomOutRequested += adapter.ZoomOut;
+        MapOverlay.ResetNorthRequested += adapter.ResetNorth;
+        MapOverlay.CenterLocationRequested += adapter.CenterOnLocation;
+        Disposable.Create(() =>
+        {
+            MapOverlay.ZoomInRequested -= adapter.ZoomIn;
+            MapOverlay.ZoomOutRequested -= adapter.ZoomOut;
+            MapOverlay.ResetNorthRequested -= adapter.ResetNorth;
+            MapOverlay.CenterLocationRequested -= adapter.CenterOnLocation;
+        }).DisposeWith(bindings);
         adapter.NorthIndicatorRotationChangedStream
-            .Subscribe(angle => _northArrowRotation.Angle = angle).DisposeWith(bindings);
-        BindButton(ZoomInButton, adapter.ZoomIn);
-        BindButton(ZoomOutButton, adapter.ZoomOut);
-        BindButton(NorthButton, adapter.ResetNorth);
-        BindButton(LocationButton, adapter.CenterOnLocation);
+            .Subscribe(MapOverlay.SetNorthIndicatorRotation).DisposeWith(bindings);
         adapter.InitializeViewport();
         adapter.SetPoints(viewModel.Points.ToArray());
         adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
         adapter.SetRouteVertices(viewModel.RouteVertices.ToArray(), viewModel.ShowAllRouteVertices);
         AdaptLayout();
 
-        void BindButton(Button button, Action action) =>
-            Observable.FromEventPattern<RoutedEventArgs>(handler => button.Click += handler,
-                    handler => button.Click -= handler)
-                .Subscribe(_ => action()).DisposeWith(bindings);
     }
 
     private void OnSizeChanged(object? sender, SizeChangedEventArgs args) => AdaptLayout();

@@ -3,7 +3,6 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:CableRoutePlanner.UI.Controls"
-    xmlns:d="clr-namespace:CableRoutePlanner.Domain;assembly=CableRoutePlanner.Domain"
     xmlns:local="using:CableRoutePlanner.UI.Views"
     xmlns:maps="clr-namespace:Mapsui.UI.Avalonia;assembly=Mapsui.UI.Avalonia"
     xmlns:rx="using:Avalonia.ReactiveUI"
@@ -21,80 +20,10 @@
             <maps:MapControl
                 x:Name="MapControl"
                 Grid.RowSpan="2" />
-            <Border
-                Classes="map-toolbar"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top">
-                <StackPanel
-                    Orientation="Horizontal"
-                    Spacing="8">
-                    <ToggleButton
-                        Content="Добавлять точки"
-                        IsChecked="{Binding AddMode}" />
-                    <Button
-                        x:Name="ZoomInButton"
-                        Content="+" />
-                    <Button
-                        x:Name="ZoomOutButton"
-                        Content="−" />
-                </StackPanel>
-            </Border>
-            <Button
-                x:Name="NorthButton"
-                Classes="north-button"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                ToolTip.Tip="Вернуть карту к северу"
-                AutomationProperties.Name="Вернуть карту к северу">
-                <Border Classes="compass-face">
-                    <!-- The compass face stays fixed; only the needle rotates. -->
-                    <Canvas
-                        x:Name="NorthArrow"
-                        Classes="compass-needle"
-                        RenderTransformOrigin="50%,50%">
-                        <Polygon Classes="compass-north" Points="23,6 14,22 32,22" />
-                        <Polygon Classes="compass-south" Points="23,40 14,24 32,24" />
-                        <Ellipse
-                            Classes="compass-center"
-                            Width="5"
-                            Height="5"
-                            Canvas.Left="20.5"
-                            Canvas.Top="20.5" />
-                    </Canvas>
-                </Border>
-            </Button>
-            <Button
-                x:Name="LocationButton"
-                Classes="location-button"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                IsVisible="{Binding IsLocationSupported}"
-                ToolTip.Tip="Показать моё местоположение"
-                AutomationProperties.Name="Показать моё местоположение">
-                <Border Classes="location-face">
-                    <TextBlock
-                        Classes="location-glyph"
-                        Text="◎" />
-                </Border>
-            </Button>
-            <Border
-                Grid.Row="1"
-                Classes="map-footer">
-                <StackPanel>
-                    <TextBlock Classes="map-notice" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
-                    <TextBlock
-                        Classes="map-notice"
-                        Text="{Binding LocationCoverageStatus}"
-                        IsVisible="{Binding HasLocationCoverageWarning}"
-                        TextWrapping="Wrap" />
-                    <TextBlock
-                        x:Name="AttributionCredit"
-                        Classes="map-attribution"
-                        Text="ⓘ"
-                        AutomationProperties.Name="© OpenStreetMap contributors · ODbL 1.0"
-                        ToolTip.Tip="© OpenStreetMap contributors · ODbL 1.0" />
-                </StackPanel>
-            </Border>
+            <local:MapOverlayControlsView
+                x:Name="MapOverlay"
+                Grid.RowSpan="2"
+                DataContext="{Binding}" />
         </Grid>
         <Border
             x:Name="SidePanel"
@@ -161,45 +90,7 @@
                         Command="{Binding Cancel}"
                         Content="Отменить расчёт"
                         IsVisible="{Binding IsBusy}" />
-                    <StackPanel IsVisible="{Binding HasRoute}" Spacing="12">
-                        <Border Classes="route-divider" />
-                        <TextBlock
-                            Classes="alternatives-heading"
-                            Text="Альтернативы"
-                            IsVisible="{Binding HasAlternatives}" />
-                        <ItemsControl
-                            x:Name="RouteChoices"
-                            ItemsSource="{Binding RouteChoices}"
-                            IsVisible="{Binding HasAlternatives}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:RouteChoice">
-                                    <Button
-                                        Classes="route-choice"
-                                        Classes.selected="{Binding IsSelected}"
-                                        Command="{Binding $parent[local:MapView].ViewModel.ChooseRoute}"
-                                        CommandParameter="{Binding Id}">
-                                        <StackPanel Spacing="4">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <TextBlock
-                                                Classes="route-choice-name"
-                                                Text="{Binding Name}" />
-                                            <TextBlock
-                                                Classes="route-choice-length"
-                                                Grid.Column="1"
-                                                Text="{Binding LengthText}" />
-                                        </Grid>
-                                        <WrapPanel>
-                                            <Border Classes="metric-badge forest"><TextBlock Text="{Binding ForestText}" /></Border>
-                                            <Border Classes="metric-badge field"><TextBlock Text="{Binding FieldText}" /></Border>
-                                            <Border Classes="metric-badge bridge"><TextBlock Text="{Binding BridgesText}" /></Border>
-                                            <Border Classes="metric-badge pipeline" IsVisible="{Binding HasGas}" ToolTip.Tip="Кандидаты воздушных переходов; согласование не подтверждено"><TextBlock Text="{Binding GasText}" /></Border>
-                                        </WrapPanel>
-                                        </StackPanel>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
+                    <local:RouteChoicesView DataContext="{Binding}" />
                     <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
                         <CheckBox x:Name="RoadContactsToggle"
                             IsChecked="{Binding ShowRoadContacts}"
@@ -208,103 +99,14 @@
                             Text="Круг — пересечение; линия — общий участок."
                             TextWrapping="Wrap" />
                     </StackPanel>
-                    <Border
+                    <local:TrackingPanelView
                         x:Name="TrackingPanel"
-                        Classes="tracking-panel"
-                        IsVisible="{Binding ShowTrackingPanel}">
-                        <StackPanel Spacing="6">
-                            <TextBlock
-                                Classes="section-heading"
-                                Text="Обход трассы" />
-                            <TextBlock
-                                Classes="tracking-progress"
-                                Text="{Binding Tracking.ProgressText}"
-                                TextWrapping="Wrap" />
-                            <TextBlock
-                                Classes="view-hint"
-                                Text="{Binding Tracking.LocationState.Message}"
-                                TextWrapping="Wrap" />
-                            <TextBlock
-                                Classes="view-hint"
-                                Text="{Binding Tracking.PersistenceStatus}"
-                                IsVisible="{Binding Tracking.HasPersistenceError}"
-                                TextWrapping="Wrap" />
-                            <WrapPanel>
-                                <Button
-                                    x:Name="StartTraversalButton"
-                                    Command="{Binding Tracking.Start}"
-                                    IsVisible="{Binding Tracking.CanStartTraversal}"
-                                    Content="Начать обход" />
-                                <Button
-                                    x:Name="PauseTraversalButton"
-                                    Command="{Binding Tracking.Pause}"
-                                    IsVisible="{Binding Tracking.CanPauseTraversal}"
-                                    Content="Пауза" />
-                                <Button
-                                    x:Name="ResumeTraversalButton"
-                                    Command="{Binding Tracking.Resume}"
-                                    IsVisible="{Binding Tracking.CanResumeTraversal}"
-                                    Content="Продолжить" />
-                                <Button
-                                    x:Name="FinishTraversalButton"
-                                    Command="{Binding Tracking.Finish}"
-                                    IsVisible="{Binding Tracking.CanFinishTraversal}"
-                                    Content="Завершить" />
-                            </WrapPanel>
-                        </StackPanel>
-                    </Border>
+                        DataContext="{Binding}"
+                        IsVisible="{Binding ShowTrackingPanel}" />
                     <TextBlock
                         Classes="route-metrics"
                         Text="{Binding MetricsText}" />
-                    <Expander
-                        IsExpanded="False"
-                        IsVisible="{Binding HasRoute}">
-                        <Expander.Header>
-                            <TextBlock
-                                Classes="route-vertices-heading"
-                                Text="Точки прокладки кабеля" />
-                        </Expander.Header>
-                        <StackPanel Margin="0,8,0,0" Spacing="4">
-                            <CheckBox IsChecked="{Binding ShowAllRouteVertices}"
-                                Content="Все промежуточные точки на карте"
-                                ToolTip.Tip="Без переключателя точки одного участка появляются вместе при приближении. Выбор точки раскрывает весь участок на карте." />
-                            <ItemsControl ItemsSource="{Binding VisibleRouteVertices}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:RouteVertexRow">
-                                        <Border Classes="route-vertex-row" Classes.child="{Binding IsChild}">
-                                            <Grid ColumnDefinitions="32,*">
-                                                <Button
-                                                    IsVisible="{Binding HasChildren}"
-                                                    AutomationProperties.Name="Раскрыть или свернуть промежуточные вершины"
-                                                    Command="{Binding $parent[local:MapView].ViewModel.ToggleRouteLeg}"
-                                                    CommandParameter="{Binding LegIndex}">
-                                                    <Grid Width="16" Height="16">
-                                                        <Path Classes="vertex-chevron" Data="M 4,2 L 10,8 L 4,14" IsVisible="{Binding !IsExpanded}" />
-                                                        <Path Classes="vertex-chevron" Data="M 2,4 L 8,10 L 14,4" IsVisible="{Binding IsExpanded}" />
-                                                    </Grid>
-                                                </Button>
-                                                <Button Grid.Column="1" Classes="vertex-select"
-                                                    Classes.selected="{Binding IsSelected}"
-                                                    Command="{Binding $parent[local:MapView].ViewModel.SelectRouteVertex}"
-                                                    CommandParameter="{Binding Number}">
-                                                    <Grid ColumnDefinitions="64,*">
-                                                        <TextBlock Text="{Binding DisplayLabel}" />
-                                                        <StackPanel Grid.Column="1">
-                                                            <TextBlock Classes="vertex-coordinate" Text="{Binding Display}" />
-                                                            <TextBlock Classes="view-hint" Text="{Binding KindText}" />
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </Button>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <Button
-                                Command="{Binding CopyRouteVertex}"
-                                Content="{Binding CopyRouteVertexText}" />
-                        </StackPanel>
-                    </Expander>
+                    <local:RouteVerticesView DataContext="{Binding}" />
                     <Border Classes="route-status">
                         <TextBlock
                             Classes="route-status-text"

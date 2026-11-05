@@ -80,12 +80,13 @@ public sealed class LocationUiTests
             new RouteMetrics(100, 100, 0, 0, 0, 0, 100, null));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-        Assert.True(view.FindControl<Button>("LocationButton")!.IsEffectivelyVisible);
+        Button locationButton = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "LocationButton");
+        Assert.True(locationButton.IsEffectivelyVisible);
         Assert.True(view.FindControl<Control>("TrackingPanel")!.IsEffectivelyVisible);
-        Button start = view.FindControl<Button>("StartTraversalButton")!;
-        Button pause = view.FindControl<Button>("PauseTraversalButton")!;
-        Button resume = view.FindControl<Button>("ResumeTraversalButton")!;
-        Button finish = view.FindControl<Button>("FinishTraversalButton")!;
+        Button start = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "StartTraversalButton");
+        Button pause = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "PauseTraversalButton");
+        Button resume = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "ResumeTraversalButton");
+        Button finish = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "FinishTraversalButton");
         Assert.True(start.IsEffectivelyVisible);
         Assert.False(pause.IsEffectivelyVisible);
         Assert.False(resume.IsEffectivelyVisible);
