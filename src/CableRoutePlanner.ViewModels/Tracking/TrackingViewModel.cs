@@ -8,7 +8,7 @@ using ReactiveUI.Fody.Helpers;
 
 namespace CableRoutePlanner.ViewModels;
 
-public sealed class TrackingViewModel : ReactiveObject, IDisposable
+public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDisposable
 {
     private static readonly RouteProgressConfiguration TrackingConfiguration = new();
     private readonly ILocationService _locationService;

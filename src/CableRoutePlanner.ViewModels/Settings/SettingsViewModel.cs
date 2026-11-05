@@ -12,7 +12,7 @@ namespace CableRoutePlanner.ViewModels;
 public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDisposable
 {
     private readonly ISettingsStore _store;
-    private readonly TrackingViewModel? _tracking;
+    private readonly ITrackingViewModel? _tracking;
     private readonly CompositeDisposable _lifetime = new();
     private RoutingOptions _saved = new();
     private bool _loadFailed;
@@ -87,7 +87,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         get; private set;
     }
 
-    public SettingsViewModel(IScreen screen, ISettingsStore store, TrackingViewModel? tracking = null)
+    public SettingsViewModel(IScreen screen, ISettingsStore store, ITrackingViewModel? tracking = null)
     {
         HostScreen = screen;
         _store = store;
@@ -211,8 +211,8 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
 
     private void TrackingPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(TrackingViewModel.IsLocationEnabled)
-            or nameof(TrackingViewModel.LocationState))
+        if (e.PropertyName is nameof(ITrackingViewModel.IsLocationEnabled)
+            or nameof(ITrackingViewModel.LocationState))
         {
             ShowLocation = _tracking?.IsLocationEnabled == true;
             LocationStatusChanged();

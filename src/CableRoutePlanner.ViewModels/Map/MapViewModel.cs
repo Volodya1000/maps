@@ -66,13 +66,13 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     private readonly WaypointListProjection _pointRows = new();
 
-    private readonly HashSet<int> _expandedLegs = [];
-
     private readonly IRouteCalculationService _calculations;
 
     private readonly IClipboardService _clipboard;
 
-    private readonly TrackingViewModel? _tracking;
+    private readonly ITrackingViewModel? _tracking;
+
+    private readonly RouteVerticesTreeViewModel _routeVertices;
 
     private readonly CompositeDisposable _lifetime = new();
 
@@ -83,8 +83,6 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private RoutingOptions _resultOptions = new();
 
     private WaypointRow? _selectedPoint;
-    private RouteVertexRow? _selectedRouteVertex;
-
     public string UrlPathSegment => "Карта";
 
     public IScreen HostScreen { get; }
@@ -95,19 +93,19 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public ObservableCollection<RouteChoice> RouteChoices { get; } = [];
 
-    public ObservableCollection<RouteVertexRow> RouteVertices { get; } = [];
+    public ObservableCollection<RouteVertexRow> RouteVertices => _routeVertices.RouteVertices;
 
-    public ObservableCollection<RouteVertexRow> VisibleRouteVertices { get; } = [];
+    public ObservableCollection<RouteVertexRow> VisibleRouteVertices => _routeVertices.VisibleRouteVertices;
 
-    public ReactiveCommand<int, Unit> ToggleRouteLeg { get; }
+    public ReactiveCommand<int, Unit> ToggleRouteLeg => _routeVertices.ToggleRouteLeg;
 
-    public ReactiveCommand<int, Unit> SelectRouteVertex { get; }
+    public ReactiveCommand<int, Unit> SelectRouteVertex => _routeVertices.SelectRouteVertex;
 
     public IReadOnlyList<MapFeature> Features { get; private set; } = Array.Empty<MapFeature>();
 
     public DataPackageInfo DataInfo => _mapLoader.Info;
 
-    public TrackingViewModel? Tracking => _tracking;
+    public ITrackingViewModel? Tracking => _tracking;
 
     public bool IsLocationSupported => _tracking?.IsLocationSupported == true;
 
@@ -138,34 +136,18 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
     public RouteVertexRow? SelectedRouteVertex
     {
-        get => _selectedRouteVertex;
-        set
-        {
-            RouteVertexRow? selected = RowSelection.Apply(RouteVertices, value,
-                row => row.Number, row => row.IsSelected, (row, isSelected) => row with { IsSelected = isSelected });
-
-            if (value is not null)
-            {
-                SelectedPoint = null;
-            }
-
-            this.RaiseAndSetIfChanged(ref _selectedRouteVertex,
-                selected);
-            if (selected is { IsChild: true })
-            {
-                _expandedLegs.Add(selected.LegIndex);
-            }
-
-            RefreshVisibleRouteVertices();
-            this.RaisePropertyChanged(nameof(CopyRouteVertexText));
-        }
+        get => _routeVertices.SelectedRouteVertex;
+        set => _routeVertices.SelectedRouteVertex = value;
     }
 
     public string CopyRouteVertexText => SelectedRouteVertex is { } vertex
         ? $"Копировать вершину {vertex.DisplayLabel}"
         : "Выберите вершину";
 
-    public ReactiveCommand<Unit, Unit> CopyRouteVertex { get; }
+    public ReactiveCommand<Unit, Unit> CopyRouteVertex
+    {
+        get; private set;
+    }
 
     [Reactive]
     public RouteAlternative? SelectedRoute
@@ -294,7 +276,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         IMapAreaLoader mapLoader,
         IRouteCalculationService calculations,
         IClipboardService clipboard,
-        TrackingViewModel? tracking = null)
+        ITrackingViewModel? tracking = null)
     {
         HostScreen = screen;
         _session = session;
@@ -302,36 +284,17 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         _calculations = calculations;
         _clipboard = clipboard;
         _tracking = tracking;
-        if (_tracking is not null)
-        {
-            _tracking.PropertyChanged += TrackingPropertyChanged;
-        }
+        _routeVertices = new RouteVerticesTreeViewModel().DisposeWith(_lifetime);
+        _canBuild = CreateCanBuildProperty();
+        InitializeCommands();
+        SetupSubscriptions();
+        SubscribeToTracking();
+    }
 
-        _canBuild = this.WhenAnyValue(
+    private ObservableAsPropertyHelper<bool> CreateCanBuildProperty() => this.WhenAnyValue(
             x => x.PointCount,
             x => x.IsBusy,
             (count, busy) => count >= 2 && !busy).ToProperty(this, x => x.CanBuild).DisposeWith(_lifetime);
-        InitializeCommands();
-        CopyRouteVertex = ReactiveCommand.CreateFromTask(async () =>
-        {
-            if (SelectedRouteVertex is { } vertex)
-            {
-                await CopyCoordinateAsync(vertex.Coordinate, vertex.DisplayLabel);
-            }
-        }, this.WhenAnyValue(x => x.SelectedRouteVertex).Select(vertex => vertex is not null)).DisposeWith(_lifetime);
-        ToggleRouteLeg = ReactiveCommand.Create<int>(leg =>
-        {
-            if (!_expandedLegs.Add(leg))
-            {
-                _expandedLegs.Remove(leg);
-            }
-
-            RefreshVisibleRouteVertices();
-        }).DisposeWith(_lifetime);
-        SelectRouteVertex = ReactiveCommand.Create<int>(number =>
-            SelectedRouteVertex = RouteVertices.FirstOrDefault(vertex => vertex.Number == number)).DisposeWith(_lifetime);
-        SetupSubscriptions();
-    }
 
     [MemberNotNull(
         nameof(AddPoint),
@@ -345,6 +308,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         nameof(MoveDown),
         nameof(ClearPoints),
         nameof(CopyCoordinates),
+        nameof(CopyRouteVertex),
         nameof(BuildRoutes),
         nameof(Cancel))]
     private void InitializeCommands()
@@ -361,6 +325,13 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         MoveDown = ReactiveCommand.Create(() => Reorder(1)).DisposeWith(_lifetime);
         CopyCoordinates = ReactiveCommand.CreateFromTask(CopySelectedCoordinatesAsync,
             this.WhenAnyValue(x => x.SelectedPoint).Select(point => point is not null)).DisposeWith(_lifetime);
+        CopyRouteVertex = ReactiveCommand.CreateFromTask(async () =>
+        {
+            if (SelectedRouteVertex is { } vertex)
+            {
+                await CopyCoordinateAsync(vertex.Coordinate, vertex.DisplayLabel);
+            }
+        }, this.WhenAnyValue(x => x.SelectedRouteVertex).Select(vertex => vertex is not null)).DisposeWith(_lifetime);
         BuildRoutes = ReactiveCommand.CreateFromTask(BuildAsync, this.WhenAnyValue(x => x.CanBuild)).DisposeWith(_lifetime);
         Cancel = ReactiveCommand.Create(() => _calculations.Cancel()).DisposeWith(_lifetime);
     }
@@ -379,11 +350,31 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 UpdateRoutePresentation(route);
             })
             .DisposeWith(_lifetime);
+        _routeVertices.WhenAnyValue(x => x.SelectedRouteVertex)
+            .Subscribe(vertex =>
+            {
+                if (vertex is not null)
+                {
+                    SelectedPoint = null;
+                }
+
+                this.RaisePropertyChanged(nameof(SelectedRouteVertex));
+                this.RaisePropertyChanged(nameof(CopyRouteVertexText));
+            })
+            .DisposeWith(_lifetime);
+    }
+
+    private void SubscribeToTracking()
+    {
+        if (_tracking is not null)
+        {
+            _tracking.PropertyChanged += TrackingPropertyChanged;
+        }
     }
 
     private void TrackingPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(TrackingViewModel.CoverageStatus))
+        if (e.PropertyName == nameof(ITrackingViewModel.CoverageStatus))
         {
             this.RaisePropertyChanged(nameof(LocationCoverageStatus));
             this.RaisePropertyChanged(nameof(HasLocationCoverageWarning));
@@ -489,9 +480,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private void UpdateRoutePresentation(RouteAlternative? route)
     {
         RouteChoices.Clear();
-        RouteVertices.Clear();
-        _expandedLegs.Clear();
-        SelectedRouteVertex = null;
+        List<RouteVertexRow> vertices = [];
         bool hasAlternatives = Alternatives.Count > 1;
         foreach (RouteAlternative alternative in Alternatives)
         {
@@ -511,11 +500,11 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         {
             foreach (RouteVertexRow vertex in RouteVertexProjection.Project(route, Points.Select(point => point.Coordinate).ToArray()))
             {
-                RouteVertices.Add(vertex);
+                vertices.Add(vertex);
             }
         }
 
-        RefreshVisibleRouteVertices();
+        _routeVertices.SetVertices(vertices);
         this.RaisePropertyChanged(nameof(HasAlternatives));
 
         MetricsText = route is null
@@ -555,24 +544,6 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
 
             default:
                 throw new InvalidOperationException("Неизвестный результат загрузки карты.");
-        }
-    }
-
-    private void RefreshVisibleRouteVertices()
-    {
-        VisibleRouteVertices.Clear();
-        HashSet<int> legsWithChildren = RouteVertices.Where(vertex => vertex.IsChild)
-            .Select(vertex => vertex.LegIndex).ToHashSet();
-        foreach (RouteVertexRow vertex in RouteVertices)
-        {
-            if (!vertex.IsChild || _expandedLegs.Contains(vertex.LegIndex))
-            {
-                VisibleRouteVertices.Add(vertex with
-                {
-                    HasChildren = !vertex.IsChild && legsWithChildren.Contains(vertex.LegIndex),
-                    IsExpanded = _expandedLegs.Contains(vertex.LegIndex)
-                });
-            }
         }
     }
 
