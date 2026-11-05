@@ -26,12 +26,9 @@ public sealed class JsonTrackingSessionStore(string path) : ITrackingSessionStor
 
         try
         {
-            RouteProgressSnapshot? snapshot = JsonSerializer.Deserialize<RouteProgressSnapshot>(
-                File.ReadAllText(path), SerializerOptions);
-            if (snapshot is null)
-            {
-                throw new PlanningException("Файл сессии обхода пуст или имеет неверный формат.");
-            }
+            RouteProgressSnapshot snapshot = JsonSerializer.Deserialize<RouteProgressSnapshot>(
+                File.ReadAllText(path), SerializerOptions)
+                ?? throw new PlanningException("Файл сессии обхода пуст или имеет неверный формат.");
 
             Validate(snapshot);
             return snapshot;
