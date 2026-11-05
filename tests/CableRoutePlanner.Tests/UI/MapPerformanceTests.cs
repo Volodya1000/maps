@@ -19,6 +19,42 @@ namespace CableRoutePlanner.Tests;
 public sealed class MapPerformanceTests
 {
     private static readonly string[] SettlementNames = ["First", "Second"];
+
+    [AvaloniaFact]
+    public async Task ClosingMapDuringDispatcherFetchLeavesNoLateRenderedTiles()
+    {
+        ObservedRepository repository = new(block: true);
+        Mapsui.UI.Avalonia.MapControl control = new();
+        using MapsuiMapAdapter adapter = new(control, repository.Info.Bounds, repository);
+        TileLayer layer = Assert.Single(control.Map.Layers.OfType<TileLayer>());
+        double resolution = layer.TileSource.Schema.Resolutions[10].UnitsPerPixel;
+        (double x, double y) = SphericalMercator.FromLonLat(27, 54);
+        MRect extent = new(x, y, x + 2_000, y + 2_000);
+        TaskCompletionSource completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int successfulCompletions = 0;
+        layer.DataChanged += (_, args) =>
+        {
+            if (args.Error is null && Interlocked.Increment(ref successfulCompletions) == 2)
+            {
+                completed.TrySetResult();
+            }
+        };
+        try
+        {
+            layer.RefreshData(new FetchInfo(new MSection(extent, resolution)));
+            await repository.TwoStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            adapter.Dispose();
+        }
+        finally
+        {
+            repository.Release.TrySetResult();
+        }
+        await completed.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Empty(layer.GetFeatures(extent, resolution));
+        Assert.False(layer.UpdateAnimations());
+        adapter.Dispose();
+    }
     [AvaloniaFact]
     public async Task RepeatedTerrainReusesStylesWithoutMergingGeometryOrSettlementNames()
     {
