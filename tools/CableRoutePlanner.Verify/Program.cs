@@ -18,6 +18,11 @@ static ServiceProvider CreateServices(string dataDirectory, string settingsPath)
     return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
 }
 
+if (args.Length == 4 && args[0] == "--crossing")
+{
+    return await CableRoutePlanner.Verify.CrossingPilot.RunAsync(args[1], args[2], args[3]);
+}
+
 if (args.Length == 3 && args[0] == "--inspect")
 {
     using ServiceProvider provider = CreateServices(args[1], Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));

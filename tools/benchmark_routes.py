@@ -10,6 +10,34 @@ import time
 from pathlib import Path
 
 
+def run_bounded_command(command, timeout_seconds, environment=None):
+    """Execute one route in a bounded cold process; return raw output for callers."""
+    started = time.monotonic()
+    try:
+        process = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+            env=environment,
+        )
+        return dict(
+            returncode=process.returncode,
+            stdout=process.stdout,
+            stderr=process.stderr,
+            timeout=False,
+            elapsed_wall_ms=round((time.monotonic() - started) * 1000),
+        )
+    except subprocess.TimeoutExpired as error:
+        return dict(
+            returncode=None,
+            stdout=(error.stdout or b"").decode(errors="replace"),
+            stderr=(error.stderr or b"").decode(errors="replace"),
+            timeout=True,
+            elapsed_wall_ms=round((time.monotonic() - started) * 1000),
+        )
+
+
 def measure(command, output, timeout_seconds):
     started = time.monotonic()
     environment = os.environ | {"DOTNET_GCHeapHardLimit": "60000000"}

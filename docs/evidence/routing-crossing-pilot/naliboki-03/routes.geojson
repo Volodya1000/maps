@@ -1,0 +1,73 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            26.61551386273843,
+            53.89481015364013
+          ],
+          [
+            26.610335588766144,
+            53.890821017178254
+          ],
+          [
+            26.60880953726157,
+            53.888797546359875
+          ]
+        ]
+      },
+      "properties": {
+        "profile": "Короче",
+        "metrics": {
+          "LengthMetres": 804.6965663808319,
+          "ForestMetres": 804.6965663808319,
+          "FieldMetres": 0,
+          "RoadCrossings": 0,
+          "ApprovedWaterCrossings": 0,
+          "PotentialBridgeCrossings": 0,
+          "WeightedCost": 804.6965663808319,
+          "AscentMetres": null,
+          "PotentialGasPipelineCrossings": 0
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            26.61551386273843,
+            53.89481015364013
+          ],
+          [
+            26.611861640270718,
+            53.89194516763291
+          ],
+          [
+            26.60880953726157,
+            53.888797546359875
+          ]
+        ]
+      },
+      "properties": {
+        "profile": "Баланс",
+        "metrics": {
+          "LengthMetres": 801.5638685408013,
+          "ForestMetres": 801.5638685408013,
+          "FieldMetres": 0,
+          "RoadCrossings": 0,
+          "ApprovedWaterCrossings": 0,
+          "PotentialBridgeCrossings": 0,
+          "WeightedCost": 3206.2554741632052,
+          "AscentMetres": null,
+          "PotentialGasPipelineCrossings": 0
+        }
+      }
+    }
+  ]
+}
