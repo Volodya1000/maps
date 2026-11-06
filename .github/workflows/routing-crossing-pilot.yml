@@ -33,8 +33,11 @@ jobs:
           manifest = json.loads((data / 'manifest.json').read_text())
           with gzip.open(data / 'geodata.sqlite.gz', 'rb') as source, (data / 'geodata.sqlite').open('wb') as target:
               shutil.copyfileobj(source, target, 1024 * 1024)
-          digest = hashlib.file_digest((data / 'geodata.sqlite').open('rb'), 'sha256').hexdigest()
-          if digest != manifest['database_sha256']:
+          digest = hashlib.sha256()
+          with (data / 'geodata.sqlite').open('rb') as stream:
+              for block in iter(lambda: stream.read(1024 * 1024), b''):
+                  digest.update(block)
+          if digest.hexdigest() != manifest['database_sha256']:
               raise SystemExit('database SHA-256 mismatch')
           PY
       - run: dotnet build tools/CableRoutePlanner.Verify -c Release -warnaserror
