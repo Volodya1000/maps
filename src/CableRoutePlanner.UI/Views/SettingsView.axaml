@@ -70,7 +70,7 @@
                 Classes="primary"
                 Command="{Binding Save}"
                 Content="Сохранить"
-                IsVisible="{Binding CanSave}" />
+                IsEnabled="{Binding CanSave}" />
             <Button
                 Command="{Binding ResetDefaults}"
                 Content="Сбросить настройки"

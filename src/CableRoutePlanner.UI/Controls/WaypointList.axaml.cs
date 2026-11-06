@@ -98,7 +98,8 @@ public partial class WaypointList : ReactiveUserControl<MapViewModel>
         _pressed = e.GetPosition(this);
         _card = source.Name == "CoordinateCard" ? source
             : source.GetVisualAncestors().OfType<Border>().First(b => b.Name == "CoordinateCard");
-        _scroll = this.GetVisualAncestors().OfType<ScrollViewer>().FirstOrDefault();
+        _scroll = this.GetVisualAncestors().OfType<ScrollViewer>().FirstOrDefault(scroll =>
+            scroll.VerticalScrollBarVisibility != Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled);
         _lastInScroll = _scroll is null ? default : e.GetPosition(_scroll);
         return true;
     }

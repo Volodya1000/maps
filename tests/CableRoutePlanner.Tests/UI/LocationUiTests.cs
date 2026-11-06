@@ -36,8 +36,8 @@ public sealed class LocationUiTests
     [AvaloniaFact]
     public async Task AndroidSettingsShowLocationSectionAndImmediateToggle()
     {
-        using TrackingViewModel tracking = CreateTracking();
-        using SettingsViewModel viewModel = new(new NavigationHost(), new MemorySettings(), tracking);
+        using LocationController controller = CreateController();
+        using SettingsViewModel viewModel = new(new NavigationHost(), new MemorySettings(), controller);
         var view = new SettingsView { ViewModel = viewModel };
         var window = new Window { Content = view, Width = 600, Height = 800 };
         window.Show();
@@ -60,8 +60,8 @@ public sealed class LocationUiTests
     public async Task AndroidMapShowsOnlyValidTraversalActionsAndCompactCollapsedProgress()
     {
         UiLocationService location = new();
-        using TrackingViewModel tracking = new(location, new UiHeadingService(),
-            new UiLocationPreferences(), new UiTrackingSessions());
+        using LocationController controller = new(location, new UiHeadingService(), new UiLocationPreferences());
+        using TrackingViewModel tracking = new(controller, new UiTrackingSessions());
         using MapViewModel viewModel = TestData.CreateMapViewModel(
             new NavigationHost(),
             new Application.PlanningSession(TestData.Planner(), TestData.AllowAllValidator),
@@ -81,6 +81,16 @@ public sealed class LocationUiTests
             [TestData.P(0, 0), TestData.P(45, 0)],
             new RouteMetrics(45, 45, 0, 0, 0, 0, 45, null));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        view.FindControl<TabControl>("ToolTabs")!.SelectedIndex = 2;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Border handle = view.FindControl<Border>("SheetHandleButton")!;
+        using HeadlessTouch touch = new(window);
+        Point handlePoint = await touch.TargetAsync(handle);
+        Point expandedPoint = handlePoint + new Point(0, -80);
+        touch.Send(RawPointerEventType.TouchBegin, handlePoint);
+        touch.Send(RawPointerEventType.TouchUpdate, expandedPoint);
+        touch.Send(RawPointerEventType.TouchEnd, expandedPoint);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
         Button locationButton = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "LocationButton");
         Assert.True(locationButton.IsEffectivelyVisible);
@@ -96,7 +106,6 @@ public sealed class LocationUiTests
 
         Assert.Equal("Начать прокладку кабеля", start.Content);
         await tracking.SetLocationEnabledAsync(true);
-        using HeadlessTouch touch = new(window);
         Point buttonPoint = await touch.TargetAsync(start);
         touch.Send(RawPointerEventType.TouchBegin, buttonPoint);
         touch.Send(RawPointerEventType.TouchEnd, buttonPoint);
@@ -118,7 +127,6 @@ public sealed class LocationUiTests
         Assert.NotEmpty(map.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>()
             .Single(layer => layer.Name == "Пройденный маршрут").Features);
 
-        Border handle = view.FindControl<Border>("SheetHandleButton")!;
         Point startPoint = await touch.TargetAsync(handle);
         Point endPoint = startPoint + new Point(0, 80);
         touch.Send(Avalonia.Input.Raw.RawPointerEventType.TouchBegin, startPoint);
@@ -154,11 +162,10 @@ public sealed class LocationUiTests
         window.Close();
     }
 
-    private static TrackingViewModel CreateTracking() => new(
+    private static LocationController CreateController() => new(
         new UiLocationService(),
         new UiHeadingService(),
-        new UiLocationPreferences(),
-        new UiTrackingSessions());
+        new UiLocationPreferences());
 
     private sealed class UiLocationService : ILocationService
     {

@@ -103,13 +103,56 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
     public async Task DisablingLocationStopsUpdatesWithoutChangingRoutingOptions()
     {
         FakeLocation location = new();
-        using TrackingViewModel viewModel = CreateViewModel(location);
+        FakeHeading heading = new();
+        using TrackingViewModel viewModel = CreateViewModel(location, heading: heading);
         await viewModel.SetLocationEnabledAsync(true);
+        location.Emit(Fix(10, Start.AddSeconds(1)));
+        heading.Emit(new HeadingMeasurement(90, true, Start.AddSeconds(1)));
+
+        Assert.NotNull(viewModel.CurrentLocation);
+        Assert.NotNull(viewModel.CurrentHeading);
 
         await viewModel.SetLocationEnabledAsync(false);
 
         Assert.False(viewModel.IsLocationEnabled);
+        Assert.Null(viewModel.CurrentLocation);
+        Assert.Null(viewModel.CurrentHeading);
         Assert.Equal(1, location.DisableCalls);
+    }
+
+    [Fact]
+    public async Task RevokedPermissionClearsDisplayedFixButKeepsTraversalProgress()
+    {
+        FakeLocation location = new();
+        MemoryTrackingSessions sessions = new();
+        using TrackingViewModel viewModel = CreateViewModel(location, sessions: sessions);
+        viewModel.SetRoute(Route(45));
+        await viewModel.SetLocationEnabledAsync(true);
+        viewModel.StartTraversal();
+        location.Emit(Fix(10, Start.AddSeconds(1)));
+
+        location.EmitState(new LocationServiceState(
+            false,
+            LocationPermissionState.PermanentlyDenied,
+            SystemLocationState.Enabled,
+            false));
+
+        Assert.Null(viewModel.CurrentLocation);
+        Assert.Null(viewModel.CurrentHeading);
+        Assert.NotNull(viewModel.Progress);
+        Assert.False(viewModel.IsLocationEnabled);
+    }
+
+    [Fact]
+    public void RestoreFailureIsReportedWithoutEscapingTheViewModel()
+    {
+        FakeLocation location = new() { RestoreException = new InvalidOperationException("GPS unavailable") };
+        MemoryLocationPreferences preferences = new();
+        preferences.Save(new LocationPreferences(true));
+
+        using TrackingViewModel viewModel = CreateViewModel(location, preferences);
+
+        Assert.Contains("GPS unavailable", viewModel.GpsDiagnosticText);
     }
 
     [Fact]
@@ -284,9 +327,10 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         MemoryTrackingSessions? sessions = null,
         FakeHeading? heading = null) =>
         new(
-            location,
-            heading ?? new FakeHeading(),
-            preferences ?? new MemoryLocationPreferences(),
+            new LocationController(
+                location,
+                heading ?? new FakeHeading(),
+                preferences ?? new MemoryLocationPreferences()),
             sessions ?? new MemoryTrackingSessions(),
             () => Start.AddMinutes(1));
 
@@ -314,6 +358,7 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         public int EnableCalls { get; private set; }
         public int RestoreCalls { get; private set; }
         public int DisableCalls { get; private set; }
+        public Exception? RestoreException { get; init; }
 
         public Task<LocationServiceState> EnableAsync(CancellationToken cancellationToken)
         {
@@ -327,6 +372,11 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         public Task<LocationServiceState> RestoreAsync(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (RestoreException is not null)
+            {
+                return Task.FromException<LocationServiceState>(RestoreException);
+            }
+
             RestoreCalls++;
             return Task.FromResult(State);
         }
@@ -352,12 +402,14 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
 
     private sealed class FakeHeading : IHeadingService
     {
+        private readonly Subject<HeadingMeasurement> _measurements = new();
         public bool IsSupported => true;
-        public IObservable<HeadingMeasurement> Measurements { get; } = new Subject<HeadingMeasurement>();
+        public IObservable<HeadingMeasurement> Measurements => _measurements;
         public int PauseCalls { get; private set; }
         public int ResumeCalls { get; private set; }
         public void PauseUpdates() => PauseCalls++;
         public void ResumeUpdates() => ResumeCalls++;
+        public void Emit(HeadingMeasurement heading) => _measurements.OnNext(heading);
         public void Dispose() { }
     }
 

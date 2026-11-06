@@ -13,8 +13,8 @@ public sealed class LocationSettingsViewModelTests : ReactiveTestScope
     {
         MemorySettings settings = new();
         FakeLocation location = new();
-        using TrackingViewModel tracking = CreateTracking(location);
-        using SettingsViewModel viewModel = new(new NavigationHost(), settings, tracking);
+        using LocationController controller = CreateController(location);
+        using SettingsViewModel viewModel = new(new NavigationHost(), settings, controller);
 
         Assert.False(viewModel.ShowLocation);
         Assert.Equal(TestData.Options, settings.Options);
@@ -25,13 +25,13 @@ public sealed class LocationSettingsViewModelTests : ReactiveTestScope
     {
         MemorySettings settings = new();
         FakeLocation location = new();
-        using TrackingViewModel tracking = CreateTracking(location);
-        using SettingsViewModel viewModel = new(new NavigationHost(), settings, tracking);
+        using LocationController controller = CreateController(location);
+        using SettingsViewModel viewModel = new(new NavigationHost(), settings, controller);
 
         await viewModel.SetLocationEnabledAsync(true);
 
         Assert.True(viewModel.ShowLocation);
-        Assert.True(tracking.IsLocationEnabled);
+        Assert.True(controller.IsEnabled);
         Assert.Equal(TestData.Options, settings.Options);
     }
 
@@ -47,8 +47,8 @@ public sealed class LocationSettingsViewModelTests : ReactiveTestScope
                 false,
                 "Включите геолокацию в настройках Android.")
         };
-        using TrackingViewModel tracking = CreateTracking(location);
-        using SettingsViewModel viewModel = new(new NavigationHost(), new MemorySettings(), tracking);
+        using LocationController controller = CreateController(location);
+        using SettingsViewModel viewModel = new(new NavigationHost(), new MemorySettings(), controller);
 
         await viewModel.SetLocationEnabledAsync(true);
 
@@ -56,11 +56,10 @@ public sealed class LocationSettingsViewModelTests : ReactiveTestScope
         Assert.Contains("Включите", viewModel.LocationStatus);
     }
 
-    private static TrackingViewModel CreateTracking(FakeLocation location) => new(
+    private static LocationController CreateController(FakeLocation location) => new(
         location,
         new FakeHeading(),
-        new MemoryLocationPreferences(),
-        new MemoryTrackingSessions());
+        new MemoryLocationPreferences());
 
     private sealed class FakeLocation : ILocationService
     {
@@ -102,10 +101,4 @@ public sealed class LocationSettingsViewModelTests : ReactiveTestScope
         public void Save(LocationPreferences preferences) { }
     }
 
-    private sealed class MemoryTrackingSessions : ITrackingSessionStore
-    {
-        public RouteProgressSnapshot? Load() => null;
-        public void Save(RouteProgressSnapshot snapshot) { }
-        public void Clear() { }
-    }
 }

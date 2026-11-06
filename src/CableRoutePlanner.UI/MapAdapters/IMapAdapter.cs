@@ -12,6 +12,9 @@ public interface IMapAdapter : IDisposable
     IObservable<Guid> WaypointSelectedStream { get; }
     IObservable<double> NorthIndicatorRotationChangedStream { get; }
     IObservable<int> RouteVertexSelectedStream { get; }
+    IObservable<MapViewportState> ViewportStateChangedStream { get; }
+
+    MapViewportState? CurrentViewportState { get; }
 
     bool IsFollowing { get; }
 
@@ -29,7 +32,7 @@ public interface IMapAdapter : IDisposable
 
     event Action? ManualCameraUsed;
 
-    void InitializeViewport();
+    void InitializeViewport(MapViewportState? restoredState = null);
 
     Task SetFeaturesAsync(IReadOnlyList<MapFeature> features);
 

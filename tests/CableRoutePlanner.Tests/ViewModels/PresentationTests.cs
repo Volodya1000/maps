@@ -107,7 +107,7 @@ public sealed class PresentationTests : ReactiveTestScope
     }
 
     [Fact]
-    public async Task NavigationReusesScreenInstancesAndBoundsHistory()
+    public async Task NavigationKeepsMapAsRootAndBackAtMapDoesNothing()
     {
         var screen = new NavigationHost();
         var data = new MemoryData();
@@ -120,11 +120,17 @@ public sealed class PresentationTests : ReactiveTestScope
             await shell.ShowMap.Execute();
         }
 
-        Assert.InRange(screen.Router.NavigationStack.Count, 1, 3);
+        Assert.Single(screen.Router.NavigationStack);
         Assert.Same(map, screen.Router.GetCurrentViewModel());
         Assert.True(shell.IsMap);
+        Assert.False(await shell.Back.CanExecute.FirstAsync());
+        Assert.Same(map, screen.Router.GetCurrentViewModel());
+        Assert.Single(screen.Router.NavigationStack);
+
+        await shell.ShowSettings.Execute();
         await shell.Back.Execute();
-        Assert.Same(settings, screen.Router.GetCurrentViewModel());
+        Assert.Same(map, screen.Router.GetCurrentViewModel());
+        Assert.Single(screen.Router.NavigationStack);
     }
 
     [Fact]

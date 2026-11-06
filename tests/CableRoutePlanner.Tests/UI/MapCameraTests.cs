@@ -240,6 +240,38 @@ public sealed class MapCameraTests
     }
 
     [AvaloniaFact]
+    public void ViewportStateSurvivesAdapterRecreationAndIsNotReplacedByInitialFit()
+    {
+        MapViewportState saved = new(3026545.647585, 7201022.31875, 123.5, 37);
+        var firstControl = new Mapsui.UI.Avalonia.MapControl();
+        var firstWindow = new Window { Content = firstControl, Width = 900, Height = 600 };
+        firstWindow.Show();
+        using (var firstAdapter = new MapsuiMapAdapter(firstControl, new(23.17, 51.23, 32.77, 56.18)))
+        {
+            firstAdapter.InitializeViewport(saved);
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            Assert.Equal(saved.CenterX, firstControl.Map.Navigator.Viewport.CenterX, 6);
+            Assert.Equal(saved.CenterY, firstControl.Map.Navigator.Viewport.CenterY, 6);
+            Assert.Equal(saved.Resolution, firstControl.Map.Navigator.Viewport.Resolution, 6);
+            Assert.Equal(saved.Rotation, firstControl.Map.Navigator.Viewport.Rotation, 6);
+        }
+        firstWindow.Close();
+
+        var secondControl = new Mapsui.UI.Avalonia.MapControl();
+        var secondWindow = new Window { Content = secondControl, Width = 420, Height = 620 };
+        secondWindow.Show();
+        using var secondAdapter = new MapsuiMapAdapter(secondControl, new(23.17, 51.23, 32.77, 56.18));
+        secondAdapter.InitializeViewport(saved);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(saved.CenterX, secondControl.Map.Navigator.Viewport.CenterX, 6);
+        Assert.Equal(saved.CenterY, secondControl.Map.Navigator.Viewport.CenterY, 6);
+        Assert.Equal(saved.Resolution, secondControl.Map.Navigator.Viewport.Resolution, 6);
+        Assert.Equal(saved.Rotation, secondControl.Map.Navigator.Viewport.Rotation, 6);
+        secondWindow.Close();
+    }
+
+    [AvaloniaFact]
     public async Task CompassResetRequestsARenderWithoutAnotherPointerEvent()
     {
         var control = new RenderCountingMapControl();

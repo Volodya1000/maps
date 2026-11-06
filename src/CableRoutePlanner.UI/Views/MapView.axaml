@@ -39,82 +39,95 @@
                         x:Name="SheetHandleText"
                         Classes="map-sheet-hint"
                         HorizontalAlignment="Center"
+                        TextTrimming="CharacterEllipsis"
                         Text="Точки и маршруты · потяните вниз, чтобы свернуть" />
                 </Border>
-                <ScrollViewer
-                    x:Name="SidePanelContent"
-                    Grid.Row="1"
-                    VerticalScrollBarVisibility="Auto">
-                <StackPanel Spacing="12">
-                    <TextBlock
-                        Classes="section-heading"
-                        Text="Точки маршрута" />
-                    <TextBlock
-                        Classes="view-hint"
-                        Text="Нажмите на карту. Маркеры можно перетаскивать. При выключенном добавлении карта свободно перемещается. На Desktop вращайте её правой кнопкой мыши; на Android используйте два пальца." />
-                    <controls:WaypointList
-                        x:Name="WaypointList"
-                        DataContext="{Binding}" />
-                    <WrapPanel>
-                        <Button
-                            Command="{Binding CopyCoordinates}"
-                            Content="{Binding CopyPointText}" />
-                        <Button
-                            Command="{Binding ClearPoints}"
-                            Content="Очистить" />
-                    </WrapPanel>
-                    <Expander Header="Ввести координаты">
-                        <StackPanel Spacing="6">
-                            <TextBox
-                                Text="{Binding LatitudeText}"
-                                Watermark="Широта, например 53.944" />
-                            <TextBox
-                                Text="{Binding LongitudeText}"
-                                Watermark="Долгота, например 27.502" />
-                            <Button
-                                Command="{Binding AddManual}"
-                                Content="Добавить точку" />
-                        </StackPanel>
-                    </Expander>
-                    <Button
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        Classes="primary"
-                        Command="{Binding BuildRoutes}"
-                        Content="Построить маршруты" />
-                    <ProgressBar
-                        Classes="route-progress"
-                        IsIndeterminate="True"
-                        IsVisible="{Binding IsBusy}" />
-                    <Button
-                        Command="{Binding Cancel}"
-                        Content="Отменить расчёт"
-                        IsVisible="{Binding IsBusy}" />
-                    <local:RouteChoicesView DataContext="{Binding}" />
-                    <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
-                        <CheckBox x:Name="RoadContactsToggle"
-                            IsChecked="{Binding ShowRoadContacts}"
-                            Content="Пересечения с дорогами" />
-                        <TextBlock IsVisible="{Binding ShowRoadContacts}"
-                            Text="Круг — пересечение; линия — общий участок."
-                            TextWrapping="Wrap" />
-                    </StackPanel>
-                    <Panel IsVisible="{Binding ShowTrackingPanel}">
-                        <local:TrackingPanelView
-                            x:Name="TrackingPanel"
-                            DataContext="{Binding Tracking}" />
-                    </Panel>
-                    <TextBlock
-                        Classes="route-metrics"
-                        Text="{Binding MetricsText}" />
-                    <local:RouteVerticesView DataContext="{Binding}" />
-                    <Border Classes="route-status">
-                        <TextBlock
-                            Classes="route-status-text"
-                            Text="{Binding Status}" />
-                    </Border>
-                </StackPanel>
-                </ScrollViewer>
+                <TabControl x:Name="ToolTabs" Classes="map-tool-tabs" Grid.Row="1">
+                    <TabItem Header="Точки">
+                        <Grid
+                            x:Name="SidePanelContent"
+                            RowDefinitions="*,Auto"
+                            RowSpacing="12">
+                            <ScrollViewer x:Name="PointEditorScroll" VerticalScrollBarVisibility="Disabled">
+                                <Grid x:Name="PointEditorLayout" RowDefinitions="Auto,*" RowSpacing="8">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock Classes="section-heading" Text="Точки маршрута" />
+                                        <TextBlock
+                                            x:Name="PointEditingHint"
+                                            Classes="view-hint"
+                                            TextWrapping="Wrap" />
+                                        <WrapPanel>
+                                            <Button Command="{Binding CopyCoordinates}" Content="{Binding CopyPointText}" />
+                                            <Button Command="{Binding ClearPoints}" Content="Очистить" />
+                                        </WrapPanel>
+                                        <Expander x:Name="ManualCoordinates" Header="Ввести координаты">
+                                            <StackPanel Spacing="6">
+                                                <TextBox Text="{Binding LatitudeText}" Watermark="Широта, например 53.944" />
+                                                <TextBox Text="{Binding LongitudeText}" Watermark="Долгота, например 27.502" />
+                                                <Button Command="{Binding AddManual}" Content="Добавить точку" />
+                                            </StackPanel>
+                                        </Expander>
+                                    </StackPanel>
+                                    <ScrollViewer
+                                        x:Name="WaypointListScroll"
+                                        Grid.Row="1"
+                                        VerticalScrollBarVisibility="Auto">
+                                        <controls:WaypointList x:Name="WaypointList" DataContext="{Binding}" />
+                                    </ScrollViewer>
+                                </Grid>
+                            </ScrollViewer>
+                            <StackPanel Grid.Row="1" Spacing="8">
+                                <Button
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    Classes="primary"
+                                    Command="{Binding BuildRoutes}"
+                                    Content="Построить маршруты" />
+                                <ProgressBar Classes="route-progress" IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+                                <Button Command="{Binding Cancel}" Content="Отменить расчёт" IsVisible="{Binding IsBusy}" />
+                                <Border Classes="route-status">
+                                    <ScrollViewer MaxHeight="64" VerticalScrollBarVisibility="Auto">
+                                        <TextBlock Classes="route-status-text" Text="{Binding Status}" TextWrapping="Wrap" />
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Маршрут">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="12">
+                                <local:RouteChoicesView DataContext="{Binding}" />
+                                <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
+                                    <CheckBox
+                                        x:Name="RoadContactsToggle"
+                                        IsChecked="{Binding ShowRoadContacts}"
+                                        Content="Пересечения с дорогами" />
+                                    <TextBlock
+                                        IsVisible="{Binding ShowRoadContacts}"
+                                        Text="Круг — пересечение; линия — общий участок."
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <TextBlock Classes="route-metrics" Text="{Binding MetricsText}" TextWrapping="Wrap" />
+                                <Button Content="К прокладке →" IsVisible="{Binding ShowTrackingPanel}" Click="ShowTraversal" />
+                                <local:RouteVerticesView DataContext="{Binding}" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="Прокладка">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="12">
+                                <Panel IsVisible="{Binding ShowTrackingPanel}">
+                                    <local:TrackingPanelView x:Name="TrackingPanel" DataContext="{Binding Tracking}" />
+                                </Panel>
+                                <TextBlock
+                                    Classes="view-hint"
+                                    IsVisible="{Binding !ShowTrackingPanel}"
+                                    Text="GPS-панель станет доступна после выбора маршрута."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
             </Grid>
         </Border>
     </Grid>
