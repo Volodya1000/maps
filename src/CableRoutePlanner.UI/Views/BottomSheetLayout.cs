@@ -17,7 +17,7 @@ public readonly record struct BottomSheetLayout(
                 Height: expanded ? Math.Min(height * 0.68, 560) : 52,
                 Padding: expanded ? 10 : 0,
                 HandleText: expanded
-                    ? "Точки и маршруты · потяните вниз, чтобы свернуть"
+                    ? "⌄ Свернуть панель"
                     : "↑ Показать точки и маршруты")
             : new(
                 IsNarrow: false,

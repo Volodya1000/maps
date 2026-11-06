@@ -38,6 +38,26 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         MapGestureBindings.Bind(viewModel, adapter, bindings);
         MapLayerBindings.Bind(viewModel, adapter, bindings);
         _sheet.Bind(SheetHandleButton, this, AdaptLayout).DisposeWith(bindings);
+        viewModel.BuildRoutes.ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(_ =>
+            {
+                if (viewModel.HasRoute)
+                {
+                    ToolTabs.SelectedIndex = 1;
+                }
+                AdaptLayout();
+            }).DisposeWith(bindings);
+        viewModel.WhenAnyValue(vm => vm.HasRoute).Skip(1)
+            .Subscribe(hasRoute =>
+            {
+                if (!hasRoute)
+                {
+                    ToolTabs.SelectedIndex = 0;
+                }
+                AdaptLayout();
+            }).DisposeWith(bindings);
+        viewModel.WhenAnyValue(vm => vm.PointCount)
+            .Subscribe(_ => AdaptLayout()).DisposeWith(bindings);
         viewModel.Tracking?.WhenAnyValue(vm => vm.CompactProgressText)
             .Subscribe(_ => AdaptLayout()).DisposeWith(bindings);
         MapOverlay.ZoomInRequested += adapter.ZoomIn;
@@ -63,11 +83,24 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
 
     private void OnSizeChanged(object? sender, SizeChangedEventArgs args) => AdaptLayout();
 
+    private void ShowTraversal(object? sender, Avalonia.Interactivity.RoutedEventArgs args) =>
+        ToolTabs.SelectedIndex = 2;
+
     private void AdaptLayout()
     {
         MapViewModel? viewModel = ViewModel;
         BottomSheetLayout layout = BottomSheetLayout.Create(Bounds.Width, Bounds.Height, _sheet.IsExpanded);
         bool narrow = layout.IsNarrow;
+        PointEditorScroll.VerticalScrollBarVisibility = narrow
+            ? Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+            : Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled;
+        PointEditorLayout.RowDefinitions = new(narrow ? "Auto,Auto" : "Auto,*");
+        WaypointListScroll.VerticalScrollBarVisibility = narrow
+            ? Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+            : Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+        PointEditingHint.Text = narrow
+            ? "Добавьте точки на карте или введите координаты. Маркеры можно перетаскивать."
+            : "Нажмите на карту, чтобы добавить точки. Маркеры можно перетаскивать; вращайте карту правой кнопкой мыши.";
         Layout.ColumnDefinitions = new(narrow ? "*" : "*,350");
         Layout.RowDefinitions = new("*");
         Grid.SetColumn(MapArea, 0);
@@ -80,8 +113,12 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             : Avalonia.Layout.VerticalAlignment.Stretch;
         SheetHandleButton.IsVisible = narrow;
         ToolTabs.IsVisible = !narrow || _sheet.IsExpanded;
-        SheetHandleText.Text = narrow && !_sheet.IsExpanded && viewModel?.Tracking is { HasRoute: true } tracking
-            ? tracking.CompactProgressText
+        SheetHandleText.Text = narrow && !_sheet.IsExpanded
+            ? viewModel?.Tracking is { HasRoute: true } tracking
+                ? "↑ " + tracking.CompactProgressText
+                : viewModel?.SelectedRoute is { } route
+                    ? $"↑ Маршрут · {route.Metrics.LengthMetres:N0} м"
+                    : $"↑ Точки: {viewModel?.PointCount ?? 0} · открыть панель"
             : layout.HandleText;
 
         if (narrow)
