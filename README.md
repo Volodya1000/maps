@@ -88,6 +88,8 @@ dotnet run --project tools/CableRoutePlanner.Verify -- samples/real-geodata-fixt
 
 [Архитектура](docs/architecture.md) · [Persistence и SQLite](docs/persistence.md) · [Источники](docs/data-sources.md) · [Алгоритм](docs/routing-algorithm.md) · [Тестирование](docs/testing.md) · [Аудит тестов и SOLID](docs/test-and-solid-review.md) · [Платформы](docs/platform-compatibility.md) · [Матрица требований](docs/acceptance.md).
 
+[Стратегия эксперимента дорожных пересечений](docs/routing-crossing-experiment-strategy.md) — техническое задание для будущего пилота на реальных сельских геоданных Беларуси.
+
 [Как выбрать и обновить Android APK](docs/android-distribution.md).
 
 Результаты предназначены для предварительного планирования. Они не заменяют обследование местности, согласование переходов и рабочий проект строительства.
