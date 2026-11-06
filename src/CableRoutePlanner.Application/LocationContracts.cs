@@ -1,5 +1,6 @@
 using CableRoutePlanner.Domain;
 using System.Runtime.InteropServices;
+using System.ComponentModel;
 
 namespace CableRoutePlanner.Application;
 
@@ -104,6 +105,27 @@ public interface ILocationPreferencesStore
     LocationPreferences Load();
 
     void Save(LocationPreferences preferences);
+}
+
+public interface ILocationController : INotifyPropertyChanged, IDisposable
+{
+    bool IsSupported { get; }
+
+    bool IsEnabled { get; }
+
+    LocationServiceState State { get; }
+
+    IObservable<LocationMeasurement> Measurements { get; }
+
+    IObservable<LocationServiceState> States { get; }
+
+    IObservable<HeadingMeasurement> Headings { get; }
+
+    Task SetEnabledAsync(bool enabled, CancellationToken cancellationToken = default);
+
+    Task RestoreAsync(CancellationToken cancellationToken = default);
+
+    void OpenSystemSettings();
 }
 
 public interface ITrackingSessionStore

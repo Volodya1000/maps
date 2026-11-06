@@ -14,7 +14,7 @@ internal sealed class BottomSheetController
     private IPointer? _pointer;
     private Point _start;
 
-    public bool IsExpanded { get; private set; } = true;
+    public bool IsExpanded { get; private set; }
 
     public IDisposable Bind(Control handle, Control coordinateRoot, Action changed)
     {

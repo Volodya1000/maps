@@ -12,7 +12,7 @@ namespace CableRoutePlanner.ViewModels;
 public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDisposable
 {
     private readonly ISettingsStore _store;
-    private readonly ITrackingViewModel? _tracking;
+    private readonly ILocationController? _locationController;
     private readonly CompositeDisposable _lifetime = new();
     private RoutingOptions _saved = new();
     private bool _loadFailed;
@@ -39,7 +39,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
     }
     [Reactive] public string Status { get; private set; } = "";
 
-    public bool IsLocationSupported => _tracking?.IsLocationSupported == true;
+    public bool IsLocationSupported => _locationController?.IsSupported == true;
 
     public bool ShowLocation
     {
@@ -47,7 +47,7 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         private set => this.RaiseAndSetIfChanged(ref _showLocation, value);
     }
 
-    public string LocationStatus => _tracking?.LocationState.Message ?? "";
+    public string LocationStatus => _locationController?.State.Message ?? "";
 
     public ReactiveCommand<Unit, Unit> ToggleLocation
     {
@@ -87,18 +87,18 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         get; private set;
     }
 
-    public SettingsViewModel(IScreen screen, ISettingsStore store, ITrackingViewModel? tracking = null)
+    public SettingsViewModel(IScreen screen, ISettingsStore store, ILocationController? locationController = null)
     {
         HostScreen = screen;
         _store = store;
-        _tracking = tracking;
-        ShowLocation = tracking?.IsLocationEnabled == true;
+        _locationController = locationController;
+        ShowLocation = locationController?.IsEnabled == true;
         Reload();
         SetupSubscriptions();
         InitializeCommands();
-        if (_tracking is not null)
+        if (_locationController is not null)
         {
-            _tracking.PropertyChanged += TrackingPropertyChanged;
+            _locationController.PropertyChanged += LocationControllerPropertyChanged;
         }
     }
 
@@ -115,21 +115,21 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
             .DisposeWith(_lifetime);
         ToggleLocation = ReactiveCommand.CreateFromTask(() => SetLocationEnabledAsync(!ShowLocation))
             .DisposeWith(_lifetime);
-        OpenLocationSettings = ReactiveCommand.Create(() => _tracking?.OpenSystemLocationSettings())
+        OpenLocationSettings = ReactiveCommand.Create(() => _locationController?.OpenSystemSettings())
             .DisposeWith(_lifetime);
     }
 
     public async Task SetLocationEnabledAsync(bool enabled)
     {
-        if (_tracking is null)
+        if (_locationController is null)
         {
             return;
         }
 
         try
         {
-            await _tracking.SetLocationEnabledAsync(enabled);
-            ShowLocation = _tracking.IsLocationEnabled;
+            await _locationController.SetEnabledAsync(enabled);
+            ShowLocation = _locationController.IsEnabled;
             LocationStatusChanged();
         }
         catch (Exception ex)
@@ -209,12 +209,12 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
         this.RaisePropertyChanged(nameof(CanReset));
     }
 
-    private void TrackingPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void LocationControllerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ITrackingViewModel.IsLocationEnabled)
-            or nameof(ITrackingViewModel.LocationState))
+        if (e.PropertyName is nameof(ILocationController.IsEnabled)
+            or nameof(ILocationController.State))
         {
-            ShowLocation = _tracking?.IsLocationEnabled == true;
+            ShowLocation = _locationController?.IsEnabled == true;
             LocationStatusChanged();
         }
     }
@@ -228,9 +228,9 @@ public sealed class SettingsViewModel : ReactiveObject, IRoutableViewModel, IDis
 
     public void Dispose()
     {
-        if (_tracking is not null)
+        if (_locationController is not null)
         {
-            _tracking.PropertyChanged -= TrackingPropertyChanged;
+            _locationController.PropertyChanged -= LocationControllerPropertyChanged;
         }
 
         _lifetime.Dispose();

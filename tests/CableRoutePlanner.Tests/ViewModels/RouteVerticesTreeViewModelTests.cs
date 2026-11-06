@@ -1,5 +1,6 @@
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.ViewModels;
+using System.Collections.Specialized;
 using System.Reactive.Threading.Tasks;
 using Xunit;
 
@@ -53,5 +54,19 @@ public sealed class RouteVerticesTreeViewModelTests
         Assert.Single(tree.RouteVertices, vertex => vertex.IsSelected);
         Assert.Contains(tree.VisibleRouteVertices, vertex => vertex.Number == 2);
         Assert.True(tree.VisibleRouteVertices.Single(vertex => vertex.Number == 1).IsExpanded);
+    }
+
+    [Fact]
+    public void SettingVerticesRefreshesVisibleRowsOnlyOnce()
+    {
+        using RouteVerticesTreeViewModel tree = new();
+        int changes = 0;
+        tree.VisibleRouteVertices.CollectionChanged += OnChanged;
+
+        tree.SetVertices(ThreeVertices);
+
+        Assert.Equal(3, changes);
+
+        void OnChanged(object? sender, NotifyCollectionChangedEventArgs args) => changes += 1;
     }
 }

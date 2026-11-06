@@ -29,6 +29,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     private readonly Subject<Guid> _waypointSelected = new();
     private readonly Subject<double> _northIndicatorRotationChanged = new();
     private readonly Subject<int> _routeVertexSelected = new();
+    private readonly Subject<MapViewportState> _viewportStateChanged = new();
 
     public IObservable<(GeoBounds Bounds, double Resolution)> ViewportChangedStream => _viewportChanged.AsObservable();
     public IObservable<GeoCoordinate> PointAddedStream => _pointAdded.AsObservable();
@@ -36,6 +37,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     public IObservable<Guid> WaypointSelectedStream => _waypointSelected.AsObservable();
     public IObservable<double> NorthIndicatorRotationChangedStream => _northIndicatorRotationChanged.AsObservable();
     public IObservable<int> RouteVertexSelectedStream => _routeVertexSelected.AsObservable();
+    public IObservable<MapViewportState> ViewportStateChangedStream => _viewportStateChanged.AsObservable();
     private const double MapReloadDistanceViewportFraction = 0.25;
 
     private const double MapReloadResolutionRatio = 1.25;
@@ -91,6 +93,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     private bool _initialized;
 
     private bool _routeExtentShown;
+
+    private MapViewportState? _restoredViewportState;
+
+    public MapViewportState? CurrentViewportState { get; private set; }
 
     private bool _following;
 
@@ -203,19 +209,24 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         control.Map.Navigator.ViewportChanged += OnViewportChanged;
     }
 
-    public void InitializeViewport()
+    public void InitializeViewport(MapViewportState? restoredState = null)
     {
-        // Fitting is queued after layout: Android can report a temporary narrow viewport
-        // while the responsive panel is being arranged. Fit again until the user moves it.
+        _restoredViewportState = restoredState is { IsValid: true } ? restoredState : null;
+        if (_restoredViewportState is not null)
+        {
+            _cameraWasUsed = true;
+            _routeExtentShown = true;
+        }
+
         _initialized = true;
-        QueueInitialFit();
+        QueueInitialViewport();
     }
 
-    private void OnMapSizeChanged(object? sender, SizeChangedEventArgs e) => QueueInitialFit();
+    private void OnMapSizeChanged(object? sender, SizeChangedEventArgs e) => QueueInitialViewport();
 
-    private void QueueInitialFit()
+    private void QueueInitialViewport()
     {
-        if (!_initialized || _cameraWasUsed || _fitQueued || _disposed)
+        if (!_initialized || _fitQueued || _disposed)
         {
             return;
         }
@@ -224,7 +235,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         Dispatcher.UIThread.Post(() =>
         {
             _fitQueued = false;
-            if (_cameraWasUsed || _disposed)
+            if (_disposed)
             {
                 return;
             }
@@ -232,8 +243,21 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             Viewport viewport = _control.Map.Navigator.Viewport;
             if (viewport.Width > 0 && viewport.Height > 0)
             {
-                _control.Map.Navigator.ZoomToBox(_extent);
-                OnViewportChanged(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(InitializeViewport)));
+                if (_restoredViewportState is { } restored)
+                {
+                    _control.Map.Navigator.SetViewport(viewport with
+                    {
+                        CenterX = restored.CenterX,
+                        CenterY = restored.CenterY,
+                        Resolution = restored.Resolution,
+                        Rotation = restored.Rotation
+                    }, 0);
+                    _restoredViewportState = null;
+                }
+                else if (!_cameraWasUsed)
+                {
+                    _control.Map.Navigator.ZoomToBox(_extent);
+                }
             }
         }, DispatcherPriority.Loaded);
     }
@@ -698,6 +722,18 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _northIndicatorRotationChanged.OnNext(northAngle);
         NorthIndicatorRotationChanged?.Invoke(northAngle);
 
+        if (MapViewportState.TryCreate(
+                viewport.CenterX,
+                viewport.CenterY,
+                viewport.Resolution,
+                viewport.Rotation,
+                out MapViewportState? state)
+            && state is { } validState)
+        {
+            CurrentViewportState = validState;
+            _viewportStateChanged.OnNext(validState);
+        }
+
         if (_tiledBase is not null)
         {
             return;
@@ -762,6 +798,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _waypointSelected.OnCompleted();
         _northIndicatorRotationChanged.OnCompleted();
         _routeVertexSelected.OnCompleted();
+        _viewportStateChanged.OnCompleted();
         _featurePreparation.Cancel();
         _featurePreparation.Dispose();
         _tiledBase?.AbortFetch();
@@ -781,6 +818,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         _waypointSelected.Dispose();
         _northIndicatorRotationChanged.Dispose();
         _routeVertexSelected.Dispose();
+        _viewportStateChanged.Dispose();
     }
 
 }

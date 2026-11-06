@@ -95,13 +95,17 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
     private IObservable<IRoutableViewModel> Discard()
     {
         Func<IObservable<IRoutableViewModel>>? navigate = _pendingNavigation;
+        if (Router.GetCurrentViewModel() is SettingsViewModel && _settings.HasChanges)
+        {
+            _settings.Reload();
+        }
         Stay();
         return navigate?.Invoke() ?? Observable.Return(Router.GetCurrentViewModel()!);
     }
 
     private IObservable<IRoutableViewModel> NavigateBack()
     {
-        if (Router.NavigationStack.Count > 1 && Router.NavigationStack[^2] is SettingsViewModel)
+        if (Router.GetCurrentViewModel() is SettingsViewModel)
         {
             _settings.Reload();
         }
@@ -123,12 +127,10 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
             if (vm is SettingsViewModel)
             {
                 _settings.Reload();
+                return Router.Navigate.Execute(_settings);
             }
-            while (Router.NavigationStack.Count >= 2)
-            {
-                Router.NavigationStack.RemoveAt(0);
-            }
-            return Router.Navigate.Execute(vm);
+
+            return Router.NavigateAndReset.Execute(_map);
         });
     }
 

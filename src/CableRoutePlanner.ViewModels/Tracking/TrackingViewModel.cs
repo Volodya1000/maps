@@ -11,9 +11,7 @@ namespace CableRoutePlanner.ViewModels;
 public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDisposable
 {
     private static readonly RouteProgressConfiguration TrackingConfiguration = new();
-    private readonly ILocationService _locationService;
-    private readonly IHeadingService _headingService;
-    private readonly ILocationPreferencesStore _preferencesStore;
+    private readonly ILocationController _locationController;
     private readonly ITrackingSessionStore _sessionStore;
     private readonly BackgroundSessionSaver _sessionSaver;
     private readonly Func<DateTimeOffset> _clock;
@@ -26,24 +24,20 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
     private bool? _isLocationInsideCoverage;
 
     public TrackingViewModel(
-        ILocationService locationService,
-        IHeadingService headingService,
-        ILocationPreferencesStore preferencesStore,
+        ILocationController locationController,
         ITrackingSessionStore sessionStore,
         Func<DateTimeOffset>? clock = null)
     {
-        _locationService = locationService ?? throw new ArgumentNullException(nameof(locationService));
-        _headingService = headingService ?? throw new ArgumentNullException(nameof(headingService));
-        _preferencesStore = preferencesStore ?? throw new ArgumentNullException(nameof(preferencesStore));
+        _locationController = locationController ?? throw new ArgumentNullException(nameof(locationController));
         _sessionStore = sessionStore ?? throw new ArgumentNullException(nameof(sessionStore));
         _sessionSaver = new BackgroundSessionSaver(_sessionStore, HandlePersistenceFailure);
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
-        LocationState = _locationService.State;
-        IsLocationEnabled = _locationService.IsSupported && _preferencesStore.Load().IsEnabled;
+        LocationState = _locationController.State;
+        IsLocationEnabled = _locationController.IsEnabled;
 
-        _locationService.Measurements.Subscribe(HandleLocation).DisposeWith(_lifetime);
-        _locationService.States.Subscribe(HandleLocationState).DisposeWith(_lifetime);
-        _headingService.Measurements.Subscribe(heading => CurrentHeading = heading).DisposeWith(_lifetime);
+        _locationController.Measurements.Subscribe(HandleLocation).DisposeWith(_lifetime);
+        _locationController.States.Subscribe(HandleLocationState).DisposeWith(_lifetime);
+        _locationController.Headings.Subscribe(heading => CurrentHeading = heading).DisposeWith(_lifetime);
 
         Start = ReactiveCommand.Create(StartTraversal, this.WhenAnyValue(vm => vm.CanStartTraversal));
         Pause = ReactiveCommand.Create(PauseTraversal, this.WhenAnyValue(vm => vm.CanPauseTraversal));
@@ -51,13 +45,13 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
         Finish = ReactiveCommand.Create(FinishTraversal, this.WhenAnyValue(vm => vm.CanFinishTraversal));
         ToggleFollowCommand = ReactiveCommand.Create(ToggleFollow);
 
-        if (IsLocationEnabled)
+        if (_locationController.IsEnabled)
         {
-            _ = RestoreEnabledLocationAsync();
+            _ = _locationController.RestoreAsync();
         }
     }
 
-    public bool IsLocationSupported => _locationService.IsSupported;
+    public bool IsLocationSupported => _locationController.IsSupported;
 
     [Reactive] public bool IsLocationEnabled { get; private set; }
 
@@ -161,30 +155,9 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
 
     public async Task SetLocationEnabledAsync(bool enabled, CancellationToken cancellationToken = default)
     {
-        if (!enabled)
-        {
-            IsLocationEnabled = false;
-            _locationService.Disable();
-            _headingService.PauseUpdates();
-            ClearLocationDisplay();
-            _preferencesStore.Save(new LocationPreferences(false));
-            return;
-        }
-
-        LocationServiceState state = await _locationService.EnableAsync(cancellationToken);
-        bool permissionWasDenied = state.Permission is LocationPermissionState.Denied
-            or LocationPermissionState.PermanentlyDenied;
-        IsLocationEnabled = !permissionWasDenied;
-        HandleLocationState(state);
-        _preferencesStore.Save(new LocationPreferences(!permissionWasDenied));
-        if (permissionWasDenied)
-        {
-            ClearLocationDisplay();
-        }
-        if (state.IsEnabled)
-        {
-            _locationService.ResumeUpdates();
-        }
+        await _locationController.SetEnabledAsync(enabled, cancellationToken);
+        IsLocationEnabled = _locationController.IsEnabled;
+        HandleLocationState(_locationController.State);
     }
 
     public void SetRoute(RouteAlternative? route)
@@ -288,7 +261,7 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
 
     public void DisableFollowing() => IsFollowing = false;
 
-    public void OpenSystemLocationSettings() => _locationService.OpenSystemSettings();
+    public void OpenSystemLocationSettings() => _locationController.OpenSystemSettings();
 
     public void SetCoverage(bool? isInsideCoverage)
     {
@@ -299,36 +272,6 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
 
         _isLocationInsideCoverage = isInsideCoverage;
         this.RaisePropertyChanged(nameof(CoverageStatus));
-    }
-
-    private async Task RestoreEnabledLocationAsync()
-    {
-        try
-        {
-            LocationServiceState state = await _locationService.RestoreAsync(CancellationToken.None);
-            if (_disposed)
-            {
-                return;
-            }
-
-            HandleLocationState(state);
-            bool permissionWasDenied = state.Permission is LocationPermissionState.Denied
-                or LocationPermissionState.PermanentlyDenied;
-            IsLocationEnabled = !permissionWasDenied;
-            if (state.IsEnabled)
-            {
-                _locationService.ResumeUpdates();
-            }
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            LocationState = new LocationServiceState(
-                false,
-                LocationPermissionState.Denied,
-                SystemLocationState.Unknown,
-                false,
-                $"Не удалось восстановить геолокацию: {ex.Message}");
-        }
     }
 
     private void ClearLocationDisplay()
@@ -358,12 +301,11 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
     private void HandleLocationState(LocationServiceState state)
     {
         LocationState = state;
+        IsLocationEnabled = _locationController.IsEnabled;
         if (IsLocationEnabled && (state.Permission is LocationPermissionState.Denied
             or LocationPermissionState.PermanentlyDenied))
         {
             IsLocationEnabled = false;
-            _preferencesStore.Save(new LocationPreferences(false));
-            _headingService.PauseUpdates();
             ClearLocationDisplay();
         }
         else if (!state.IsEnabled && state.SystemLocation == SystemLocationState.Disabled)
@@ -376,12 +318,6 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
             ClearLocationDisplay();
         }
 
-        bool paused = state.IsSearching && state.FixState == LocationFixState.None;
-        if (!_disposed && IsLocationEnabled && state.IsEnabled && !paused
-            && state.FixState != LocationFixState.None)
-        {
-            _headingService.ResumeUpdates();
-        }
         this.RaisePropertyChanged(nameof(IsLocationSupported));
         this.RaisePropertyChanged(nameof(CompactProgressText));
         this.RaisePropertyChanged(nameof(TrackingStatusText));

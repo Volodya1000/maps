@@ -30,6 +30,11 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         // Detach subscriptions and cancel their tasks before disposing the adapter.
         CompositeDisposable bindings = new CompositeDisposable().DisposeWith(lifetime);
         IMapAdapter adapter = _adapterFactory(MapControl, viewModel.DataInfo.Bounds).DisposeWith(lifetime);
+        adapter.ViewportStateChangedStream
+            .Subscribe(state => viewModel.UpdateViewportState(state))
+            .DisposeWith(bindings);
+        Disposable.Create(() => viewModel.UpdateViewportState(adapter.CurrentViewportState))
+            .DisposeWith(lifetime);
         MapGestureBindings.Bind(viewModel, adapter, bindings);
         MapLayerBindings.Bind(viewModel, adapter, bindings);
         _sheet.Bind(SheetHandleButton, this, AdaptLayout).DisposeWith(bindings);
@@ -48,7 +53,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         }).DisposeWith(bindings);
         adapter.NorthIndicatorRotationChangedStream
             .Subscribe(MapOverlay.SetNorthIndicatorRotation).DisposeWith(bindings);
-        adapter.InitializeViewport();
+        adapter.InitializeViewport(viewModel.ViewportState);
         adapter.SetPoints(viewModel.Points.ToArray());
         adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
         adapter.SetRouteVertices(viewModel.RouteVertices.ToArray(), viewModel.ShowAllRouteVertices);
@@ -74,7 +79,7 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
             ? Avalonia.Layout.VerticalAlignment.Bottom
             : Avalonia.Layout.VerticalAlignment.Stretch;
         SheetHandleButton.IsVisible = narrow;
-        SidePanelContent.IsVisible = !narrow || _sheet.IsExpanded;
+        ToolTabs.IsVisible = !narrow || _sheet.IsExpanded;
         SheetHandleText.Text = narrow && !_sheet.IsExpanded && viewModel?.Tracking is { HasRoute: true } tracking
             ? tracking.CompactProgressText
             : layout.HandleText;

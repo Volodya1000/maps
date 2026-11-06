@@ -26,6 +26,7 @@ public static class PresentationServiceCollectionExtensions
         }
         services.TryAddSingleton<ILocationService>(_ => new DisabledLocationService());
         services.TryAddSingleton<IHeadingService>(_ => new DisabledHeadingService());
+        services.AddSingleton<ILocationController, LocationController>();
         services.AddSingleton<TrackingViewModel>();
         services.AddSingleton<ITrackingViewModel>(provider => provider.GetRequiredService<TrackingViewModel>());
         services.AddSingleton<IScreen, NavigationHost>();

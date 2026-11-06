@@ -60,7 +60,13 @@ public sealed class RouteVerticesTreeViewModel : ReactiveObject, IDisposable
         }
 
         _expandedLegs.Clear();
-        SelectedRouteVertex = null;
+        bool hadSelection = _selectedRouteVertex is not null;
+        _selectedRouteVertex = null;
+        if (hadSelection)
+        {
+            this.RaisePropertyChanged(nameof(SelectedRouteVertex));
+            this.RaisePropertyChanged(nameof(CopyRouteVertexText));
+        }
         RefreshVisibleVertices();
     }
 

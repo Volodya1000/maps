@@ -83,6 +83,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private RoutingOptions _resultOptions = new();
 
     private WaypointRow? _selectedPoint;
+    private MapViewportState? _viewportState;
     public string UrlPathSegment => "Карта";
 
     public IScreen HostScreen { get; }
@@ -104,6 +105,12 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public IReadOnlyList<MapFeature> Features { get; private set; } = Array.Empty<MapFeature>();
 
     public DataPackageInfo DataInfo => _mapLoader.Info;
+
+    public MapViewportState? ViewportState
+    {
+        get => _viewportState;
+        private set => this.RaiseAndSetIfChanged(ref _viewportState, value);
+    }
 
     public ITrackingViewModel? Tracking => _tracking;
 
@@ -133,6 +140,16 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     }
 
     public string CopyPointText => SelectedPoint is { } point ? $"Копировать точку {point.Number}" : "Выберите точку";
+
+    public void UpdateViewportState(MapViewportState? state)
+    {
+        if (state is null || !state.IsValid)
+        {
+            return;
+        }
+
+        ViewportState = state;
+    }
 
     public RouteVertexRow? SelectedRouteVertex
     {

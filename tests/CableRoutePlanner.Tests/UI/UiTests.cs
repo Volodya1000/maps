@@ -342,7 +342,7 @@ public sealed class UiTests
         window.Close();
         await vm.DiscardAndLeave.Execute();
         Assert.False(window.IsVisible);
-        Assert.True(settings.HasChanges);
+        Assert.False(settings.HasChanges);
     }
 
     [AvaloniaFact]
@@ -429,6 +429,8 @@ public sealed class UiTests
         };
         var window = new Window { Content = view, Width = 1100, Height = 900 };
         window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        view.FindControl<TabControl>("ToolTabs")!.SelectedIndex = 1;
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         ItemsControl choices = view.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "RouteChoices");
         StackPanel section = choices.GetVisualAncestors().OfType<StackPanel>().First();
@@ -589,6 +591,8 @@ public sealed class UiTests
         var window = new Window { Content = view, Width = 1100, Height = 1100 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        view.FindControl<TabControl>("ToolTabs")!.SelectedIndex = 1;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         RouteChoice target = vm.RouteChoices.First(choice => choice.Id != vm.SelectedRoute!.Id);
         Button button = view.GetVisualDescendants().OfType<Button>()
             .Single(candidate => candidate.DataContext is RouteChoice choice && choice.Id == target.Id);
@@ -725,17 +729,17 @@ public sealed class UiTests
         Border handle = view.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "SheetHandleButton");
         ScrollViewer content = view.GetVisualDescendants().OfType<ScrollViewer>().Single(scroll => scroll.Name == "SidePanelContent");
         using var touch = new HeadlessTouch(window);
-        Assert.True(content.IsVisible);
-
-        await SwipeHandle(touch, handle, 80);
-
-        Assert.False(content.IsVisible);
-        Assert.Equal(52, panel.Height);
+        Assert.False(content.IsEffectivelyVisible);
 
         await SwipeHandle(touch, handle, -80);
 
-        Assert.True(content.IsVisible);
+        Assert.True(content.IsEffectivelyVisible);
         Assert.True(panel.Height > 52);
+
+        await SwipeHandle(touch, handle, 80);
+
+        Assert.False(content.IsEffectivelyVisible);
+        Assert.Equal(52, panel.Height);
         window.Close();
     }
 

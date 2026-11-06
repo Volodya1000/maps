@@ -25,6 +25,29 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     }
 
     [Fact]
+    public async Task MapViewModelDelegatesRouteLegExpansionToItsTreeViewModel()
+    {
+        using MapViewModel vm = CreateVm(new MemoryData());
+        GeoCoordinate start = TestData.P(0, 0);
+        GeoCoordinate bend = TestData.P(100, 80);
+        GeoCoordinate end = TestData.P(200, 0);
+        await vm.AddPoint.Execute(start).ToTask();
+        await vm.AddPoint.Execute(end).ToTask();
+        vm.SelectedRoute = new RouteAlternative(
+            Guid.NewGuid(),
+            "Маршрут",
+            [start, bend, end],
+            new RouteMetrics(200, 0, 200, 0, 0, 0, 200, null));
+
+        RouteVertexRow child = Assert.Single(vm.RouteVertices, vertex => vertex.IsChild);
+        Assert.DoesNotContain(vm.VisibleRouteVertices, vertex => vertex.Number == child.Number);
+
+        await vm.ToggleRouteLeg.Execute(child.LegIndex).ToTask();
+
+        Assert.Contains(vm.VisibleRouteVertices, vertex => vertex.Number == child.Number);
+    }
+
+    [Fact]
     public async Task LatestMapRequestWinsWhenOlderRequestFinishesLast()
     {
         var data = new DeferredMapData();

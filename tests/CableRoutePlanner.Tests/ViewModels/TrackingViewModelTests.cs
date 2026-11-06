@@ -284,9 +284,10 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         MemoryTrackingSessions? sessions = null,
         FakeHeading? heading = null) =>
         new(
-            location,
-            heading ?? new FakeHeading(),
-            preferences ?? new MemoryLocationPreferences(),
+            new LocationController(
+                location,
+                heading ?? new FakeHeading(),
+                preferences ?? new MemoryLocationPreferences()),
             sessions ?? new MemoryTrackingSessions(),
             () => Start.AddMinutes(1));
 
