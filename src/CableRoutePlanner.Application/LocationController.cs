@@ -12,6 +12,7 @@ public sealed class LocationController : ILocationController
     private readonly SemaphoreSlim _gate = new(1, 1);
     private LocationServiceState _state;
     private bool _isEnabled;
+    private bool _restoreFailed;
     private bool _disposed;
 
     public LocationController(
@@ -50,15 +51,14 @@ public sealed class LocationController : ILocationController
         {
             if (!enabled)
             {
-                _isEnabled = false;
+                SetEnabled(false);
                 _locationService.Disable();
-                _headingService.PauseUpdates();
                 ApplyState(_locationService.State);
                 _preferencesStore.Save(new LocationPreferences(false));
                 return;
             }
 
-            if (!IsSupported || (_isEnabled && _state.IsEnabled))
+            if (!IsSupported || (_isEnabled && _state.IsEnabled && !_restoreFailed))
             {
                 return;
             }
@@ -66,13 +66,10 @@ public sealed class LocationController : ILocationController
             LocationServiceState state = await _locationService.EnableAsync(cancellationToken);
             bool denied = state.Permission is LocationPermissionState.Denied
                 or LocationPermissionState.PermanentlyDenied;
-            _isEnabled = !denied;
+            SetEnabled(!denied);
+            _restoreFailed = false;
             ApplyState(state);
             _preferencesStore.Save(new LocationPreferences(_isEnabled));
-            if (_isEnabled)
-            {
-                _locationService.ResumeUpdates();
-            }
         }
         finally
         {
@@ -90,16 +87,23 @@ public sealed class LocationController : ILocationController
         await _gate.WaitAsync(cancellationToken);
         try
         {
-            LocationServiceState state = await _locationService.RestoreAsync(cancellationToken);
+            LocationServiceState state;
+            try
+            {
+                state = await _locationService.RestoreAsync(cancellationToken);
+            }
+            catch
+            {
+                _restoreFailed = true;
+                throw;
+            }
+
             bool denied = state.Permission is LocationPermissionState.Denied
                 or LocationPermissionState.PermanentlyDenied;
-            _isEnabled = !denied;
+            SetEnabled(!denied);
+            _restoreFailed = false;
             ApplyState(state);
             _preferencesStore.Save(new LocationPreferences(_isEnabled));
-            if (_isEnabled)
-            {
-                _locationService.ResumeUpdates();
-            }
         }
         finally
         {
@@ -116,21 +120,41 @@ public sealed class LocationController : ILocationController
             return;
         }
 
+        LocationServiceState previousState = _state;
         _state = state;
         bool denied = state.Permission is LocationPermissionState.Denied
             or LocationPermissionState.PermanentlyDenied;
-        if (denied && _isEnabled)
+        if (denied)
         {
-            _isEnabled = false;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsEnabled)));
+            SetEnabled(false);
+            _preferencesStore.Save(new LocationPreferences(false));
         }
 
         _states.OnNext(state);
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(State)));
-        if (_isEnabled && state.IsEnabled)
+        if (!Equals(previousState, state))
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(State)));
+        }
+
+        if (!_isEnabled || denied || !state.IsEnabled && state.SystemLocation == SystemLocationState.Disabled)
+        {
+            _headingService.PauseUpdates();
+        }
+        else if (state.IsEnabled)
         {
             _headingService.ResumeUpdates();
         }
+    }
+
+    private void SetEnabled(bool enabled)
+    {
+        if (_isEnabled == enabled)
+        {
+            return;
+        }
+
+        _isEnabled = enabled;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsEnabled)));
     }
 
     public void Dispose()

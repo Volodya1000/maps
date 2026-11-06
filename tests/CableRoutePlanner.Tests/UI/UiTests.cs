@@ -727,7 +727,7 @@ public sealed class UiTests
 
         Border panel = view.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "SidePanel");
         Border handle = view.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "SheetHandleButton");
-        ScrollViewer content = view.GetVisualDescendants().OfType<ScrollViewer>().Single(scroll => scroll.Name == "SidePanelContent");
+        ScrollViewer content = view.GetVisualDescendants().OfType<ScrollViewer>().Single(scroll => scroll.Name == "WaypointListScroll");
         using var touch = new HeadlessTouch(window);
         Assert.False(content.IsEffectivelyVisible);
 

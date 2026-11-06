@@ -43,16 +43,16 @@
                 </Border>
                 <TabControl x:Name="ToolTabs" Grid.Row="1">
                     <TabItem Header="Точки и расчёт">
-                        <ScrollViewer
+                        <Grid
                             x:Name="SidePanelContent"
-                            VerticalScrollBarVisibility="Auto">
+                            RowDefinitions="Auto,*,Auto"
+                            RowSpacing="12">
                             <StackPanel Spacing="12">
                                 <TextBlock Classes="section-heading" Text="Точки маршрута" />
                                 <TextBlock
                                     Classes="view-hint"
                                     Text="Нажмите на карту. Маркеры можно перетаскивать. При выключенном добавлении карта свободно перемещается. На Desktop вращайте её правой кнопкой мыши; на Android используйте два пальца."
                                     TextWrapping="Wrap" />
-                                <controls:WaypointList x:Name="WaypointList" DataContext="{Binding}" />
                                 <WrapPanel>
                                     <Button Command="{Binding CopyCoordinates}" Content="{Binding CopyPointText}" />
                                     <Button Command="{Binding ClearPoints}" Content="Очистить" />
@@ -64,6 +64,14 @@
                                         <Button Command="{Binding AddManual}" Content="Добавить точку" />
                                     </StackPanel>
                                 </Expander>
+                            </StackPanel>
+                            <ScrollViewer
+                                x:Name="WaypointListScroll"
+                                Grid.Row="1"
+                                VerticalScrollBarVisibility="Auto">
+                                <controls:WaypointList x:Name="WaypointList" DataContext="{Binding}" />
+                            </ScrollViewer>
+                            <StackPanel Grid.Row="2" Spacing="8">
                                 <Button
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Center"
@@ -76,7 +84,7 @@
                                     <TextBlock Classes="route-status-text" Text="{Binding Status}" TextWrapping="Wrap" />
                                 </Border>
                             </StackPanel>
-                        </ScrollViewer>
+                        </Grid>
                     </TabItem>
                     <TabItem Header="Маршрут">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">

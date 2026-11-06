@@ -16,6 +16,7 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
     private readonly BackgroundSessionSaver _sessionSaver;
     private readonly Func<DateTimeOffset> _clock;
     private readonly CompositeDisposable _lifetime = new();
+    private readonly CancellationTokenSource _restoreCancellation = new();
     private RouteProgressTracker? _tracker;
     private RouteAlternative? _route;
     private Guid _sessionId;
@@ -37,7 +38,7 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
 
         _locationController.Measurements.Subscribe(HandleLocation).DisposeWith(_lifetime);
         _locationController.States.Subscribe(HandleLocationState).DisposeWith(_lifetime);
-        _locationController.Headings.Subscribe(heading => CurrentHeading = heading).DisposeWith(_lifetime);
+        _locationController.Headings.Subscribe(HandleHeading).DisposeWith(_lifetime);
 
         Start = ReactiveCommand.Create(StartTraversal, this.WhenAnyValue(vm => vm.CanStartTraversal));
         Pause = ReactiveCommand.Create(PauseTraversal, this.WhenAnyValue(vm => vm.CanPauseTraversal));
@@ -47,7 +48,7 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
 
         if (_locationController.IsEnabled)
         {
-            _ = _locationController.RestoreAsync();
+            _ = RestoreLocationAsync(_restoreCancellation.Token);
         }
     }
 
@@ -298,17 +299,26 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
         }
     }
 
+    private void HandleHeading(HeadingMeasurement heading)
+    {
+        if (!_disposed && _locationController.IsEnabled)
+        {
+            CurrentHeading = heading;
+        }
+    }
+
     private void HandleLocationState(LocationServiceState state)
     {
         LocationState = state;
         IsLocationEnabled = _locationController.IsEnabled;
-        if (IsLocationEnabled && (state.Permission is LocationPermissionState.Denied
-            or LocationPermissionState.PermanentlyDenied))
+        if (state.Permission is LocationPermissionState.Denied
+            or LocationPermissionState.PermanentlyDenied)
         {
             IsLocationEnabled = false;
             ClearLocationDisplay();
         }
-        else if (!state.IsEnabled && state.SystemLocation == SystemLocationState.Disabled)
+        else if (!_locationController.IsEnabled
+            || !state.IsEnabled && state.SystemLocation == SystemLocationState.Disabled)
         {
             ClearLocationDisplay();
         }
@@ -321,6 +331,36 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
         this.RaisePropertyChanged(nameof(IsLocationSupported));
         this.RaisePropertyChanged(nameof(CompactProgressText));
         this.RaisePropertyChanged(nameof(TrackingStatusText));
+    }
+
+    private async Task RestoreLocationAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _locationController.RestoreAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        catch (Exception exception)
+        {
+            ReportGpsDiagnostic("Не удалось восстановить геолокацию: " + exception.Message);
+        }
+    }
+
+    private void ReportGpsDiagnostic(string message)
+    {
+        RxApp.MainThreadScheduler.Schedule(Unit.Default, (_, _) =>
+        {
+            if (_disposed)
+            {
+                return Disposable.Empty;
+            }
+
+            GpsDiagnosticText = message;
+            return Disposable.Empty;
+        });
     }
 
     private void SaveSession()
@@ -391,6 +431,7 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
         }
 
         _disposed = true;
+        _restoreCancellation.Cancel();
         if (_tracker is not null && IsTraversalActive)
         {
             Progress = _tracker.Pause();
@@ -398,6 +439,7 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
         }
 
         _lifetime.Dispose();
+        _restoreCancellation.Dispose();
         _sessionSaver.Dispose();
         Start.Dispose();
         Pause.Dispose();

@@ -1,6 +1,8 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
+using System.Reactive.Threading.Tasks;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.UI.MapAdapters;
 using CableRoutePlanner.UI.Views;
@@ -22,7 +24,38 @@ public sealed class ResponsiveLayoutTests
 
         TabControl tabs = Assert.Single(view.GetVisualDescendants().OfType<TabControl>());
         Assert.Equal(3, tabs.Items.Count);
-        Assert.NotNull(view.FindControl<ScrollViewer>("SidePanelContent"));
+        Assert.NotNull(view.FindControl<ScrollViewer>("WaypointListScroll"));
+        window.Close();
+    }
+
+    [AvaloniaTheory]
+    [InlineData(1920, 1080)]
+    [InlineData(1280, 850)]
+    [InlineData(1024, 768)]
+    public async Task DesktopPointListScrollsWithoutHidingRouteBuildAction(double width, double height)
+    {
+        using MapViewModel viewModel = CreateViewModel();
+        MapView view = CreateView(viewModel);
+        Window window = new() { Content = view, Width = width, Height = height };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+        for (int index = 0; index < 40; index++)
+        {
+            await viewModel.AddPoint.Execute(TestData.P(30 + index, 150)).ToTask();
+        }
+
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        ScrollViewer list = view.FindControl<ScrollViewer>("WaypointListScroll")!;
+        Button build = view.GetVisualDescendants().OfType<Button>()
+            .Single(button => Equals(button.Content, "Построить маршруты"));
+        Avalonia.Point listBottom = list.TranslatePoint(new Avalonia.Point(0, list.Bounds.Height), window)!.Value;
+        Avalonia.Point buildTop = build.TranslatePoint(new Avalonia.Point(0, 0), window)!.Value;
+
+        Assert.True(list.IsEffectivelyVisible);
+        Assert.True(build.IsEffectivelyVisible);
+        Assert.True(buildTop.Y >= listBottom.Y);
+        Assert.True(list.Extent.Height > list.Viewport.Height);
         window.Close();
     }
 
