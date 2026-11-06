@@ -1,0 +1,13 @@
+{
+  "seed": 20261106,
+  "rejected": {
+    "building_near_road": 29,
+    "unknown_terrain": 73,
+    "blocked_point": 12,
+    "short_road": 12,
+    "control_without_direct_witness": 3,
+    "distance": 38
+  },
+  "accepted": 10,
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+}

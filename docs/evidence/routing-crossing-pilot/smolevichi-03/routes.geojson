@@ -1,0 +1,35 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            28.401721417341744,
+            53.87248265619576
+          ],
+          [
+            28.405448027716336,
+            53.87640602874908
+          ]
+        ]
+      },
+      "properties": {
+        "profile": "Короче",
+        "metrics": {
+          "LengthMetres": 500.0054954821231,
+          "ForestMetres": 0,
+          "FieldMetres": 500.0054954821231,
+          "RoadCrossings": 0,
+          "ApprovedWaterCrossings": 0,
+          "PotentialBridgeCrossings": 0,
+          "WeightedCost": 500.0054954821231,
+          "AscentMetres": null,
+          "PotentialGasPipelineCrossings": 0
+        }
+      }
+    }
+  ]
+}
