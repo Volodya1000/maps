@@ -1,0 +1,54 @@
+{
+  "id": "smolevichi-04",
+  "area": "smolevichi",
+  "category": "A",
+  "quality": "verified",
+  "distanceClass": "local",
+  "terrain": [
+    "Field",
+    "Field"
+  ],
+  "points": [
+    {
+      "Longitude": 28.104615898132728,
+      "Latitude": 53.993017548474526
+    },
+    {
+      "Longitude": 28.108090501867274,
+      "Latitude": 53.98802325152547
+    }
+  ],
+  "distanceMetres": 599.9999998092134,
+  "auditBounds": [
+    28.074615898132727,
+    53.95802325152547,
+    28.138090501867275,
+    54.02301754847453
+  ],
+  "targetRoad": {
+    "featureId": 2683950,
+    "sourceId": "way/723343766"
+  },
+  "candidateIds": [
+    192543
+  ],
+  "routingOptions": {
+    "CellSizeMetres": 25,
+    "MaxNodes": 100000,
+    "ReserveFraction": 0.1,
+    "PreferOverheadGasCrossings": true,
+    "MaxRouteLengthMetres": 1000000
+  },
+  "seed": 20261106,
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "witness": {
+    "kind": "direct_bridge",
+    "candidateId": 192543,
+    "roadIds": [
+      101974,
+      192541,
+      2683950,
+      2683955
+    ]
+  }
+}

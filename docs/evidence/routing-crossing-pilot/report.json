@@ -1,0 +1,115 @@
+{
+  "schema": "maps.routing-crossing-pilot.v1",
+  "appCommit": "4bc0d4b4a822b22c8f6e7ca1fbd8adbbe508a7dd",
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "corpusSha256": "2aea3e441f1fb48994e74b1814e4637f96fafee97d30a0310dca0a66bdfa48f1",
+  "generation": {
+    "seed": 20261106,
+    "rejected": {
+      "building_near_road": 29,
+      "unknown_terrain": 73,
+      "blocked_point": 12,
+      "short_road": 12,
+      "control_without_direct_witness": 3,
+      "distance": 38
+    },
+    "accepted": 10,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  "counts": {
+    "success": 4,
+    "no_route": 6
+  },
+  "results": [
+    {
+      "id": "naliboki-01",
+      "category": "B",
+      "distanceMetres": 799.9783187005982,
+      "status": "success",
+      "wallMilliseconds": 4093,
+      "alternativeCount": 1,
+      "audit": "valid"
+    },
+    {
+      "id": "naliboki-02",
+      "category": "B",
+      "distanceMetres": 10800.004946979492,
+      "status": "no_route",
+      "wallMilliseconds": 3568,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "naliboki-03",
+      "category": "B",
+      "distanceMetres": 799.9971394029088,
+      "status": "success",
+      "wallMilliseconds": 6676,
+      "alternativeCount": 2,
+      "audit": "valid"
+    },
+    {
+      "id": "naliboki-04",
+      "category": "F",
+      "distanceMetres": 500.0085665803538,
+      "status": "success",
+      "wallMilliseconds": 5815,
+      "alternativeCount": 1,
+      "audit": "valid"
+    },
+    {
+      "id": "pukhovichi-01",
+      "category": "A",
+      "distanceMetres": 1799.9972861952947,
+      "status": "no_route",
+      "wallMilliseconds": 3763,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "pukhovichi-02",
+      "category": "B",
+      "distanceMetres": 10800.020164822496,
+      "status": "no_route",
+      "wallMilliseconds": 4984,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "pukhovichi-03",
+      "category": "B",
+      "distanceMetres": 10800.060932909322,
+      "status": "no_route",
+      "wallMilliseconds": 6071,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "smolevichi-01",
+      "category": "B",
+      "distanceMetres": 800.008442041225,
+      "status": "no_route",
+      "wallMilliseconds": 3625,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "smolevichi-02",
+      "category": "B",
+      "distanceMetres": 12399.999434855556,
+      "status": "no_route",
+      "wallMilliseconds": 3863,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "smolevichi-03",
+      "category": "F",
+      "distanceMetres": 500.00549548192646,
+      "status": "success",
+      "wallMilliseconds": 3285,
+      "alternativeCount": 1,
+      "audit": "valid"
+    }
+  ]
+}

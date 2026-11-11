@@ -1,0 +1,80 @@
+name: Routing crossing pilot
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+concurrency:
+  group: routing-crossing-pilot-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pilot:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'ci:routing-crossing-pilot'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          version: '0.12.23'
+          python-version: '3.12'
+      - run: uv sync --project tools/GeodataPreparation --locked
+      - uses: ./.github/actions/country-data
+      - name: Extract verified routing database
+        run: |
+          python3 - <<'PY'
+          import gzip, hashlib, json, shutil
+          from pathlib import Path
+          data = Path('artifacts/belarus')
+          manifest = json.loads((data / 'manifest.json').read_text())
+          with gzip.open(data / 'geodata.sqlite.gz', 'rb') as source, (data / 'geodata.sqlite').open('wb') as target:
+              shutil.copyfileobj(source, target, 1024 * 1024)
+          digest = hashlib.sha256()
+          with (data / 'geodata.sqlite').open('rb') as stream:
+              for block in iter(lambda: stream.read(1024 * 1024), b''):
+                  digest.update(block)
+          if digest.hexdigest() != manifest['database_sha256']:
+              raise SystemExit('database SHA-256 mismatch')
+          PY
+      - run: dotnet build tools/CableRoutePlanner.Verify -c Release -warnaserror
+      - name: Generate frozen inputs
+        run: uv run --project tools/GeodataPreparation --locked python tools/routing_crossing_pilot.py generate --data artifacts/belarus --output artifacts/routing-crossing-pilot
+      - name: Run bounded pilot
+        env:
+          PILOT_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: uv run --project tools/GeodataPreparation --locked python tools/routing_crossing_pilot.py run --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-crossing-pilot
+      - name: Publish available results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: routing-crossing-pilot-${{ github.sha }}-${{ github.run_attempt }}
+          path: artifacts/routing-crossing-pilot/
+          if-no-files-found: warn
+      - name: Report harness integrity and pilot acceptance
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path('artifacts/routing-crossing-pilot/report.json')
+          if not path.exists():
+              raise SystemExit('Harness did not produce a report')
+          report = json.loads(path.read_text())
+          acceptance = report['acceptance']
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+              summary.write('## Pilot execution and acceptance\n\n')
+              summary.write(f"Harness integrity: **{acceptance['harnessIntegrity']}**  \n")
+              summary.write(f"Pilot accepted: **{acceptance['pilotAccepted']}**  \n")
+              summary.write(f"Allowed road-crossing routes: **{acceptance['successfulRoutesWithAllowedRoadContact']}**\n\n")
+              for requirement in acceptance['unmetRequirements']:
+                  summary.write(f'- Not met: {requirement}\n')
+              for requirement in acceptance['unverifiedRequirements']:
+                  summary.write(f'- Unverified: {requirement}\n')
+          if acceptance['harnessIntegrity'] != 'pass':
+              raise SystemExit('Harness incomplete or a successful route was not validly audited')
+          PY

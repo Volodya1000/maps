@@ -1,0 +1,57 @@
+{
+  "status": "valid",
+  "findings": [
+    {
+      "reason": "road_contact",
+      "roadId": 101974,
+      "coordinate": [
+        129.48460364159294,
+        -316.58890306218456
+      ],
+      "bridgeIds": [
+        192543
+      ],
+      "gasIds": [],
+      "allowed": true
+    },
+    {
+      "reason": "road_contact",
+      "roadId": 192541,
+      "coordinate": [
+        97.6495155313025,
+        -238.75234689816352
+      ],
+      "bridgeIds": [
+        192543
+      ],
+      "gasIds": [],
+      "allowed": true
+    },
+    {
+      "reason": "road_contact",
+      "roadId": 2683950,
+      "coordinate": [
+        112.99357361580734,
+        -276.2684560020835
+      ],
+      "bridgeIds": [
+        192543
+      ],
+      "gasIds": [],
+      "allowed": true
+    },
+    {
+      "reason": "road_contact",
+      "roadId": 2683955,
+      "coordinate": [
+        108.10937608480631,
+        -264.32662898024944
+      ],
+      "bridgeIds": [
+        192543
+      ],
+      "gasIds": [],
+      "allowed": true
+    }
+  ]
+}

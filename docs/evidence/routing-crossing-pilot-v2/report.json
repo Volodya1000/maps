@@ -1,0 +1,182 @@
+{
+  "schema": "maps.routing-crossing-pilot.v2",
+  "prHeadSha": "8208d46960aa66febe0b9fd8ab0d90834d095f66",
+  "checkoutSha": "8208d46960aa66febe0b9fd8ab0d90834d095f66",
+  "acceptance": {
+    "areaCount": 3,
+    "distanceClassCounts": {
+      "local": 6,
+      "full": 4
+    },
+    "categoryCounts": {
+      "A": 2,
+      "B": 5,
+      "C": 0,
+      "D": 0,
+      "E": 1,
+      "F": 2
+    },
+    "qualityCounts": {
+      "verified": 3,
+      "exploratory": 7
+    },
+    "missingCategories": [
+      "C",
+      "D"
+    ],
+    "verifiedPositiveWitnesses": 1,
+    "successfulRoutesWithAllowedRoadContact": 1,
+    "confirmedMissedPaths": [],
+    "failureReasonsByProfile": {
+      "Короче": {
+        "NoRouteInSearchArea": 6
+      },
+      "Баланс": {
+        "NoRouteInSearchArea": 6
+      },
+      "Проще прокладка": {
+        "NoRouteInSearchArea": 6
+      }
+    },
+    "evidenceAssessments": {
+      "repeat with semantic comparison": {
+        "status": "met",
+        "source": "repeat-comparison.json (validated external comparison)"
+      }
+    },
+    "unmetRequirements": [
+      "two independent positive A/C witnesses"
+    ],
+    "unverifiedRequirements": [
+      "manual review of all cases",
+      "full per-candidate rejection log",
+      "canonical manifest and per-scenario hashes",
+      "checkpoint/resume verified",
+      "warm local/full runs"
+    ],
+    "unmetOrUnverifiedRequirements": [
+      "two independent positive A/C witnesses",
+      "manual review of all cases",
+      "full per-candidate rejection log",
+      "canonical manifest and per-scenario hashes",
+      "checkpoint/resume verified",
+      "warm local/full runs"
+    ],
+    "harnessIntegrity": "pass",
+    "pilotAccepted": false
+  },
+  "appCommit": "8208d46960aa66febe0b9fd8ab0d90834d095f66",
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "corpusSha256": "2951f20e9df5422bb51c0b549b345df6b10e26f773855d0149c0af87aeccfb9f",
+  "generation": {
+    "seed": 20261106,
+    "rejected": {
+      "building_near_road": 29,
+      "unknown_terrain": 73,
+      "blocked_point": 12,
+      "short_road": 12,
+      "control_without_direct_witness": 3,
+      "distance": 38
+    },
+    "accepted": 10,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "corpusVersion": "v2",
+    "revisionNotes": "v2: retrospectively classified smolevichi-01 as E; replaced successful naliboki-01 with independently witnessed bridge case"
+  },
+  "counts": {
+    "no_route": 6,
+    "success": 4
+  },
+  "results": [
+    {
+      "id": "naliboki-02",
+      "category": "B",
+      "distanceMetres": 10800.004946979492,
+      "status": "no_route",
+      "wallMilliseconds": 2762,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "naliboki-03",
+      "category": "B",
+      "distanceMetres": 799.9971394029088,
+      "status": "success",
+      "wallMilliseconds": 5141,
+      "alternativeCount": 2,
+      "audit": "valid"
+    },
+    {
+      "id": "naliboki-04",
+      "category": "F",
+      "distanceMetres": 500.0085665803538,
+      "status": "success",
+      "wallMilliseconds": 4779,
+      "alternativeCount": 1,
+      "audit": "valid"
+    },
+    {
+      "id": "pukhovichi-01",
+      "category": "A",
+      "distanceMetres": 1799.9972861952947,
+      "status": "no_route",
+      "wallMilliseconds": 2943,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "pukhovichi-02",
+      "category": "B",
+      "distanceMetres": 10800.020164822496,
+      "status": "no_route",
+      "wallMilliseconds": 3856,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "pukhovichi-03",
+      "category": "B",
+      "distanceMetres": 10800.060932909322,
+      "status": "no_route",
+      "wallMilliseconds": 4583,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "smolevichi-01",
+      "category": "E",
+      "distanceMetres": 800.008442041225,
+      "status": "no_route",
+      "wallMilliseconds": 2746,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "smolevichi-02",
+      "category": "B",
+      "distanceMetres": 12399.999434855556,
+      "status": "no_route",
+      "wallMilliseconds": 3309,
+      "alternativeCount": 0,
+      "audit": "unknown"
+    },
+    {
+      "id": "smolevichi-03",
+      "category": "F",
+      "distanceMetres": 500.00549548192646,
+      "status": "success",
+      "wallMilliseconds": 2635,
+      "alternativeCount": 1,
+      "audit": "valid"
+    },
+    {
+      "id": "smolevichi-04",
+      "category": "A",
+      "distanceMetres": 599.9999998092134,
+      "status": "success",
+      "wallMilliseconds": 3392,
+      "alternativeCount": 1,
+      "audit": "valid"
+    }
+  ]
+}

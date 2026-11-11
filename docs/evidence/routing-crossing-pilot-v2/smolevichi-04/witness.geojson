@@ -1,0 +1,24 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            28.104615898132728,
+            53.993017548474526
+          ],
+          [
+            28.108090501867274,
+            53.98802325152547
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "verified_direct_witness"
+      }
+    }
+  ]
+}

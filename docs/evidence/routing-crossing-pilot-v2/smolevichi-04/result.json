@@ -1,0 +1,152 @@
+{
+  "status": "success",
+  "elapsedMilliseconds": 1364,
+  "alternatives": [
+    {
+      "name": "Короче",
+      "geometry": [
+        {
+          "Latitude": 53.993017548474526,
+          "Longitude": 28.104615898132728
+        },
+        {
+          "Latitude": 53.98802325152547,
+          "Longitude": 28.108090501867274
+        }
+      ],
+      "metrics": {
+        "LengthMetres": 599.9999998095263,
+        "ForestMetres": 0,
+        "FieldMetres": 147.80968720375884,
+        "RoadCrossings": 4,
+        "ApprovedWaterCrossings": 0,
+        "PotentialBridgeCrossings": 1,
+        "WeightedCost": 599.9999998095263,
+        "AscentMetres": null,
+        "PotentialGasPipelineCrossings": 0
+      },
+      "roadContacts": [
+        {
+          "RoadId": 101974,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.9901704,
+              "Longitude": 28.1065967
+            }
+          ]
+        },
+        {
+          "RoadId": 192541,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.9908704,
+              "Longitude": 28.1061097
+            }
+          ]
+        },
+        {
+          "RoadId": 192543,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.990520749001334,
+              "Longitude": 28.106352957194787
+            }
+          ]
+        },
+        {
+          "RoadId": 2683950,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.990533009991154,
+              "Longitude": 28.106344427049013
+            }
+          ]
+        },
+        {
+          "RoadId": 2683955,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.99064040527336,
+              "Longitude": 28.106269710616964
+            }
+          ]
+        }
+      ],
+      "gasCandidateIds": []
+    }
+  ],
+  "error": null,
+  "wallMilliseconds": 3036,
+  "appCommit": "05ea88dedf509bb9f33897067e5a7e0a2e0fbc3c",
+  "sourceDirty": true,
+  "verifyDllSha256": "7537756f79a4e2605636a84e3e7b0ff071bc722fd3a6c1e5f86f86856f4b15ba",
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "audit": {
+    "status": "valid",
+    "alternatives": [
+      {
+        "status": "valid",
+        "findings": [
+          {
+            "reason": "road_contact",
+            "roadId": 101974,
+            "coordinate": [
+              129.48460364159294,
+              -316.58890306218456
+            ],
+            "bridgeIds": [
+              192543
+            ],
+            "gasIds": [],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 192541,
+            "coordinate": [
+              97.6495155313025,
+              -238.75234689816352
+            ],
+            "bridgeIds": [
+              192543
+            ],
+            "gasIds": [],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 2683950,
+            "coordinate": [
+              112.99357361580734,
+              -276.2684560020835
+            ],
+            "bridgeIds": [
+              192543
+            ],
+            "gasIds": [],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 2683955,
+            "coordinate": [
+              108.10937608480631,
+              -264.32662898024944
+            ],
+            "bridgeIds": [
+              192543
+            ],
+            "gasIds": [],
+            "allowed": true
+          }
+        ]
+      }
+    ]
+  },
+  "id": "smolevichi-04"
+}
