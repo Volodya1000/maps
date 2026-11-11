@@ -44,6 +44,8 @@ jobs:
       - name: Generate frozen inputs
         run: uv run --project tools/GeodataPreparation --locked python tools/routing_crossing_pilot.py generate --data artifacts/belarus --output artifacts/routing-crossing-pilot
       - name: Run bounded pilot
+        env:
+          PILOT_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: uv run --project tools/GeodataPreparation --locked python tools/routing_crossing_pilot.py run --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-crossing-pilot
       - name: Publish available results
         if: always()
@@ -52,3 +54,25 @@ jobs:
           name: routing-crossing-pilot-${{ github.sha }}-${{ github.run_attempt }}
           path: artifacts/routing-crossing-pilot/
           if-no-files-found: warn
+      - name: Report harness integrity and pilot acceptance
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path('artifacts/routing-crossing-pilot/report.json')
+          if not path.exists():
+              raise SystemExit('Harness did not produce a report')
+          report = json.loads(path.read_text())
+          acceptance = report['acceptance']
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+              summary.write('## Pilot execution and acceptance\n\n')
+              summary.write(f"Harness integrity: **{acceptance['harnessIntegrity']}**  \n")
+              summary.write(f"Pilot accepted: **{acceptance['pilotAccepted']}**  \n")
+              summary.write(f"Allowed road-crossing routes: **{acceptance['successfulRoutesWithAllowedRoadContact']}**\n\n")
+              for requirement in acceptance['unmetOrUnverifiedRequirements']:
+                  summary.write(f'- Not met or not verified: {requirement}\n')
+          if acceptance['harnessIntegrity'] != 'pass':
+              raise SystemExit('Harness incomplete or a successful route was not validly audited')
+          PY

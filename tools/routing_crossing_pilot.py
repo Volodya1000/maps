@@ -134,10 +134,13 @@ def audit(route, features, coverage=None, origin=None):
             approvals = [
                 g
                 for f, g in projected
-                if f["kind"] == "ApprovedCrossing" and f.get("approval_id")
+                if f["kind"] == "ApprovedCrossing"
+                and (f.get("approval_id") or "").strip()
             ]
             bridges = [
-                g.buffer(2) for f, g in projected if f["kind"] == "BridgeCandidate"
+                g.buffer(2)
+                for f, g in projected
+                if f["kind"] == "BridgeCandidate" and g.intersects(geometry)
             ]
             opening = route.intersection(geometry)
             if not any(corridor.covers(opening) for corridor in approvals + bridges):
@@ -146,7 +149,11 @@ def audit(route, features, coverage=None, origin=None):
                 )
         if feature["kind"] != "Road":
             continue
-        for point in components(route.intersection(geometry)):
+        contact = route.intersection(geometry)
+        points = components(contact)
+        if not contact.is_empty and (not points or contact.length > 0):
+            findings.append({"reason": "shared_road_section", "roadId": feature["id"]})
+        for point in points:
             bridges = [
                 f["id"]
                 for f, g in projected
@@ -181,7 +188,106 @@ def audit(route, features, coverage=None, origin=None):
         in ("outside_coverage", "blocked_terrain", "water_without_opening")
         for f in findings
     )
-    return {"status": "violation" if bad else "valid", "findings": findings}
+    incomplete = any(f["reason"] in ("shared_road_section",) for f in findings)
+    return {
+        "status": "violation" if bad else "unknown" if incomplete else "valid",
+        "findings": findings,
+    }
+
+
+def note_incomplete_audit(checks, reason):
+    if checks["status"] != "violation":
+        checks["status"] = "unknown"
+    checks["findings"].append({"reason": reason})
+
+
+def pilot_acceptance(scenarios, results):
+    categories = Counter(s["category"] for s in scenarios)
+    quality = Counter(s["quality"] for s in scenarios)
+    by_id = {s["id"]: s for s in scenarios}
+    routes_with_contacts = 0
+    confirmed_missed = []
+    failure_profiles = {
+        name: Counter() for name in ("Короче", "Баланс", "Проще прокладка")
+    }
+    for result in results:
+        case = by_id[result["id"]]
+        if case.get("witness") and result["status"] == "no_route":
+            confirmed_missed.append(case["id"])
+        for alt in result.get("audit", {}).get("alternatives", []):
+            if alt["status"] == "valid" and any(
+                f.get("reason") == "road_contact" and f.get("allowed")
+                for f in alt["findings"]
+            ):
+                routes_with_contacts += 1
+        for item in (result.get("error") or {}).get("searchFailures", []):
+            if item["profile"] in failure_profiles:
+                failure_profiles[item["profile"]][item["reason"]] += 1
+    positive = sum(
+        bool(s.get("witness"))
+        and s["quality"] == "verified"
+        and s["category"] in ("A", "C")
+        for s in scenarios
+    )
+    missing = [c for c in "ABCDEF" if not categories[c]]
+    missing_requirements = []
+    if not (
+        8 <= len(scenarios) <= 12
+        and categories["B"]
+        and categories["E"]
+        and categories["F"]
+    ):
+        missing_requirements.append("minimum scenario strata B/E/F or 8-12 cases")
+    areas = {s.get("area") for s in scenarios} - {None}
+    distances = Counter(s.get("distanceClass") for s in scenarios)
+    if len(areas) < 2 or distances["local"] < 2 or distances["full"] < 2:
+        missing_requirements.append("at least two AOIs, two local and two full cases")
+    if not any(s["category"] == "F" and s["quality"] == "verified" for s in scenarios):
+        missing_requirements.append("independent verified F control")
+    if positive < 2:
+        missing_requirements.append("two independent positive A/C witnesses")
+    if not routes_with_contacts:
+        missing_requirements.append("successful model-eligible road crossing")
+    if len(results) != len(scenarios):
+        missing_requirements.append("all scenarios executed")
+    if confirmed_missed:
+        missing_requirements.append("verified-positive route missed by search")
+    if any(r.get("audit", {}).get("status") == "violation" for r in results):
+        missing_requirements.append("audit violation investigated")
+    # These requirements are not established by a single automated cold run.
+    missing_requirements.extend(
+        [
+            "manual review of all cases",
+            "full per-candidate rejection log",
+            "canonical manifest and per-scenario hashes",
+            "repeat with semantic comparison",
+            "checkpoint/resume verified",
+            "warm local/full runs",
+        ]
+    )
+    return {
+        "areaCount": len(areas),
+        "distanceClassCounts": {d: distances[d] for d in ("local", "full")},
+        "categoryCounts": {c: categories[c] for c in "ABCDEF"},
+        "qualityCounts": {q: quality[q] for q in ("verified", "exploratory")},
+        "missingCategories": missing,
+        "verifiedPositiveWitnesses": positive,
+        "successfulRoutesWithAllowedRoadContact": routes_with_contacts,
+        "confirmedMissedPaths": confirmed_missed,
+        "failureReasonsByProfile": {k: dict(v) for k, v in failure_profiles.items()},
+        "unmetOrUnverifiedRequirements": missing_requirements,
+        "harnessIntegrity": "pass"
+        if len(results) == len(scenarios)
+        and len(by_id) == len(scenarios)
+        and {r["id"] for r in results} == set(by_id)
+        and all(
+            r.get("audit", {}).get("status") == "valid"
+            for r in results
+            if r.get("status") == "success"
+        )
+        else "fail_or_incomplete",
+        "pilotAccepted": not missing_requirements,
+    }
 
 
 def geojson(features):
@@ -196,7 +302,7 @@ def save_json(path, value):
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
 
 
-def generate(data, output, count=10):
+def generate(data, output, count=10, corpus_version="v2"):
     manifest = json.loads((data / "manifest.json").read_text())
     with (data / "geodata.sqlite").open("rb") as stream:
         if (
@@ -374,6 +480,107 @@ def generate(data, output, count=10):
                     break
         if picked < quotas[name]:
             rejected[f"quota_unfilled_{name}"] = quotas[name] - picked
+    original = json.dumps(scenarios, ensure_ascii=False, indent=2) + "\n"
+    if original != Path("samples/routing-crossing-pilot.json").read_text():
+        raise ValueError("generated v1 differs from frozen pilot corpus")
+    witness = None
+    if corpus_version == "v2":
+        # Original E slot was selected before baseline as B. Reclassify after
+        # checking separate intersections; keep its original failed result.
+        complex_case = next(s for s in scenarios if s["id"] == "smolevichi-01")
+        complex_case["category"] = "E"
+        complex_case["classificationEvidence"] = {
+            "directRoadIds": [1055591, 2926352, 2926353, 2930680],
+            "classification": "retrospective; original selection was B before baseline",
+        }
+        original_features, _ = inventory["smolevichi-01"]
+        direct = LineString(
+            [(p["Longitude"], p["Latitude"]) for p in complex_case["points"]]
+        )
+        road_hits = {
+            f["id"]
+            for f in original_features
+            if f["kind"] == "Road" and direct.intersects(f["geometry"])
+        }
+        if not set(complex_case["classificationEvidence"]["directRoadIds"]).issubset(
+            road_hits
+        ):
+            raise ValueError("complex road evidence changed")
+        coords = [
+            (28.104615898132728, 53.993017548474526),
+            (28.108090501867274, 53.98802325152547),
+        ]
+        witness = LineString(coords)
+        pad = 0.03
+        bounds2 = (
+            min(x for x, _ in coords) - pad,
+            min(y for _, y in coords) - pad,
+            max(x for x, _ in coords) + pad,
+            max(y for _, y in coords) + pad,
+        )
+        nearby = query(connection, bounds2)
+        road = next(f for f in nearby if f["id"] == 2683950 and f["kind"] == "Road")
+        candidate = next(
+            f for f in nearby if f["id"] == 192543 and f["kind"] == "BridgeCandidate"
+        )
+        if not candidate["geometry"].intersects(road["geometry"]):
+            raise ValueError("bridge is not eligible for target road")
+        if any(
+            f["kind"] in ("Building", "Marsh", "River", "Lake")
+            and witness.intersects(f["geometry"])
+            for f in nearby
+        ):
+            raise ValueError("independent witness touches blocked terrain")
+        terrain = [
+            next(
+                (
+                    f["kind"]
+                    for f in nearby
+                    if f["kind"] in ("Field", "Forest")
+                    and f["geometry"].covers(Point(pt))
+                ),
+                "unknown",
+            )
+            for pt in coords
+        ]
+        if "unknown" in terrain:
+            raise ValueError("witness endpoint terrain unknown")
+        checks = audit(
+            project(witness, coords[0]),
+            nearby,
+            coverage=project(coverage, coords[0]),
+            origin=coords[0],
+        )
+        contacts = [f for f in checks["findings"] if f["reason"] == "road_contact"]
+        if (
+            checks["status"] != "valid"
+            or not contacts
+            or any(192543 not in c["bridgeIds"] for c in contacts)
+        ):
+            raise ValueError("witness bridge contacts not independently verified")
+        case = {
+            "id": "smolevichi-04",
+            "area": "smolevichi",
+            "category": "A",
+            "quality": "verified",
+            "distanceClass": "local",
+            "terrain": terrain,
+            "points": [{"Longitude": x, "Latitude": y} for x, y in coords],
+            "distanceMetres": distance(*coords),
+            "auditBounds": bounds2,
+            "targetRoad": {"featureId": road["id"], "sourceId": road["source_id"]},
+            "candidateIds": [candidate["id"]],
+            "routingOptions": OPTIONS,
+            "seed": SEED,
+            "databaseSha256": manifest["database_sha256"],
+            "witness": {
+                "kind": "direct_bridge",
+                "candidateId": candidate["id"],
+                "roadIds": sorted(c["roadId"] for c in contacts),
+            },
+        }
+        scenarios = [s for s in scenarios if s["id"] != "naliboki-01"] + [case]
+        inventory[case["id"]] = (nearby, road)
     connection.close()
     output.mkdir(parents=True, exist_ok=True)
     save_json(output / "scenarios.json", scenarios)
@@ -384,12 +591,20 @@ def generate(data, output, count=10):
             "rejected": rejected,
             "accepted": len(scenarios),
             "databaseSha256": manifest["database_sha256"],
+            "corpusVersion": corpus_version,
+            "revisionNotes": "v2: retrospectively classified smolevichi-01 as E; replaced successful naliboki-01 with independently witnessed bridge case"
+            if corpus_version == "v2"
+            else "v1",
         },
     )
-    frozen = Path("samples/routing-crossing-pilot.json")
+    frozen = Path(
+        "samples/routing-crossing-pilot-v2.json"
+        if corpus_version == "v2"
+        else "samples/routing-crossing-pilot.json"
+    )
     if (
-        frozen.exists()
-        and frozen.read_bytes() != (output / "scenarios.json").read_bytes()
+        not frozen.exists()
+        or frozen.read_bytes() != (output / "scenarios.json").read_bytes()
     ):
         raise ValueError("generated scenarios differ from frozen pilot corpus")
     for scenario in scenarios:
@@ -398,7 +613,30 @@ def generate(data, output, count=10):
         folder = output / sid
         folder.mkdir(exist_ok=True)
         save_json(folder / "scenario.json", scenario)
-        if scenario["category"] == "F":
+        if scenario["category"] == "F" or scenario.get("witness"):
+            if scenario.get("witness"):
+                checks = audit(
+                    project(
+                        witness,
+                        (
+                            scenario["points"][0]["Longitude"],
+                            scenario["points"][0]["Latitude"],
+                        ),
+                    ),
+                    nearby,
+                    coverage=project(
+                        coverage,
+                        (
+                            scenario["points"][0]["Longitude"],
+                            scenario["points"][0]["Latitude"],
+                        ),
+                    ),
+                    origin=(
+                        scenario["points"][0]["Longitude"],
+                        scenario["points"][0]["Latitude"],
+                    ),
+                )
+                save_json(folder / "witness-audit.json", checks)
             save_json(
                 folder / "witness.geojson",
                 geojson(
@@ -504,9 +742,20 @@ def svg_map(input_features, routes, title, status, path, audit_bounds):
     path.write_text(content)
 
 
+def pr_head_sha():
+    event = os.environ.get("GITHUB_EVENT_PATH")
+    if event:
+        payload = json.loads(Path(event).read_text())
+        return payload.get("pull_request", {}).get("head", {}).get(
+            "sha"
+        ) or os.environ.get("PILOT_PR_HEAD_SHA")
+    return os.environ.get("PILOT_PR_HEAD_SHA")
+
+
 def run(data, verify, output, timeout=120):
     scenarios = json.loads((output / "scenarios.json").read_text())
     results = []
+    full_results = []
     coverage = Polygon(json.loads(Path("data/belarus-coverage.json").read_text()))
     for scenario in scenarios:
         folder = output / scenario["id"]
@@ -602,8 +851,7 @@ def run(data, verify, output, timeout=120):
                 checks["status"] = "violation"
                 checks["findings"].append({"reason": "endpoint_mismatch"})
             if not box(*scenario["auditBounds"]).covers(geometry):
-                checks["status"] = "unknown"
-                checks["findings"].append({"reason": "outside_audit_window"})
+                note_incomplete_audit(checks, "outside_audit_window")
             findings.append(checks)
             route_features.append(
                 feature(geometry, {"profile": alt["name"], "metrics": alt["metrics"]})
@@ -627,7 +875,9 @@ def run(data, verify, output, timeout=120):
             folder / "map.svg",
             scenario["auditBounds"],
         )
+        result["id"] = scenario["id"]
         save_json(result_path, result)
+        full_results.append(result)
         results.append(
             {
                 "id": scenario["id"],
@@ -642,7 +892,12 @@ def run(data, verify, output, timeout=120):
         save_json(
             output / "report.json",
             {
-                "schema": "maps.routing-crossing-pilot.v1",
+                "schema": "maps.routing-crossing-pilot.v2",
+                "prHeadSha": pr_head_sha(),
+                "checkoutSha": subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], text=True
+                ).strip(),
+                "acceptance": pilot_acceptance(scenarios, full_results),
                 "appCommit": subprocess.check_output(
                     ["git", "rev-parse", "HEAD"], text=True
                 ).strip(),
@@ -709,6 +964,17 @@ def run(data, verify, output, timeout=120):
         lines.append(
             f"- **{item['id']}** ({case['category']}, {item['status']}): {coords}; target `{case['targetRoad']['sourceId']}`; кандидаты {case['candidateIds']}. [Карта]({item['id']}/map.svg), [исходные данные]({item['id']}/input.geojson)."
         )
+    acceptance = pilot_acceptance(scenarios, full_results)
+    lines += [
+        "",
+        "## Машинная оценка приёмки",
+        "",
+        "```json",
+        json.dumps(acceptance, ensure_ascii=False, indent=2),
+        "```",
+        "",
+        "Harness завершился — это не означает, что критерии пилота выполнены.",
+    ]
     lines += [
         "",
         "Для A нужен независимо проверенный witness перед утверждением о пропущенном пути. Контрольные F имеют отдельно сохранённый прямой witness; его вершины не передавались маршрутизатору как пользовательские точки.",
@@ -724,9 +990,10 @@ def main():
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--verify-dll", type=Path)
+    parser.add_argument("--corpus-version", choices=("v1", "v2"), default="v2")
     args = parser.parse_args()
     if args.mode == "generate":
-        generate(args.data, args.output)
+        generate(args.data, args.output, corpus_version=args.corpus_version)
     else:
         run(args.data, args.verify_dll, args.output)
 

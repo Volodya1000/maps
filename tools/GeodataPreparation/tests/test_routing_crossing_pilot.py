@@ -3,7 +3,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, MultiLineString, Point
 
 MODULE = Path(__file__).resolve().parents[3] / "tools/routing_crossing_pilot.py"
 sys.path.insert(0, str(MODULE.parent))
@@ -83,10 +83,153 @@ class CrossingPilotTests(unittest.TestCase):
         }
         self.assertEqual(pilot.audit(route, [road, bridge])["status"], "valid")
 
-    def test_audit_rejects_building_and_marks_water_unknown_without_approval_data(self):
+    def test_audit_rejects_building(self):
         route = LineString([(-100, 0), (100, 0)])
         building = {"id": 3, "kind": "Building", "geometry": Point(0, 0).buffer(10)}
         self.assertEqual(pilot.audit(route, [building])["status"], "violation")
+
+
+class ContactAuditRegressionTests(unittest.TestCase):
+    def test_shared_road_section_is_not_silently_accepted(self):
+        road = {"id": 1, "kind": "Road", "geometry": LineString([(0, 0), (10, 0)])}
+        route = LineString([(-1, 0), (5, 0)])
+        self.assertNotEqual(pilot.audit(route, [road])["status"], "valid")
+
+    def test_proven_building_violation_beats_unknown_shared_section(self):
+        road = {"id": 1, "kind": "Road", "geometry": LineString([(0, 0), (10, 0)])}
+        building = {"id": 2, "kind": "Building", "geometry": Point(3, 0).buffer(1)}
+        route = LineString([(-1, 0), (5, 0)])
+        self.assertEqual(pilot.audit(route, [road, building])["status"], "violation")
+
+    def test_point_touch_is_a_road_contact(self):
+        road = {"id": 1, "kind": "Road", "geometry": LineString([(0, 0), (0, 5)])}
+        route = LineString([(-1, 0), (1, 0)])
+        self.assertEqual(pilot.audit(route, [road])["status"], "violation")
+
+    def test_nearby_bridge_not_intersecting_water_does_not_open_it(self):
+        water = {"id": 1, "kind": "River", "geometry": LineString([(0, -4), (0, 4)])}
+        bridge = {
+            "id": 2,
+            "kind": "BridgeCandidate",
+            "geometry": LineString([(1, -4), (1, 4)]),
+        }
+        route = LineString([(-5, 0), (5, 0)])
+        self.assertEqual(pilot.audit(route, [water, bridge])["status"], "violation")
+
+    def test_mixed_shared_and_point_contacts_do_not_hide_violation(self):
+        road = {"id": 1, "kind": "Road", "geometry": LineString([(0, 0), (10, 0)])}
+        route = MultiLineString([[(0, 0), (3, 0)], [(7, -1), (7, 1)]])
+        checks = pilot.audit(route, [road])
+        self.assertEqual(checks["status"], "violation")
+        self.assertEqual(
+            {f["reason"] for f in checks["findings"]},
+            {"shared_road_section", "road_contact"},
+        )
+
+    def test_bridge_away_from_road_does_not_authorize_contact(self):
+        road = {"id": 1, "kind": "Road", "geometry": LineString([(0, -10), (0, 10)])}
+        bridge = {
+            "id": 2,
+            "kind": "BridgeCandidate",
+            "geometry": LineString([(1, -4), (1, 4)]),
+        }
+        route = LineString([(-5, 0), (5, 0)])
+        self.assertEqual(pilot.audit(route, [road, bridge])["status"], "violation")
+
+    def test_gas_span_must_align_with_road_contact(self):
+        road = {"id": 1, "kind": "Road", "geometry": LineString([(0, -10), (0, 10)])}
+        gas = {
+            "id": 2,
+            "kind": "GasPipelineCrossingCandidate",
+            "geometry": LineString([(-5, 4), (5, 4)]),
+        }
+        route = LineString([(-5, 0), (5, 0)])
+        self.assertEqual(pilot.audit(route, [road, gas])["status"], "violation")
+
+    def test_water_without_opening_is_violation(self):
+        water = {"id": 2, "kind": "River", "geometry": LineString([(0, -5), (0, 5)])}
+        route = LineString([(-10, 0), (10, 0)])
+        self.assertEqual(pilot.audit(route, [water])["status"], "violation")
+
+
+class AcceptanceTests(unittest.TestCase):
+    def test_v2_preserves_old_failures_and_records_witness_and_complex(self):
+        import json
+
+        root = MODULE.parents[1] / "samples"
+        v1 = json.loads((root / "routing-crossing-pilot.json").read_text())
+        v2 = json.loads((root / "routing-crossing-pilot-v2.json").read_text())
+        by_id = {case["id"]: case for case in v2}
+        self.assertEqual(len(v2), 10)
+        for case_id in (
+            "naliboki-02",
+            "pukhovichi-01",
+            "pukhovichi-02",
+            "pukhovichi-03",
+            "smolevichi-01",
+            "smolevichi-02",
+        ):
+            self.assertEqual(
+                by_id[case_id]["points"],
+                next(case["points"] for case in v1 if case["id"] == case_id),
+            )
+        self.assertEqual(by_id["smolevichi-01"]["category"], "E")
+        self.assertGreaterEqual(
+            len(by_id["smolevichi-01"]["classificationEvidence"]["directRoadIds"]), 2
+        )
+        self.assertEqual(by_id["smolevichi-04"]["witness"]["kind"], "direct_bridge")
+
+    def test_window_preserves_proven_violation(self):
+        checks = {"status": "violation", "findings": [{"reason": "blocked_terrain"}]}
+        pilot.note_incomplete_audit(checks, "outside_audit_window")
+        self.assertEqual(checks["status"], "violation")
+        self.assertEqual(checks["findings"][-1]["reason"], "outside_audit_window")
+
+    def test_verified_witness_missed_and_profile_reasons_are_reported(self):
+        case = {
+            "id": "bridge",
+            "category": "A",
+            "quality": "verified",
+            "witness": {"kind": "direct_bridge"},
+        }
+        result = {
+            "id": "bridge",
+            "status": "no_route",
+            "audit": {"status": "unknown", "alternatives": []},
+            "alternatives": [],
+            "error": {
+                "searchFailures": [
+                    {"profile": "Короче", "reason": "NoRouteInSearchArea"}
+                ]
+            },
+        }
+        acceptance = pilot.pilot_acceptance([case], [result])
+        self.assertEqual(acceptance["confirmedMissedPaths"], ["bridge"])
+        self.assertEqual(
+            acceptance["failureReasonsByProfile"]["Короче"]["NoRouteInSearchArea"], 1
+        )
+        self.assertEqual(acceptance["harnessIntegrity"], "pass")
+        self.assertFalse(acceptance["pilotAccepted"])
+
+    def test_missing_categories_and_witness_block_acceptance(self):
+        cases = [{"id": "a", "category": "F", "quality": "verified"}]
+        results = [
+            {
+                "id": "a",
+                "status": "success",
+                "audit": {
+                    "status": "valid",
+                    "alternatives": [{"status": "valid", "findings": []}],
+                },
+                "alternatives": [],
+                "error": None,
+            }
+        ]
+        acceptance = pilot.pilot_acceptance(cases, results)
+        self.assertFalse(acceptance["pilotAccepted"])
+        self.assertIn("E", acceptance["missingCategories"])
+        self.assertEqual(acceptance["successfulRoutesWithAllowedRoadContact"], 0)
+        self.assertEqual(acceptance["verifiedPositiveWitnesses"], 0)
 
 
 if __name__ == "__main__":
