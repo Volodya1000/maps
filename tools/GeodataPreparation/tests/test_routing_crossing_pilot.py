@@ -211,6 +211,188 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(acceptance["harnessIntegrity"], "pass")
         self.assertFalse(acceptance["pilotAccepted"])
 
+    def test_success_without_route_or_matching_audit_fails_integrity(self):
+        case = {"id": "a", "category": "F", "quality": "verified"}
+        result = {
+            "id": "a",
+            "status": "success",
+            "alternatives": [],
+            "audit": {"status": "valid", "alternatives": []},
+        }
+        self.assertNotEqual(
+            pilot.pilot_acceptance([case], [result])["harnessIntegrity"], "pass"
+        )
+        result["alternatives"] = [{"name": "Короче", "geometry": []}]
+        self.assertNotEqual(
+            pilot.pilot_acceptance([case], [result])["harnessIntegrity"], "pass"
+        )
+
+    def test_duplicate_result_ids_and_bad_audit_fail_integrity(self):
+        cases = [
+            {"id": x, "category": "B", "quality": "exploratory"} for x in ("a", "b")
+        ]
+        result = {
+            "id": "a",
+            "status": "no_route",
+            "alternatives": [],
+            "audit": {"status": "unknown", "alternatives": []},
+        }
+        self.assertNotEqual(
+            pilot.pilot_acceptance(cases, [result, result])["harnessIntegrity"], "pass"
+        )
+        result = {
+            "id": "a",
+            "status": "success",
+            "alternatives": [
+                {
+                    "name": "Короче",
+                    "geometry": [
+                        {"Latitude": 1, "Longitude": 1},
+                        {"Latitude": 2, "Longitude": 2},
+                    ],
+                }
+            ],
+            "audit": {"status": "valid", "alternatives": []},
+        }
+        self.assertNotEqual(
+            pilot.pilot_acceptance(cases[:1], [result])["harnessIntegrity"], "pass"
+        )
+
+    def test_inconsistent_valid_audit_does_not_pass_integrity(self):
+        case = {"id": "a", "category": "B", "quality": "exploratory"}
+        alt = {
+            "name": "Короче",
+            "geometry": [
+                {"Latitude": 1, "Longitude": 1},
+                {"Latitude": 2, "Longitude": 2},
+            ],
+        }
+        checks = {
+            "status": "valid",
+            "findings": [
+                {
+                    "reason": "road_contact",
+                    "allowed": True,
+                    "bridgeIds": [],
+                    "gasIds": [],
+                }
+            ],
+        }
+        result = {
+            "id": "a",
+            "status": "success",
+            "alternatives": [alt],
+            "audit": {"status": "valid", "alternatives": [checks]},
+        }
+        self.assertNotEqual(
+            pilot.pilot_acceptance([case], [result])["harnessIntegrity"], "pass"
+        )
+
+    def test_unchecked_evidence_is_unverified_not_unconditionally_unmet(self):
+        case = {"id": "a", "category": "F", "quality": "verified"}
+        result = {
+            "id": "a",
+            "status": "no_route",
+            "alternatives": [],
+            "audit": {"status": "unknown", "alternatives": []},
+        }
+        acceptance = pilot.pilot_acceptance([case], [result])
+        self.assertIn(
+            "manual review of all cases", acceptance["unverifiedRequirements"]
+        )
+        self.assertNotIn("manual review of all cases", acceptance["unmetRequirements"])
+        self.assertIn(
+            "two independent positive A/C witnesses", acceptance["unmetRequirements"]
+        )
+
+    def test_explicit_evidence_changes_only_its_requirement(self):
+        case = {"id": "a", "category": "F", "quality": "verified"}
+        result = {
+            "id": "a",
+            "status": "no_route",
+            "alternatives": [],
+            "audit": {"status": "unknown", "alternatives": []},
+        }
+        evidence = {
+            "repeat with semantic comparison": {
+                "status": "met",
+                "source": "repeat-comparison.json",
+            }
+        }
+        acceptance = pilot.pilot_acceptance([case], [result], evidence=evidence)
+        self.assertNotIn(
+            "repeat with semantic comparison", acceptance["unverifiedRequirements"]
+        )
+        self.assertEqual(
+            acceptance["evidenceAssessments"]["repeat with semantic comparison"][
+                "status"
+            ],
+            "met",
+        )
+        self.assertIn(
+            "manual review of all cases", acceptance["unverifiedRequirements"]
+        )
+
+    def test_missing_results_do_not_prove_absence_of_a_successful_crossing(self):
+        cases = [{"id": "a", "category": "A", "quality": "exploratory"}]
+        acceptance = pilot.pilot_acceptance(cases, [])
+        self.assertIn(
+            "successful model-eligible road crossing",
+            acceptance["unverifiedRequirements"],
+        )
+        self.assertNotIn(
+            "successful model-eligible road crossing", acceptance["unmetRequirements"]
+        )
+        self.assertNotEqual(acceptance["harnessIntegrity"], "pass")
+
+    def test_measured_criteria_can_pass_without_claiming_manual_acceptance(self):
+        cases = []
+        results = []
+        for i in range(10):
+            case = {
+                "id": str(i),
+                "category": (
+                    "A" if i < 2 else "E" if i == 2 else "F" if i == 3 else "B"
+                ),
+                "quality": "verified" if i < 4 else "exploratory",
+                "area": "one" if i < 5 else "two",
+                "distanceClass": "local" if i < 6 else "full",
+            }
+            if i < 2:
+                case["witness"] = {"kind": "direct_bridge"}
+            cases.append(case)
+            finding = {
+                "reason": "road_contact",
+                "roadId": 1,
+                "allowed": True,
+                "bridgeIds": [2],
+                "gasIds": [],
+                "coordinate": [0.0, 0.0],
+            }
+            alt = {
+                "name": "Короче",
+                "geometry": [
+                    {"Latitude": 1, "Longitude": 1},
+                    {"Latitude": 2, "Longitude": 2},
+                ],
+            }
+            results.append(
+                {
+                    "id": str(i),
+                    "status": "success",
+                    "alternatives": [alt],
+                    "audit": {
+                        "status": "valid",
+                        "alternatives": [{"status": "valid", "findings": [finding]}],
+                    },
+                }
+            )
+        acceptance = pilot.pilot_acceptance(cases, results)
+        self.assertEqual(acceptance["harnessIntegrity"], "pass")
+        self.assertEqual(acceptance["unmetRequirements"], [])
+        self.assertIsNone(acceptance["pilotAccepted"])
+        self.assertTrue(acceptance["unverifiedRequirements"])
+
     def test_missing_categories_and_witness_block_acceptance(self):
         cases = [{"id": "a", "category": "F", "quality": "verified"}]
         results = [

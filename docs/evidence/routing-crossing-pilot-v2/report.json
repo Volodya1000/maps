@@ -1,7 +1,7 @@
 {
   "schema": "maps.routing-crossing-pilot.v2",
-  "prHeadSha": "05ea88dedf509bb9f33897067e5a7e0a2e0fbc3c",
-  "checkoutSha": "05ea88dedf509bb9f33897067e5a7e0a2e0fbc3c",
+  "prHeadSha": "8208d46960aa66febe0b9fd8ab0d90834d095f66",
+  "checkoutSha": "8208d46960aa66febe0b9fd8ab0d90834d095f66",
   "acceptance": {
     "areaCount": 3,
     "distanceClassCounts": {
@@ -38,19 +38,34 @@
         "NoRouteInSearchArea": 6
       }
     },
+    "evidenceAssessments": {
+      "repeat with semantic comparison": {
+        "status": "met",
+        "source": "repeat-comparison.json (validated external comparison)"
+      }
+    },
+    "unmetRequirements": [
+      "two independent positive A/C witnesses"
+    ],
+    "unverifiedRequirements": [
+      "manual review of all cases",
+      "full per-candidate rejection log",
+      "canonical manifest and per-scenario hashes",
+      "checkpoint/resume verified",
+      "warm local/full runs"
+    ],
     "unmetOrUnverifiedRequirements": [
       "two independent positive A/C witnesses",
       "manual review of all cases",
       "full per-candidate rejection log",
       "canonical manifest and per-scenario hashes",
-      "repeat with semantic comparison",
       "checkpoint/resume verified",
       "warm local/full runs"
     ],
     "harnessIntegrity": "pass",
     "pilotAccepted": false
   },
-  "appCommit": "05ea88dedf509bb9f33897067e5a7e0a2e0fbc3c",
+  "appCommit": "8208d46960aa66febe0b9fd8ab0d90834d095f66",
   "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
   "corpusSha256": "2951f20e9df5422bb51c0b549b345df6b10e26f773855d0149c0af87aeccfb9f",
   "generation": {
@@ -78,7 +93,7 @@
       "category": "B",
       "distanceMetres": 10800.004946979492,
       "status": "no_route",
-      "wallMilliseconds": 3118,
+      "wallMilliseconds": 2762,
       "alternativeCount": 0,
       "audit": "unknown"
     },
@@ -87,7 +102,7 @@
       "category": "B",
       "distanceMetres": 799.9971394029088,
       "status": "success",
-      "wallMilliseconds": 5669,
+      "wallMilliseconds": 5141,
       "alternativeCount": 2,
       "audit": "valid"
     },
@@ -96,7 +111,7 @@
       "category": "F",
       "distanceMetres": 500.0085665803538,
       "status": "success",
-      "wallMilliseconds": 4994,
+      "wallMilliseconds": 4779,
       "alternativeCount": 1,
       "audit": "valid"
     },
@@ -105,7 +120,7 @@
       "category": "A",
       "distanceMetres": 1799.9972861952947,
       "status": "no_route",
-      "wallMilliseconds": 3208,
+      "wallMilliseconds": 2943,
       "alternativeCount": 0,
       "audit": "unknown"
     },
@@ -114,7 +129,7 @@
       "category": "B",
       "distanceMetres": 10800.020164822496,
       "status": "no_route",
-      "wallMilliseconds": 3851,
+      "wallMilliseconds": 3856,
       "alternativeCount": 0,
       "audit": "unknown"
     },
@@ -123,7 +138,7 @@
       "category": "B",
       "distanceMetres": 10800.060932909322,
       "status": "no_route",
-      "wallMilliseconds": 4875,
+      "wallMilliseconds": 4583,
       "alternativeCount": 0,
       "audit": "unknown"
     },
@@ -132,7 +147,7 @@
       "category": "E",
       "distanceMetres": 800.008442041225,
       "status": "no_route",
-      "wallMilliseconds": 2843,
+      "wallMilliseconds": 2746,
       "alternativeCount": 0,
       "audit": "unknown"
     },
@@ -141,7 +156,7 @@
       "category": "B",
       "distanceMetres": 12399.999434855556,
       "status": "no_route",
-      "wallMilliseconds": 3285,
+      "wallMilliseconds": 3309,
       "alternativeCount": 0,
       "audit": "unknown"
     },
@@ -150,7 +165,7 @@
       "category": "F",
       "distanceMetres": 500.00549548192646,
       "status": "success",
-      "wallMilliseconds": 2614,
+      "wallMilliseconds": 2635,
       "alternativeCount": 1,
       "audit": "valid"
     },
@@ -159,7 +174,7 @@
       "category": "A",
       "distanceMetres": 599.9999998092134,
       "status": "success",
-      "wallMilliseconds": 3036,
+      "wallMilliseconds": 3392,
       "alternativeCount": 1,
       "audit": "valid"
     }

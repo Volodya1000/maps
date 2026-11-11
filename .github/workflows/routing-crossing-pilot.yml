@@ -71,8 +71,10 @@ jobs:
               summary.write(f"Harness integrity: **{acceptance['harnessIntegrity']}**  \n")
               summary.write(f"Pilot accepted: **{acceptance['pilotAccepted']}**  \n")
               summary.write(f"Allowed road-crossing routes: **{acceptance['successfulRoutesWithAllowedRoadContact']}**\n\n")
-              for requirement in acceptance['unmetOrUnverifiedRequirements']:
-                  summary.write(f'- Not met or not verified: {requirement}\n')
+              for requirement in acceptance['unmetRequirements']:
+                  summary.write(f'- Not met: {requirement}\n')
+              for requirement in acceptance['unverifiedRequirements']:
+                  summary.write(f'- Unverified: {requirement}\n')
           if acceptance['harnessIntegrity'] != 'pass':
               raise SystemExit('Harness incomplete or a successful route was not validly audited')
           PY

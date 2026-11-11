@@ -1,0 +1,257 @@
+{
+  "corpusSha256": "2951f20e9df5422bb51c0b549b345df6b10e26f773855d0149c0af87aeccfb9f",
+  "baseline": "GitHub Actions run 43072880695 (PR head 8208d46)",
+  "repeat": "local working tree based on 8208d46; sourceDirty=true",
+  "comparison": "status, alternative count, per-profile RoadId/Kind/geometry (1e-6 degrees), and audit status/findings (coordinates rounded to 0.01 m); no timing comparison",
+  "matches": true,
+  "scenarios": [
+    {
+      "id": "naliboki-02",
+      "matches": true,
+      "baseline": {
+        "status": "no_route",
+        "alternativeCount": 0,
+        "audit": "unknown",
+        "alternatives": []
+      },
+      "repeat": null
+    },
+    {
+      "id": "naliboki-03",
+      "matches": true,
+      "baseline": {
+        "status": "success",
+        "alternativeCount": 2,
+        "audit": "valid",
+        "alternatives": [
+          {
+            "profile": "Баланс",
+            "roadContacts": [],
+            "audit": "valid",
+            "findings": []
+          },
+          {
+            "profile": "Короче",
+            "roadContacts": [],
+            "audit": "valid",
+            "findings": []
+          }
+        ]
+      },
+      "repeat": null
+    },
+    {
+      "id": "naliboki-04",
+      "matches": true,
+      "baseline": {
+        "status": "success",
+        "alternativeCount": 1,
+        "audit": "valid",
+        "alternatives": [
+          {
+            "profile": "Короче",
+            "roadContacts": [],
+            "audit": "valid",
+            "findings": []
+          }
+        ]
+      },
+      "repeat": null
+    },
+    {
+      "id": "pukhovichi-01",
+      "matches": true,
+      "baseline": {
+        "status": "no_route",
+        "alternativeCount": 0,
+        "audit": "unknown",
+        "alternatives": []
+      },
+      "repeat": null
+    },
+    {
+      "id": "pukhovichi-02",
+      "matches": true,
+      "baseline": {
+        "status": "no_route",
+        "alternativeCount": 0,
+        "audit": "unknown",
+        "alternatives": []
+      },
+      "repeat": null
+    },
+    {
+      "id": "pukhovichi-03",
+      "matches": true,
+      "baseline": {
+        "status": "no_route",
+        "alternativeCount": 0,
+        "audit": "unknown",
+        "alternatives": []
+      },
+      "repeat": null
+    },
+    {
+      "id": "smolevichi-01",
+      "matches": true,
+      "baseline": {
+        "status": "no_route",
+        "alternativeCount": 0,
+        "audit": "unknown",
+        "alternatives": []
+      },
+      "repeat": null
+    },
+    {
+      "id": "smolevichi-02",
+      "matches": true,
+      "baseline": {
+        "status": "no_route",
+        "alternativeCount": 0,
+        "audit": "unknown",
+        "alternatives": []
+      },
+      "repeat": null
+    },
+    {
+      "id": "smolevichi-03",
+      "matches": true,
+      "baseline": {
+        "status": "success",
+        "alternativeCount": 1,
+        "audit": "valid",
+        "alternatives": [
+          {
+            "profile": "Короче",
+            "roadContacts": [],
+            "audit": "valid",
+            "findings": []
+          }
+        ]
+      },
+      "repeat": null
+    },
+    {
+      "id": "smolevichi-04",
+      "matches": true,
+      "baseline": {
+        "status": "success",
+        "alternativeCount": 1,
+        "audit": "valid",
+        "alternatives": [
+          {
+            "profile": "Короче",
+            "roadContacts": [
+              [
+                101974,
+                0,
+                [
+                  [
+                    53.99017,
+                    28.106597
+                  ]
+                ]
+              ],
+              [
+                192541,
+                0,
+                [
+                  [
+                    53.99087,
+                    28.10611
+                  ]
+                ]
+              ],
+              [
+                192543,
+                0,
+                [
+                  [
+                    53.990521,
+                    28.106353
+                  ]
+                ]
+              ],
+              [
+                2683950,
+                0,
+                [
+                  [
+                    53.990533,
+                    28.106344
+                  ]
+                ]
+              ],
+              [
+                2683955,
+                0,
+                [
+                  [
+                    53.99064,
+                    28.10627
+                  ]
+                ]
+              ]
+            ],
+            "audit": "valid",
+            "findings": [
+              {
+                "reason": "road_contact",
+                "roadId": 101974,
+                "bridgeIds": [
+                  192543
+                ],
+                "gasIds": [],
+                "allowed": true,
+                "coordinateMetres": [
+                  129.48,
+                  -316.59
+                ]
+              },
+              {
+                "reason": "road_contact",
+                "roadId": 192541,
+                "bridgeIds": [
+                  192543
+                ],
+                "gasIds": [],
+                "allowed": true,
+                "coordinateMetres": [
+                  97.65,
+                  -238.75
+                ]
+              },
+              {
+                "reason": "road_contact",
+                "roadId": 2683950,
+                "bridgeIds": [
+                  192543
+                ],
+                "gasIds": [],
+                "allowed": true,
+                "coordinateMetres": [
+                  112.99,
+                  -276.27
+                ]
+              },
+              {
+                "reason": "road_contact",
+                "roadId": 2683955,
+                "bridgeIds": [
+                  192543
+                ],
+                "gasIds": [],
+                "allowed": true,
+                "coordinateMetres": [
+                  108.11,
+                  -264.33
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "repeat": null
+    }
+  ]
+}

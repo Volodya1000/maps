@@ -201,7 +201,98 @@ def note_incomplete_audit(checks, reason):
     checks["findings"].append({"reason": reason})
 
 
-def pilot_acceptance(scenarios, results):
+def harness_integrity(scenarios, results):
+    """Validate the completeness and internal consistency of observable records."""
+    ids = [case.get("id") for case in scenarios]
+    result_ids = [result.get("id") for result in results]
+    if not ids or any(
+        not isinstance(value, str) or not value for value in ids + result_ids
+    ):
+        return False
+    if (
+        len(ids) != len(set(ids))
+        or len(result_ids) != len(set(result_ids))
+        or set(ids) != set(result_ids)
+    ):
+        return False
+    for result in results:
+        status = result.get("status")
+        alternatives = result.get("alternatives")
+        audit_result = result.get("audit")
+        if (
+            status
+            not in (
+                "success",
+                "no_route",
+                "timeout",
+                "resource_limit",
+                "error",
+                "invalid_input",
+            )
+            or not isinstance(alternatives, list)
+            or not isinstance(audit_result, dict)
+        ):
+            return False
+        audits = audit_result.get("alternatives")
+        if not isinstance(audits, list) or len(alternatives) != len(audits):
+            return False
+        if status != "success":
+            if alternatives or audit_result.get("status") != "unknown":
+                return False
+            continue
+        if not alternatives or audit_result.get("status") != "valid":
+            return False
+        for alternative, check in zip(alternatives, audits, strict=True):
+            if not isinstance(alternative, dict) or not isinstance(check, dict):
+                return False
+            geometry = alternative.get("geometry")
+            if (
+                not alternative.get("name")
+                or not isinstance(geometry, list)
+                or len(geometry) < 2
+            ):
+                return False
+            if not all(
+                isinstance(point, dict)
+                and isinstance(point.get("Latitude"), (int, float))
+                and isinstance(point.get("Longitude"), (int, float))
+                and math.isfinite(point["Latitude"])
+                and math.isfinite(point["Longitude"])
+                for point in geometry
+            ):
+                return False
+            if check.get("status") != "valid" or not isinstance(
+                check.get("findings"), list
+            ):
+                return False
+            for finding in check["findings"]:
+                if (
+                    not isinstance(finding, dict)
+                    or finding.get("reason") != "road_contact"
+                ):
+                    return False
+                if (
+                    finding.get("allowed") is not True
+                    or not isinstance(finding.get("roadId"), int)
+                    or not isinstance(finding.get("bridgeIds"), list)
+                    or not isinstance(finding.get("gasIds"), list)
+                    or not (finding["bridgeIds"] or finding["gasIds"])
+                ):
+                    return False
+                coordinate = finding.get("coordinate")
+                if (
+                    not isinstance(coordinate, list)
+                    or len(coordinate) != 2
+                    or not all(
+                        isinstance(x, (int, float)) and math.isfinite(x)
+                        for x in coordinate
+                    )
+                ):
+                    return False
+    return True
+
+
+def pilot_acceptance(scenarios, results, *, evidence=None):
     categories = Counter(s["category"] for s in scenarios)
     quality = Counter(s["quality"] for s in scenarios)
     by_id = {s["id"]: s for s in scenarios}
@@ -211,8 +302,8 @@ def pilot_acceptance(scenarios, results):
         name: Counter() for name in ("Короче", "Баланс", "Проще прокладка")
     }
     for result in results:
-        case = by_id[result["id"]]
-        if case.get("witness") and result["status"] == "no_route":
+        case = by_id.get(result.get("id"), {})
+        if case.get("witness") and result.get("status") == "no_route":
             confirmed_missed.append(case["id"])
         for alt in result.get("audit", {}).get("alternatives", []):
             if alt["status"] == "valid" and any(
@@ -246,25 +337,50 @@ def pilot_acceptance(scenarios, results):
         missing_requirements.append("independent verified F control")
     if positive < 2:
         missing_requirements.append("two independent positive A/C witnesses")
-    if not routes_with_contacts:
+    complete = (
+        len(results) == len(scenarios)
+        and len({r.get("id") for r in results}) == len(scenarios)
+        and {r.get("id") for r in results} == set(by_id)
+    )
+    if not routes_with_contacts and complete:
         missing_requirements.append("successful model-eligible road crossing")
-    if len(results) != len(scenarios):
+    if not complete:
         missing_requirements.append("all scenarios executed")
     if confirmed_missed:
         missing_requirements.append("verified-positive route missed by search")
-    if any(r.get("audit", {}).get("status") == "violation" for r in results):
-        missing_requirements.append("audit violation investigated")
     # These requirements are not established by a single automated cold run.
-    missing_requirements.extend(
-        [
-            "manual review of all cases",
-            "full per-candidate rejection log",
-            "canonical manifest and per-scenario hashes",
-            "repeat with semantic comparison",
-            "checkpoint/resume verified",
-            "warm local/full runs",
-        ]
-    )
+    unverified_requirements = [
+        "manual review of all cases",
+        "full per-candidate rejection log",
+        "canonical manifest and per-scenario hashes",
+        "repeat with semantic comparison",
+        "checkpoint/resume verified",
+        "warm local/full runs",
+    ]
+    if not routes_with_contacts and not complete:
+        unverified_requirements.append("successful model-eligible road crossing")
+    if any(r.get("audit", {}).get("status") == "violation" for r in results):
+        unverified_requirements.append("audit violation investigated")
+    # These external attestations describe evidence outside this one run. The
+    # caller is responsible for validating the source, not the harness.
+    evidence_assessments = {}
+    for requirement, assessment in (evidence or {}).items():
+        if (
+            requirement not in unverified_requirements
+            or assessment.get("status") not in ("met", "unmet", "unverified")
+            or not assessment.get("source")
+        ):
+            raise ValueError("invalid external evidence assessment")
+        evidence_assessments[requirement] = assessment
+        if assessment["status"] != "unverified":
+            unverified_requirements.remove(requirement)
+            if assessment["status"] == "unmet":
+                missing_requirements.append(requirement)
+    integrity = harness_integrity(scenarios, results)
+    if not integrity:
+        missing_requirements.append(
+            "complete and internally consistent harness results"
+        )
     return {
         "areaCount": len(areas),
         "distanceClassCounts": {d: distances[d] for d in ("local", "full")},
@@ -275,18 +391,16 @@ def pilot_acceptance(scenarios, results):
         "successfulRoutesWithAllowedRoadContact": routes_with_contacts,
         "confirmedMissedPaths": confirmed_missed,
         "failureReasonsByProfile": {k: dict(v) for k, v in failure_profiles.items()},
-        "unmetOrUnverifiedRequirements": missing_requirements,
-        "harnessIntegrity": "pass"
-        if len(results) == len(scenarios)
-        and len(by_id) == len(scenarios)
-        and {r["id"] for r in results} == set(by_id)
-        and all(
-            r.get("audit", {}).get("status") == "valid"
-            for r in results
-            if r.get("status") == "success"
-        )
-        else "fail_or_incomplete",
-        "pilotAccepted": not missing_requirements,
+        "evidenceAssessments": evidence_assessments,
+        "unmetRequirements": missing_requirements,
+        "unverifiedRequirements": unverified_requirements,
+        "unmetOrUnverifiedRequirements": missing_requirements + unverified_requirements,
+        "harnessIntegrity": "pass" if integrity else "fail_or_incomplete",
+        "pilotAccepted": False
+        if missing_requirements
+        else None
+        if unverified_requirements
+        else True,
     }
 
 
