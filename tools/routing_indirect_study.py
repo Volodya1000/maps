@@ -56,6 +56,22 @@ def classify_result(baseline, route_audits):
     }
 
 
+def effective_baseline(written_result, process):
+    """Prefer the bounded process outcome over a partial result file."""
+    if process["timeout"] or process["returncode"] != 0 or written_result is None:
+        return {
+            "status": "timeout" if process["timeout"] else "error",
+            "alternatives": [],
+            "error": {
+                "reason": "process_timeout"
+                if process["timeout"]
+                else "process_failure",
+                "returnCode": process["returncode"],
+            },
+        }
+    return written_result
+
+
 def audit_scenario(scenario, features, *, coverage=None, origin=None):
     """Audit the forbidden direct segment and the separate witness polyline."""
     points = [(point["Longitude"], point["Latitude"]) for point in scenario["points"]]
@@ -433,20 +449,12 @@ def run(data, verify, output, *, timeout=120, scenario_path=DEFAULT_SCENARIO):
     )
     (output / "baseline.stdout.log").write_text(process["stdout"])
     (output / "baseline.stderr.log").write_text(process["stderr"])
-    if not result_path.exists():
-        baseline = {
-            "status": "timeout" if process["timeout"] else "error",
-            "alternatives": [],
-            "error": {
-                "reason": "process_timeout"
-                if process["timeout"]
-                else "process_failure",
-                "returnCode": process["returncode"],
-            },
-        }
+    written_result = (
+        json.loads(result_path.read_text()) if result_path.exists() else None
+    )
+    baseline = effective_baseline(written_result, process)
+    if written_result is None:
         save_json(result_path, baseline)
-    else:
-        baseline = json.loads(result_path.read_text())
     route_audits = audit_alternatives(
         scenario, baseline.get("alternatives", []), features, coverage
     )
@@ -479,6 +487,7 @@ def run(data, verify, output, *, timeout=120, scenario_path=DEFAULT_SCENARIO):
         "timeoutSeconds": timeout,
         "returnCode": process["returncode"],
         "timedOut": process["timeout"],
+        "verifyDllSha256": sha256(verify),
     }
     save_json(output / "invocation.json", invocation)
     return write_report(output, scenario, baseline, route_audits, process, invocation)

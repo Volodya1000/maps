@@ -96,4 +96,8 @@ jobs:
               raise SystemExit('Indirect crossing study did not return an independently valid route')
           if report['invocation']['userPointCount'] != 2:
               raise SystemExit('Indirect crossing study did not use exactly two user points')
+          if report['invocation']['witnessVerticesPassedAsUserPoints']:
+              raise SystemExit('Indirect crossing study passed witness vertices as user points')
+          if not report['routeAudits'] or any(item['status'] != 'valid' for item in report['routeAudits']):
+              raise SystemExit('Indirect crossing study returned an unaudited or invalid alternative')
           PY

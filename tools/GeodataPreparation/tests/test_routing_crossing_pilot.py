@@ -228,6 +228,25 @@ class CrossingPilotTests(unittest.TestCase):
 
         self.assertAlmostEqual(measured, 56.568500179156494, places=6)
 
+    def test_indirect_study_does_not_accept_result_from_failed_process(self):
+        module_path = MODULE.with_name("routing_indirect_study.py")
+        study_spec = importlib.util.spec_from_file_location(
+            "routing_indirect_study", module_path
+        )
+        study = importlib.util.module_from_spec(study_spec)
+        study_spec.loader.exec_module(study)
+        self.assertTrue(
+            hasattr(study, "effective_baseline"), "process result validation is missing"
+        )
+        written = {"status": "success", "alternatives": [{"name": "short"}]}
+        process = {"returncode": 1, "timeout": False}
+
+        baseline = study.effective_baseline(written, process)
+
+        self.assertEqual(baseline["status"], "error")
+        self.assertEqual(baseline["alternatives"], [])
+        self.assertEqual(baseline["error"]["reason"], "process_failure")
+
 
 class ContactAuditRegressionTests(unittest.TestCase):
     def test_shared_road_section_is_not_silently_accepted(self):
