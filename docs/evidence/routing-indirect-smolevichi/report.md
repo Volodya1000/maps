@@ -25,6 +25,6 @@ Baseline успешен, поэтому диагностические повт�
 - [Ограниченный журнал отбора](selection-attempts.json).
 - [Машинный сравнительный отчёт](report.json).
 
-Evidence создан на commit `5a2b07989e79e1e4622d0ce6a69a3de0582aa63f`; tracked source dirty: `false`. Инженерная пригодность перехода не проверялась: доказана только допустимость по текущей модели.
+Evidence создан на commit `5816edb11d27d8a3a2042a6e00f045e6f5813a1f`; tracked source dirty: `false`. Инженерная пригодность перехода не проверялась: доказана только допустимость по текущей модели.
 
 © OpenStreetMap contributors, ODbL 1.0.

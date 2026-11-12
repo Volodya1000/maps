@@ -1,7 +1,7 @@
 {
   "schema": "maps.routing-indirect-study.result.v1",
   "scenarioId": "smolevichi-indirect-01",
-  "appCommit": "5a2b07989e79e1e4622d0ce6a69a3de0582aa63f",
+  "appCommit": "5816edb11d27d8a3a2042a6e00f045e6f5813a1f",
   "sourceDirty": false,
   "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
   "invocation": {
@@ -10,7 +10,8 @@
     "witnessVerticesPassedAsUserPoints": false,
     "timeoutSeconds": 120,
     "returnCode": 0,
-    "timedOut": false
+    "timedOut": false,
+    "verifyDllSha256": "f75753fea1492a9b6cb247d0cf2d96896235713d1000503dc814f0506a4169c8"
   },
   "preRoute": {
     "scenarioId": "smolevichi-indirect-01",
@@ -73,7 +74,7 @@
   },
   "baseline": {
     "status": "success",
-    "wallMilliseconds": 4244,
+    "wallMilliseconds": 4346,
     "alternativeCount": 1,
     "routeMatchesWitnessVertices": [
       true
