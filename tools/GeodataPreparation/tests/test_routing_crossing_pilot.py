@@ -88,6 +88,146 @@ class CrossingPilotTests(unittest.TestCase):
         building = {"id": 3, "kind": "Building", "geometry": Point(0, 0).buffer(10)}
         self.assertEqual(pilot.audit(route, [building])["status"], "violation")
 
+    def test_indirect_study_keeps_witness_out_of_user_points(self):
+        module_path = MODULE.with_name("routing_indirect_study.py")
+        self.assertTrue(module_path.exists(), "indirect study module is missing")
+        study_spec = importlib.util.spec_from_file_location(
+            "routing_indirect_study", module_path
+        )
+        study = importlib.util.module_from_spec(study_spec)
+        study_spec.loader.exec_module(study)
+        start = [28.10628540678451, 53.991102846068685]
+        crossing = [28.1061097, 53.9908704]
+        end = [28.10571432583397, 53.99097370050572]
+        scenario = {
+            "points": [
+                {"Longitude": start[0], "Latitude": start[1]},
+                {"Longitude": end[0], "Latitude": end[1]},
+            ],
+            "witness": {
+                "candidateId": 192543,
+                "coordinates": [start, crossing, end],
+            },
+        }
+        direct_audit = {
+            "status": "violation",
+            "findings": [
+                {"reason": "road_contact", "roadId": 192541, "allowed": False}
+            ],
+        }
+        witness_audit = {
+            "status": "valid",
+            "findings": [
+                {
+                    "reason": "road_contact",
+                    "roadId": 192541,
+                    "bridgeIds": [192543],
+                    "gasIds": [],
+                    "allowed": True,
+                }
+            ],
+        }
+
+        study.validate_pre_route(scenario, direct_audit, witness_audit)
+
+        scenario["points"].insert(
+            1, {"Longitude": crossing[0], "Latitude": crossing[1]}
+        )
+        with self.assertRaisesRegex(ValueError, "exactly two user points"):
+            study.validate_pre_route(scenario, direct_audit, witness_audit)
+
+    def test_indirect_study_audits_direct_and_witness_separately(self):
+        module_path = MODULE.with_name("routing_indirect_study.py")
+        study_spec = importlib.util.spec_from_file_location(
+            "routing_indirect_study", module_path
+        )
+        study = importlib.util.module_from_spec(study_spec)
+        study_spec.loader.exec_module(study)
+        scenario = {
+            "points": [
+                {"Longitude": -20, "Latitude": 20},
+                {"Longitude": 20, "Latitude": 20},
+            ],
+            "witness": {"candidateId": 2, "coordinates": [[-20, 20], [0, 0], [20, 20]]},
+        }
+        features = [
+            {
+                "id": 1,
+                "kind": "Road",
+                "geometry": LineString([(0, -100), (0, 100)]),
+            },
+            {
+                "id": 2,
+                "kind": "BridgeCandidate",
+                "geometry": LineString([(0, 0), (10, -10)]),
+            },
+        ]
+        self.assertTrue(
+            hasattr(study, "audit_scenario"), "indirect audit composition is missing"
+        )
+
+        evidence = study.audit_scenario(scenario, features)
+
+        self.assertEqual(evidence["direct"]["status"], "violation")
+        self.assertEqual(evidence["witness"]["status"], "valid")
+
+    def test_frozen_indirect_scenario_identifies_barrier_and_crossing(self):
+        import json
+
+        scenario_path = MODULE.parents[1] / "samples/routing-indirect-smolevichi.json"
+        self.assertTrue(scenario_path.exists(), "frozen indirect scenario is missing")
+        scenario = json.loads(scenario_path.read_text())
+        self.assertEqual(len(scenario["points"]), 2)
+        self.assertEqual(scenario["targetRoad"]["featureId"], 192541)
+        self.assertEqual(scenario["witness"]["candidateId"], 192543)
+        self.assertEqual(
+            scenario["databaseSha256"],
+            "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+        )
+        user_coordinates = {
+            (point["Longitude"], point["Latitude"]) for point in scenario["points"]
+        }
+        self.assertNotIn(tuple(scenario["witness"]["coordinates"][1]), user_coordinates)
+
+    def test_indirect_study_classifies_valid_audited_route_without_defect(self):
+        module_path = MODULE.with_name("routing_indirect_study.py")
+        study_spec = importlib.util.spec_from_file_location(
+            "routing_indirect_study", module_path
+        )
+        study = importlib.util.module_from_spec(study_spec)
+        study_spec.loader.exec_module(study)
+        self.assertTrue(
+            hasattr(study, "classify_result"), "result classification is missing"
+        )
+        baseline = {"status": "success", "alternatives": [{"name": "short"}]}
+        audits = [{"status": "valid", "findings": []}]
+
+        assessment = study.classify_result(baseline, audits)
+
+        self.assertEqual(assessment["classification"], "valid_route_found")
+        self.assertFalse(assessment["productionDefectConfirmed"])
+        self.assertEqual(assessment["diagnosticRuns"], [])
+
+    def test_indirect_study_measures_every_witness_segment(self):
+        module_path = MODULE.with_name("routing_indirect_study.py")
+        study_spec = importlib.util.spec_from_file_location(
+            "routing_indirect_study", module_path
+        )
+        study = importlib.util.module_from_spec(study_spec)
+        study_spec.loader.exec_module(study)
+        self.assertTrue(
+            hasattr(study, "polyline_distance"), "polyline measurement is missing"
+        )
+        coordinates = [
+            [28.10628540678451, 53.991102846068685],
+            [28.1061097, 53.9908704],
+            [28.10571432583397, 53.99097370050572],
+        ]
+
+        measured = study.polyline_distance(coordinates)
+
+        self.assertAlmostEqual(measured, 56.568500179156494, places=6)
+
 
 class ContactAuditRegressionTests(unittest.TestCase):
     def test_shared_road_section_is_not_silently_accepted(self):

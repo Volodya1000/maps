@@ -47,12 +47,16 @@ jobs:
         env:
           PILOT_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: uv run --project tools/GeodataPreparation --locked python tools/routing_crossing_pilot.py run --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-crossing-pilot
+      - name: Run indirect crossing study
+        run: uv run --project tools/GeodataPreparation --locked python tools/routing_indirect_study.py --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-indirect-study
       - name: Publish available results
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: routing-crossing-pilot-${{ github.sha }}-${{ github.run_attempt }}
-          path: artifacts/routing-crossing-pilot/
+          path: |
+            artifacts/routing-crossing-pilot/
+            artifacts/routing-indirect-study/
           if-no-files-found: warn
       - name: Report harness integrity and pilot acceptance
         if: always()
@@ -77,4 +81,19 @@ jobs:
                   summary.write(f'- Unverified: {requirement}\n')
           if acceptance['harnessIntegrity'] != 'pass':
               raise SystemExit('Harness incomplete or a successful route was not validly audited')
+          PY
+      - name: Verify indirect crossing evidence
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('artifacts/routing-indirect-study/report.json')
+          if not path.exists():
+              raise SystemExit('Indirect crossing study did not produce a report')
+          report = json.loads(path.read_text())
+          if report['assessment']['classification'] != 'valid_route_found':
+              raise SystemExit('Indirect crossing study did not return an independently valid route')
+          if report['invocation']['userPointCount'] != 2:
+              raise SystemExit('Indirect crossing study did not use exactly two user points')
           PY
