@@ -1,0 +1,25 @@
+{
+  "geographicScope": "smolevichi-04 bridge candidate 192543",
+  "currentSelection": "first valid 20 m by 20 m offset around the north candidate endpoint",
+  "currentAttemptCount": 1,
+  "historicalRecoveredAttempts": {
+    "count": 10,
+    "offsetsMetres": [
+      100,
+      -100,
+      200,
+      -200,
+      300,
+      -300,
+      400,
+      -400,
+      500,
+      -500
+    ],
+    "reasons": {
+      "other_unmapped_road_contacts": 10,
+      "also_unverified_water_contact": 2
+    },
+    "limitation": "Recovered from the previous-run narrative; exact geometries were lost and are not presented as fresh measurements."
+  }
+}

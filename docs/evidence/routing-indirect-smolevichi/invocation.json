@@ -1,0 +1,9 @@
+{
+  "mode": "CableRoutePlanner.Verify --crossing",
+  "userPointCount": 2,
+  "witnessVerticesPassedAsUserPoints": false,
+  "timeoutSeconds": 120,
+  "returnCode": 0,
+  "timedOut": false,
+  "verifyDllSha256": "f75753fea1492a9b6cb247d0cf2d96896235713d1000503dc814f0506a4169c8"
+}

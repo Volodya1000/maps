@@ -1,0 +1,18 @@
+{
+  "status": "valid",
+  "findings": [
+    {
+      "reason": "road_contact",
+      "roadId": 192541,
+      "coordinate": [
+        -11.486443903602705,
+        -25.846859257550648
+      ],
+      "bridgeIds": [
+        192543
+      ],
+      "gasIds": [],
+      "allowed": true
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+info: CableRoutePlanner.Infrastructure.Routing.GridRoutePlanner[1]
+      Routing SQLite query 4 ms; WKB, projection and spatial index 79 ms (zero on cache reuse)
+info: CableRoutePlanner.Infrastructure.Routing.GridRoutePlanner[3]
+      Calculated 1 distinct routes over 6642 grid nodes and evaluated 104 grid edges
+info: CableRoutePlanner.Infrastructure.Routing.GridRoutePlanner[2]
+      Completed 1 routes for 2 waypoints in 1913 ms
