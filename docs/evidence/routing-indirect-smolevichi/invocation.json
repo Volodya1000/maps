@@ -1,0 +1,8 @@
+{
+  "mode": "CableRoutePlanner.Verify --crossing",
+  "userPointCount": 2,
+  "witnessVerticesPassedAsUserPoints": false,
+  "timeoutSeconds": 120,
+  "returnCode": 0,
+  "timedOut": false
+}

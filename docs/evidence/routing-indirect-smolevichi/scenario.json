@@ -1,0 +1,56 @@
+{
+  "schema": "maps.routing-indirect-study.scenario.v1",
+  "id": "smolevichi-indirect-01",
+  "quality": "verified",
+  "expectation": "valid_route_found",
+  "points": [
+    {
+      "Longitude": 28.10628540678451,
+      "Latitude": 53.991102846068685
+    },
+    {
+      "Longitude": 28.10571432583397,
+      "Latitude": 53.99097370050572
+    }
+  ],
+  "auditBounds": [
+    28.095,
+    53.982,
+    28.116,
+    53.999
+  ],
+  "targetRoad": {
+    "featureId": 192541,
+    "sourceId": "way/79123064"
+  },
+  "candidateIds": [
+    192543
+  ],
+  "witness": {
+    "kind": "indirect_bridge",
+    "candidateId": 192543,
+    "coordinates": [
+      [
+        28.10628540678451,
+        53.991102846068685
+      ],
+      [
+        28.1061097,
+        53.9908704
+      ],
+      [
+        28.10571432583397,
+        53.99097370050572
+      ]
+    ]
+  },
+  "routingOptions": {
+    "CellSizeMetres": 25,
+    "MaxNodes": 100000,
+    "ReserveFraction": 0.1,
+    "PreferOverheadGasCrossings": true,
+    "MaxRouteLengthMetres": 1000000
+  },
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "rulesCommit": "75b645b35111fa6ff692da5d347f0fc72c395e50"
+}

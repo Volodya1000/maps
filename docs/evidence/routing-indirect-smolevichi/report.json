@@ -1,0 +1,116 @@
+{
+  "schema": "maps.routing-indirect-study.result.v1",
+  "scenarioId": "smolevichi-indirect-01",
+  "appCommit": "5a2b07989e79e1e4622d0ce6a69a3de0582aa63f",
+  "sourceDirty": false,
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "invocation": {
+    "mode": "CableRoutePlanner.Verify --crossing",
+    "userPointCount": 2,
+    "witnessVerticesPassedAsUserPoints": false,
+    "timeoutSeconds": 120,
+    "returnCode": 0,
+    "timedOut": false
+  },
+  "preRoute": {
+    "scenarioId": "smolevichi-indirect-01",
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "candidateIds": [
+      192543
+    ],
+    "targetRoad": {
+      "featureId": 192541,
+      "sourceId": "way/79123064"
+    },
+    "coverage": {
+      "status": "inside",
+      "directCovered": true,
+      "witnessCovered": true
+    },
+    "requestedSearchBounds": [
+      28.09041746690013,
+      53.98198049686847,
+      28.12158226571835,
+      54.00009604970593
+    ],
+    "witnessInsideRequestedSearchBounds": true,
+    "directDistanceMetres": 39.999859528745134,
+    "witnessDistanceMetres": 56.56850017912647,
+    "directAudit": {
+      "status": "violation",
+      "findings": [
+        {
+          "reason": "road_contact",
+          "roadId": 192541,
+          "coordinate": [
+            -18.666579441247023,
+            -7.180175617912486
+          ],
+          "bridgeIds": [],
+          "gasIds": [],
+          "allowed": false
+        }
+      ]
+    },
+    "witnessAudit": {
+      "status": "valid",
+      "findings": [
+        {
+          "reason": "road_contact",
+          "roadId": 192541,
+          "coordinate": [
+            -11.486443903602705,
+            -25.846859257550648
+          ],
+          "bridgeIds": [
+            192543
+          ],
+          "gasIds": [],
+          "allowed": true
+        }
+      ]
+    }
+  },
+  "baseline": {
+    "status": "success",
+    "wallMilliseconds": 4244,
+    "alternativeCount": 1,
+    "routeMatchesWitnessVertices": [
+      true
+    ],
+    "resultRef": "baseline-result.json",
+    "stdoutRef": "baseline.stdout.log",
+    "stderrRef": "baseline.stderr.log"
+  },
+  "routeAudits": [
+    {
+      "status": "valid",
+      "findings": [
+        {
+          "reason": "road_contact",
+          "roadId": 192541,
+          "coordinate": [
+            -11.486443903602705,
+            -25.846859257550648
+          ],
+          "bridgeIds": [
+            192543
+          ],
+          "gasIds": [],
+          "allowed": true
+        }
+      ],
+      "profile": "Короче"
+    }
+  ],
+  "routingParameters": {
+    "requestedCellSizeMetres": 25,
+    "effectiveCellSizeMetres": null,
+    "effectiveCellAvailability": "not instrumented; baseline succeeded so failure diagnostics were not triggered"
+  },
+  "assessment": {
+    "classification": "valid_route_found",
+    "productionDefectConfirmed": false,
+    "diagnosticRuns": []
+  }
+}

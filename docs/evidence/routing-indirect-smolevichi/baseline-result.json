@@ -1,0 +1,58 @@
+{
+  "status": "success",
+  "elapsedMilliseconds": 1928,
+  "alternatives": [
+    {
+      "name": "\u041A\u043E\u0440\u043E\u0447\u0435",
+      "geometry": [
+        {
+          "Latitude": 53.991102846068685,
+          "Longitude": 28.10628540678451
+        },
+        {
+          "Latitude": 53.9908704,
+          "Longitude": 28.1061097
+        },
+        {
+          "Latitude": 53.99097370050572,
+          "Longitude": 28.10571432583397
+        }
+      ],
+      "metrics": {
+        "LengthMetres": 56.568500179156494,
+        "ForestMetres": 0,
+        "FieldMetres": 11.550165752693044,
+        "RoadCrossings": 1,
+        "ApprovedWaterCrossings": 0,
+        "PotentialBridgeCrossings": 1,
+        "WeightedCost": 56.568500179156494,
+        "AscentMetres": null,
+        "PotentialGasPipelineCrossings": 0
+      },
+      "roadContacts": [
+        {
+          "RoadId": 192541,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.9908704,
+              "Longitude": 28.1061097
+            }
+          ]
+        },
+        {
+          "RoadId": 192543,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.9908704,
+              "Longitude": 28.1061097
+            }
+          ]
+        }
+      ],
+      "gasCandidateIds": []
+    }
+  ],
+  "error": null
+}
