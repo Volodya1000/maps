@@ -100,6 +100,8 @@ def desktop() -> None:
     dotnet_env = os.environ.copy()
     dotnet_directory = str(Path(dotnet).resolve().parent)
     dotnet_env["PATH"] = os.pathsep.join((dotnet_directory, dotnet_env.get("PATH", "")))
+    dotnet_env["DOTNET_ROOT"] = dotnet_directory
+    dotnet_env["DOTNET_HOST_PATH"] = dotnet
     run(dotnet, "restore", SOLUTION, "--locked-mode", env=dotnet_env)
     run(dotnet, "tool", "restore", env=dotnet_env)
     run(
@@ -309,6 +311,8 @@ def android() -> None:
     dotnet_env = os.environ.copy()
     dotnet_directory = str(Path(dotnet).resolve().parent)
     dotnet_env["PATH"] = os.pathsep.join((dotnet_directory, dotnet_env.get("PATH", "")))
+    dotnet_env["DOTNET_ROOT"] = dotnet_directory
+    dotnet_env["DOTNET_HOST_PATH"] = dotnet
     sdk = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
     if not sdk:
         raise ValueError(
