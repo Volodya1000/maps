@@ -1,0 +1,119 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.4526283,
+            53.8941522
+          ],
+          [
+            27.4522508,
+            53.8941668
+          ]
+        ]
+      },
+      "properties": {
+        "osmWay": "way/24422904",
+        "role": "unmodeled"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.452464,
+            53.8944429
+          ],
+          [
+            27.4524214,
+            53.8941477
+          ]
+        ]
+      },
+      "properties": {
+        "osmWay": "way/789027454",
+        "role": "road"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          27.45242319413123,
+          53.89416013257135
+        ]
+      },
+      "properties": {
+        "role": "intersection"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            28.7999255,
+            55.4782981
+          ],
+          [
+            28.8004366,
+            55.4804676
+          ]
+        ]
+      },
+      "properties": {
+        "osmWay": "way/22374814",
+        "role": "unmodeled"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            28.7999198,
+            55.4804659
+          ],
+          [
+            28.8001797,
+            55.4803124
+          ],
+          [
+            28.8009336,
+            55.4802618
+          ],
+          [
+            28.8010794,
+            55.4803673
+          ]
+        ]
+      },
+      "properties": {
+        "osmWay": "way/293283800",
+        "role": "road"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.800396607613447,
+          55.48029784166967
+        ]
+      },
+      "properties": {
+        "role": "intersection"
+      }
+    }
+  ]
+}

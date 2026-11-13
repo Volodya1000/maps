@@ -1,0 +1,475 @@
+{
+  "schema": "maps.routing-pr53-diagnostic.v1",
+  "baselineCorpusSha256": "025262ab54548df41a43b71d230d003151b6e03b2541fec72a9b963e45e0634d",
+  "baselineDatabaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "osmObjects": [
+    {
+      "osmWay": "way/24422904",
+      "osmTags": {
+        "tunnel": "yes",
+        "layer": "-1",
+        "highway": "footway"
+      },
+      "roadWay": "way/789027454",
+      "roadFeatureId": 2868696,
+      "roadTags": {
+        "highway": "secondary"
+      },
+      "sourceIntersection": {
+        "type": "Point",
+        "coordinates": [
+          27.45242319413123,
+          53.89416013257135
+        ]
+      },
+      "preparedRows": [],
+      "preparedRoadKind": "Road",
+      "preparedIntersection": {
+        "type": "Point",
+        "coordinates": [
+          27.45242319413123,
+          53.89416013257135
+        ]
+      },
+      "crossesRoad": true
+    },
+    {
+      "osmWay": "way/22374814",
+      "osmTags": {
+        "bridge": "yes",
+        "layer": "1",
+        "railway": "rail"
+      },
+      "roadWay": "way/293283800",
+      "roadFeatureId": 1055396,
+      "roadTags": {
+        "highway": "service"
+      },
+      "sourceIntersection": {
+        "type": "Point",
+        "coordinates": [
+          28.800396607613447,
+          55.48029784166967
+        ]
+      },
+      "preparedRows": [],
+      "preparedRoadKind": "Road",
+      "preparedIntersection": {
+        "type": "Point",
+        "coordinates": [
+          28.800396607613447,
+          55.48029784166967
+        ]
+      },
+      "crossesRoad": true
+    }
+  ],
+  "bridgeTrials": [
+    {
+      "id": "mass-naliboki-bridge-01",
+      "bridgePolylineTrials": [
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 2108.4,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "water_without_opening",
+              "featureId": 298666
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 1914903
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 1928855,
+              "coordinate": [
+                1825.2320404989264,
+                -287.9845957697872
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            }
+          ]
+        },
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 2108.8,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "water_without_opening",
+              "featureId": 298666
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 1600861,
+              "coordinate": [
+                883.0364692733103,
+                -84.83453964723334
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 1928855,
+              "coordinate": [
+                1826.5139191832322,
+                -273.568154187714
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 2631835
+            },
+            {
+              "reason": "blocked_terrain",
+              "featureId": 2631839
+            },
+            {
+              "reason": "blocked_terrain",
+              "featureId": 3088250
+            }
+          ]
+        }
+      ],
+      "fineGridStatus": "no_route"
+    },
+    {
+      "id": "mass-naliboki-bridge-02",
+      "bridgePolylineTrials": [
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 950.6,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "water_without_opening",
+              "featureId": 30552
+            },
+            {
+              "reason": "blocked_terrain",
+              "featureId": 1946341
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 4559653
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 4559655
+            }
+          ]
+        },
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 950.6,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "water_without_opening",
+              "featureId": 30552
+            },
+            {
+              "reason": "blocked_terrain",
+              "featureId": 1946341
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 4559653
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 4559655
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 4559656
+            }
+          ]
+        }
+      ],
+      "fineGridStatus": "no_route"
+    },
+    {
+      "id": "mass-naliboki-bridge-03",
+      "bridgePolylineTrials": [
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 812.9,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "water_without_opening",
+              "featureId": 298666
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 1914903
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 1974268,
+              "coordinate": [
+                643.3606707280004,
+                -93.32698214997347
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 3382627
+            }
+          ]
+        },
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 806.0,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "blocked_terrain",
+              "featureId": 1947550
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 1974268,
+              "coordinate": [
+                601.554021102231,
+                -76.28755707189823
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "blocked_terrain",
+              "featureId": 2647976
+            },
+            {
+              "reason": "blocked_terrain",
+              "featureId": 3088249
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 3382627
+            }
+          ]
+        }
+      ],
+      "fineGridStatus": null
+    },
+    {
+      "id": "mass-smolevichi-bridge-03",
+      "bridgePolylineTrials": [
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 707.4,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "water_without_opening",
+              "featureId": 3278109
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 3278112
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 3278113
+            }
+          ]
+        },
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 704.5,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "water_without_opening",
+              "featureId": 3278109
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 3278112
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 3278113
+            }
+          ]
+        }
+      ],
+      "fineGridStatus": null
+    },
+    {
+      "id": "mass-brest-bridge-03",
+      "bridgePolylineTrials": [
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 710.7,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "water_without_opening",
+              "featureId": 4448964
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 4448967
+            }
+          ]
+        },
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 715.9,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "water_without_opening",
+              "featureId": 32767
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 4448964
+            },
+            {
+              "reason": "water_without_opening",
+              "featureId": 4448967
+            }
+          ]
+        }
+      ],
+      "fineGridStatus": null
+    },
+    {
+      "id": "mass-smolevichi-bridge-04",
+      "bridgePolylineTrials": [
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 890.2,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "road_contact",
+              "roadId": 121745,
+              "coordinate": [
+                166.0267293698554,
+                -2.660358208050971
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 2683926,
+              "coordinate": [
+                467.2114581665222,
+                -52.39010672409809
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 2683929,
+              "coordinate": [
+                483.25268219551634,
+                -36.12661298150353
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            }
+          ]
+        },
+        {
+          "insideSearchBounds": true,
+          "lengthMetres": 900.3,
+          "status": "violation",
+          "violations": [
+            {
+              "reason": "road_contact",
+              "roadId": 291825,
+              "coordinate": [
+                100.38554158108683,
+                -31.54731462327429
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 413622,
+              "coordinate": [
+                164.04943052637066,
+                -51.55442623581413
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 413623,
+              "coordinate": [
+                159.83397240006852,
+                -50.22966988447969
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 594771,
+              "coordinate": [
+                256.70846892868514,
+                -80.67359809191939
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            },
+            {
+              "reason": "road_contact",
+              "roadId": 2683928,
+              "coordinate": [
+                225.84818187532863,
+                -70.9753968399951
+              ],
+              "bridgeIds": [],
+              "gasIds": [],
+              "allowed": false
+            }
+          ]
+        }
+      ],
+      "fineGridStatus": "no_route"
+    }
+  ],
+  "algorithmDefectConfirmed": false,
+  "postFixComparison": null,
+  "baselineMetrics": {
+    "scenarioCount": 88,
+    "validRouteCount": 32,
+    "noRouteCount": 56,
+    "domainViolationCount": 0,
+    "verifiedPositiveCount": 15,
+    "verifiedPositiveFound": 15
+  },
+  "comparisonStatus": "not_applicable_no_confirmed_fix"
+}
