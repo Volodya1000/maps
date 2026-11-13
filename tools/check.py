@@ -97,9 +97,20 @@ def lint() -> None:
 
 def desktop() -> None:
     dotnet = executable("dotnet")
-    run(dotnet, "restore", SOLUTION, "--locked-mode")
-    run(dotnet, "tool", "restore")
-    run(dotnet, "format", "whitespace", SOLUTION, "--no-restore", "--verify-no-changes")
+    dotnet_env = os.environ.copy()
+    dotnet_directory = str(Path(dotnet).resolve().parent)
+    dotnet_env["PATH"] = os.pathsep.join((dotnet_directory, dotnet_env.get("PATH", "")))
+    run(dotnet, "restore", SOLUTION, "--locked-mode", env=dotnet_env)
+    run(dotnet, "tool", "restore", env=dotnet_env)
+    run(
+        dotnet,
+        "format",
+        "whitespace",
+        SOLUTION,
+        "--no-restore",
+        "--verify-no-changes",
+        env=dotnet_env,
+    )
     run(
         dotnet,
         "format",
@@ -109,6 +120,7 @@ def desktop() -> None:
         "--verify-no-changes",
         "--severity",
         "warn",
+        env=dotnet_env,
     )
     run(
         dotnet,
@@ -119,8 +131,18 @@ def desktop() -> None:
         "--verify-no-changes",
         "--severity",
         "warn",
+        env=dotnet_env,
     )
-    run(dotnet, "build", SOLUTION, "--no-restore", "-c", "Release", "-warnaserror")
+    run(
+        dotnet,
+        "build",
+        SOLUTION,
+        "--no-restore",
+        "-c",
+        "Release",
+        "-warnaserror",
+        env=dotnet_env,
+    )
     run(
         dotnet,
         "test",
@@ -139,6 +161,7 @@ def desktop() -> None:
         "--settings",
         "coverage.runsettings",
         timeout=180,
+        env=dotnet_env,
     )
     run(sys.executable, "tools/check_coverage.py", "artifacts/tests")
     run(
@@ -149,6 +172,7 @@ def desktop() -> None:
         "-reports:artifacts/tests/**/coverage.cobertura.xml",
         "-targetdir:artifacts/coverage-report",
         "-reporttypes:Html",
+        env=dotnet_env,
     )
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
@@ -156,6 +180,7 @@ def desktop() -> None:
             [sys.executable, "tools/check_coverage.py", "artifacts/tests"],
             cwd=ROOT,
             text=True,
+            env=dotnet_env,
         )
         Path(summary).write_text(
             "## C# code coverage\n\n```text\n" + report + "```\n", encoding="utf-8"
@@ -178,6 +203,7 @@ def desktop() -> None:
             # made subject to the same terrain rules as all other obstacles.
             "53.9409,27.4977",
             "53.9424,27.4991",
+            env=dotnet_env,
         )
         run(
             sys.executable,
@@ -200,6 +226,7 @@ def desktop() -> None:
             "-p:NuGetLockFilePath=obj/publish.win-x64.lock.json",
             "-o",
             "artifacts/win-x64",
+            env=dotnet_env,
         )
 
 
