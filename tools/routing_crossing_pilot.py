@@ -866,6 +866,22 @@ def pr_head_sha():
     return os.environ.get("PILOT_PR_HEAD_SHA")
 
 
+def effective_result(written_result, process):
+    """A partial file cannot override a failed or timed-out child process."""
+    if process["timeout"] or process["returncode"] != 0 or written_result is None:
+        return {
+            "status": "timeout" if process["timeout"] else "error",
+            "alternatives": [],
+            "error": {
+                "reason": "process_timeout"
+                if process["timeout"]
+                else "process_failure",
+                "returnCode": process["returncode"],
+            },
+        }
+    return written_result
+
+
 def run(data, verify, output, timeout=120):
     scenarios = json.loads((output / "scenarios.json").read_text())
     results = []
@@ -886,19 +902,17 @@ def run(data, verify, output, timeout=120):
         process = run_bounded_command(
             command, timeout, os.environ | {"DOTNET_GCHeapHardLimit": "60000000"}
         )
-        status = "timeout" if process["timeout"] else "error"
         stdout, stderr = process["stdout"], process["stderr"]
         (folder / "stdout.log").write_text(stdout)
         (folder / "stderr.log").write_text(stderr)
-        result = (
+        written = (
             json.loads(result_path.read_text())
             if result_path.exists()
-            else {
-                "status": status or "error",
-                "alternatives": [],
-                "error": {"reason": "process_failure"},
-            }
+            and not process["timeout"]
+            and process["returncode"] == 0
+            else None
         )
+        result = effective_result(written, process)
         result["wallMilliseconds"] = process["elapsed_wall_ms"]
         result["appCommit"] = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], text=True

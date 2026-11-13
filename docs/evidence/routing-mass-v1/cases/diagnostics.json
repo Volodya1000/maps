@@ -1,0 +1,87 @@
+[
+  {
+    "id": "mass-naliboki-bridge-01",
+    "routerStatus": "no_route",
+    "typedReason": "NoRouteInSearchArea",
+    "directAuditStatus": "violation",
+    "directFindingCounts": {
+      "water_without_opening": 2,
+      "road_contact": 3,
+      "blocked_terrain": 1
+    },
+    "forbiddenDirectRoadContacts": 3,
+    "targetRoadDirectContacts": 1,
+    "candidateChecks": [
+      {
+        "featureId": 438476,
+        "kind": "BridgeCandidate",
+        "sourceId": "way/174737352",
+        "intersectsTargetRoad": true,
+        "insideRequestedBounds": true,
+        "distanceFromDirectMetres": 66.3
+      }
+    ],
+    "requestedSearchBounds": [
+      26.707195770291644,
+      53.94579355923645,
+      26.767930529708355,
+      53.96667974076355
+    ],
+    "effectiveCellMetres": null,
+    "portalConnectionStatus": "unknown",
+    "independentValidPathStatus": "unknown"
+  },
+  {
+    "id": "pukhovichi-01",
+    "routerStatus": "no_route",
+    "typedReason": "NoRouteInSearchArea",
+    "directAuditStatus": "violation",
+    "directFindingCounts": {
+      "road_contact": 9,
+      "water_without_opening": 1
+    },
+    "forbiddenDirectRoadContacts": 9,
+    "targetRoadDirectContacts": 1,
+    "candidateChecks": [
+      {
+        "featureId": 4605961,
+        "kind": "GasPipelineCrossingCandidate",
+        "sourceId": "gas-road:way/670219564:way/440525556:0",
+        "intersectsTargetRoad": true,
+        "insideRequestedBounds": true,
+        "distanceFromDirectMetres": 0.0
+      }
+    ],
+    "requestedSearchBounds": [
+      27.477978952471265,
+      52.84080505582376,
+      27.518634847528734,
+      52.87358964417624
+    ],
+    "effectiveCellMetres": null,
+    "portalConnectionStatus": "unknown",
+    "independentValidPathStatus": "unknown"
+  },
+  {
+    "id": "mass-brest-multi-06",
+    "routerStatus": "no_route",
+    "typedReason": "NoRouteInSearchArea",
+    "directAuditStatus": "violation",
+    "directFindingCounts": {
+      "road_contact": 10,
+      "blocked_terrain": 1
+    },
+    "forbiddenDirectRoadContacts": 10,
+    "targetRoadDirectContacts": 1,
+    "candidateChecks": [],
+    "requestedSearchBounds": [
+      23.875124501712154,
+      52.10827622044721,
+      23.913918798287845,
+      52.12862667955279
+    ],
+    "effectiveCellMetres": null,
+    "portalConnectionStatus": "unknown",
+    "independentValidPathStatus": "unknown"
+  }
+]

@@ -1,0 +1,115 @@
+{
+  "sourceSha256": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01",
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "scope": "all tagged OSM ways in pinned Belarus PBF",
+  "osmWays": {
+    "railway_tunnel": 259,
+    "nonzero_layer": 96983,
+    "road_bridge": 10837,
+    "railway_bridge": 1263,
+    "covered_highway": 2791,
+    "pedestrian_tunnel": 2739,
+    "pedestrian_bridge": 4288,
+    "ford": 195,
+    "road_tunnel": 2508,
+    "gas_pipeline_other": 847,
+    "bridge_structure": 1070,
+    "gas_pipeline_overhead": 67
+  },
+  "importedByCategoryAndKind": {
+    "road_bridge:BridgeCandidate": 10837,
+    "nonzero_layer:BridgeCandidate": 13879,
+    "covered_highway:Road": 2186,
+    "pedestrian_bridge:BridgeCandidate": 4286,
+    "nonzero_layer:Road": 1478,
+    "road_tunnel:Road": 2506,
+    "covered_highway:BridgeCandidate": 20,
+    "ford:BridgeCandidate": 10,
+    "ford:Road": 112,
+    "railway_bridge:BridgeCandidate": 8,
+    "nonzero_layer:OverheadGasPipeline": 3,
+    "gas_pipeline_overhead:OverheadGasPipeline": 67,
+    "road_tunnel:BridgeCandidate": 1,
+    "pedestrian_tunnel:BridgeCandidate": 2
+  },
+  "preparedFeatureCounts": {
+    "BridgeCandidate": 15123,
+    "Building": 3007287,
+    "Clearing": 31640,
+    "Field": 114639,
+    "Forest": 192254,
+    "GasPipelineCrossingCandidate": 12,
+    "Lake": 80042,
+    "Marsh": 30112,
+    "OverheadGasPipeline": 67,
+    "River": 386778,
+    "Road": 725970,
+    "Settlement": 22044
+  },
+  "sourceWaysWithoutComparedKindExamples": {
+    "railway_tunnel": [
+      "way/19925906",
+      "way/30860033",
+      "way/30860448",
+      "way/41036122",
+      "way/87616301"
+    ],
+    "nonzero_layer": [
+      "way/19925906",
+      "way/22374814",
+      "way/23269335",
+      "way/23269340",
+      "way/23625471"
+    ],
+    "railway_bridge": [
+      "way/22374814",
+      "way/23269335",
+      "way/23269340",
+      "way/23625471",
+      "way/24944781"
+    ],
+    "pedestrian_tunnel": [
+      "way/23995468",
+      "way/24406671",
+      "way/24406747",
+      "way/24406858",
+      "way/24406872"
+    ],
+    "ford": [
+      "way/25269019",
+      "way/129199138",
+      "way/140008010",
+      "way/166762968",
+      "way/194142949"
+    ],
+    "covered_highway": [
+      "way/30017527",
+      "way/38188085",
+      "way/44584098",
+      "way/44584099",
+      "way/44584100"
+    ],
+    "gas_pipeline_other": [
+      "way/30646577",
+      "way/54965170",
+      "way/105037053",
+      "way/161782371",
+      "way/167184621"
+    ],
+    "bridge_structure": [
+      "way/138143529",
+      "way/140399873",
+      "way/168640590",
+      "way/168646250",
+      "way/190178033"
+    ],
+    "road_tunnel": [
+      "way/485715698"
+    ],
+    "pedestrian_bridge": [
+      "way/1167763807",
+      "way/1311986312"
+    ]
+  },
+  "notes": "Categories overlap. Way counts do not prove grade-separated road crossings or engineering permission. Prepared gas crossing candidates are generated spans, not source ways."
+}

@@ -1,0 +1,75 @@
+{
+  "seed": 20261113,
+  "accepted": 88,
+  "new": 78,
+  "rejected": {
+    "naliboki": {
+      "unknown_terrain": 24,
+      "blocked_endpoint": 5,
+      "short_road": 2,
+      "unfilled_bridge": 0,
+      "unfilled_gas": 2,
+      "unfilled_multi": 0,
+      "unfilled_no_candidate": 0,
+      "unfilled_control": 0
+    },
+    "pukhovichi": {
+      "short_road": 11,
+      "unfilled_bridge": 0,
+      "unknown_terrain": 38,
+      "blocked_endpoint": 8,
+      "unfilled_gas": 2,
+      "unfilled_multi": 0,
+      "unfilled_no_candidate": 0,
+      "invalid_control": 4,
+      "unfilled_control": 0
+    },
+    "smolevichi": {
+      "unknown_terrain": 23,
+      "unfilled_bridge": 0,
+      "unfilled_gas": 2,
+      "short_road": 6,
+      "blocked_endpoint": 8,
+      "unfilled_multi": 0,
+      "unfilled_no_candidate": 0,
+      "unfilled_control": 0
+    },
+    "brest": {
+      "blocked_endpoint": 15,
+      "unknown_terrain": 39,
+      "short_road": 10,
+      "unfilled_bridge": 0,
+      "unfilled_gas": 2,
+      "single_barrier": 1,
+      "unfilled_multi": 0,
+      "unfilled_no_candidate": 0,
+      "invalid_control": 4,
+      "unfilled_control": 0
+    },
+    "gomel": {
+      "blocked_endpoint": 31,
+      "unknown_terrain": 74,
+      "short_road": 20,
+      "unfilled_bridge": 0,
+      "unfilled_gas": 2,
+      "single_barrier": 3,
+      "unfilled_multi": 0,
+      "unfilled_no_candidate": 0,
+      "invalid_control": 7,
+      "unfilled_control": 0
+    },
+    "vitebsk": {
+      "unknown_terrain": 176,
+      "blocked_endpoint": 67,
+      "short_road": 39,
+      "unfilled_bridge": 0,
+      "unfilled_gas": 2,
+      "unfilled_multi": 0,
+      "unfilled_no_candidate": 0,
+      "invalid_control": 1,
+      "unfilled_control": 0
+    }
+  },
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "corpusSha256": "025262ab54548df41a43b71d230d003151b6e03b2541fec72a9b963e45e0634d"
+}
