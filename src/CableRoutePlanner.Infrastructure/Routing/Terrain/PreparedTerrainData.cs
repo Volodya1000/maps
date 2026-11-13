@@ -30,6 +30,7 @@ internal sealed class PreparedTerrainData
     public (long Id, Geometry Geometry, Geometry Corridor)[] BridgeCrossingCandidates { get; }
     public BridgeGuide[] BridgeGuides { get; }
     public GasCrossingIndex GasCrossings { get; }
+    public GasCrossingIndex UnderpassCrossings { get; }
     public RoadContactAnalyzer RoadContacts { get; }
     public IReadOnlyList<GridPortal> TransitionPortals { get; }
 
@@ -50,6 +51,7 @@ internal sealed class PreparedTerrainData
             f => new ProjectedMapFeature(f, projection.Forward(reader.Read(f.Wkb)))).ToArray();
         ProjectedMapFeature[] projected = input.OrderBy(feature => feature.Feature.Id).ToArray();
         GasCrossings = new GasCrossingIndex(input);
+        UnderpassCrossings = new GasCrossingIndex(input, TerrainKind.PedestrianUnderpassCandidate);
         BridgeCrossingCandidates = projected
             .Where(feature => feature.Feature.Kind == TerrainKind.BridgeCandidate)
             .Select(feature => (feature.Feature.Id, feature.Geometry,

@@ -5,7 +5,8 @@ public sealed record RoutingOptions(
     int MaxNodes = 100000,
     double ReserveFraction = 0.10,
     bool PreferOverheadGasCrossings = true,
-    double MaxRouteLengthMetres = 1_000_000)
+    double MaxRouteLengthMetres = 1_000_000,
+    bool AllowExperimentalPedestrianUnderpasses = false)
 {
     public const double MinCellSizeMetres = 5;
     public const double MaxCellSizeMetres = 200;

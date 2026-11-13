@@ -17,6 +17,10 @@ public static class TerrainTraversalPolicy
     public static bool AllowsRoadCrossing(bool hasBridgeCandidate, bool hasGasCandidate) =>
         hasBridgeCandidate || hasGasCandidate;
 
+    /// <summary>Experimental model permission; engineering approval remains separate.</summary>
+    public static bool AllowsPedestrianUnderpass(bool enabled, bool matchedRoadAndGeometry) =>
+        enabled && matchedRoadAndGeometry;
+
     /// <summary>Classifies every supported object explicitly; an unknown kind cannot silently acquire permission.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The source supplies a terrain kind without a declared policy.</exception>
     public static TerrainTraversalRule For(TerrainKind terrain) => terrain switch

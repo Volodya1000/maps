@@ -108,14 +108,15 @@ public sealed class GridRoutePlanner(
         CancellationToken ct)
     {
         LocalProjection projection = area.Projection;
-        TerrainEvaluator evaluator = new(area.Terrain, preferGas: options.PreferOverheadGasCrossings);
+        TerrainEvaluator evaluator = new(area.Terrain, preferGas: options.PreferOverheadGasCrossings, allowUnderpasses: options.AllowExperimentalPedestrianUnderpasses);
         RouteGeometryPostProcessor postProcessor = new(evaluator, area.Terrain);
         GridMesh mesh = gridGenerator.Generate(bounds, options, projection);
         Coordinate maximum = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
         mesh = mesh with
         {
             // A portal outside the queried area could bypass obstacles we never loaded.
-            Portals = area.Terrain.TransitionPortals.Where(portal => portal.Coordinates.All(point =>
+            Portals = area.Terrain.TransitionPortals.Concat(options.AllowExperimentalPedestrianUnderpasses
+                ? area.Terrain.UnderpassCrossings.Portals : []).Where(portal => portal.Coordinates.All(point =>
                 point.X >= mesh.Minimum.X && point.Y >= mesh.Minimum.Y
                 && point.X <= maximum.X && point.Y <= maximum.Y)).ToArray()
         };
