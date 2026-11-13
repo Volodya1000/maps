@@ -9,6 +9,22 @@ namespace CableRoutePlanner.Tests;
 public sealed class PersistenceTests
 {
     [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task VersionedPackagesLoadUnderpassLinksOnlyFromNewSchema(int version)
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (100, 0), (100, 500));
+        MapFeature tunnel = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (50, 100), (150, 100));
+        tunnel = tunnel with { UnderpassRoadIds = new long[] { 1 } };
+        using var fixture = new SqliteGeodataFixture([road, tunnel], null, schemaVersion: version);
+        IReadOnlyList<MapFeature> loaded = await fixture.Repository.QueryAsync(fixture.Repository.Info.Bounds, default);
+        MapFeature candidate = Assert.Single(loaded, feature => feature.Kind == TerrainKind.PedestrianUnderpassCandidate);
+        Assert.Equal(version == 3 ? new long[] { 1 } : null, candidate.UnderpassRoadIds);
+        Assert.Equal(TerrainTraversalRule.Neutral, TerrainTraversalPolicy.For(candidate.Kind));
+    }
+
+    [Theory]
     [InlineData(500, 0, 501)]
     [InlineData(100, 1, 1501)]
     [InlineData(20, 2, 5001)]

@@ -21,17 +21,17 @@ internal sealed class SqliteGeodataFixture : IDisposable
     }
 
     public SqliteGeodataFixture(IReadOnlyList<MapFeature> features, int? displayLod,
-        GeoCoverage? coverage = null, string regionId = "synthetic-test-only", GeoBounds? bounds = null)
+        GeoCoverage? coverage = null, string regionId = "synthetic-test-only", GeoBounds? bounds = null, int schemaVersion = 2)
     {
         try
         {
             string database = Path.Combine(DirectoryPath, "geodata.sqlite");
-            CreateDatabase(database, features, displayLod);
+            CreateDatabase(database, features, displayLod, schemaVersion);
             using FileStream input = File.OpenRead(database);
             string checksum = Convert.ToHexString(SHA256.HashData(input));
             File.WriteAllText(Path.Combine(DirectoryPath, "manifest.json"), JsonSerializer.Serialize(new
             {
-                schema_version = 2,
+                schema_version = schemaVersion,
                 coordinate_system = "EPSG:4326",
                 database_sha256 = checksum,
                 bounds = bounds is { } area ? new[] { area.West, area.South, area.East, area.North } : SyntheticBounds,
@@ -49,7 +49,7 @@ internal sealed class SqliteGeodataFixture : IDisposable
         }
     }
 
-    private static void CreateDatabase(string path, IEnumerable<MapFeature> features, int? displayLod)
+    private static void CreateDatabase(string path, IEnumerable<MapFeature> features, int? displayLod, int schemaVersion)
     {
         using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {
@@ -65,6 +65,11 @@ internal sealed class SqliteGeodataFixture : IDisposable
             CREATE VIRTUAL TABLE display_index USING rtree(id,minx,maxx,miny,maxy);
             """;
         command.ExecuteNonQuery();
+        if (schemaVersion >= 3)
+        {
+            command.CommandText = "CREATE TABLE underpass_roads(candidate_id INTEGER,road_id INTEGER,tunnel_osm_id TEXT,road_osm_id TEXT)";
+            command.ExecuteNonQuery();
+        }
         using SqliteTransaction transaction = connection.BeginTransaction();
         command.Transaction = transaction;
         foreach (MapFeature feature in features)
@@ -93,6 +98,17 @@ internal sealed class SqliteGeodataFixture : IDisposable
             command.Parameters.AddWithValue("$south", envelope.MinY);
             command.Parameters.AddWithValue("$north", envelope.MaxY);
             command.ExecuteNonQuery();
+            if (schemaVersion >= 3 && feature.UnderpassRoadIds is { } roads)
+            {
+                foreach (long road in roads)
+                {
+                    command.Parameters.Clear();
+                    command.CommandText = "INSERT INTO underpass_roads VALUES($candidate,$road,'way/1','way/2')";
+                    command.Parameters.AddWithValue("$candidate", feature.Id);
+                    command.Parameters.AddWithValue("$road", road);
+                    command.ExecuteNonQuery();
+                }
+            }
         }
 
         transaction.Commit();

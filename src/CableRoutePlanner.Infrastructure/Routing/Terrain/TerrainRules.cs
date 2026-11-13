@@ -92,7 +92,8 @@ internal sealed class TerrainRules
         new TraversalOnlyRule(TerrainKind.Settlement),
         new TraversalOnlyRule(TerrainKind.OverheadGasPipeline),
         // Local gas permission and identifiers come from GasCrossingIndex, not from mere intersection.
-        new TraversalOnlyRule(TerrainKind.GasPipelineCrossingCandidate)
+        new TraversalOnlyRule(TerrainKind.GasPipelineCrossingCandidate),
+        new TraversalOnlyRule(TerrainKind.PedestrianUnderpassCandidate)
     ];
 
     private sealed class TraversalOnlyRule(TerrainKind kind) : ITerrainRule
