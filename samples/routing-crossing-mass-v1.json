@@ -1,0 +1,4432 @@
+[
+  {
+    "id": "naliboki-02",
+    "area": "naliboki",
+    "category": "B",
+    "quality": "exploratory",
+    "distanceClass": "full",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.934284343660416,
+        "Longitude": 26.46056213602869
+      },
+      {
+        "Latitude": 54.030854056339585,
+        "Longitude": 26.44289926397131
+      }
+    ],
+    "distanceMetres": 10800.004946979492,
+    "auditBounds": [
+      26.41289926397131,
+      53.904284343660414,
+      26.49056213602869,
+      54.060854056339586
+    ],
+    "targetRoad": {
+      "featureId": 1916204,
+      "sourceId": "way/491824287"
+    },
+    "candidateIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "naliboki-03",
+    "area": "naliboki",
+    "category": "B",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.89481015364013,
+        "Longitude": 26.61551386273843
+      },
+      {
+        "Latitude": 53.888797546359875,
+        "Longitude": 26.60880953726157
+      }
+    ],
+    "distanceMetres": 799.9971394029088,
+    "auditBounds": [
+      26.57880953726157,
+      53.858797546359874,
+      26.64551386273843,
+      53.92481015364013
+    ],
+    "targetRoad": {
+      "featureId": 1915402,
+      "sourceId": "way/491585575"
+    },
+    "candidateIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "naliboki-04",
+    "area": "naliboki",
+    "category": "F",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.82429206005621,
+        "Longitude": 26.578591766662143
+      },
+      {
+        "Latitude": 53.82785602359297,
+        "Longitude": 26.583237261053448
+      }
+    ],
+    "distanceMetres": 500.0085665803538,
+    "auditBounds": [
+      26.548591766662142,
+      53.79429206005621,
+      26.61323726105345,
+      53.85785602359297
+    ],
+    "targetRoad": {
+      "featureId": 1413754,
+      "sourceId": "way/377367162"
+    },
+    "candidateIds": [
+      1413755
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "pukhovichi-01",
+    "area": "pukhovichi",
+    "category": "A",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.864596440538996,
+        "Longitude": 27.49287320427754
+      },
+      {
+        "Latitude": 52.849798259461004,
+        "Longitude": 27.50374059572246
+      }
+    ],
+    "distanceMetres": 1799.9972861952947,
+    "auditBounds": [
+      27.46287320427754,
+      52.819798259461,
+      27.53374059572246,
+      52.894596440539
+    ],
+    "targetRoad": {
+      "featureId": 1687425,
+      "sourceId": "way/440525556"
+    },
+    "candidateIds": [
+      4605961
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "pukhovichi-02",
+    "area": "pukhovichi",
+    "category": "B",
+    "quality": "exploratory",
+    "distanceClass": "full",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.91222279347633,
+        "Longitude": 27.33825411338872
+      },
+      {
+        "Latitude": 52.993957006523665,
+        "Longitude": 27.42534628661128
+      }
+    ],
+    "distanceMetres": 10800.020164822496,
+    "auditBounds": [
+      27.30825411338872,
+      52.88222279347633,
+      27.45534628661128,
+      53.023957006523666
+    ],
+    "targetRoad": {
+      "featureId": 4060330,
+      "sourceId": "way/1309063838"
+    },
+    "candidateIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "pukhovichi-03",
+    "area": "pukhovichi",
+    "category": "B",
+    "quality": "exploratory",
+    "distanceClass": "full",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.817213541366314,
+        "Longitude": 27.360615053653717
+      },
+      {
+        "Latitude": 52.757190958633686,
+        "Longitude": 27.48687784634628
+      }
+    ],
+    "distanceMetres": 10800.060932909322,
+    "auditBounds": [
+      27.330615053653716,
+      52.727190958633685,
+      27.516877846346283,
+      52.847213541366315
+    ],
+    "targetRoad": {
+      "featureId": 1816169,
+      "sourceId": "way/466152016"
+    },
+    "candidateIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "smolevichi-01",
+    "area": "smolevichi",
+    "category": "E",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 54.08077941101372,
+        "Longitude": 28.216782562413425
+      },
+      {
+        "Latitude": 54.08654828898628,
+        "Longitude": 28.209453637586577
+      }
+    ],
+    "distanceMetres": 800.008442041225,
+    "auditBounds": [
+      28.179453637586576,
+      54.05077941101372,
+      28.246782562413426,
+      54.11654828898628
+    ],
+    "targetRoad": {
+      "featureId": 2926352,
+      "sourceId": "way/820261831"
+    },
+    "candidateIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "classificationEvidence": {
+      "directRoadIds": [
+        1055591,
+        2926352,
+        2926353,
+        2930680
+      ],
+      "classification": "retrospective; original selection was B before baseline"
+    }
+  },
+  {
+    "id": "smolevichi-02",
+    "area": "smolevichi",
+    "category": "B",
+    "quality": "exploratory",
+    "distanceClass": "full",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.80035579898087,
+        "Longitude": 28.16195833707451
+      },
+      {
+        "Latitude": 53.91082970101913,
+        "Longitude": 28.13617486292549
+      }
+    ],
+    "distanceMetres": 12399.999434855556,
+    "auditBounds": [
+      28.10617486292549,
+      53.770355798980866,
+      28.19195833707451,
+      53.94082970101913
+    ],
+    "targetRoad": {
+      "featureId": 2910603,
+      "sourceId": "way/813511449"
+    },
+    "candidateIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "smolevichi-03",
+    "area": "smolevichi",
+    "category": "F",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 53.87248265619576,
+        "Longitude": 28.401721417341744
+      },
+      {
+        "Latitude": 53.87640602874908,
+        "Longitude": 28.405448027716336
+      }
+    ],
+    "distanceMetres": 500.00549548192646,
+    "auditBounds": [
+      28.371721417341742,
+      53.842482656195756,
+      28.435448027716337,
+      53.90640602874908
+    ],
+    "targetRoad": {
+      "featureId": 430324,
+      "sourceId": "way/172050318"
+    },
+    "candidateIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "smolevichi-04",
+    "area": "smolevichi",
+    "category": "A",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Longitude": 28.104615898132728,
+        "Latitude": 53.993017548474526
+      },
+      {
+        "Longitude": 28.108090501867274,
+        "Latitude": 53.98802325152547
+      }
+    ],
+    "distanceMetres": 599.9999998092134,
+    "auditBounds": [
+      28.074615898132727,
+      53.95802325152547,
+      28.138090501867275,
+      54.02301754847453
+    ],
+    "targetRoad": {
+      "featureId": 2683950,
+      "sourceId": "way/723343766"
+    },
+    "candidateIds": [
+      192543
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261106,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct_bridge",
+      "candidateId": 192543,
+      "roadIds": [
+        101974,
+        192541,
+        2683950,
+        2683955
+      ]
+    }
+  },
+  {
+    "id": "mass-naliboki-bridge-01",
+    "area": "naliboki",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.95768653712631,
+        "Longitude": 26.722479858468972
+      },
+      {
+        "Latitude": 53.954786762873695,
+        "Longitude": 26.752646441531027
+      }
+    ],
+    "distanceMetres": 1999.8893145786599,
+    "auditBounds": [
+      26.697479858468974,
+      53.9297867628737,
+      26.777646441531026,
+      53.982686537126305
+    ],
+    "targetRoad": {
+      "featureId": 302761,
+      "sourceId": "way/133585589"
+    },
+    "candidateIds": [
+      438476
+    ],
+    "directRoadIds": [
+      302761,
+      1600861,
+      1928855
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-bridge-02",
+    "area": "naliboki",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.92170016456113,
+        "Longitude": 26.420341486023116
+      },
+      {
+        "Latitude": 53.92115683543887,
+        "Longitude": 26.430985913976887
+      }
+    ],
+    "distanceMetres": 699.6332305321545,
+    "auditBounds": [
+      26.395341486023117,
+      53.89615683543887,
+      26.455985913976885,
+      53.94670016456113
+    ],
+    "targetRoad": {
+      "featureId": 1179367,
+      "sourceId": "way/319924326"
+    },
+    "candidateIds": [
+      1600800
+    ],
+    "directRoadIds": [
+      1179367
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-bridge-03",
+    "area": "naliboki",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.958139201120595,
+        "Longitude": 26.732664749067194
+      },
+      {
+        "Latitude": 53.957378298879405,
+        "Longitude": 26.743285750932806
+      }
+    ],
+    "distanceMetres": 700.0124694263078,
+    "auditBounds": [
+      26.707664749067195,
+      53.93237829887941,
+      26.768285750932804,
+      53.98313920112059
+    ],
+    "targetRoad": {
+      "featureId": 438477,
+      "sourceId": "way/174737353"
+    },
+    "candidateIds": [
+      438476
+    ],
+    "directRoadIds": [
+      438477,
+      1944876,
+      1944878,
+      1974268
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-bridge-04",
+    "area": "naliboki",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.92749694843864,
+        "Longitude": 26.35341886587644
+      },
+      {
+        "Latitude": 53.92660405156136,
+        "Longitude": 26.36400073412356
+      }
+    ],
+    "distanceMetres": 699.9078549207073,
+    "auditBounds": [
+      26.32841886587644,
+      53.901604051561364,
+      26.38900073412356,
+      53.952496948438636
+    ],
+    "targetRoad": {
+      "featureId": 1732889,
+      "sourceId": "way/452928648"
+    },
+    "candidateIds": [
+      1732887
+    ],
+    "directRoadIds": [
+      1732889
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-bridge-05",
+    "area": "naliboki",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.82693388567949,
+        "Longitude": 26.588914854373137
+      },
+      {
+        "Latitude": 53.83154461432051,
+        "Longitude": 26.581654745626864
+      }
+    ],
+    "distanceMetres": 699.9016047822207,
+    "auditBounds": [
+      26.556654745626865,
+      53.80193388567949,
+      26.613914854373135,
+      53.856544614320505
+    ],
+    "targetRoad": {
+      "featureId": 266620,
+      "sourceId": "way/109653697"
+    },
+    "candidateIds": [
+      1915306
+    ],
+    "directRoadIds": [
+      266620,
+      1259455,
+      1413848,
+      4477367
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-multi-06",
+    "area": "naliboki",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.9524209693212,
+        "Longitude": 26.558740327115995
+      },
+      {
+        "Latitude": 53.9469690306788,
+        "Longitude": 26.553392272884004
+      }
+    ],
+    "distanceMetres": 699.9919160677758,
+    "auditBounds": [
+      26.528392272884005,
+      53.9219690306788,
+      26.583740327115994,
+      53.9774209693212
+    ],
+    "targetRoad": {
+      "featureId": 1949338,
+      "sourceId": "way/497685762"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1613082,
+      1949338
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-multi-07",
+    "area": "naliboki",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.802499905081085,
+        "Longitude": 26.742783238839742
+      },
+      {
+        "Latitude": 53.79787239491892,
+        "Longitude": 26.755839861160258
+      }
+    ],
+    "distanceMetres": 999.9999477563855,
+    "auditBounds": [
+      26.717783238839743,
+      53.77287239491892,
+      26.780839861160256,
+      53.82749990508108
+    ],
+    "targetRoad": {
+      "featureId": 1905668,
+      "sourceId": "way/489917031"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1413632,
+      1905668
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-multi-08",
+    "area": "naliboki",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.962719904054,
+        "Longitude": 26.714523942224478
+      },
+      {
+        "Latitude": 53.966203195946,
+        "Longitude": 26.70561045777552
+      }
+    ],
+    "distanceMetres": 699.9955121465019,
+    "auditBounds": [
+      26.680610457775522,
+      53.937719904054,
+      26.739523942224476,
+      53.991203195946
+    ],
+    "targetRoad": {
+      "featureId": 394829,
+      "sourceId": "way/159812568"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      394829,
+      3487031
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-no_candidate-09",
+    "area": "naliboki",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.836524881170426,
+        "Longitude": 26.49235558694649
+      },
+      {
+        "Latitude": 53.842766918829575,
+        "Longitude": 26.490971413053508
+      }
+    ],
+    "distanceMetres": 699.99999837331,
+    "auditBounds": [
+      26.46597141305351,
+      53.81152488117043,
+      26.51735558694649,
+      53.867766918829574
+    ],
+    "targetRoad": {
+      "featureId": 1920479,
+      "sourceId": "way/492194958"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1920478,
+      1920479
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-no_candidate-10",
+    "area": "naliboki",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.77167572145938,
+        "Longitude": 26.695970038040393
+      },
+      {
+        "Latitude": 53.77774627854062,
+        "Longitude": 26.68474246195961
+      }
+    ],
+    "distanceMetres": 999.9881529682834,
+    "auditBounds": [
+      26.65974246195961,
+      53.74667572145938,
+      26.72097003804039,
+      53.80274627854062
+    ],
+    "targetRoad": {
+      "featureId": 1911075,
+      "sourceId": "way/491185127"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1911075
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-no_candidate-11",
+    "area": "naliboki",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.941961681305884,
+        "Longitude": 26.562593001536573
+      },
+      {
+        "Latitude": 53.93940931869412,
+        "Longitude": 26.552816598463426
+      }
+    ],
+    "distanceMetres": 700.0001510043553,
+    "auditBounds": [
+      26.527816598463428,
+      53.91440931869412,
+      26.587593001536572,
+      53.96696168130588
+    ],
+    "targetRoad": {
+      "featureId": 1916102,
+      "sourceId": "way/491679198"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1916101,
+      1916102
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-naliboki-control-12",
+    "area": "naliboki",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.993693938098836,
+        "Longitude": 26.379193134482335
+      },
+      {
+        "Latitude": 53.99193388979991,
+        "Longitude": 26.379823528913036
+      }
+    ],
+    "distanceMetres": 200.00019433435426,
+    "auditBounds": [
+      26.354193134482337,
+      53.96693388979991,
+      26.404823528913035,
+      54.018693938098835
+    ],
+    "targetRoad": {
+      "featureId": 3815227,
+      "sourceId": "way/1190702741"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          26.379193134482335,
+          53.993693938098836
+        ],
+        [
+          26.379823528913036,
+          53.99193388979991
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-naliboki-control-13",
+    "area": "naliboki",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.98955428212325,
+        "Longitude": 26.690799287394974
+      },
+      {
+        "Latitude": 53.9911333882183,
+        "Longitude": 26.692264008570657
+      }
+    ],
+    "distanceMetres": 200.0009817582296,
+    "auditBounds": [
+      26.665799287394975,
+      53.96455428212325,
+      26.717264008570655,
+      54.0161333882183
+    ],
+    "targetRoad": {
+      "featureId": 3705591,
+      "sourceId": "way/1136267486"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          26.690799287394974,
+          53.98955428212325
+        ],
+        [
+          26.692264008570657,
+          53.9911333882183
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-pukhovichi-bridge-01",
+    "area": "pukhovichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.94697206331584,
+        "Longitude": 27.465841267491506
+      },
+      {
+        "Latitude": 52.94810803668416,
+        "Longitude": 27.455565132508493
+      }
+    ],
+    "distanceMetres": 699.9937229609972,
+    "auditBounds": [
+      27.430565132508494,
+      52.92197206331584,
+      27.490841267491504,
+      52.97310803668416
+    ],
+    "targetRoad": {
+      "featureId": 4062190,
+      "sourceId": "way/1310887621"
+    },
+    "candidateIds": [
+      1502947
+    ],
+    "directRoadIds": [
+      4062190
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-bridge-02",
+    "area": "pukhovichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.99683004576208,
+        "Longitude": 27.460010386990323
+      },
+      {
+        "Latitude": 52.993271754237924,
+        "Longitude": 27.46863871300968
+      }
+    ],
+    "distanceMetres": 700.0107757786418,
+    "auditBounds": [
+      27.435010386990324,
+      52.968271754237925,
+      27.493638713009677,
+      53.02183004576208
+    ],
+    "targetRoad": {
+      "featureId": 3366839,
+      "sourceId": "way/963420521"
+    },
+    "candidateIds": [
+      1514999
+    ],
+    "directRoadIds": [
+      3366839
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-bridge-03",
+    "area": "pukhovichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.93602825631896,
+        "Longitude": 27.574070492664067
+      },
+      {
+        "Latitude": 52.942292043681036,
+        "Longitude": 27.575113407335934
+      }
+    ],
+    "distanceMetres": 699.9999829763418,
+    "auditBounds": [
+      27.549070492664068,
+      52.911028256318964,
+      27.600113407335932,
+      52.967292043681034
+    ],
+    "targetRoad": {
+      "featureId": 117687,
+      "sourceId": "way/40900520"
+    },
+    "candidateIds": [
+      1506839
+    ],
+    "directRoadIds": [
+      117687
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-bridge-04",
+    "area": "pukhovichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.78446731131168,
+        "Longitude": 27.411274008250004
+      },
+      {
+        "Latitude": 52.77826798868833,
+        "Longitude": 27.413083991749996
+      }
+    ],
+    "distanceMetres": 700.0006405107898,
+    "auditBounds": [
+      27.386274008250005,
+      52.75326798868833,
+      27.438083991749995,
+      52.80946731131168
+    ],
+    "targetRoad": {
+      "featureId": 156165,
+      "sourceId": "way/61753694"
+    },
+    "candidateIds": [
+      1816175
+    ],
+    "directRoadIds": [
+      156165
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-bridge-05",
+    "area": "pukhovichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.707827908843335,
+        "Longitude": 27.736967906536837
+      },
+      {
+        "Latitude": 52.70190999115667,
+        "Longitude": 27.740510893463163
+      }
+    ],
+    "distanceMetres": 700.0025626452297,
+    "auditBounds": [
+      27.711967906536838,
+      52.67690999115667,
+      27.765510893463162,
+      52.73282790884333
+    ],
+    "targetRoad": {
+      "featureId": 1290881,
+      "sourceId": "way/353061308"
+    },
+    "candidateIds": [
+      2864229
+    ],
+    "directRoadIds": [
+      1290881,
+      1290883
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-multi-06",
+    "area": "pukhovichi",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.75921528471478,
+        "Longitude": 27.596967716070317
+      },
+      {
+        "Latitude": 52.75590261528522,
+        "Longitude": 27.588122283929682
+      }
+    ],
+    "distanceMetres": 699.9999992454898,
+    "auditBounds": [
+      27.563122283929683,
+      52.730902615285224,
+      27.621967716070316,
+      52.784215284714776
+    ],
+    "targetRoad": {
+      "featureId": 2346480,
+      "sourceId": "way/631658729"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      680949,
+      2346480,
+      4147880
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-multi-07",
+    "area": "pukhovichi",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.771982513885554,
+        "Longitude": 27.37779994429808
+      },
+      {
+        "Latitude": 52.780962286114445,
+        "Longitude": 27.37861215570192
+      }
+    ],
+    "distanceMetres": 1000.0000045643427,
+    "auditBounds": [
+      27.35279994429808,
+      52.746982513885555,
+      27.403612155701918,
+      52.80596228611444
+    ],
+    "targetRoad": {
+      "featureId": 2243553,
+      "sourceId": "way/598184573"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      299908,
+      2243549,
+      2243551,
+      2243552,
+      2243553,
+      2243554,
+      2243555
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-multi-08",
+    "area": "pukhovichi",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.75200336494736,
+        "Longitude": 27.440300822832324
+      },
+      {
+        "Latitude": 52.76019443505263,
+        "Longitude": 27.42259087716768
+      }
+    ],
+    "distanceMetres": 1499.9962107662911,
+    "auditBounds": [
+      27.39759087716768,
+      52.727003364947365,
+      27.465300822832322,
+      52.78519443505263
+    ],
+    "targetRoad": {
+      "featureId": 2392894,
+      "sourceId": "way/644328515"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1961603,
+      2097113,
+      2097115,
+      2097116,
+      2392894,
+      2392895,
+      2641611,
+      2641612,
+      3934986
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-no_candidate-09",
+    "area": "pukhovichi",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.84587588266293,
+        "Longitude": 27.716959623020415
+      },
+      {
+        "Latitude": 52.851717617337066,
+        "Longitude": 27.713074876979583
+      }
+    ],
+    "distanceMetres": 699.9988212293533,
+    "auditBounds": [
+      27.688074876979584,
+      52.82087588266293,
+      27.741959623020414,
+      52.876717617337064
+    ],
+    "targetRoad": {
+      "featureId": 705758,
+      "sourceId": "way/229956407"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      48112,
+      705758
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-no_candidate-10",
+    "area": "pukhovichi",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.73843748703049,
+        "Longitude": 27.38722358098261
+      },
+      {
+        "Latitude": 52.750637812969515,
+        "Longitude": 27.377716019017388
+      }
+    ],
+    "distanceMetres": 1499.9997336749339,
+    "auditBounds": [
+      27.35271601901739,
+      52.71343748703049,
+      27.41222358098261,
+      52.775637812969514
+    ],
+    "targetRoad": {
+      "featureId": 4034718,
+      "sourceId": "way/1297728088"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      197547,
+      2243486,
+      2332840,
+      4034706,
+      4034718,
+      4361754
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-no_candidate-11",
+    "area": "pukhovichi",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.74463516360314,
+        "Longitude": 27.401355946122
+      },
+      {
+        "Latitude": 52.74997543639686,
+        "Longitude": 27.395849253878
+      }
+    ],
+    "distanceMetres": 699.9983752637417,
+    "auditBounds": [
+      27.370849253878003,
+      52.719635163603144,
+      27.426355946121998,
+      52.77497543639686
+    ],
+    "targetRoad": {
+      "featureId": 1070703,
+      "sourceId": "way/296643954"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1070703,
+      4173323
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-pukhovichi-control-12",
+    "area": "pukhovichi",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.87380394764227,
+        "Longitude": 27.606098987032066
+      },
+      {
+        "Latitude": 52.87552811543675,
+        "Longitude": 27.60694766531846
+      }
+    ],
+    "distanceMetres": 200.00075504101997,
+    "auditBounds": [
+      27.581098987032068,
+      52.848803947642274,
+      27.63194766531846,
+      52.90052811543675
+    ],
+    "targetRoad": {
+      "featureId": 2599552,
+      "sourceId": "way/692789964"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          27.606098987032066,
+          52.87380394764227
+        ],
+        [
+          27.60694766531846,
+          52.87552811543675
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-pukhovichi-control-13",
+    "area": "pukhovichi",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.71034951629479,
+        "Longitude": 27.421434405335404
+      },
+      {
+        "Latitude": 52.70876877680104,
+        "Longitude": 27.42285104535215
+      }
+    ],
+    "distanceMetres": 200.00841996198713,
+    "auditBounds": [
+      27.396434405335405,
+      52.68376877680104,
+      27.44785104535215,
+      52.73534951629479
+    ],
+    "targetRoad": {
+      "featureId": 1600648,
+      "sourceId": "way/420561260"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          27.421434405335404,
+          52.71034951629479
+        ],
+        [
+          27.42285104535215,
+          52.70876877680104
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-smolevichi-bridge-01",
+    "area": "smolevichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 53.98631281210885,
+        "Longitude": 28.093459942114222
+      },
+      {
+        "Latitude": 53.985246587891154,
+        "Longitude": 28.08290965788578
+      }
+    ],
+    "distanceMetres": 699.9043560260894,
+    "auditBounds": [
+      28.05790965788578,
+      53.960246587891156,
+      28.11845994211422,
+      54.01131281210885
+    ],
+    "targetRoad": {
+      "featureId": 294614,
+      "sourceId": "way/128552514"
+    },
+    "candidateIds": [
+      1301530
+    ],
+    "directRoadIds": [
+      294614,
+      1301536
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-bridge-02",
+    "area": "smolevichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 54.05682084055751,
+        "Longitude": 28.135609451154608
+      },
+      {
+        "Latitude": 54.062778559442485,
+        "Longitude": 28.132144548845393
+      }
+    ],
+    "distanceMetres": 700.0020976009761,
+    "auditBounds": [
+      28.107144548845394,
+      54.031820840557515,
+      28.160609451154606,
+      54.087778559442484
+    ],
+    "targetRoad": {
+      "featureId": 4041493,
+      "sourceId": "way/1300440044"
+    },
+    "candidateIds": [
+      4041506
+    ],
+    "directRoadIds": [
+      4041489,
+      4041491,
+      4041493,
+      4041498,
+      4041501
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-bridge-03",
+    "area": "smolevichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 53.946548853568274,
+        "Longitude": 28.315910956055692
+      },
+      {
+        "Latitude": 53.94643174643173,
+        "Longitude": 28.32660444394431
+      }
+    ],
+    "distanceMetres": 699.9330791746797,
+    "auditBounds": [
+      28.290910956055694,
+      53.92143174643173,
+      28.351604443944307,
+      53.97154885356827
+    ],
+    "targetRoad": {
+      "featureId": 292589,
+      "sourceId": "way/126577583"
+    },
+    "candidateIds": [
+      3278111
+    ],
+    "directRoadIds": [
+      292589
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-bridge-04",
+    "area": "smolevichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 54.020472481764244,
+        "Longitude": 28.220207536424496
+      },
+      {
+        "Latitude": 54.02194661823575,
+        "Longitude": 28.230625363575502
+      }
+    ],
+    "distanceMetres": 700.0121473337584,
+    "auditBounds": [
+      28.195207536424498,
+      53.995472481764246,
+      28.2556253635755,
+      54.04694661823575
+    ],
+    "targetRoad": {
+      "featureId": 121743,
+      "sourceId": "way/43682764"
+    },
+    "candidateIds": [
+      192546
+    ],
+    "directRoadIds": [
+      121743,
+      121745
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-bridge-05",
+    "area": "smolevichi",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 54.0030560922491,
+        "Longitude": 28.127452069607152
+      },
+      {
+        "Latitude": 53.9905718077509,
+        "Longitude": 28.13614673039285
+      }
+    ],
+    "distanceMetres": 1500.0192481304182,
+    "auditBounds": [
+      28.102452069607153,
+      53.9655718077509,
+      28.161146730392847,
+      54.0280560922491
+    ],
+    "targetRoad": {
+      "featureId": 594770,
+      "sourceId": "way/206790526"
+    },
+    "candidateIds": [
+      192544
+    ],
+    "directRoadIds": [
+      104746,
+      104757,
+      192542,
+      594770,
+      2683940
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-multi-06",
+    "area": "smolevichi",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 54.09130633141374,
+        "Longitude": 28.082501502720696
+      },
+      {
+        "Latitude": 54.092206468586255,
+        "Longitude": 28.067245097279304
+      }
+    ],
+    "distanceMetres": 999.9634772284792,
+    "auditBounds": [
+      28.042245097279306,
+      54.06630633141374,
+      28.107501502720694,
+      54.117206468586254
+    ],
+    "targetRoad": {
+      "featureId": 1100577,
+      "sourceId": "way/302721619"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      47098,
+      1100577,
+      1403975,
+      3094818,
+      3094819
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-multi-07",
+    "area": "smolevichi",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 54.03353124878262,
+        "Longitude": 28.096918626478143
+      },
+      {
+        "Latitude": 54.038485951217375,
+        "Longitude": 28.103531273521856
+      }
+    ],
+    "distanceMetres": 700.0018413607868,
+    "auditBounds": [
+      28.071918626478144,
+      54.008531248782624,
+      28.128531273521855,
+      54.06348595121737
+    ],
+    "targetRoad": {
+      "featureId": 3692805,
+      "sourceId": "way/1132036513"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      518010,
+      3692804,
+      3692805,
+      3692806,
+      3692807
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-multi-08",
+    "area": "smolevichi",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 54.02081376620402,
+        "Longitude": 28.05446770166749
+      },
+      {
+        "Latitude": 54.004941833795975,
+        "Longitude": 28.06886739833251
+      }
+    ],
+    "distanceMetres": 2000.0036109394405,
+    "auditBounds": [
+      28.029467701667492,
+      53.979941833795976,
+      28.09386739833251,
+      54.04581376620402
+    ],
+    "targetRoad": {
+      "featureId": 2954308,
+      "sourceId": "way/827830581"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      47121,
+      47217,
+      47227,
+      47230,
+      303575,
+      2592765,
+      2592766,
+      2954308,
+      3081363,
+      3081379,
+      3081380,
+      4414563,
+      4419635
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-no_candidate-09",
+    "area": "smolevichi",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 53.984352542425874,
+        "Longitude": 28.103534655399553
+      },
+      {
+        "Latitude": 53.98280275757413,
+        "Longitude": 28.11391094460045
+      }
+    ],
+    "distanceMetres": 699.99355965572,
+    "auditBounds": [
+      28.078534655399555,
+      53.95780275757413,
+      28.138910944600447,
+      54.00935254242587
+    ],
+    "targetRoad": {
+      "featureId": 3099165,
+      "sourceId": "way/870887884"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      101974,
+      1458950,
+      3099165
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-no_candidate-10",
+    "area": "smolevichi",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 53.90522345601741,
+        "Longitude": 28.273032522008332
+      },
+      {
+        "Latitude": 53.90859644398259,
+        "Longitude": 28.26400957799167
+      }
+    ],
+    "distanceMetres": 700.0045478930213,
+    "auditBounds": [
+      28.23900957799167,
+      53.88022345601741,
+      28.29803252200833,
+      53.93359644398259
+    ],
+    "targetRoad": {
+      "featureId": 3469633,
+      "sourceId": "way/1011056722"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      3469633
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-no_candidate-11",
+    "area": "smolevichi",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 53.96722985371437,
+        "Longitude": 28.021635576043995
+      },
+      {
+        "Latitude": 53.96157994628563,
+        "Longitude": 28.026355123956005
+      }
+    ],
+    "distanceMetres": 700.0005469237236,
+    "auditBounds": [
+      27.996635576043996,
+      53.93657994628563,
+      28.051355123956004,
+      53.99222985371437
+    ],
+    "targetRoad": {
+      "featureId": 2683966,
+      "sourceId": "way/723343782"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      526169,
+      2683965,
+      2683966,
+      2683978,
+      2683979,
+      2683980
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-smolevichi-control-12",
+    "area": "smolevichi",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 53.93378725698048,
+        "Longitude": 28.368456609660317
+      },
+      {
+        "Latitude": 53.93430405963358,
+        "Longitude": 28.371383267833963
+      }
+    ],
+    "distanceMetres": 200.01870744372619,
+    "auditBounds": [
+      28.34345660966032,
+      53.90878725698048,
+      28.39638326783396,
+      53.95930405963358
+    ],
+    "targetRoad": {
+      "featureId": 1487220,
+      "sourceId": "way/391378186"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          28.368456609660317,
+          53.93378725698048
+        ],
+        [
+          28.371383267833963,
+          53.93430405963358
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-smolevichi-control-13",
+    "area": "smolevichi",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 54.03158508668602,
+        "Longitude": 28.10342870236145
+      },
+      {
+        "Latitude": 54.0326160711549,
+        "Longitude": 28.100919559437546
+      }
+    ],
+    "distanceMetres": 199.9879831687575,
+    "auditBounds": [
+      28.075919559437548,
+      54.00658508668602,
+      28.12842870236145,
+      54.0576160711549
+    ],
+    "targetRoad": {
+      "featureId": 517797,
+      "sourceId": "way/201576403"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          28.10342870236145,
+          54.03158508668602
+        ],
+        [
+          28.100919559437546,
+          54.0326160711549
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-brest-bridge-01",
+    "area": "brest",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.080982435253034,
+        "Longitude": 23.69800203595697
+      },
+      {
+        "Latitude": 52.08236696474697,
+        "Longitude": 23.71246186404303
+      }
+    ],
+    "distanceMetres": 1000.0130601070605,
+    "auditBounds": [
+      23.673002035956973,
+      52.055982435253036,
+      23.737461864043027,
+      52.107366964746966
+    ],
+    "targetRoad": {
+      "featureId": 233567,
+      "sourceId": "way/100016850"
+    },
+    "candidateIds": [
+      75768
+    ],
+    "directRoadIds": [
+      233567
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-bridge-02",
+    "area": "brest",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.132540818851815,
+        "Longitude": 23.805020969844556
+      },
+      {
+        "Latitude": 52.12690148114819,
+        "Longitude": 23.809578830155445
+      }
+    ],
+    "distanceMetres": 700.0055799073609,
+    "auditBounds": [
+      23.780020969844557,
+      52.10190148114819,
+      23.834578830155444,
+      52.157540818851814
+    ],
+    "targetRoad": {
+      "featureId": 4013700,
+      "sourceId": "way/1281269531"
+    },
+    "candidateIds": [
+      240196
+    ],
+    "directRoadIds": [
+      240194,
+      2299299,
+      3634577,
+      4013700
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-bridge-03",
+    "area": "brest",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.03227068658924,
+        "Longitude": 24.02837350301165
+      },
+      {
+        "Latitude": 52.02841621341076,
+        "Longitude": 24.03646329698835
+      }
+    ],
+    "distanceMetres": 699.9945407631621,
+    "auditBounds": [
+      24.00337350301165,
+      52.00341621341076,
+      24.06146329698835,
+      52.05727068658924
+    ],
+    "targetRoad": {
+      "featureId": 2557481,
+      "sourceId": "way/680888645"
+    },
+    "candidateIds": [
+      2557463
+    ],
+    "directRoadIds": [
+      2557481
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-bridge-04",
+    "area": "brest",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.23250392259543,
+        "Longitude": 23.995539282124334
+      },
+      {
+        "Latitude": 52.231698877404575,
+        "Longitude": 24.00573381787567
+      }
+    ],
+    "distanceMetres": 700.0257583286801,
+    "auditBounds": [
+      23.970539282124335,
+      52.20669887740458,
+      24.030733817875667,
+      52.257503922595426
+    ],
+    "targetRoad": {
+      "featureId": 291975,
+      "sourceId": "way/125857388"
+    },
+    "candidateIds": [
+      293439
+    ],
+    "directRoadIds": [
+      291975
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-bridge-05",
+    "area": "brest",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.08022386961713,
+        "Longitude": 23.847322446010633
+      },
+      {
+        "Latitude": 52.080407230382875,
+        "Longitude": 23.86195345398937
+      }
+    ],
+    "distanceMetres": 1000.0270531274695,
+    "auditBounds": [
+      23.822322446010634,
+      52.05522386961713,
+      23.886953453989367,
+      52.10540723038287
+    ],
+    "targetRoad": {
+      "featureId": 3792156,
+      "sourceId": "way/1178722392"
+    },
+    "candidateIds": [
+      3792155
+    ],
+    "directRoadIds": [
+      213310,
+      1866969,
+      2895868,
+      2926441,
+      3767221,
+      3767224,
+      3792156,
+      4246041
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-multi-06",
+    "area": "brest",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.11963347591554,
+        "Longitude": 23.88977067245049
+      },
+      {
+        "Latitude": 52.117269424084455,
+        "Longitude": 23.89927262754951
+      }
+    ],
+    "distanceMetres": 699.9999993169625,
+    "auditBounds": [
+      23.86477067245049,
+      52.092269424084456,
+      23.92427262754951,
+      52.14463347591554
+    ],
+    "targetRoad": {
+      "featureId": 3640794,
+      "sourceId": "way/1102446002"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      293106,
+      297755,
+      1866935,
+      1866945,
+      1866949,
+      1866953,
+      3640791,
+      3640792,
+      3640794,
+      3640797
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-multi-07",
+    "area": "brest",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 51.999177393999894,
+        "Longitude": 23.813333135045525
+      },
+      {
+        "Latitude": 51.997944206000106,
+        "Longitude": 23.803306464954474
+      }
+    ],
+    "distanceMetres": 699.9953996189687,
+    "auditBounds": [
+      23.778306464954476,
+      51.97294420600011,
+      23.838333135045524,
+      52.02417739399989
+    ],
+    "targetRoad": {
+      "featureId": 2668129,
+      "sourceId": "way/713410346"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      53849,
+      2668128,
+      2668129
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-multi-08",
+    "area": "brest",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.0517412086061,
+        "Longitude": 23.874666638527355
+      },
+      {
+        "Latitude": 52.0625599913939,
+        "Longitude": 23.861562061472647
+      }
+    ],
+    "distanceMetres": 1499.989271393259,
+    "auditBounds": [
+      23.836562061472648,
+      52.026741208606104,
+      23.899666638527354,
+      52.087559991393896
+    ],
+    "targetRoad": {
+      "featureId": 4492189,
+      "sourceId": "way/1509597657"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1400278,
+      4225812,
+      4492188,
+      4492189,
+      4492190
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-no_candidate-09",
+    "area": "brest",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.17274944197218,
+        "Longitude": 24.026390397702645
+      },
+      {
+        "Latitude": 52.166503258027824,
+        "Longitude": 24.027669302297355
+      }
+    ],
+    "distanceMetres": 699.9999589779659,
+    "auditBounds": [
+      24.001390397702647,
+      52.141503258027825,
+      24.052669302297353,
+      52.19774944197218
+    ],
+    "targetRoad": {
+      "featureId": 4460077,
+      "sourceId": "way/1496704658"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      4460076,
+      4460077
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-no_candidate-10",
+    "area": "brest",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.02997517042099,
+        "Longitude": 23.824317974239925
+      },
+      {
+        "Latitude": 52.023893029579014,
+        "Longitude": 23.835084625760075
+      }
+    ],
+    "distanceMetres": 1000.0022350006641,
+    "auditBounds": [
+      23.799317974239926,
+      51.998893029579015,
+      23.860084625760074,
+      52.05497517042099
+    ],
+    "targetRoad": {
+      "featureId": 2793905,
+      "sourceId": "way/766093027"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1263396,
+      2793905,
+      3898677
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-no_candidate-11",
+    "area": "brest",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.031521765656905,
+        "Longitude": 23.71605073043065
+      },
+      {
+        "Latitude": 52.025693234343095,
+        "Longitude": 23.712184569569352
+      }
+    ],
+    "distanceMetres": 700.0002693981676,
+    "auditBounds": [
+      23.687184569569354,
+      52.000693234343096,
+      23.741050730430647,
+      52.0565217656569
+    ],
+    "targetRoad": {
+      "featureId": 214154,
+      "sourceId": "way/90675020"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      53736,
+      214146,
+      214154,
+      2919162,
+      3745022,
+      4542325
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-brest-control-12",
+    "area": "brest",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.251677406059635,
+        "Longitude": 23.95373308779473
+      },
+      {
+        "Latitude": 52.2500212807115,
+        "Longitude": 23.954879312845357
+      }
+    ],
+    "distanceMetres": 200.00189067796873,
+    "auditBounds": [
+      23.928733087794733,
+      52.2250212807115,
+      23.979879312845355,
+      52.27667740605963
+    ],
+    "targetRoad": {
+      "featureId": 3978495,
+      "sourceId": "way/1266035825"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          23.95373308779473,
+          52.251677406059635
+        ],
+        [
+          23.954879312845357,
+          52.2500212807115
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-brest-control-13",
+    "area": "brest",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.33378899940223,
+        "Longitude": 23.814367303305392
+      },
+      {
+        "Latitude": 52.33558692961442,
+        "Longitude": 23.81428457487894
+      }
+    ],
+    "distanceMetres": 199.99999963773274,
+    "auditBounds": [
+      23.78928457487894,
+      52.30878899940223,
+      23.83936730330539,
+      52.36058692961442
+    ],
+    "targetRoad": {
+      "featureId": 3587369,
+      "sourceId": "way/1075173437"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          23.814367303305392,
+          52.33378899940223
+        ],
+        [
+          23.81428457487894,
+          52.33558692961442
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-gomel-bridge-01",
+    "area": "gomel",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.2055965456034,
+        "Longitude": 30.995254314862727
+      },
+      {
+        "Latitude": 52.1995129543966,
+        "Longitude": 30.997895385137273
+      }
+    ],
+    "distanceMetres": 699.9999183594132,
+    "auditBounds": [
+      30.97025431486273,
+      52.174512954396604,
+      31.02289538513727,
+      52.2305965456034
+    ],
+    "targetRoad": {
+      "featureId": 261530,
+      "sourceId": "way/106135970"
+    },
+    "candidateIds": [
+      3449357
+    ],
+    "directRoadIds": [
+      261530,
+      3609980
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-bridge-02",
+    "area": "gomel",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.24356063260201,
+        "Longitude": 30.802217906788496
+      },
+      {
+        "Latitude": 52.26143636739799,
+        "Longitude": 30.805472293211505
+      }
+    ],
+    "distanceMetres": 2000.0006949827243,
+    "auditBounds": [
+      30.777217906788497,
+      52.21856063260201,
+      30.830472293211503,
+      52.28643636739799
+    ],
+    "targetRoad": {
+      "featureId": 1255258,
+      "sourceId": "way/341438124"
+    },
+    "candidateIds": [
+      1251309
+    ],
+    "directRoadIds": [
+      1255258
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-bridge-03",
+    "area": "gomel",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.37898288153478,
+        "Longitude": 30.877381448331676
+      },
+      {
+        "Latitude": 52.37309581846522,
+        "Longitude": 30.881034051668323
+      }
+    ],
+    "distanceMetres": 699.996175944921,
+    "auditBounds": [
+      30.852381448331677,
+      52.34809581846522,
+      30.90603405166832,
+      52.40398288153478
+    ],
+    "targetRoad": {
+      "featureId": 807428,
+      "sourceId": "way/246421046"
+    },
+    "candidateIds": [
+      807427
+    ],
+    "directRoadIds": [
+      807428,
+      807437
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-bridge-04",
+    "area": "gomel",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.440977132234245,
+        "Longitude": 30.80742541692688
+      },
+      {
+        "Latitude": 52.441606867765756,
+        "Longitude": 30.81770028307312
+      }
+    ],
+    "distanceMetres": 699.9585572144867,
+    "auditBounds": [
+      30.78242541692688,
+      52.41597713223425,
+      30.842700283073118,
+      52.466606867765755
+    ],
+    "targetRoad": {
+      "featureId": 225987,
+      "sourceId": "way/97540566"
+    },
+    "candidateIds": [
+      1396375
+    ],
+    "directRoadIds": [
+      225987
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-bridge-05",
+    "area": "gomel",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.46240071621832,
+        "Longitude": 31.015568878094204
+      },
+      {
+        "Latitude": 52.46509178378168,
+        "Longitude": 31.029654021905795
+      }
+    ],
+    "distanceMetres": 1000.045284053957,
+    "auditBounds": [
+      30.990568878094205,
+      52.43740071621832,
+      31.054654021905794,
+      52.49009178378168
+    ],
+    "targetRoad": {
+      "featureId": 415070,
+      "sourceId": "way/168981649"
+    },
+    "candidateIds": [
+      415071
+    ],
+    "directRoadIds": [
+      415069,
+      415070,
+      4557464
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-multi-06",
+    "area": "gomel",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.26158696257527,
+        "Longitude": 30.708763931537963
+      },
+      {
+        "Latitude": 52.27581033742472,
+        "Longitude": 30.72675436846204
+      }
+    ],
+    "distanceMetres": 2000.002242995641,
+    "auditBounds": [
+      30.683763931537964,
+      52.236586962575274,
+      30.751754368462038,
+      52.30081033742472
+    ],
+    "targetRoad": {
+      "featureId": 1358898,
+      "sourceId": "way/366799775"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      302473,
+      1351065,
+      1351066,
+      1351067,
+      1355503,
+      1358898,
+      3553037
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-multi-07",
+    "area": "gomel",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.4455288,
+        "Longitude": 30.820464620942214
+      },
+      {
+        "Latitude": 52.4455288,
+        "Longitude": 30.849973979057783
+      }
+    ],
+    "distanceMetres": 2000.0000783594023,
+    "auditBounds": [
+      30.795464620942216,
+      52.4205288,
+      30.87497397905778,
+      52.4705288
+    ],
+    "targetRoad": {
+      "featureId": 4541759,
+      "sourceId": "way/1534258815"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      40188,
+      1396364,
+      1770410,
+      2611608,
+      2643280,
+      2643284,
+      2643290,
+      2643296,
+      4541759
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-multi-08",
+    "area": "gomel",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.22177027133354,
+        "Longitude": 31.101143589649805
+      },
+      {
+        "Latitude": 52.22041282866646,
+        "Longitude": 31.086632010350193
+      }
+    ],
+    "distanceMetres": 999.9847408135189,
+    "auditBounds": [
+      31.061632010350195,
+      52.19541282866646,
+      31.126143589649804,
+      52.24677027133354
+    ],
+    "targetRoad": {
+      "featureId": 2874186,
+      "sourceId": "way/791814150"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      2874182,
+      2874183,
+      2874184,
+      2874185,
+      2874186,
+      2874187,
+      2874188,
+      2874189,
+      2874190
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-no_candidate-09",
+    "area": "gomel",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.4145444025462,
+        "Longitude": 31.119105105747085
+      },
+      {
+        "Latitude": 52.4260584974538,
+        "Longitude": 31.141763494252913
+      }
+    ],
+    "distanceMetres": 2000.0485271808645,
+    "auditBounds": [
+      31.094105105747087,
+      52.3895444025462,
+      31.166763494252912,
+      52.4510584974538
+    ],
+    "targetRoad": {
+      "featureId": 1062972,
+      "sourceId": "way/294791461"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      202993,
+      1062972,
+      1062982,
+      3502183
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-no_candidate-10",
+    "area": "gomel",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.29877899364521,
+        "Longitude": 30.77412638540014
+      },
+      {
+        "Latitude": 52.28723630635479,
+        "Longitude": 30.78554121459986
+      }
+    ],
+    "distanceMetres": 1500.0050334352925,
+    "auditBounds": [
+      30.749126385400142,
+      52.262236306354794,
+      30.81054121459986,
+      52.323778993645206
+    ],
+    "targetRoad": {
+      "featureId": 3559619,
+      "sourceId": "way/1058942540"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      40236,
+      3371644,
+      3371645,
+      3550626,
+      3550630,
+      3550631,
+      3550632,
+      3559612,
+      3559616,
+      3559619
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-no_candidate-11",
+    "area": "gomel",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.40749465649331,
+        "Longitude": 30.85621437590483
+      },
+      {
+        "Latitude": 52.39045254350669,
+        "Longitude": 30.84678852409517
+      }
+    ],
+    "distanceMetres": 1999.9996686438158,
+    "auditBounds": [
+      30.821788524095172,
+      52.36545254350669,
+      30.88121437590483,
+      52.43249465649331
+    ],
+    "targetRoad": {
+      "featureId": 3550609,
+      "sourceId": "way/1053639035"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      807438,
+      807440,
+      3550576,
+      3550577,
+      3550578,
+      3550585,
+      3550586,
+      3550588,
+      3550593,
+      3550594,
+      3550595,
+      3550596,
+      3550597,
+      3550600,
+      3550604,
+      3550605,
+      3550606,
+      3550608,
+      3550609,
+      3749827,
+      3749843,
+      3749846
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-gomel-control-12",
+    "area": "gomel",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 52.211630347225125,
+        "Longitude": 31.090278727181605
+      },
+      {
+        "Latitude": 52.209906946114074,
+        "Longitude": 31.089438639441877
+      }
+    ],
+    "distanceMetres": 199.99975381689637,
+    "auditBounds": [
+      31.064438639441878,
+      52.184906946114076,
+      31.115278727181604,
+      52.23663034722512
+    ],
+    "targetRoad": {
+      "featureId": 2072057,
+      "sourceId": "way/542305062"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          31.090278727181605,
+          52.211630347225125
+        ],
+        [
+          31.089438639441877,
+          52.209906946114074
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-gomel-control-13",
+    "area": "gomel",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 52.25402952634082,
+        "Longitude": 31.119416835162692
+      },
+      {
+        "Latitude": 52.253288117636465,
+        "Longitude": 31.122094283593356
+      }
+    ],
+    "distanceMetres": 200.03235853220622,
+    "auditBounds": [
+      31.094416835162694,
+      52.22828811763647,
+      31.147094283593354,
+      52.27902952634082
+    ],
+    "targetRoad": {
+      "featureId": 1605091,
+      "sourceId": "way/421886409"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          31.119416835162692,
+          52.25402952634082
+        ],
+        [
+          31.122094283593356,
+          52.253288117636465
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-vitebsk-bridge-01",
+    "area": "vitebsk",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 55.09367601005522,
+        "Longitude": 30.255640895711085
+      },
+      {
+        "Latitude": 55.11134848994478,
+        "Longitude": 30.261489204288917
+      }
+    ],
+    "distanceMetres": 2000.0017919320026,
+    "auditBounds": [
+      30.230640895711087,
+      55.06867601005522,
+      30.286489204288916,
+      55.13634848994478
+    ],
+    "targetRoad": {
+      "featureId": 405694,
+      "sourceId": "way/166091471"
+    },
+    "candidateIds": [
+      405696
+    ],
+    "directRoadIds": [
+      100885,
+      236261,
+      405694,
+      435013,
+      966814,
+      3584732,
+      4083065
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-bridge-02",
+    "area": "vitebsk",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 55.08464513642466,
+        "Longitude": 30.2373944031019
+      },
+      {
+        "Latitude": 55.089675063575335,
+        "Longitude": 30.2243670968981
+      }
+    ],
+    "distanceMetres": 1000.0810044152812,
+    "auditBounds": [
+      30.1993670968981,
+      55.05964513642466,
+      30.262394403101897,
+      55.11467506357533
+    ],
+    "targetRoad": {
+      "featureId": 1370785,
+      "sourceId": "way/369187801"
+    },
+    "candidateIds": [
+      1370786
+    ],
+    "directRoadIds": [
+      1370785
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-bridge-03",
+    "area": "vitebsk",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 55.06721907024461,
+        "Longitude": 30.327260999018943
+      },
+      {
+        "Latitude": 55.06768722975539,
+        "Longitude": 30.342945200981056
+      }
+    ],
+    "distanceMetres": 999.9941320996567,
+    "auditBounds": [
+      30.302260999018944,
+      55.04221907024461,
+      30.367945200981055,
+      55.09268722975539
+    ],
+    "targetRoad": {
+      "featureId": 1272041,
+      "sourceId": "way/345137583"
+    },
+    "candidateIds": [
+      1272039
+    ],
+    "directRoadIds": [
+      406162,
+      1272041,
+      4100271,
+      4100272
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-bridge-04",
+    "area": "vitebsk",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 55.18370380456794,
+        "Longitude": 30.087769574713477
+      },
+      {
+        "Latitude": 55.19269699543206,
+        "Longitude": 30.087796125286523
+      }
+    ],
+    "distanceMetres": 1000.0000000006169,
+    "auditBounds": [
+      30.062769574713478,
+      55.15870380456794,
+      30.112796125286522,
+      55.21769699543206
+    ],
+    "targetRoad": {
+      "featureId": 2307400,
+      "sourceId": "way/620498784"
+    },
+    "candidateIds": [
+      93534
+    ],
+    "directRoadIds": [
+      197817,
+      1210332,
+      2307398,
+      2307400,
+      4564454
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-bridge-05",
+    "area": "vitebsk",
+    "category": "A",
+    "scenarioType": "bridge",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 55.255029519184376,
+        "Longitude": 30.141157896465224
+      },
+      {
+        "Latitude": 55.258367680815624,
+        "Longitude": 30.150523303534776
+      }
+    ],
+    "distanceMetres": 700.0050419038573,
+    "auditBounds": [
+      30.116157896465225,
+      55.23002951918438,
+      30.175523303534774,
+      55.28336768081562
+    ],
+    "targetRoad": {
+      "featureId": 118796,
+      "sourceId": "way/41991659"
+    },
+    "candidateIds": [
+      1363052
+    ],
+    "directRoadIds": [
+      118796,
+      697907,
+      1956530
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-multi-06",
+    "area": "vitebsk",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 55.23807358014127,
+        "Longitude": 30.097944998404106
+      },
+      {
+        "Latitude": 55.239626119858734,
+        "Longitude": 30.129374001595895
+      }
+    ],
+    "distanceMetres": 2000.0197857467956,
+    "auditBounds": [
+      30.072944998404108,
+      55.21307358014127,
+      30.154374001595894,
+      55.26462611985873
+    ],
+    "targetRoad": {
+      "featureId": 71791,
+      "sourceId": "way/27897296"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      71733,
+      71791,
+      71809,
+      71812,
+      74835,
+      701320,
+      701341,
+      701342,
+      701357,
+      1379523,
+      1589321,
+      2279129
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-multi-07",
+    "area": "vitebsk",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 55.19302053170194,
+        "Longitude": 30.3310190899443
+      },
+      {
+        "Latitude": 55.19245156829806,
+        "Longitude": 30.3625137100557
+      }
+    ],
+    "distanceMetres": 2000.031056753904,
+    "auditBounds": [
+      30.3060190899443,
+      55.16745156829806,
+      30.3875137100557,
+      55.21802053170194
+    ],
+    "targetRoad": {
+      "featureId": 977074,
+      "sourceId": "way/282340477"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      952113,
+      952117,
+      977074
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-multi-08",
+    "area": "vitebsk",
+    "category": "E",
+    "scenarioType": "multi",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 55.312446037713904,
+        "Longitude": 30.105519338940752
+      },
+      {
+        "Latitude": 55.320755662286096,
+        "Longitude": 30.13355216105925
+      }
+    ],
+    "distanceMetres": 1999.999979374431,
+    "auditBounds": [
+      30.080519338940753,
+      55.287446037713906,
+      30.158552161059248,
+      55.345755662286095
+    ],
+    "targetRoad": {
+      "featureId": 583676,
+      "sourceId": "way/206102243"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      96619,
+      583676
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-no_candidate-09",
+    "area": "vitebsk",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 55.189654205481695,
+        "Longitude": 30.139484437922476
+      },
+      {
+        "Latitude": 55.19573119451831,
+        "Longitude": 30.136605662077525
+      }
+    ],
+    "distanceMetres": 700.0001197266332,
+    "auditBounds": [
+      30.111605662077526,
+      55.164654205481696,
+      30.164484437922475,
+      55.22073119451831
+    ],
+    "targetRoad": {
+      "featureId": 145513,
+      "sourceId": "way/58423925"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      93606,
+      145513,
+      1210361
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-no_candidate-10",
+    "area": "vitebsk",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Field"
+    ],
+    "points": [
+      {
+        "Latitude": 55.17620244681889,
+        "Longitude": 30.318960235237938
+      },
+      {
+        "Latitude": 55.175614553181106,
+        "Longitude": 30.33467516476206
+      }
+    ],
+    "distanceMetres": 1000.0200976134106,
+    "auditBounds": [
+      30.29396023523794,
+      55.15061455318111,
+      30.35967516476206,
+      55.20120244681889
+    ],
+    "targetRoad": {
+      "featureId": 1247899,
+      "sourceId": "way/339561458"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      1247899,
+      3354575,
+      3577573
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-no_candidate-11",
+    "area": "vitebsk",
+    "category": "B",
+    "scenarioType": "no_candidate",
+    "quality": "exploratory",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 55.24371516142145,
+        "Longitude": 30.315058124017746
+      },
+      {
+        "Latitude": 55.25115113857855,
+        "Longitude": 30.343788675982257
+      }
+    ],
+    "distanceMetres": 2000.0044855867684,
+    "auditBounds": [
+      30.290058124017747,
+      55.21871516142145,
+      30.368788675982255,
+      55.27615113857855
+    ],
+    "targetRoad": {
+      "featureId": 1293894,
+      "sourceId": "way/353339836"
+    },
+    "candidateIds": [],
+    "directRoadIds": [
+      100750,
+      422534,
+      1293894,
+      1293897,
+      1293898,
+      1293903,
+      1727735
+    ],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6"
+  },
+  {
+    "id": "mass-vitebsk-control-12",
+    "area": "vitebsk",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Forest",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 55.125709986183615,
+        "Longitude": 30.229078823547596
+      },
+      {
+        "Latitude": 55.124125323821644,
+        "Longitude": 30.227590880057686
+      }
+    ],
+    "distanceMetres": 199.9965946836679,
+    "auditBounds": [
+      30.202590880057688,
+      55.099125323821646,
+      30.254078823547594,
+      55.150709986183614
+    ],
+    "targetRoad": {
+      "featureId": 100899,
+      "sourceId": "way/34159071"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          30.229078823547596,
+          55.125709986183615
+        ],
+        [
+          30.227590880057686,
+          55.124125323821644
+        ]
+      ]
+    }
+  },
+  {
+    "id": "mass-vitebsk-control-13",
+    "area": "vitebsk",
+    "category": "F",
+    "scenarioType": "control",
+    "quality": "verified",
+    "distanceClass": "local",
+    "terrain": [
+      "Field",
+      "Forest"
+    ],
+    "points": [
+      {
+        "Latitude": 55.11136550416813,
+        "Longitude": 29.94998053244129
+      },
+      {
+        "Latitude": 55.11288345838861,
+        "Longitude": 29.951667348909975
+      }
+    ],
+    "distanceMetres": 199.99812478544237,
+    "auditBounds": [
+      29.924980532441293,
+      55.08636550416813,
+      29.976667348909974,
+      55.13788345838861
+    ],
+    "targetRoad": {
+      "featureId": 118416,
+      "sourceId": "way/41517094"
+    },
+    "candidateIds": [],
+    "directRoadIds": [],
+    "routingOptions": {
+      "CellSizeMetres": 25,
+      "MaxNodes": 100000,
+      "ReserveFraction": 0.1,
+      "PreferOverheadGasCrossings": true,
+      "MaxRouteLengthMetres": 1000000
+    },
+    "seed": 20261113,
+    "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+    "witness": {
+      "kind": "direct",
+      "coordinates": [
+        [
+          29.94998053244129,
+          55.11136550416813
+        ],
+        [
+          29.951667348909975,
+          55.11288345838861
+        ]
+      ]
+    }
+  }
+]

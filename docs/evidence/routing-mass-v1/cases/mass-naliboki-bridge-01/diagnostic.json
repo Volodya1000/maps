@@ -1,0 +1,32 @@
+{
+  "id": "mass-naliboki-bridge-01",
+  "routerStatus": "no_route",
+  "typedReason": "NoRouteInSearchArea",
+  "directAuditStatus": "violation",
+  "directFindingCounts": {
+    "water_without_opening": 2,
+    "road_contact": 3,
+    "blocked_terrain": 1
+  },
+  "forbiddenDirectRoadContacts": 3,
+  "targetRoadDirectContacts": 1,
+  "candidateChecks": [
+    {
+      "featureId": 438476,
+      "kind": "BridgeCandidate",
+      "sourceId": "way/174737352",
+      "intersectsTargetRoad": true,
+      "insideRequestedBounds": true,
+      "distanceFromDirectMetres": 66.3
+    }
+  ],
+  "requestedSearchBounds": [
+    26.707195770291644,
+    53.94579355923645,
+    26.767930529708355,
+    53.96667974076355
+  ],
+  "effectiveCellMetres": null,
+  "portalConnectionStatus": "unknown",
+  "independentValidPathStatus": "unknown"
+}

@@ -247,6 +247,21 @@ class CrossingPilotTests(unittest.TestCase):
         self.assertEqual(baseline["alternatives"], [])
         self.assertEqual(baseline["error"]["reason"], "process_failure")
 
+    def test_pilot_does_not_accept_partial_result_from_failed_process(self):
+        written = {"status": "success", "alternatives": [{"name": "short"}]}
+        failed = {"returncode": 1, "timeout": False}
+        timed_out = {"returncode": None, "timeout": True}
+
+        error = pilot.effective_result(written, failed)
+        timeout = pilot.effective_result(written, timed_out)
+
+        self.assertEqual(error["status"], "error")
+        self.assertEqual(error["alternatives"], [])
+        self.assertEqual(error["error"]["reason"], "process_failure")
+        self.assertEqual(timeout["status"], "timeout")
+        self.assertEqual(timeout["alternatives"], [])
+        self.assertEqual(timeout["error"]["reason"], "process_timeout")
+
 
 class ContactAuditRegressionTests(unittest.TestCase):
     def test_shared_road_section_is_not_silently_accepted(self):

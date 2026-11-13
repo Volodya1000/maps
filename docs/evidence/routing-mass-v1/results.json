@@ -1,0 +1,4120 @@
+{
+  "schema": "maps.routing-crossing-mass.v1",
+  "baselineAppCommit": "03ea54850df3ce0f16f38151769196373f427cdf",
+  "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+  "corpusSha256": "025262ab54548df41a43b71d230d003151b6e03b2541fec72a9b963e45e0634d",
+  "databaseSha256": "2e304811624b88bcbd664f7a78d3ee915bb37c5260396b5d7d72ce2dd9f154e6",
+  "sourceSha256": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01",
+  "metrics": {
+    "scenarioCount": 88,
+    "sourceDirtyCaseCount": 33,
+    "validRouteCount": 32,
+    "validRouteRate": 0.36363636363636365,
+    "noRouteCount": 56,
+    "noRouteRate": 0.6363636363636364,
+    "domainViolationCount": 0,
+    "domainViolationRate": 0.0,
+    "verifiedPositiveCount": 15,
+    "verifiedPositiveFound": 15,
+    "verifiedPositiveRecall": 1.0,
+    "confirmedMissedValidPathCount": 0,
+    "crossingUtilization": 0.375,
+    "p50WallMilliseconds": 3818,
+    "p95WallMilliseconds": 5674,
+    "statusCounts": {
+      "no_route": 56,
+      "success": 32
+    },
+    "typedReasonCounts": {
+      "NoRouteInSearchArea": 56
+    },
+    "crossingTypeCounts": {
+      "bridge": 12
+    },
+    "byAreaAndType": {
+      "area:brest": {
+        "no_route": 9,
+        "success": 4
+      },
+      "area:gomel": {
+        "no_route": 7,
+        "success": 6
+      },
+      "area:naliboki": {
+        "no_route": 11,
+        "success": 5
+      },
+      "area:pukhovichi": {
+        "no_route": 10,
+        "success": 6
+      },
+      "area:smolevichi": {
+        "no_route": 9,
+        "success": 8
+      },
+      "area:vitebsk": {
+        "no_route": 10,
+        "success": 3
+      },
+      "category:A": {
+        "no_route": 22,
+        "success": 10
+      },
+      "category:B": {
+        "no_route": 17,
+        "success": 6
+      },
+      "category:E": {
+        "no_route": 17,
+        "success": 2
+      },
+      "category:F": {
+        "success": 14
+      },
+      "type:bridge": {
+        "no_route": 21,
+        "success": 9
+      },
+      "type:control": {
+        "success": 12
+      },
+      "type:multi": {
+        "no_route": 16,
+        "success": 2
+      },
+      "type:no_candidate": {
+        "no_route": 13,
+        "success": 5
+      },
+      "type:pilot": {
+        "no_route": 6,
+        "success": 4
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "naliboki-02",
+      "area": "naliboki",
+      "category": "B",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Latitude": 53.934284343660416,
+          "Longitude": 26.46056213602869
+        },
+        {
+          "Latitude": 54.030854056339585,
+          "Longitude": 26.44289926397131
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1916204,
+        "sourceId": "way/491824287"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3850,
+      "routerMilliseconds": 1822,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "naliboki-03",
+      "area": "naliboki",
+      "category": "B",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Latitude": 53.89481015364013,
+          "Longitude": 26.61551386273843
+        },
+        {
+          "Latitude": 53.888797546359875,
+          "Longitude": 26.60880953726157
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1915402,
+        "sourceId": "way/491585575"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 6202,
+      "routerMilliseconds": 4278,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "naliboki-04",
+      "area": "naliboki",
+      "category": "F",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Latitude": 53.82429206005621,
+          "Longitude": 26.578591766662143
+        },
+        {
+          "Latitude": 53.82785602359297,
+          "Longitude": 26.583237261053448
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1413754,
+        "sourceId": "way/377367162"
+      },
+      "candidateIds": [
+        1413755
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 5377,
+      "routerMilliseconds": 3481,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "pukhovichi-01",
+      "area": "pukhovichi",
+      "category": "A",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Latitude": 52.864596440538996,
+          "Longitude": 27.49287320427754
+        },
+        {
+          "Latitude": 52.849798259461004,
+          "Longitude": 27.50374059572246
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1687425,
+        "sourceId": "way/440525556"
+      },
+      "candidateIds": [
+        4605961
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3445,
+      "routerMilliseconds": 1494,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "pukhovichi-02",
+      "area": "pukhovichi",
+      "category": "B",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Latitude": 52.91222279347633,
+          "Longitude": 27.33825411338872
+        },
+        {
+          "Latitude": 52.993957006523665,
+          "Longitude": 27.42534628661128
+        }
+      ],
+      "targetRoad": {
+        "featureId": 4060330,
+        "sourceId": "way/1309063838"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4623,
+      "routerMilliseconds": 2704,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "pukhovichi-03",
+      "area": "pukhovichi",
+      "category": "B",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Latitude": 52.817213541366314,
+          "Longitude": 27.360615053653717
+        },
+        {
+          "Latitude": 52.757190958633686,
+          "Longitude": 27.48687784634628
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1816169,
+        "sourceId": "way/466152016"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 5451,
+      "routerMilliseconds": 3527,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "smolevichi-01",
+      "area": "smolevichi",
+      "category": "E",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Latitude": 54.08077941101372,
+          "Longitude": 28.216782562413425
+        },
+        {
+          "Latitude": 54.08654828898628,
+          "Longitude": 28.209453637586577
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2926352,
+        "sourceId": "way/820261831"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3255,
+      "routerMilliseconds": 1322,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "smolevichi-02",
+      "area": "smolevichi",
+      "category": "B",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Latitude": 53.80035579898087,
+          "Longitude": 28.16195833707451
+        },
+        {
+          "Latitude": 53.91082970101913,
+          "Longitude": 28.13617486292549
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2910603,
+        "sourceId": "way/813511449"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3729,
+      "routerMilliseconds": 1777,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "smolevichi-03",
+      "area": "smolevichi",
+      "category": "F",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Latitude": 53.87248265619576,
+          "Longitude": 28.401721417341744
+        },
+        {
+          "Latitude": 53.87640602874908,
+          "Longitude": 28.405448027716336
+        }
+      ],
+      "targetRoad": {
+        "featureId": 430324,
+        "sourceId": "way/172050318"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2999,
+      "routerMilliseconds": 1076,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "smolevichi-04",
+      "area": "smolevichi",
+      "category": "A",
+      "scenarioType": "pilot",
+      "points": [
+        {
+          "Longitude": 28.104615898132728,
+          "Latitude": 53.993017548474526
+        },
+        {
+          "Longitude": 28.108090501867274,
+          "Latitude": 53.98802325152547
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2683950,
+        "sourceId": "way/723343766"
+      },
+      "candidateIds": [
+        192543
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        101974,
+        192541,
+        2683950,
+        2683955
+      ],
+      "wallMilliseconds": 3598,
+      "routerMilliseconds": 1680,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct_bridge"
+    },
+    {
+      "id": "mass-naliboki-bridge-01",
+      "area": "naliboki",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 53.95768653712631,
+          "Longitude": 26.722479858468972
+        },
+        {
+          "Latitude": 53.954786762873695,
+          "Longitude": 26.752646441531027
+        }
+      ],
+      "targetRoad": {
+        "featureId": 302761,
+        "sourceId": "way/133585589"
+      },
+      "candidateIds": [
+        438476
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 5158,
+      "routerMilliseconds": 3252,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-bridge-02",
+      "area": "naliboki",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 53.92170016456113,
+          "Longitude": 26.420341486023116
+        },
+        {
+          "Latitude": 53.92115683543887,
+          "Longitude": 26.430985913976887
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1179367,
+        "sourceId": "way/319924326"
+      },
+      "candidateIds": [
+        1600800
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 5746,
+      "routerMilliseconds": 3853,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-bridge-03",
+      "area": "naliboki",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 53.958139201120595,
+          "Longitude": 26.732664749067194
+        },
+        {
+          "Latitude": 53.957378298879405,
+          "Longitude": 26.743285750932806
+        }
+      ],
+      "targetRoad": {
+        "featureId": 438477,
+        "sourceId": "way/174737353"
+      },
+      "candidateIds": [
+        438476
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 5074,
+      "routerMilliseconds": 3087,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-bridge-04",
+      "area": "naliboki",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 53.92749694843864,
+          "Longitude": 26.35341886587644
+        },
+        {
+          "Latitude": 53.92660405156136,
+          "Longitude": 26.36400073412356
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1732889,
+        "sourceId": "way/452928648"
+      },
+      "candidateIds": [
+        1732887
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3948,
+      "routerMilliseconds": 2017,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-bridge-05",
+      "area": "naliboki",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 53.82693388567949,
+          "Longitude": 26.588914854373137
+        },
+        {
+          "Latitude": 53.83154461432051,
+          "Longitude": 26.581654745626864
+        }
+      ],
+      "targetRoad": {
+        "featureId": 266620,
+        "sourceId": "way/109653697"
+      },
+      "candidateIds": [
+        1915306
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 8873,
+      "routerMilliseconds": 6952,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-multi-06",
+      "area": "naliboki",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 53.9524209693212,
+          "Longitude": 26.558740327115995
+        },
+        {
+          "Latitude": 53.9469690306788,
+          "Longitude": 26.553392272884004
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1949338,
+        "sourceId": "way/497685762"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2879,
+      "routerMilliseconds": 963,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-multi-07",
+      "area": "naliboki",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 53.802499905081085,
+          "Longitude": 26.742783238839742
+        },
+        {
+          "Latitude": 53.79787239491892,
+          "Longitude": 26.755839861160258
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1905668,
+        "sourceId": "way/489917031"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4606,
+      "routerMilliseconds": 2713,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-multi-08",
+      "area": "naliboki",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 53.962719904054,
+          "Longitude": 26.714523942224478
+        },
+        {
+          "Latitude": 53.966203195946,
+          "Longitude": 26.70561045777552
+        }
+      ],
+      "targetRoad": {
+        "featureId": 394829,
+        "sourceId": "way/159812568"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 8035,
+      "routerMilliseconds": 6090,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-no_candidate-09",
+      "area": "naliboki",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 53.836524881170426,
+          "Longitude": 26.49235558694649
+        },
+        {
+          "Latitude": 53.842766918829575,
+          "Longitude": 26.490971413053508
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1920479,
+        "sourceId": "way/492194958"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4036,
+      "routerMilliseconds": 2122,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-no_candidate-10",
+      "area": "naliboki",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 53.77167572145938,
+          "Longitude": 26.695970038040393
+        },
+        {
+          "Latitude": 53.77774627854062,
+          "Longitude": 26.68474246195961
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1911075,
+        "sourceId": "way/491185127"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 5541,
+      "routerMilliseconds": 3646,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-no_candidate-11",
+      "area": "naliboki",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 53.941961681305884,
+          "Longitude": 26.562593001536573
+        },
+        {
+          "Latitude": 53.93940931869412,
+          "Longitude": 26.552816598463426
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1916102,
+        "sourceId": "way/491679198"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2592,
+      "routerMilliseconds": 664,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-naliboki-control-12",
+      "area": "naliboki",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 53.993693938098836,
+          "Longitude": 26.379193134482335
+        },
+        {
+          "Latitude": 53.99193388979991,
+          "Longitude": 26.379823528913036
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3815227,
+        "sourceId": "way/1190702741"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2787,
+      "routerMilliseconds": 845,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-naliboki-control-13",
+      "area": "naliboki",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 53.98955428212325,
+          "Longitude": 26.690799287394974
+        },
+        {
+          "Latitude": 53.9911333882183,
+          "Longitude": 26.692264008570657
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3705591,
+        "sourceId": "way/1136267486"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2167,
+      "routerMilliseconds": 236,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-pukhovichi-bridge-01",
+      "area": "pukhovichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.94697206331584,
+          "Longitude": 27.465841267491506
+        },
+        {
+          "Latitude": 52.94810803668416,
+          "Longitude": 27.455565132508493
+        }
+      ],
+      "targetRoad": {
+        "featureId": 4062190,
+        "sourceId": "way/1310887621"
+      },
+      "candidateIds": [
+        1502947
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 3,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        1502946,
+        4062190
+      ],
+      "wallMilliseconds": 3433,
+      "routerMilliseconds": 1453,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-bridge-02",
+      "area": "pukhovichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.99683004576208,
+          "Longitude": 27.460010386990323
+        },
+        {
+          "Latitude": 52.993271754237924,
+          "Longitude": 27.46863871300968
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3366839,
+        "sourceId": "way/963420521"
+      },
+      "candidateIds": [
+        1514999
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        1515000,
+        3366839
+      ],
+      "wallMilliseconds": 3840,
+      "routerMilliseconds": 1884,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-bridge-03",
+      "area": "pukhovichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.93602825631896,
+          "Longitude": 27.574070492664067
+        },
+        {
+          "Latitude": 52.942292043681036,
+          "Longitude": 27.575113407335934
+        }
+      ],
+      "targetRoad": {
+        "featureId": 117687,
+        "sourceId": "way/40900520"
+      },
+      "candidateIds": [
+        1506839
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        117687
+      ],
+      "wallMilliseconds": 3459,
+      "routerMilliseconds": 1538,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-bridge-04",
+      "area": "pukhovichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.78446731131168,
+          "Longitude": 27.411274008250004
+        },
+        {
+          "Latitude": 52.77826798868833,
+          "Longitude": 27.413083991749996
+        }
+      ],
+      "targetRoad": {
+        "featureId": 156165,
+        "sourceId": "way/61753694"
+      },
+      "candidateIds": [
+        1816175
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        156165
+      ],
+      "wallMilliseconds": 3654,
+      "routerMilliseconds": 1761,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-bridge-05",
+      "area": "pukhovichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.707827908843335,
+          "Longitude": 27.736967906536837
+        },
+        {
+          "Latitude": 52.70190999115667,
+          "Longitude": 27.740510893463163
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1290881,
+        "sourceId": "way/353061308"
+      },
+      "candidateIds": [
+        2864229
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3751,
+      "routerMilliseconds": 1831,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-multi-06",
+      "area": "pukhovichi",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 52.75921528471478,
+          "Longitude": 27.596967716070317
+        },
+        {
+          "Latitude": 52.75590261528522,
+          "Longitude": 27.588122283929682
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2346480,
+        "sourceId": "way/631658729"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3488,
+      "routerMilliseconds": 1566,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-multi-07",
+      "area": "pukhovichi",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 52.771982513885554,
+          "Longitude": 27.37779994429808
+        },
+        {
+          "Latitude": 52.780962286114445,
+          "Longitude": 27.37861215570192
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2243553,
+        "sourceId": "way/598184573"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3177,
+      "routerMilliseconds": 1233,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-multi-08",
+      "area": "pukhovichi",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 52.75200336494736,
+          "Longitude": 27.440300822832324
+        },
+        {
+          "Latitude": 52.76019443505263,
+          "Longitude": 27.42259087716768
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2392894,
+        "sourceId": "way/644328515"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3421,
+      "routerMilliseconds": 1496,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-no_candidate-09",
+      "area": "pukhovichi",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 52.84587588266293,
+          "Longitude": 27.716959623020415
+        },
+        {
+          "Latitude": 52.851717617337066,
+          "Longitude": 27.713074876979583
+        }
+      ],
+      "targetRoad": {
+        "featureId": 705758,
+        "sourceId": "way/229956407"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3189,
+      "routerMilliseconds": 1301,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-no_candidate-10",
+      "area": "pukhovichi",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 52.73843748703049,
+          "Longitude": 27.38722358098261
+        },
+        {
+          "Latitude": 52.750637812969515,
+          "Longitude": 27.377716019017388
+        }
+      ],
+      "targetRoad": {
+        "featureId": 4034718,
+        "sourceId": "way/1297728088"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4052,
+      "routerMilliseconds": 2126,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-no_candidate-11",
+      "area": "pukhovichi",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 52.74463516360314,
+          "Longitude": 27.401355946122
+        },
+        {
+          "Latitude": 52.74997543639686,
+          "Longitude": 27.395849253878
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1070703,
+        "sourceId": "way/296643954"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4231,
+      "routerMilliseconds": 2357,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-pukhovichi-control-12",
+      "area": "pukhovichi",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 52.87380394764227,
+          "Longitude": 27.606098987032066
+        },
+        {
+          "Latitude": 52.87552811543675,
+          "Longitude": 27.60694766531846
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2599552,
+        "sourceId": "way/692789964"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2262,
+      "routerMilliseconds": 309,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-pukhovichi-control-13",
+      "area": "pukhovichi",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 52.71034951629479,
+          "Longitude": 27.421434405335404
+        },
+        {
+          "Latitude": 52.70876877680104,
+          "Longitude": 27.42285104535215
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1600648,
+        "sourceId": "way/420561260"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 3,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3273,
+      "routerMilliseconds": 1310,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-smolevichi-bridge-01",
+      "area": "smolevichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 53.98631281210885,
+          "Longitude": 28.093459942114222
+        },
+        {
+          "Latitude": 53.985246587891154,
+          "Longitude": 28.08290965788578
+        }
+      ],
+      "targetRoad": {
+        "featureId": 294614,
+        "sourceId": "way/128552514"
+      },
+      "candidateIds": [
+        1301530
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        294614,
+        1301533
+      ],
+      "wallMilliseconds": 4167,
+      "routerMilliseconds": 2263,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-bridge-02",
+      "area": "smolevichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 54.05682084055751,
+          "Longitude": 28.135609451154608
+        },
+        {
+          "Latitude": 54.062778559442485,
+          "Longitude": 28.132144548845393
+        }
+      ],
+      "targetRoad": {
+        "featureId": 4041493,
+        "sourceId": "way/1300440044"
+      },
+      "candidateIds": [
+        4041506
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3964,
+      "routerMilliseconds": 2068,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-bridge-03",
+      "area": "smolevichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 53.946548853568274,
+          "Longitude": 28.315910956055692
+        },
+        {
+          "Latitude": 53.94643174643173,
+          "Longitude": 28.32660444394431
+        }
+      ],
+      "targetRoad": {
+        "featureId": 292589,
+        "sourceId": "way/126577583"
+      },
+      "candidateIds": [
+        3278111
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3240,
+      "routerMilliseconds": 1344,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-bridge-04",
+      "area": "smolevichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 54.020472481764244,
+          "Longitude": 28.220207536424496
+        },
+        {
+          "Latitude": 54.02194661823575,
+          "Longitude": 28.230625363575502
+        }
+      ],
+      "targetRoad": {
+        "featureId": 121743,
+        "sourceId": "way/43682764"
+      },
+      "candidateIds": [
+        192546
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3908,
+      "routerMilliseconds": 2011,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-bridge-05",
+      "area": "smolevichi",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 54.0030560922491,
+          "Longitude": 28.127452069607152
+        },
+        {
+          "Latitude": 53.9905718077509,
+          "Longitude": 28.13614673039285
+        }
+      ],
+      "targetRoad": {
+        "featureId": 594770,
+        "sourceId": "way/206790526"
+      },
+      "candidateIds": [
+        192544
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3762,
+      "routerMilliseconds": 1892,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-multi-06",
+      "area": "smolevichi",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 54.09130633141374,
+          "Longitude": 28.082501502720696
+        },
+        {
+          "Latitude": 54.092206468586255,
+          "Longitude": 28.067245097279304
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1100577,
+        "sourceId": "way/302721619"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3531,
+      "routerMilliseconds": 1627,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-multi-07",
+      "area": "smolevichi",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 54.03353124878262,
+          "Longitude": 28.096918626478143
+        },
+        {
+          "Latitude": 54.038485951217375,
+          "Longitude": 28.103531273521856
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3692805,
+        "sourceId": "way/1132036513"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4528,
+      "routerMilliseconds": 2551,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-multi-08",
+      "area": "smolevichi",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 54.02081376620402,
+          "Longitude": 28.05446770166749
+        },
+        {
+          "Latitude": 54.004941833795975,
+          "Longitude": 28.06886739833251
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2954308,
+        "sourceId": "way/827830581"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3805,
+      "routerMilliseconds": 1865,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-no_candidate-09",
+      "area": "smolevichi",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 53.984352542425874,
+          "Longitude": 28.103534655399553
+        },
+        {
+          "Latitude": 53.98280275757413,
+          "Longitude": 28.11391094460045
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3099165,
+        "sourceId": "way/870887884"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 3,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        101974,
+        192541,
+        2683950,
+        2683953,
+        2683955
+      ],
+      "wallMilliseconds": 4227,
+      "routerMilliseconds": 2312,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-no_candidate-10",
+      "area": "smolevichi",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 53.90522345601741,
+          "Longitude": 28.273032522008332
+        },
+        {
+          "Latitude": 53.90859644398259,
+          "Longitude": 28.26400957799167
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3469633,
+        "sourceId": "way/1011056722"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3376,
+      "routerMilliseconds": 1384,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-no_candidate-11",
+      "area": "smolevichi",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 53.96722985371437,
+          "Longitude": 28.021635576043995
+        },
+        {
+          "Latitude": 53.96157994628563,
+          "Longitude": 28.026355123956005
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2683966,
+        "sourceId": "way/723343782"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3464,
+      "routerMilliseconds": 1510,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-smolevichi-control-12",
+      "area": "smolevichi",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 53.93378725698048,
+          "Longitude": 28.368456609660317
+        },
+        {
+          "Latitude": 53.93430405963358,
+          "Longitude": 28.371383267833963
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1487220,
+        "sourceId": "way/391378186"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2211,
+      "routerMilliseconds": 222,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-smolevichi-control-13",
+      "area": "smolevichi",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 54.03158508668602,
+          "Longitude": 28.10342870236145
+        },
+        {
+          "Latitude": 54.0326160711549,
+          "Longitude": 28.100919559437546
+        }
+      ],
+      "targetRoad": {
+        "featureId": 517797,
+        "sourceId": "way/201576403"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3594,
+      "routerMilliseconds": 1630,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-brest-bridge-01",
+      "area": "brest",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.080982435253034,
+          "Longitude": 23.69800203595697
+        },
+        {
+          "Latitude": 52.08236696474697,
+          "Longitude": 23.71246186404303
+        }
+      ],
+      "targetRoad": {
+        "featureId": 233567,
+        "sourceId": "way/100016850"
+      },
+      "candidateIds": [
+        75768
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4307,
+      "routerMilliseconds": 2402,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-bridge-02",
+      "area": "brest",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.132540818851815,
+          "Longitude": 23.805020969844556
+        },
+        {
+          "Latitude": 52.12690148114819,
+          "Longitude": 23.809578830155445
+        }
+      ],
+      "targetRoad": {
+        "featureId": 4013700,
+        "sourceId": "way/1281269531"
+      },
+      "candidateIds": [
+        240196
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 3,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        4013700
+      ],
+      "wallMilliseconds": 3880,
+      "routerMilliseconds": 1923,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-bridge-03",
+      "area": "brest",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.03227068658924,
+          "Longitude": 24.02837350301165
+        },
+        {
+          "Latitude": 52.02841621341076,
+          "Longitude": 24.03646329698835
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2557481,
+        "sourceId": "way/680888645"
+      },
+      "candidateIds": [
+        2557463
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3829,
+      "routerMilliseconds": 1941,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-bridge-04",
+      "area": "brest",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.23250392259543,
+          "Longitude": 23.995539282124334
+        },
+        {
+          "Latitude": 52.231698877404575,
+          "Longitude": 24.00573381787567
+        }
+      ],
+      "targetRoad": {
+        "featureId": 291975,
+        "sourceId": "way/125857388"
+      },
+      "candidateIds": [
+        293439
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        291975
+      ],
+      "wallMilliseconds": 3868,
+      "routerMilliseconds": 1889,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-bridge-05",
+      "area": "brest",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.08022386961713,
+          "Longitude": 23.847322446010633
+        },
+        {
+          "Latitude": 52.080407230382875,
+          "Longitude": 23.86195345398937
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3792156,
+        "sourceId": "way/1178722392"
+      },
+      "candidateIds": [
+        3792155
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 5005,
+      "routerMilliseconds": 3062,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-multi-06",
+      "area": "brest",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 52.11963347591554,
+          "Longitude": 23.88977067245049
+        },
+        {
+          "Latitude": 52.117269424084455,
+          "Longitude": 23.89927262754951
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3640794,
+        "sourceId": "way/1102446002"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3679,
+      "routerMilliseconds": 1798,
+      "sourceDirty": false,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-multi-07",
+      "area": "brest",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 51.999177393999894,
+          "Longitude": 23.813333135045525
+        },
+        {
+          "Latitude": 51.997944206000106,
+          "Longitude": 23.803306464954474
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2668129,
+        "sourceId": "way/713410346"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2817,
+      "routerMilliseconds": 919,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-multi-08",
+      "area": "brest",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 52.0517412086061,
+          "Longitude": 23.874666638527355
+        },
+        {
+          "Latitude": 52.0625599913939,
+          "Longitude": 23.861562061472647
+        }
+      ],
+      "targetRoad": {
+        "featureId": 4492189,
+        "sourceId": "way/1509597657"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2934,
+      "routerMilliseconds": 1038,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-no_candidate-09",
+      "area": "brest",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 52.17274944197218,
+          "Longitude": 24.026390397702645
+        },
+        {
+          "Latitude": 52.166503258027824,
+          "Longitude": 24.027669302297355
+        }
+      ],
+      "targetRoad": {
+        "featureId": 4460077,
+        "sourceId": "way/1496704658"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3950,
+      "routerMilliseconds": 2008,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-no_candidate-10",
+      "area": "brest",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 52.02997517042099,
+          "Longitude": 23.824317974239925
+        },
+        {
+          "Latitude": 52.023893029579014,
+          "Longitude": 23.835084625760075
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2793905,
+        "sourceId": "way/766093027"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 6026,
+      "routerMilliseconds": 4120,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-no_candidate-11",
+      "area": "brest",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 52.031521765656905,
+          "Longitude": 23.71605073043065
+        },
+        {
+          "Latitude": 52.025693234343095,
+          "Longitude": 23.712184569569352
+        }
+      ],
+      "targetRoad": {
+        "featureId": 214154,
+        "sourceId": "way/90675020"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3531,
+      "routerMilliseconds": 1535,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-brest-control-12",
+      "area": "brest",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 52.251677406059635,
+          "Longitude": 23.95373308779473
+        },
+        {
+          "Latitude": 52.2500212807115,
+          "Longitude": 23.954879312845357
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3978495,
+        "sourceId": "way/1266035825"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2929,
+      "routerMilliseconds": 940,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-brest-control-13",
+      "area": "brest",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 52.33378899940223,
+          "Longitude": 23.814367303305392
+        },
+        {
+          "Latitude": 52.33558692961442,
+          "Longitude": 23.81428457487894
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3587369,
+        "sourceId": "way/1075173437"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2475,
+      "routerMilliseconds": 563,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-gomel-bridge-01",
+      "area": "gomel",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.2055965456034,
+          "Longitude": 30.995254314862727
+        },
+        {
+          "Latitude": 52.1995129543966,
+          "Longitude": 30.997895385137273
+        }
+      ],
+      "targetRoad": {
+        "featureId": 261530,
+        "sourceId": "way/106135970"
+      },
+      "candidateIds": [
+        3449357
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4887,
+      "routerMilliseconds": 2941,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-bridge-02",
+      "area": "gomel",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.24356063260201,
+          "Longitude": 30.802217906788496
+        },
+        {
+          "Latitude": 52.26143636739799,
+          "Longitude": 30.805472293211505
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1255258,
+        "sourceId": "way/341438124"
+      },
+      "candidateIds": [
+        1251309
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        1251308,
+        1255258,
+        1692459
+      ],
+      "wallMilliseconds": 3745,
+      "routerMilliseconds": 1733,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-bridge-03",
+      "area": "gomel",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.37898288153478,
+          "Longitude": 30.877381448331676
+        },
+        {
+          "Latitude": 52.37309581846522,
+          "Longitude": 30.881034051668323
+        }
+      ],
+      "targetRoad": {
+        "featureId": 807428,
+        "sourceId": "way/246421046"
+      },
+      "candidateIds": [
+        807427
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4117,
+      "routerMilliseconds": 2172,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-bridge-04",
+      "area": "gomel",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.440977132234245,
+          "Longitude": 30.80742541692688
+        },
+        {
+          "Latitude": 52.441606867765756,
+          "Longitude": 30.81770028307312
+        }
+      ],
+      "targetRoad": {
+        "featureId": 225987,
+        "sourceId": "way/97540566"
+      },
+      "candidateIds": [
+        1396375
+      ],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 3,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        1396376
+      ],
+      "wallMilliseconds": 3882,
+      "routerMilliseconds": 1851,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-bridge-05",
+      "area": "gomel",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 52.46240071621832,
+          "Longitude": 31.015568878094204
+        },
+        {
+          "Latitude": 52.46509178378168,
+          "Longitude": 31.029654021905795
+        }
+      ],
+      "targetRoad": {
+        "featureId": 415070,
+        "sourceId": "way/168981649"
+      },
+      "candidateIds": [
+        415071
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4390,
+      "routerMilliseconds": 2491,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-multi-06",
+      "area": "gomel",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 52.26158696257527,
+          "Longitude": 30.708763931537963
+        },
+        {
+          "Latitude": 52.27581033742472,
+          "Longitude": 30.72675436846204
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1358898,
+        "sourceId": "way/366799775"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2957,
+      "routerMilliseconds": 1011,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-multi-07",
+      "area": "gomel",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 52.4455288,
+          "Longitude": 30.820464620942214
+        },
+        {
+          "Latitude": 52.4455288,
+          "Longitude": 30.849973979057783
+        }
+      ],
+      "targetRoad": {
+        "featureId": 4541759,
+        "sourceId": "way/1534258815"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3533,
+      "routerMilliseconds": 1665,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-multi-08",
+      "area": "gomel",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 52.22177027133354,
+          "Longitude": 31.101143589649805
+        },
+        {
+          "Latitude": 52.22041282866646,
+          "Longitude": 31.086632010350193
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2874186,
+        "sourceId": "way/791814150"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4022,
+      "routerMilliseconds": 2048,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-no_candidate-09",
+      "area": "gomel",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 52.4145444025462,
+          "Longitude": 31.119105105747085
+        },
+        {
+          "Latitude": 52.4260584974538,
+          "Longitude": 31.141763494252913
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1062972,
+        "sourceId": "way/294791461"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3223,
+      "routerMilliseconds": 1330,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-no_candidate-10",
+      "area": "gomel",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 52.29877899364521,
+          "Longitude": 30.77412638540014
+        },
+        {
+          "Latitude": 52.28723630635479,
+          "Longitude": 30.78554121459986
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3559619,
+        "sourceId": "way/1058942540"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3808,
+      "routerMilliseconds": 1898,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-no_candidate-11",
+      "area": "gomel",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 52.40749465649331,
+          "Longitude": 30.85621437590483
+        },
+        {
+          "Latitude": 52.39045254350669,
+          "Longitude": 30.84678852409517
+        }
+      ],
+      "targetRoad": {
+        "featureId": 3550609,
+        "sourceId": "way/1053639035"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4133,
+      "routerMilliseconds": 2204,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-gomel-control-12",
+      "area": "gomel",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 52.211630347225125,
+          "Longitude": 31.090278727181605
+        },
+        {
+          "Latitude": 52.209906946114074,
+          "Longitude": 31.089438639441877
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2072057,
+        "sourceId": "way/542305062"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 3,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2845,
+      "routerMilliseconds": 951,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-gomel-control-13",
+      "area": "gomel",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 52.25402952634082,
+          "Longitude": 31.119416835162692
+        },
+        {
+          "Latitude": 52.253288117636465,
+          "Longitude": 31.122094283593356
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1605091,
+        "sourceId": "way/421886409"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2395,
+      "routerMilliseconds": 475,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-vitebsk-bridge-01",
+      "area": "vitebsk",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 55.09367601005522,
+          "Longitude": 30.255640895711085
+        },
+        {
+          "Latitude": 55.11134848994478,
+          "Longitude": 30.261489204288917
+        }
+      ],
+      "targetRoad": {
+        "featureId": 405694,
+        "sourceId": "way/166091471"
+      },
+      "candidateIds": [
+        405696
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 5286,
+      "routerMilliseconds": 3285,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-bridge-02",
+      "area": "vitebsk",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 55.08464513642466,
+          "Longitude": 30.2373944031019
+        },
+        {
+          "Latitude": 55.089675063575335,
+          "Longitude": 30.2243670968981
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1370785,
+        "sourceId": "way/369187801"
+      },
+      "candidateIds": [
+        1370786
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3985,
+      "routerMilliseconds": 2091,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-bridge-03",
+      "area": "vitebsk",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 55.06721907024461,
+          "Longitude": 30.327260999018943
+        },
+        {
+          "Latitude": 55.06768722975539,
+          "Longitude": 30.342945200981056
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1272041,
+        "sourceId": "way/345137583"
+      },
+      "candidateIds": [
+        1272039
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4804,
+      "routerMilliseconds": 2919,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-bridge-04",
+      "area": "vitebsk",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 55.18370380456794,
+          "Longitude": 30.087769574713477
+        },
+        {
+          "Latitude": 55.19269699543206,
+          "Longitude": 30.087796125286523
+        }
+      ],
+      "targetRoad": {
+        "featureId": 2307400,
+        "sourceId": "way/620498784"
+      },
+      "candidateIds": [
+        93534
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4637,
+      "routerMilliseconds": 2739,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-bridge-05",
+      "area": "vitebsk",
+      "category": "A",
+      "scenarioType": "bridge",
+      "points": [
+        {
+          "Latitude": 55.255029519184376,
+          "Longitude": 30.141157896465224
+        },
+        {
+          "Latitude": 55.258367680815624,
+          "Longitude": 30.150523303534776
+        }
+      ],
+      "targetRoad": {
+        "featureId": 118796,
+        "sourceId": "way/41991659"
+      },
+      "candidateIds": [
+        1363052
+      ],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4523,
+      "routerMilliseconds": 2532,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-multi-06",
+      "area": "vitebsk",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 55.23807358014127,
+          "Longitude": 30.097944998404106
+        },
+        {
+          "Latitude": 55.239626119858734,
+          "Longitude": 30.129374001595895
+        }
+      ],
+      "targetRoad": {
+        "featureId": 71791,
+        "sourceId": "way/27897296"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3486,
+      "routerMilliseconds": 1552,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-multi-07",
+      "area": "vitebsk",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 55.19302053170194,
+          "Longitude": 30.3310190899443
+        },
+        {
+          "Latitude": 55.19245156829806,
+          "Longitude": 30.3625137100557
+        }
+      ],
+      "targetRoad": {
+        "featureId": 977074,
+        "sourceId": "way/282340477"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3882,
+      "routerMilliseconds": 1996,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-multi-08",
+      "area": "vitebsk",
+      "category": "E",
+      "scenarioType": "multi",
+      "points": [
+        {
+          "Latitude": 55.312446037713904,
+          "Longitude": 30.105519338940752
+        },
+        {
+          "Latitude": 55.320755662286096,
+          "Longitude": 30.13355216105925
+        }
+      ],
+      "targetRoad": {
+        "featureId": 583676,
+        "sourceId": "way/206102243"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 4364,
+      "routerMilliseconds": 2459,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-no_candidate-09",
+      "area": "vitebsk",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 55.189654205481695,
+          "Longitude": 30.139484437922476
+        },
+        {
+          "Latitude": 55.19573119451831,
+          "Longitude": 30.136605662077525
+        }
+      ],
+      "targetRoad": {
+        "featureId": 145513,
+        "sourceId": "way/58423925"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 2,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [
+        "bridge"
+      ],
+      "crossedRoadIds": [
+        783725,
+        2307511
+      ],
+      "wallMilliseconds": 4618,
+      "routerMilliseconds": 2683,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-no_candidate-10",
+      "area": "vitebsk",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 55.17620244681889,
+          "Longitude": 30.318960235237938
+        },
+        {
+          "Latitude": 55.175614553181106,
+          "Longitude": 30.33467516476206
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1247899,
+        "sourceId": "way/339561458"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3258,
+      "routerMilliseconds": 1348,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-no_candidate-11",
+      "area": "vitebsk",
+      "category": "B",
+      "scenarioType": "no_candidate",
+      "points": [
+        {
+          "Latitude": 55.24371516142145,
+          "Longitude": 30.315058124017746
+        },
+        {
+          "Latitude": 55.25115113857855,
+          "Longitude": 30.343788675982257
+        }
+      ],
+      "targetRoad": {
+        "featureId": 1293894,
+        "sourceId": "way/353339836"
+      },
+      "candidateIds": [],
+      "status": "no_route",
+      "typedReason": "NoRouteInSearchArea",
+      "searchFailures": [
+        {
+          "profile": "Короче",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Баланс",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "Проще прокладка",
+          "reason": "NoRouteInSearchArea"
+        }
+      ],
+      "alternativeCount": 0,
+      "auditStatus": "unknown",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3837,
+      "routerMilliseconds": 1950,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "absent",
+      "witnessKind": null
+    },
+    {
+      "id": "mass-vitebsk-control-12",
+      "area": "vitebsk",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 55.125709986183615,
+          "Longitude": 30.229078823547596
+        },
+        {
+          "Latitude": 55.124125323821644,
+          "Longitude": 30.227590880057686
+        }
+      ],
+      "targetRoad": {
+        "featureId": 100899,
+        "sourceId": "way/34159071"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 2949,
+      "routerMilliseconds": 1039,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    },
+    {
+      "id": "mass-vitebsk-control-13",
+      "area": "vitebsk",
+      "category": "F",
+      "scenarioType": "control",
+      "points": [
+        {
+          "Latitude": 55.11136550416813,
+          "Longitude": 29.94998053244129
+        },
+        {
+          "Latitude": 55.11288345838861,
+          "Longitude": 29.951667348909975
+        }
+      ],
+      "targetRoad": {
+        "featureId": 118416,
+        "sourceId": "way/41517094"
+      },
+      "candidateIds": [],
+      "status": "success",
+      "typedReason": null,
+      "searchFailures": [],
+      "alternativeCount": 1,
+      "auditStatus": "valid",
+      "crossingTypesUsed": [],
+      "crossedRoadIds": [],
+      "wallMilliseconds": 3270,
+      "routerMilliseconds": 1348,
+      "sourceDirty": true,
+      "verifyDllSha256": "f466f79ed5b9d9f073896b537af2d9d1ce3adcea6089fee26bb4be65e09bcc58",
+      "peakRssBytes": null,
+      "effectiveCellMetres": null,
+      "witnessStatus": "valid",
+      "witnessKind": "direct"
+    }
+  ]
+}

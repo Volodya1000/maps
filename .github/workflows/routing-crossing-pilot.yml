@@ -35,6 +35,15 @@ jobs:
         run: uv run --project tools/GeodataPreparation --locked python tools/routing_crossing_pilot.py run --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-crossing-pilot
       - name: Run indirect crossing study
         run: uv run --project tools/GeodataPreparation --locked python tools/routing_indirect_study.py --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-indirect-study
+      - name: Generate frozen mass corpus
+        run: uv run --project tools/GeodataPreparation --locked python tools/routing_mass_experiment.py freeze --data artifacts/belarus --output artifacts/routing-mass
+      - name: Run mass baseline
+        run: uv run --project tools/GeodataPreparation --locked python tools/routing_mass_experiment.py run --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-mass
+      - name: Summarize mass baseline and selected failures
+        run: |
+          cp docs/evidence/routing-mass-v1/source-inventory.json artifacts/routing-mass/source-inventory.json
+          uv run --project tools/GeodataPreparation --locked python tools/routing_mass_diagnostics.py --run artifacts/routing-mass --output artifacts/routing-mass/cases mass-naliboki-bridge-01 pukhovichi-01 mass-brest-multi-06
+          uv run --project tools/GeodataPreparation --locked python tools/routing_mass_report.py --run artifacts/routing-mass --inventory artifacts/routing-mass/source-inventory.json --output artifacts/routing-mass
       - name: Publish available results
         if: always()
         uses: actions/upload-artifact@v7
@@ -43,6 +52,7 @@ jobs:
           path: |
             artifacts/routing-crossing-pilot/
             artifacts/routing-indirect-study/
+            artifacts/routing-mass/
           if-no-files-found: warn
       - name: Report harness integrity and pilot acceptance
         if: always()

@@ -1,0 +1,31 @@
+{
+  "id": "pukhovichi-01",
+  "routerStatus": "no_route",
+  "typedReason": "NoRouteInSearchArea",
+  "directAuditStatus": "violation",
+  "directFindingCounts": {
+    "road_contact": 9,
+    "water_without_opening": 1
+  },
+  "forbiddenDirectRoadContacts": 9,
+  "targetRoadDirectContacts": 1,
+  "candidateChecks": [
+    {
+      "featureId": 4605961,
+      "kind": "GasPipelineCrossingCandidate",
+      "sourceId": "gas-road:way/670219564:way/440525556:0",
+      "intersectsTargetRoad": true,
+      "insideRequestedBounds": true,
+      "distanceFromDirectMetres": 0.0
+    }
+  ],
+  "requestedSearchBounds": [
+    27.477978952471265,
+    52.84080505582376,
+    27.518634847528734,
+    52.87358964417624
+  ],
+  "effectiveCellMetres": null,
+  "portalConnectionStatus": "unknown",
+  "independentValidPathStatus": "unknown"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "mass-brest-multi-06",
+  "routerStatus": "no_route",
+  "typedReason": "NoRouteInSearchArea",
+  "directAuditStatus": "violation",
+  "directFindingCounts": {
+    "road_contact": 10,
+    "blocked_terrain": 1
+  },
+  "forbiddenDirectRoadContacts": 10,
+  "targetRoadDirectContacts": 1,
+  "candidateChecks": [],
+  "requestedSearchBounds": [
+    23.875124501712154,
+    52.10827622044721,
+    23.913918798287845,
+    52.12862667955279
+  ],
+  "effectiveCellMetres": null,
+  "portalConnectionStatus": "unknown",
+  "independentValidPathStatus": "unknown"
+}
