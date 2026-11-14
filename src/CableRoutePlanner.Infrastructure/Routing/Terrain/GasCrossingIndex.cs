@@ -10,28 +10,28 @@ internal sealed class GasCrossingIndex
     private const double AlignmentToleranceMetres = 1;
     // A review window around the road axis, not a surveyed carriageway width.
     private const double RoadReviewHalfWidthMetres = 3;
-    private sealed record Candidate(long Id, Geometry Span, IPreparedGeometry Corridor);
+    private sealed record Candidate(long Id, Geometry Span, IPreparedGeometry Corridor, IReadOnlyList<long>? RoadIds);
     private readonly STRtree<Candidate> _index = new();
     public IReadOnlyList<GridPortal> Portals { get; }
     public bool HasCandidates => Portals.Count > 0;
 
-    public GasCrossingIndex(IEnumerable<ProjectedMapFeature> features)
+    public GasCrossingIndex(IEnumerable<ProjectedMapFeature> features, TerrainKind kind = TerrainKind.GasPipelineCrossingCandidate)
     {
         List<GridPortal> portals = [];
-        foreach (ProjectedMapFeature feature in features.Where(feature => feature.Feature.Kind == TerrainKind.GasPipelineCrossingCandidate))
+        foreach (ProjectedMapFeature feature in features.Where(feature => feature.Feature.Kind == kind))
         {
             Geometry span = feature.Geometry;
             if (span is not LineString || span.IsEmpty)
             { continue; }
             Geometry corridor = span.Buffer(AlignmentToleranceMetres);
-            _index.Insert(corridor.EnvelopeInternal, new Candidate(feature.Feature.Id, span, PreparedGeometryFactory.Prepare(corridor)));
+            _index.Insert(corridor.EnvelopeInternal, new Candidate(feature.Feature.Id, span, PreparedGeometryFactory.Prepare(corridor), feature.Feature.UnderpassRoadIds));
             portals.Add(new GridPortal(span.Coordinates));
         }
         _index.Build();
         Portals = portals.AsReadOnly();
     }
 
-    public IReadOnlyList<long> UsedBy(LineString segment, Geometry road, Geometry intersection, Point crossing)
+    public IReadOnlyList<long> UsedBy(LineString segment, Geometry road, Geometry intersection, Point crossing, long? requiredRoadId = null)
     {
         if (!HasCandidates)
         { return []; }
@@ -46,6 +46,8 @@ internal sealed class GasCrossingIndex
         Geometry[] crossingSections = sections.Where(section => section.Covers(crossing)).ToArray();
         foreach (Candidate candidate in candidates)
         {
+            if (requiredRoadId.HasValue && !(candidate.RoadIds?.Contains(requiredRoadId.Value) ?? false))
+            { continue; }
             if (!candidate.Span.Crosses(road))
             { continue; }
             if (crossingSections.Length > 0 && candidate.Corridor.Covers(crossing)

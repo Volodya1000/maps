@@ -20,6 +20,7 @@ from prepare import METRES_PER_DEGREE
 from shapely import from_wkb, make_valid, to_wkb
 from shapely.affinity import scale
 from shapely.geometry import Point
+from underpass import create_staging, import_candidates, is_underpass, stage
 
 
 def main():
@@ -67,6 +68,8 @@ def main():
             name TEXT NOT NULL,lod INTEGER NOT NULL);
         CREATE VIRTUAL TABLE display_index USING rtree(id,minx,maxx,miny,maxy);
     """)
+    if not args.finalize_only:
+        create_staging(connection)
     counts = Counter()
     errors = Counter()
     factory = osmium.geom.WKBFactory()
@@ -92,6 +95,7 @@ def main():
             (row, west, east, south, north),
         )
         counts[kind] += 1
+        stage(connection, kind, geometry, tags, source, row)
         area = geometry.area
         for lod, tolerance in ((0, 0.003), (1, 0.0005), (2, 0.00005)):
             if not include_in_display_lod(kind, tags, area, lod):
@@ -110,6 +114,7 @@ def main():
         if sum(counts.values()) % 10000 == 0:
             connection.commit()
             print(json.dumps(dict(counts)), flush=True)
+        return row
 
     class Handler(osmium.SimpleHandler):
         def node(self, node):
@@ -128,6 +133,9 @@ def main():
         def way(self, way):
             tags = dict(way.tags)
             kind = classify(tags)
+            if is_underpass(tags):
+                geometry = from_wkb(bytes.fromhex(factory.create_linestring(way)))
+                stage(connection, None, geometry, tags, f"way/{way.id}")
             # Areas are handled by osmium's multipolygon assembler, including closed ways and holes.
             if kind not in (
                 "Road",
@@ -200,6 +208,7 @@ def main():
     if not args.finalize_only:
         Handler().apply_file(str(args.pbf), locations=True, idx="flex_mem")
         if not args.audit_only:
+            import_candidates(connection, add)
             for geometry, source in pipeline_road_candidates(connection):
                 add(
                     "GasPipelineCrossingCandidate",
@@ -216,7 +225,8 @@ def main():
             source_counts = {
                 kind: count
                 for kind, count in counts.items()
-                if kind != "GasPipelineCrossingCandidate"
+                if kind
+                not in ("GasPipelineCrossingCandidate", "PedestrianUnderpassCandidate")
             }
             if source_counts != audited["feature_counts"]:
                 raise ValueError("Independent audit feature counts differ")
@@ -247,7 +257,7 @@ def main():
             for block in iter(lambda: stream.read(1024 * 1024), b""):
                 h.update(block)
     manifest = dict(
-        schema_version=2,
+        schema_version=3,
         region_id="belarus",
         coordinate_system="EPSG:4326",
         bounds=bounds,

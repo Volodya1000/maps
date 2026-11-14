@@ -16,18 +16,20 @@ internal sealed class TerrainEvaluator
     private readonly GeometryFactory _factory = new();
     private readonly TerrainRules _rules;
     private readonly bool _preferGas;
+    private readonly bool _allowUnderpasses;
     public PreparedTerrainData Terrain { get; }
 
-    public TerrainEvaluator(PreparedTerrainData terrain, TerrainRules? rules = null, bool preferGas = false)
+    public TerrainEvaluator(PreparedTerrainData terrain, TerrainRules? rules = null, bool preferGas = false, bool allowUnderpasses = false)
     {
         Terrain = terrain;
         _rules = rules ?? new TerrainRules();
         _preferGas = preferGas;
+        _allowUnderpasses = allowUnderpasses;
     }
 
     public TerrainEvaluator(IReadOnlyList<MapFeature> features, LocalProjection projection,
-        TerrainRules? rules = null, bool preferGas = false, Geometry? coverage = null, Envelope? fullyCoveredArea = null)
-        : this(new PreparedTerrainData(features, projection, coverage, fullyCoveredArea), rules, preferGas) { }
+        TerrainRules? rules = null, bool preferGas = false, Geometry? coverage = null, Envelope? fullyCoveredArea = null, bool allowUnderpasses = false)
+        : this(new PreparedTerrainData(features, projection, coverage, fullyCoveredArea), rules, preferGas, allowUnderpasses) { }
 
     /// <summary>Returns complete segment facts with geodesic length, or null when coverage or policy forbids it.</summary>
     public EdgeEvaluation? Evaluate(Coordinate a, Coordinate b)
@@ -83,8 +85,10 @@ internal sealed class TerrainEvaluator
                         .Select(candidate => candidate.Id)
                         .ToArray();
                     IReadOnlyList<long> gasCandidateIds = Terrain.GasCrossings.UsedBy(line, geometry, intersection, crossing);
+                    bool underpass = _allowUnderpasses && Terrain.UnderpassCrossings.UsedBy(line, geometry, intersection, crossing, obstacle.Id).Count > 0;
                     if (!TerrainTraversalPolicy.AllowsRoadCrossing(
-                        bridgeCandidates.Length > 0, gasCandidateIds.Count > 0))
+                        bridgeCandidates.Length > 0, gasCandidateIds.Count > 0)
+                        && !TerrainTraversalPolicy.AllowsPedestrianUnderpass(_allowUnderpasses, underpass))
                     {
                         return null;
                     }

@@ -1,0 +1,22 @@
+{
+  "id": "way-24422904-10",
+  "points": [
+    {
+      "Longitude": 27.452780586088508,
+      "Latitude": 53.89414631025989
+    },
+    {
+      "Longitude": 27.452098513911494,
+      "Latitude": 53.89417268974011
+    }
+  ],
+  "routingOptions": {
+    "CellSizeMetres": 25,
+    "MaxNodes": 100000,
+    "ReserveFraction": 0.1,
+    "PreferOverheadGasCrossings": true,
+    "MaxRouteLengthMetres": 1000000,
+    "AllowExperimentalPedestrianUnderpasses": false
+  },
+  "databaseSha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493"
+}

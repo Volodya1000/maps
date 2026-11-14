@@ -1,0 +1,198 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.4524214,
+            53.8941477
+          ],
+          [
+            27.4525742,
+            53.894148
+          ],
+          [
+            27.4526847,
+            53.8941483
+          ],
+          [
+            27.453267,
+            53.8941364
+          ],
+          [
+            27.4533372,
+            53.8941344
+          ],
+          [
+            27.453608,
+            53.894244
+          ],
+          [
+            27.4539769,
+            53.8942292
+          ],
+          [
+            27.4546812,
+            53.8942079
+          ],
+          [
+            27.4552767,
+            53.8941643
+          ],
+          [
+            27.4556153,
+            53.8941386
+          ],
+          [
+            27.4556308,
+            53.8940582
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "Road",
+        "featureId": 193126,
+        "target": false,
+        "sourceId": "way/80427934"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.452464,
+            53.8944429
+          ],
+          [
+            27.4524214,
+            53.8941477
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "Road",
+        "featureId": 2868696,
+        "target": false,
+        "sourceId": "way/789027454"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.4524214,
+            53.8941477
+          ],
+          [
+            27.4523889,
+            53.893868
+          ],
+          [
+            27.4523815,
+            53.8937873
+          ],
+          [
+            27.4523768,
+            53.8936902
+          ],
+          [
+            27.4523756,
+            53.8936066
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "Road",
+        "featureId": 2868697,
+        "target": false
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.4526283,
+            53.8941522
+          ],
+          [
+            27.4522508,
+            53.8941668
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "PedestrianUnderpassCandidate",
+        "featureId": 4606095,
+        "target": true,
+        "sourceId": "way/24422904",
+        "underpassRoadIds": [
+          2868696
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.4526211,
+            53.8941037
+          ],
+          [
+            27.4526283,
+            53.8941522
+          ],
+          [
+            27.4526334,
+            53.8941973
+          ]
+        ]
+      },
+      "properties": {
+        "kind": "PedestrianUnderpassCandidate",
+        "featureId": 4606360,
+        "target": true,
+        "sourceId": "way/80427924",
+        "underpassRoadIds": [
+          193126
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          27.452780586088508,
+          53.89414631025989
+        ]
+      },
+      "properties": {
+        "role": "A"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          27.452098513911494,
+          53.89417268974011
+        ]
+      },
+      "properties": {
+        "role": "B"
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.452780586088508,
+            53.89414631025989
+          ],
+          [
+            27.4526211,
+            53.8941037
+          ],
+          [
+            27.4526334,
+            53.8941973
+          ],
+          [
+            27.452861582674203,
+            53.89414631025989
+          ],
+          [
+            27.452098513911494,
+            53.89417268974011
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Короче",
+        "metrics": {
+          "LengthMetres": 87.98979800698496,
+          "ForestMetres": 0,
+          "FieldMetres": 0,
+          "RoadCrossings": 2,
+          "ApprovedWaterCrossings": 0,
+          "PotentialBridgeCrossings": 0,
+          "WeightedCost": 87.98979800698496,
+          "AscentMetres": null,
+          "PotentialGasPipelineCrossings": 0
+        }
+      }
+    }
+  ]
+}

@@ -14,5 +14,6 @@ public enum TerrainKind
     ApprovedCrossing,
     Settlement,
     OverheadGasPipeline,
-    GasPipelineCrossingCandidate
+    GasPipelineCrossingCandidate,
+    PedestrianUnderpassCandidate
 }

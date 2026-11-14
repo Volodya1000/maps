@@ -33,7 +33,7 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         using JsonDocument json = JsonDocument.Parse(File.ReadAllText(manifestPath));
         JsonElement root = json.RootElement;
         _schemaVersion = root.GetProperty("schema_version").GetInt32();
-        if (_schemaVersion is not (1 or 2) || root.GetProperty("coordinate_system").GetString() != "EPSG:4326")
+        if (_schemaVersion is not (1 or 2 or 3) || root.GetProperty("coordinate_system").GetString() != "EPSG:4326")
         {
             throw new PlanningException("Версия или система координат офлайн-пакета не поддерживается.");
         }
@@ -112,6 +112,23 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
     {
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
+        Dictionary<long, List<long>> underpassRoads = [];
+        if (_schemaVersion >= 3 && !lod.HasValue)
+        {
+            using SqliteCommand links = connection.CreateCommand();
+            links.CommandText = "SELECT candidate_id,road_id FROM underpass_roads ORDER BY candidate_id,road_id";
+            using SqliteDataReader linkReader = links.ExecuteReader();
+            while (linkReader.Read())
+            {
+                long candidateId = linkReader.GetInt64(0);
+                if (!underpassRoads.TryGetValue(candidateId, out List<long>? roads))
+                {
+                    roads = [];
+                    underpassRoads.Add(candidateId, roads);
+                }
+                roads.Add(linkReader.GetInt64(1));
+            }
+        }
         using SqliteCommand command = connection.CreateCommand();
         // The raster basemap queries one tile at its prepared detail level.
         // An ID-ordered LIMIT permanently caches incomplete tiles, dropping roads
@@ -153,7 +170,8 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
                     kind,
                     (byte[])reader[2],
                     reader.GetString(3),
-                    reader.IsDBNull(4) ? null : reader.GetString(4)));
+                    reader.IsDBNull(4) ? null : reader.GetString(4),
+                    underpassRoads.TryGetValue(reader.GetInt64(0), out List<long>? linkedRoads) ? linkedRoads.AsReadOnly() : null));
         }
 
         return result;
