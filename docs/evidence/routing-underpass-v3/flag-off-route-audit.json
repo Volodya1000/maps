@@ -1,0 +1,29 @@
+{
+  "status": "violation",
+  "findings": [
+    {
+      "reason": "road_contact",
+      "roadId": 193126,
+      "coordinate": [
+        -10.067627847041729,
+        0.20381239999689033
+      ],
+      "bridgeIds": [],
+      "gasIds": [],
+      "underpassIds": [],
+      "allowed": false
+    },
+    {
+      "reason": "road_contact",
+      "roadId": 2868696,
+      "coordinate": [
+        -23.405536574634638,
+        1.684448274286118
+      ],
+      "bridgeIds": [],
+      "gasIds": [],
+      "underpassIds": [],
+      "allowed": false
+    }
+  ]
+}

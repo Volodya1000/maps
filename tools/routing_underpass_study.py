@@ -351,7 +351,10 @@ def reaudit(args):
                 existing=True,
             )
             record.update(off=summary(off), on=summary(on))
-            if record.get("candidateId") == report["confirmed"]["candidateId"]:
+            if (
+                record.get("candidateId") == report["confirmed"]["candidateId"]
+                and scenario["id"] == report["confirmed"]["scenario"]["id"]
+            ):
                 if not confirmed(off, on, record["candidateId"]):
                     raise RuntimeError("Saved real case failed the strengthened audit")
                 report["confirmed"] = record
