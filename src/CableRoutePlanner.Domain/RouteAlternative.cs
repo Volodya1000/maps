@@ -7,4 +7,5 @@ public sealed record RouteAlternative(
     RouteMetrics Metrics,
     IReadOnlyList<GeoCoordinate>? TransitionPoints = null,
     IReadOnlyList<RouteRoadContact>? RoadContacts = null,
-    IReadOnlyList<long>? GasPipelineCandidateIds = null);
+    IReadOnlyList<long>? GasPipelineCandidateIds = null,
+    IReadOnlyList<long>? UnderpassCandidateIds = null);

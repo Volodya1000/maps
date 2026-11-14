@@ -49,6 +49,7 @@ internal sealed class TerrainEvaluator
         }
         var contribution = new TerrainContribution();
         SortedSet<long>? gasCandidates = null;
+        SortedSet<long>? underpassCandidates = null;
         HashSet<long>? gasRoads = null;
         foreach (TerrainObstacle obstacle in Terrain.Index.Query(line.EnvelopeInternal))
         {
@@ -85,9 +86,13 @@ internal sealed class TerrainEvaluator
                         .Select(candidate => candidate.Id)
                         .ToArray();
                     IReadOnlyList<long> gasCandidateIds = Terrain.GasCrossings.UsedBy(line, geometry, intersection, crossing);
-                    bool underpass = _allowUnderpasses && Terrain.UnderpassCrossings.UsedBy(line, geometry, intersection, crossing, obstacle.Id).Count > 0;
-                    if (!TerrainTraversalPolicy.AllowsRoadCrossing(
-                        bridgeCandidates.Length > 0, gasCandidateIds.Count > 0)
+                    IReadOnlyList<long> underpassCandidateIds = _allowUnderpasses
+                        ? Terrain.UnderpassCrossings.UsedBy(line, geometry, intersection, crossing, obstacle.Id)
+                        : [];
+                    bool underpass = underpassCandidateIds.Count > 0;
+                    bool permittedByExistingRoadCrossing = TerrainTraversalPolicy.AllowsRoadCrossing(
+                        bridgeCandidates.Length > 0, gasCandidateIds.Count > 0);
+                    if (!permittedByExistingRoadCrossing
                         && !TerrainTraversalPolicy.AllowsPedestrianUnderpass(_allowUnderpasses, underpass))
                     {
                         return null;
@@ -100,6 +105,11 @@ internal sealed class TerrainEvaluator
                         gasRoads ??= [];
                         gasCandidates.UnionWith(gasCandidateIds);
                         gasRoads.Add(obstacle.Id);
+                    }
+                    if (underpassCandidateIds.Count > 0 && !permittedByExistingRoadCrossing)
+                    {
+                        underpassCandidates ??= [];
+                        underpassCandidates.UnionWith(underpassCandidateIds);
                     }
                 }
             }
@@ -125,6 +135,7 @@ internal sealed class TerrainEvaluator
             contribution.Crossings.ToArray(),
             contribution.BridgeCandidates.ToArray(),
             gasCandidates?.ToArray() ?? [],
+            underpassCandidates?.ToArray() ?? [],
             gasRoads?.Count ?? 0,
             _preferGas);
     }

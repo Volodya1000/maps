@@ -18,6 +18,7 @@ internal static class MapsuiStyleFactory
         TerrainKind.BridgeCandidate or TerrainKind.ApprovedCrossing => 5,
         TerrainKind.Settlement => 6,
         TerrainKind.GasPipelineCrossingCandidate => 7,
+        TerrainKind.PedestrianUnderpassCandidate => 8,
         _ => 3
     };
 
@@ -30,6 +31,22 @@ internal static class MapsuiStyleFactory
                 new VectorStyle { Line = new Pen(new Color(0, 143, 157), 4) },
                 new LabelStyle { Text = "ГАЗ", ForeColor = Color.White,
                     BackColor = new Brush(new Color(0, 112, 126)), CollisionDetection = true }
+            ];
+        }
+        if (kind == TerrainKind.PedestrianUnderpassCandidate)
+        {
+            return
+            [
+                new VectorStyle { Line = new Pen(Color.White, 6), MaxVisible = 10 },
+                new VectorStyle
+                {
+                    Line = new Pen(new Color(112, 74, 161), 3)
+                    {
+                        PenStyle = PenStyle.ShortDash,
+                        PenStrokeCap = PenStrokeCap.Round
+                    },
+                    MaxVisible = 10
+                },
             ];
         }
         Color color = kind switch

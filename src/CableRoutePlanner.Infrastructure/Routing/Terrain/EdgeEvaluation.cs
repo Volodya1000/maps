@@ -12,6 +12,7 @@ internal sealed record EdgeEvaluation(
     IReadOnlyList<long> Crossings,
     IReadOnlyList<long> BridgeCandidates,
     IReadOnlyList<long> GasCandidates,
+    IReadOnlyList<long> UnderpassCandidates,
     int GasRoadCrossings,
     bool PreferGas)
 {

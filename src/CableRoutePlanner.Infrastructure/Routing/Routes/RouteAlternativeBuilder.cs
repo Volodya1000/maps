@@ -39,6 +39,7 @@ internal sealed class RouteAlternativeBuilder(
         var crossings = new HashSet<long>();
         var bridgeCandidates = new HashSet<long>();
         HashSet<long> gasCandidates = [];
+        HashSet<long> underpassCandidates = [];
         for (int i = 1; i < route.Count; i++)
         {
             EdgeEvaluation edge = evaluator.Evaluate(route[i - 1], route[i])
@@ -51,6 +52,7 @@ internal sealed class RouteAlternativeBuilder(
             crossings.UnionWith(edge.Crossings);
             bridgeCandidates.UnionWith(edge.BridgeCandidates);
             gasCandidates.UnionWith(edge.GasCandidates);
+            underpassCandidates.UnionWith(edge.UnderpassCandidates);
         }
 
         if (length > options.MaxRouteLengthMetres)
@@ -70,6 +72,7 @@ internal sealed class RouteAlternativeBuilder(
         // even when their lines occupy almost the same map corridor.
         if (result.Any(existing => (existing.GasPipelineCandidateIds ?? [])
             .SequenceEqual(gasCandidates.Order())
+            && (existing.UnderpassCandidateIds ?? []).SequenceEqual(underpassCandidates.Order())
             && Similar(existing.Geometry, route, projection, options.CellSizeMetres)))
         {
             return null;
@@ -93,7 +96,8 @@ internal sealed class RouteAlternativeBuilder(
                 Array.AsReadOnly(postProcessor.BridgeTransitionPoints(route)
                     .Select(projection.Inverse).ToArray()),
                 terrain.RoadContacts.Analyze(route, ct),
-                Array.AsReadOnly(gasCandidates.Order().ToArray())));
+                Array.AsReadOnly(gasCandidates.Order().ToArray()),
+                Array.AsReadOnly(underpassCandidates.Order().ToArray())));
         return null;
     }
 

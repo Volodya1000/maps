@@ -284,10 +284,11 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         previous.Dispose();
         CancellationToken cancellationToken = current.Token;
         MapFeature[] snapshot = features.ToArray();
+        double metresPerPixel = _control.Map.Navigator.Viewport.Resolution;
         try
         {
             IFeature[] prepared = await Task.Run(
-                () => PrepareFeatures(snapshot, cancellationToken), cancellationToken);
+                () => PrepareFeatures(snapshot, cancellationToken, metresPerPixel), cancellationToken);
             void Publish()
             {
                 if (_disposed || cancellationToken.IsCancellationRequested)
@@ -323,10 +324,15 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         var reader = new WKBReader();
         var transform = new MercatorTransformer();
         var terrainStyles = new Dictionary<TerrainKind, IReadOnlyList<IStyle>>();
-        return features.Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline).OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind)).Select(f =>
+        return features
+            .Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline
+                && (feature.Kind != TerrainKind.PedestrianUnderpassCandidate || metresPerPixel <= 10))
+            .OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind))
+            .SelectMany(f =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var feature = new GeometryFeature(transform.Transform(reader.Read(f.Wkb)));
+            NetTopologySuite.Geometries.Geometry geometry = transform.Transform(reader.Read(f.Wkb));
+            var feature = new GeometryFeature(geometry);
             if (f.Kind == TerrainKind.Settlement)
             {
                 feature.Styles.Add(
@@ -351,7 +357,29 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 }
             }
 
-            return (IFeature)feature;
+            if (f.Kind != TerrainKind.PedestrianUnderpassCandidate || metresPerPixel > 5)
+            {
+                return new IFeature[] { feature };
+            }
+
+            var marker = new GeometryFeature(geometry.Centroid);
+            marker.Styles.Add(new SymbolStyle
+            {
+                SymbolType = SymbolType.Triangle,
+                Fill = new Brush(new Color(112, 74, 161)),
+                Outline = new Pen(Color.White, 1.5),
+                SymbolScale = 0.75,
+                MaxVisible = 5
+            });
+            marker.Styles.Add(new LabelStyle
+            {
+                Text = "Подземный переход",
+                ForeColor = Color.White,
+                BackColor = new Brush(new Color(88, 55, 129)),
+                CollisionDetection = true,
+                MaxVisible = 2
+            });
+            return new IFeature[] { feature, marker };
         }).ToArray();
     }
 

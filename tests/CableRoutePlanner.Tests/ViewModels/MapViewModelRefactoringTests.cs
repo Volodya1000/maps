@@ -262,6 +262,22 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         Assert.Contains("Переходов по мостам: 0", result);
         Assert.DoesNotContain("Высотные характеристики", result);
         Assert.DoesNotContain("Требуются обследование и согласование.", result);
+        Assert.DoesNotContain("Подземный переход.", result);
+    }
+
+    [Fact]
+    public void RouteMetricsFormattingWarnsWhenRouteUsesPedestrianUnderpass()
+    {
+        var route = new RouteAlternative(
+            Guid.NewGuid(),
+            "test",
+            [],
+            new RouteMetrics(100, 0, 0, 1, 0, 0, 100, null),
+            UnderpassCandidateIds: [24422904]);
+
+        string result = RouteMetricsFormatter.Format(route, new RoutingOptions());
+
+        Assert.Contains("Подземный переход. Прокладка кабеля требует инженерной проверки", result);
     }
 
     private static MapViewModel CreateVm(IGeodataRepository data) => TestData.CreateMapViewModel(

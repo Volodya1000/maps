@@ -89,6 +89,38 @@ public sealed class UiTests
     }
 
     [AvaloniaFact]
+    public void PedestrianUnderpassWay24422904IsHiddenAtOverviewAndMarkedAtDetail()
+    {
+        NetTopologySuite.Geometries.GeometryFactory factory = new();
+        MapFeature underpass = new(
+            24422904,
+            TerrainKind.PedestrianUnderpassCandidate,
+            new NetTopologySuite.IO.WKBWriter().Write(factory.CreateLineString(
+            [
+                new NetTopologySuite.Geometries.Coordinate(27.4526283, 53.8941522),
+                new NetTopologySuite.Geometries.Coordinate(27.4522508, 53.8941668)
+            ])),
+            "way/24422904");
+
+        IReadOnlyList<Mapsui.IFeature> overview = CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter
+            .PrepareFeatures([underpass], CancellationToken.None, metresPerPixel: 50);
+        IReadOnlyList<Mapsui.IFeature> detail = CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter
+            .PrepareFeatures([underpass], CancellationToken.None, metresPerPixel: 1);
+
+        Assert.Empty(overview);
+        Mapsui.Nts.GeometryFeature line = Assert.IsType<Mapsui.Nts.GeometryFeature>(detail[0]);
+        Mapsui.Styles.VectorStyle[] strokes = line.Styles.OfType<Mapsui.Styles.VectorStyle>().ToArray();
+        Assert.Equal(2, strokes.Length);
+        Assert.Equal(Mapsui.Styles.PenStyle.ShortDash, strokes[1].Line!.PenStyle);
+        Assert.All(strokes, stroke => Assert.Equal(10, stroke.MaxVisible));
+        Mapsui.Nts.GeometryFeature marker = Assert.IsType<Mapsui.Nts.GeometryFeature>(
+            Assert.Single(detail, feature => feature.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any()));
+        Mapsui.Styles.LabelStyle label = Assert.Single(marker.Styles.OfType<Mapsui.Styles.LabelStyle>());
+        Assert.Equal("Подземный переход", label.GetLabelText(marker));
+        Assert.Equal(2, label.MaxVisible);
+    }
+
+    [AvaloniaFact]
     public async Task RoadContactToggleShowsSelectedAlternativeAndClearsOnDisableOrRouteRemoval()
     {
         using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
@@ -208,6 +240,7 @@ public sealed class UiTests
         // Source pipelines are calculation data; only their derived road spans are displayed.
         Assert.Equal(kinds.Count(kind => kind != TerrainKind.OverheadGasPipeline), rendered.Features!.Count());
         Assert.All(rendered.Features, feature => Assert.NotEmpty(feature.Styles));
+        Assert.DoesNotContain(rendered.Features, feature => feature.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any());
     }
 
     [AvaloniaFact]

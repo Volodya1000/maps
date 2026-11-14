@@ -2,6 +2,7 @@ using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.Infrastructure.Geography;
 using CableRoutePlanner.Infrastructure.Routing;
+using CableRoutePlanner.Persistence;
 using NetTopologySuite.Geometries;
 using Xunit;
 
@@ -19,7 +20,44 @@ public sealed class UnderpassRoutingTests
         PlanningException error = await Assert.ThrowsAsync<PlanningException>(() => planner.PlanAsync(points, TestData.Options, default));
         Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
         IReadOnlyList<RouteAlternative> routes = await planner.PlanAsync(points, TestData.Options with { AllowExperimentalPedestrianUnderpasses = true }, default);
-        Assert.Contains(routes, route => route.RoadContacts!.Any(contact => contact.Geometry.Any(point => point.DistanceTo(TestData.P(163, 150)) < 2)));
+        RouteAlternative route = Assert.Single(routes);
+        Assert.Contains(route.RoadContacts!, contact => contact.Geometry.Any(point => point.DistanceTo(TestData.P(163, 150)) < 2));
+        Assert.Equal(new long[] { 2 }, route.UnderpassCandidateIds);
+    }
+
+    [Fact]
+    public async Task LegacyUserSettingsEnableMatchedUnderpassForRoute()
+    {
+        using var fixture = new TemporaryDirectory();
+        string path = Path.Combine(fixture.DirectoryPath, "settings.json");
+        File.WriteAllText(path, "{\"AllowExperimentalPedestrianUnderpasses\":false}");
+        var store = new JsonSettingsStore(path);
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature tunnel = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (163, 130), (163, 170))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+
+        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(road, tunnel).PlanAsync(
+            [TestData.P(40, 100), TestData.P(280, 200)], store.Load(), default);
+
+        Assert.Equal(new long[] { 2 }, Assert.Single(routes).UnderpassCandidateIds);
+    }
+
+    [Fact]
+    public async Task UnderpassIsNotReportedWhenGasCandidateAlreadyPermitsTheRoadContact()
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature tunnel = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (163, 130), (163, 170))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+        MapFeature gas = TestData.Line(3, TerrainKind.GasPipelineCrossingCandidate, (163, 130), (163, 170));
+
+        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(road, tunnel, gas).PlanAsync(
+            [TestData.P(40, 100), TestData.P(280, 200)],
+            TestData.Options with { AllowExperimentalPedestrianUnderpasses = true },
+            default);
+
+        Assert.All(routes, route => Assert.Empty(route.UnderpassCandidateIds ?? []));
     }
 
     [Theory]
