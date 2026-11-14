@@ -14,7 +14,7 @@ from pathlib import Path
 from benchmark_routes import run_bounded_command
 from shapely import from_wkb
 from shapely.geometry import LineString, Point, Polygon, box, mapping, shape
-from shapely.ops import transform
+from shapely.ops import substring, transform, unary_union
 
 SEED = 20261106
 WINDOWS = {
@@ -40,6 +40,7 @@ KINDS = (
     "Forest",
     "Field",
     "ApprovedCrossing",
+    "PedestrianUnderpassCandidate",
 )
 
 
@@ -95,7 +96,7 @@ def query(connection, bounds, kinds=KINDS):
         JOIN feature_index i ON i.id=f.id WHERE i.minx<=? AND i.maxx>=?
         AND i.miny<=? AND i.maxy>=? AND f.kind IN ({placeholders}) ORDER BY f.id"""
     rows = connection.execute(sql, (east, west, north, south, *kinds))
-    return [
+    features = [
         dict(
             id=row[0],
             kind=row[1],
@@ -105,6 +106,19 @@ def query(connection, bounds, kinds=KINDS):
         )
         for row in rows
     ]
+    if connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='underpass_roads'"
+    ).fetchone():
+        for feature in features:
+            if feature["kind"] == "PedestrianUnderpassCandidate":
+                feature["underpass_road_ids"] = [
+                    row[0]
+                    for row in connection.execute(
+                        "SELECT road_id FROM underpass_roads WHERE candidate_id=? ORDER BY road_id",
+                        (feature["id"],),
+                    )
+                ]
+    return features
 
 
 def components(geometry):
@@ -115,7 +129,30 @@ def components(geometry):
     return []
 
 
-def audit(route, features, coverage=None, origin=None):
+def contact_positions(route, geometry):
+    if hasattr(geometry, "geoms"):
+        return [
+            position
+            for part in geometry.geoms
+            for position in contact_positions(route, part)
+        ]
+    return [route.project(Point(c)) for c in geometry.coords]
+
+
+def local_road_contact(route, road, point):
+    """Follow the connected route through vertices within the local road window."""
+    position = route.project(point)
+    contacts = contact_positions(route, route.intersection(road))
+    lower = max([0, *[(p + position) / 2 for p in contacts if p < position - 1e-7]])
+    upper = min(
+        [route.length, *[(p + position) / 2 for p in contacts if p > position + 1e-7]]
+    )
+    section = substring(route, lower, upper).intersection(road.buffer(3))
+    parts = list(section.geoms) if hasattr(section, "geoms") else [section]
+    return unary_union([part for part in parts if part.distance(point) < 1e-7])
+
+
+def audit(route, features, coverage=None, origin=None, *, allow_underpasses=False):
     """Independent overlay on stored WKB. Unknown is used where model evidence is incomplete."""
     findings = []
     if coverage is not None and not coverage.covers(route):
@@ -172,6 +209,19 @@ def audit(route, features, coverage=None, origin=None):
                 section = route.intersection(geometry.buffer(3))
                 if g.buffer(1).covers(section):
                     gas.append(f["id"])
+            underpasses = []
+            if allow_underpasses:
+                section = local_road_contact(route, geometry, point)
+                underpasses = [
+                    f["id"]
+                    for f, g in projected
+                    if f["kind"] == "PedestrianUnderpassCandidate"
+                    and feature["id"] in f.get("underpass_road_ids", [])
+                    and g.crosses(geometry)
+                    and not section.is_empty
+                    and g.buffer(1).covers(point)
+                    and g.buffer(1).covers(section)
+                ]
             findings.append(
                 {
                     "reason": "road_contact",
@@ -179,7 +229,8 @@ def audit(route, features, coverage=None, origin=None):
                     "coordinate": list(point.coords[0]),
                     "bridgeIds": bridges,
                     "gasIds": gas,
-                    "allowed": bool(bridges or gas),
+                    "underpassIds": underpasses,
+                    "allowed": bool(bridges or gas or underpasses),
                 }
             )
     bad = any(

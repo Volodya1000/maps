@@ -1,6 +1,15 @@
 name: Routing crossing pilot
 on:
   workflow_dispatch:
+    inputs:
+      underpass:
+        description: Audit pedestrian underpasses and compare the frozen 88 scenarios
+        type: boolean
+        default: false
+      data_run:
+        description: Successful run containing pull-request-belarus-data
+        type: string
+        default: '43485336517'
   pull_request:
     types: [labeled]
 permissions:
@@ -10,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   pilot:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'ci:routing-crossing-pilot'
+    if: (github.event_name == 'workflow_dispatch' && !inputs.underpass) || github.event.label.name == 'ci:routing-crossing-pilot'
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
@@ -60,3 +69,43 @@ jobs:
       - name: Verify indirect crossing evidence
         if: always()
         run: uv run --project tools/GeodataPreparation --locked python tools/ci/routing_pilot_ci.py verify-indirect --report artifacts/routing-indirect-study/report.json
+
+  underpass:
+    if: github.event_name == 'workflow_dispatch' && inputs.underpass
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          version: '0.12.23'
+          python-version: '3.12'
+      - uses: actions/download-artifact@v8
+        with:
+          name: pull-request-belarus-data
+          run-id: ${{ inputs.data_run }}
+          github-token: ${{ github.token }}
+          path: artifacts/belarus
+      - name: Extract existing database and verify its manifest checksum
+        run: python3 tools/ci/routing_pilot_ci.py extract-db --data artifacts/belarus
+      - run: uv sync --project tools/GeodataPreparation --locked
+      - run: dotnet build tools/CableRoutePlanner.Verify -c Release -warnaserror
+      - name: Audit real underpass routing then compare frozen corpus
+        run: >-
+          uv run --project tools/GeodataPreparation --locked python tools/routing_underpass_study.py
+          --data artifacts/belarus
+          --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll
+          --output artifacts/routing-underpass
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: routing-underpass-${{ github.run_id }}
+          path: artifacts/routing-underpass/
+          retention-days: 30
+          if-no-files-found: error
