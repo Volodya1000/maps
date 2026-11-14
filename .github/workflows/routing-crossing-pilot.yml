@@ -10,6 +10,10 @@ on:
         description: Successful run containing pull-request-belarus-data
         type: string
         default: '43485336517'
+      evidence_run:
+        description: Reaudit saved routing-underpass results from this run without rerouting
+        type: string
+        default: ''
   pull_request:
     types: [labeled]
 permissions:
@@ -92,6 +96,13 @@ jobs:
           run-id: ${{ inputs.data_run }}
           github-token: ${{ github.token }}
           path: artifacts/belarus
+      - uses: actions/download-artifact@v8
+        if: inputs.evidence_run != ''
+        with:
+          name: routing-underpass-${{ inputs.evidence_run }}
+          run-id: ${{ inputs.evidence_run }}
+          github-token: ${{ github.token }}
+          path: artifacts/routing-underpass
       - name: Extract existing database and verify its manifest checksum
         run: python3 tools/ci/routing_pilot_ci.py extract-db --data artifacts/belarus
       - run: uv sync --project tools/GeodataPreparation --locked
@@ -102,6 +113,7 @@ jobs:
           --data artifacts/belarus
           --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll
           --output artifacts/routing-underpass
+          ${{ inputs.evidence_run != '' && '--existing' || '' }}
       - uses: actions/upload-artifact@v7
         if: always()
         with:

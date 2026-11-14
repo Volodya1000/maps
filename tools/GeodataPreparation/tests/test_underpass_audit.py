@@ -73,6 +73,20 @@ class UnderpassAuditTests(unittest.TestCase):
     def test_turn_at_next_vertex_inside_road_window_is_rejected(self):
         self.check("violation", route=LineString([(-10, 0), (1, 0), (2, 10), (10, 10)]))
 
+    def test_self_intersection_does_not_hide_continuing_local_contact(self):
+        self.check(
+            "violation",
+            route=LineString(
+                [(-10, 0), (2, 0), (2, 0.5), (1, -0.5), (1, 10), (10, 10)]
+            ),
+        )
+
+    def test_later_reentry_without_axis_contact_is_not_part_of_initial_contact(self):
+        self.check(
+            "valid",
+            route=LineString([(-10, 0), (5, 0), (5, 10), (1, 0), (1, 10), (10, 10)]),
+        )
+
     def test_separate_contacts_are_audited_locally(self):
         self.road["geometry"] = LineString([(0, -20), (0, 20), (10, 20), (10, -20)])
         second = dict(self.span, id=3, geometry=LineString([(5, 0), (15, 0)]))
@@ -102,6 +116,57 @@ class UnderpassAuditTests(unittest.TestCase):
 
 
 class UnderpassEvidenceAcceptanceTests(unittest.TestCase):
+    def test_existing_result_is_audited_without_relaunching_verify(self):
+        import json
+        import tempfile
+
+        from routing_underpass_study import DATABASE_SHA256, execute
+
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            sqlite3.connect(":memory:") as connection,
+        ):
+            folder = Path(directory)
+            scenario = dict(
+                id="saved",
+                points=[dict(Longitude=0, Latitude=0), dict(Longitude=1, Latitude=0)],
+                routingOptions={},
+            )
+            saved = scenario | {
+                "databaseSha256": DATABASE_SHA256,
+                "routingOptions": {"AllowExperimentalPedestrianUnderpasses": False},
+            }
+            (folder / "scenario.json").write_text(json.dumps(saved))
+            (folder / "result.json").write_text(
+                json.dumps(
+                    dict(status="no_route", alternatives=[], wallMilliseconds=123)
+                )
+            )
+            result = execute(
+                folder,
+                folder / "nonexistent-verify.dll",
+                folder,
+                scenario,
+                False,
+                connection,
+                None,
+                existing=True,
+            )
+            self.assertEqual(result["status"], "no_route")
+            self.assertEqual(result["wallMilliseconds"], 123)
+            self.assertEqual(result["audits"], [])
+            with self.assertRaises(ValueError):
+                execute(
+                    folder,
+                    folder / "nonexistent-verify.dll",
+                    folder,
+                    scenario,
+                    True,
+                    connection,
+                    None,
+                    existing=True,
+                )
+
     def test_confirmation_requires_no_route_off_and_valid_real_candidate_on(self):
         from routing_underpass_study import confirmed
 

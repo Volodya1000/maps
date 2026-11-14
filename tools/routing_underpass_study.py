@@ -35,7 +35,9 @@ def digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def execute(data, verify, folder, scenario, enabled, connection, coverage):
+def execute(
+    data, verify, folder, scenario, enabled, connection, coverage, *, existing=False
+):
     folder.mkdir(parents=True, exist_ok=True)
     scenario = scenario | {
         "databaseSha256": DATABASE_SHA256,
@@ -44,27 +46,37 @@ def execute(data, verify, folder, scenario, enabled, connection, coverage):
     }
     if len(scenario["points"]) != 2:
         raise ValueError("Exactly two user points required")
-    save_json(folder / "scenario.json", scenario)
     result_path = folder / "result.json"
-    result_path.unlink(missing_ok=True)
-    process = run_bounded_command(
-        [
-            "dotnet",
-            str(verify),
-            "--crossing",
-            str(data),
-            str(folder / "scenario.json"),
-            str(result_path),
-        ],
-        120,
-        os.environ | {"DOTNET_GCHeapHardLimit": "60000000"},
-    )
-    (folder / "stdout.log").write_text(process["stdout"])
-    (folder / "stderr.log").write_text(process["stderr"])
-    result = effective_result(
-        json.loads(result_path.read_text()) if result_path.exists() else None, process
-    )
-    result["wallMilliseconds"] = process["elapsed_wall_ms"]
+    if existing:
+        saved = json.loads((folder / "scenario.json").read_text())
+        if any(
+            saved[key] != scenario[key]
+            for key in ("points", "routingOptions", "databaseSha256")
+        ):
+            raise ValueError("Saved route parameters differ from the frozen scenario")
+        result = json.loads(result_path.read_text())
+    else:
+        save_json(folder / "scenario.json", scenario)
+        result_path.unlink(missing_ok=True)
+        process = run_bounded_command(
+            [
+                "dotnet",
+                str(verify),
+                "--crossing",
+                str(data),
+                str(folder / "scenario.json"),
+                str(result_path),
+            ],
+            120,
+            os.environ | {"DOTNET_GCHeapHardLimit": "60000000"},
+        )
+        (folder / "stdout.log").write_text(process["stdout"])
+        (folder / "stderr.log").write_text(process["stderr"])
+        result = effective_result(
+            json.loads(result_path.read_text()) if result_path.exists() else None,
+            process,
+        )
+        result["wallMilliseconds"] = process["elapsed_wall_ms"]
     route_features = []
     audits = []
     for alternative in result["alternatives"]:
@@ -294,9 +306,109 @@ def study(args):
             raise RuntimeError("Incomplete mass comparison or invalid route audit")
 
 
+def reaudit(args):
+    """Recheck saved Verify geometries against the same SQLite without rerouting."""
+    if digest(args.data / "geodata.sqlite") != DATABASE_SHA256:
+        raise ValueError("Expected the already-built SQLite v3 Belarus database")
+    report = json.loads((args.output / "results.json").read_text())
+    if report["databaseSha256"] != DATABASE_SHA256 or report["corpusSha256"] != digest(
+        CORPUS
+    ):
+        raise ValueError("Saved experiment provenance differs")
+    coverage = Polygon(json.loads(Path("data/belarus-coverage.json").read_text()))
+    frozen = {s["id"]: s for s in json.loads(CORPUS.read_text())}
+    if set(frozen) != {s["id"] for s in report["mass"]} or len(report["mass"]) != 88:
+        raise ValueError("Expected exactly the frozen 88 cases")
+    with sqlite3.connect(
+        f"file:{args.data / 'geodata.sqlite'}?mode=ro", uri=True
+    ) as connection:
+        records = [
+            (a, args.output / a["scenario"]["id"], a["scenario"])
+            for a in report["attempts"]
+        ]
+        records += [
+            (a, args.output / "mass" / a["id"], frozen[a["id"]]) for a in report["mass"]
+        ]
+        for record, folder, scenario in records:
+            off = execute(
+                args.data,
+                args.verify_dll,
+                folder / "false",
+                scenario,
+                False,
+                connection,
+                coverage,
+                existing=True,
+            )
+            on = execute(
+                args.data,
+                args.verify_dll,
+                folder / "true",
+                scenario,
+                True,
+                connection,
+                coverage,
+                existing=True,
+            )
+            record.update(off=summary(off), on=summary(on))
+            if record.get("candidateId") == report["confirmed"]["candidateId"]:
+                if not confirmed(off, on, record["candidateId"]):
+                    raise RuntimeError("Saved real case failed the strengthened audit")
+                report["confirmed"] = record
+                actual = LineString(
+                    [
+                        (p["Longitude"], p["Latitude"])
+                        for p in on["alternatives"][0]["geometry"]
+                    ]
+                )
+                w, s, e, n = actual.bounds
+                features = query(
+                    connection, (w - 0.001, s - 0.001, e + 0.001, n + 0.001)
+                )
+                origin = actual.coords[0]
+                report["confirmedRouteWithFlagOffAudit"] = audit(
+                    project(actual, origin), features, project(coverage, origin), origin
+                )
+                used = sorted(
+                    {
+                        cid
+                        for check in on["audits"]
+                        for finding in check["findings"]
+                        for cid in finding.get("underpassIds", [])
+                    }
+                )
+                placeholders = ",".join("?" for _ in used)
+                report["confirmedSqliteLinks"] = [
+                    dict(
+                        candidateId=row[0],
+                        roadId=row[1],
+                        tunnelSourceId=row[2],
+                        roadSourceId=row[3],
+                    )
+                    for row in connection.execute(
+                        f"SELECT candidate_id,road_id,tunnel_osm_id,road_osm_id FROM underpass_roads WHERE candidate_id IN ({placeholders}) ORDER BY candidate_id,road_id",
+                        used,
+                    )
+                ]
+    report["auditCommit"] = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], text=True
+    ).strip()
+    report["auditWorkflowRunId"] = os.environ.get("GITHUB_RUN_ID")
+    save_json(args.output / "results.json", report)
+    if report["confirmedRouteWithFlagOffAudit"]["status"] != "violation" or any(
+        item[flag]["status"] not in ("success", "no_route")
+        or any(a["audit"]["status"] != "valid" for a in item[flag]["alternatives"])
+        for item in report["mass"]
+        for flag in ("off", "on")
+    ):
+        raise RuntimeError("Saved comparison failed the strengthened audit")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--verify-dll", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    study(parser.parse_args())
+    parser.add_argument("--existing", action="store_true")
+    args = parser.parse_args()
+    (reaudit if args.existing else study)(args)

@@ -140,16 +140,48 @@ def contact_positions(route, geometry):
 
 
 def local_road_contact(route, road, point):
-    """Follow the connected route through vertices within the local road window."""
-    position = route.project(point)
-    contacts = contact_positions(route, route.intersection(road))
-    lower = max([0, *[(p + position) / 2 for p in contacts if p < position - 1e-7]])
-    upper = min(
-        [route.length, *[(p + position) / 2 for p in contacts if p > position + 1e-7]]
-    )
-    section = substring(route, lower, upper).intersection(road.buffer(3))
-    parts = list(section.geoms) if hasattr(section, "geoms") else [section]
-    return unary_union([part for part in parts if part.distance(point) < 1e-7])
+    """Clip in route order: a spatial self-intersection must not cut or join visits."""
+    intervals = []
+    contacts = []
+    occurrences = []
+    offset = 0
+    window = road.buffer(3)
+    coordinates = list(route.coords)
+    for a, b in zip(coordinates[:-1], coordinates[1:], strict=True):
+        edge = LineString([a, b])
+        if edge.length == 0:
+            continue
+        contacts.extend(
+            offset + p for p in contact_positions(edge, edge.intersection(road))
+        )
+        if edge.distance(point) < 1e-7:
+            occurrences.append(offset + edge.project(point))
+        clipped = edge.intersection(window)
+        parts = list(clipped.geoms) if hasattr(clipped, "geoms") else [clipped]
+        for part in parts:
+            positions = contact_positions(edge, part)
+            if positions:
+                intervals.append((offset + min(positions), offset + max(positions)))
+        offset += edge.length
+    merged = []
+    for start, end in sorted(intervals):
+        if merged and start <= merged[-1][1] + 1e-7:
+            merged[-1] = (merged[-1][0], max(end, merged[-1][1]))
+        else:
+            merged.append((start, end))
+    sections = []
+    for position in occurrences:
+        for start, end in merged:
+            if not start - 1e-7 <= position <= end + 1e-7:
+                continue
+            lower = max(
+                [start, *[(p + position) / 2 for p in contacts if p < position - 1e-7]]
+            )
+            upper = min(
+                [end, *[(p + position) / 2 for p in contacts if p > position + 1e-7]]
+            )
+            sections.append(substring(route, lower, upper))
+    return unary_union(sections)
 
 
 def audit(route, features, coverage=None, origin=None, *, allow_underpasses=False):
