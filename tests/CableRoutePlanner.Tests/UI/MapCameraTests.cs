@@ -286,15 +286,21 @@ public sealed class MapCameraTests
             0,
             new Mapsui.Animations.Easing(progress => progress));
         await Task.Delay(control.UpdateInterval * 2);
-        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        int rendersBeforeReset = control.RenderCount;
+        int rendersBeforeReset = 0;
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            rendersBeforeReset = control.RenderCount;
+            adapter.ResetNorth();
+        });
 
-        adapter.ResetNorth();
         await Task.Delay(control.UpdateInterval * 2);
-        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-
-        Assert.True(control.RenderCount > rendersBeforeReset);
-        Assert.Equal(0, control.Map.Navigator.Viewport.Rotation, 6);
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            Assert.True(control.RenderCount > rendersBeforeReset);
+            Assert.Equal(0, control.Map.Navigator.Viewport.Rotation, 6);
+        });
         window.Close();
     }
 

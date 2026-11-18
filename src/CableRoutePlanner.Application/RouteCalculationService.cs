@@ -51,7 +51,14 @@ public sealed class RouteCalculationService(
         long revision;
         lock (_gate)
         {
+#if NET6_0
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(RouteCalculationService));
+            }
+#else
             ObjectDisposedException.ThrowIf(_disposed, this);
+#endif
             CancellationTokenSource? previous = _calculation;
             current = new CancellationTokenSource();
             _calculation = current;
@@ -104,7 +111,14 @@ public sealed class RouteCalculationService(
         CancellationTokenSource current;
         lock (_gate)
         {
+#if NET6_0
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(RouteCalculationService));
+            }
+#else
             ObjectDisposedException.ThrowIf(_disposed, this);
+#endif
             CancellationTokenSource? previous = _pointMove;
             current = new CancellationTokenSource();
             _pointMove = current;

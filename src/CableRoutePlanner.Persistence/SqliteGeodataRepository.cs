@@ -46,7 +46,12 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
 
         using (FileStream stream = File.OpenRead(db))
         {
+#if NET6_0
+            using SHA256 algorithm = SHA256.Create();
+            string actual = BitConverter.ToString(algorithm.ComputeHash(stream)).Replace("-", string.Empty, StringComparison.Ordinal);
+#else
             string actual = Convert.ToHexString(SHA256.HashData(stream));
+#endif
             if (!actual.Equals(
                 root.GetProperty("database_sha256").GetString(),
                 StringComparison.OrdinalIgnoreCase))

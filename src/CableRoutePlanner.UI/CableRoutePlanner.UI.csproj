@@ -13,5 +13,6 @@
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Mapsui.Avalonia" />
     <PackageReference Include="Mapsui.Nts" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Condition="'$(Win7Port)' == 'true'" />
   </ItemGroup>
 </Project>
