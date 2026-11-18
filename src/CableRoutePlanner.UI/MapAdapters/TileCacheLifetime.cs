@@ -18,7 +18,14 @@ internal sealed class TileCacheLifetime(BackgroundTileSource source)
     {
         lock (_gate)
         {
+#if NET6_0
+            if (_closing)
+            {
+                throw new ObjectDisposedException(nameof(TileCacheLifetime));
+            }
+#else
             ObjectDisposedException.ThrowIf(_closing, this);
+#endif
             _pending.Add(tile.Index);
         }
 

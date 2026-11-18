@@ -1,4 +1,6 @@
-# Проверка на ноутбуке Windows 7
+# Legacy-прототип для Windows 7
+
+> Это инструкция только для старого `net48`-прототипа. Для полного приложения используйте [автономный x86 пакет](windows7-offline.md); ему не требуются .NET Framework 4.8 или Mono на ноутбуке.
 
 Скачайте artifact `windows7-payload-tree-<run_id>` из Windows 7 compatibility workflow данного PR и распакуйте целиком в доступный для записи каталог. Пакет рассчитан на Windows 7 SP1 x64 с установленным .NET Framework 4.8.
 

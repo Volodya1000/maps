@@ -30,7 +30,14 @@ public sealed class FadingTileRenderFetchStrategy(TimeProvider? clock = null)
 
     public IList<IFeature> Get(MRect extent, double resolution, ITileSchema schema, ITileCache<IFeature?> memoryCache)
     {
+#if NET6_0
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(FadingTileRenderFetchStrategy));
+        }
+#else
         ObjectDisposedException.ThrowIf(_disposed, this);
+#endif
         foreach (TileIndex key in _states.Keys.ToArray())
         {
             if (!ReferenceEquals(memoryCache.Find(key), _states[key].Original))

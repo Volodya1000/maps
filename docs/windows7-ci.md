@@ -1,4 +1,6 @@
-# Windows 7 CI experiment — source of truth
+# Windows 7 CI experiment — архив прототипа
+
+> Актуальный CI полного приложения — `.github/workflows/windows7-x86.yml`, а его пакет и реальная проверка описаны в [windows7-offline.md](windows7-offline.md). Этот документ сохраняет историю QEMU/`net48`-прототипа и не является источником статуса поставки.
 
 The repository does not claim Windows 7 support. This document is the source of truth for the experiment and uses four statuses: `VERIFIED` (a recorded run proves the statement), `BLOCKED` (an external input is missing), `FAILED` (a run disproved the statement), and `NOT_TESTED` (no run exists). The modern Desktop target remains `net8.0`.
 

@@ -23,7 +23,14 @@ internal sealed class BackgroundTileSource(ITileSource source) : ITileSource, ID
         CancellationToken token;
         lock (_gate)
         {
+#if NET6_0
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(BackgroundTileSource));
+            }
+#else
             ObjectDisposedException.ThrowIf(_disposed, this);
+#endif
             _users++;
             token = _shutdown.Token;
         }
