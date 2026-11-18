@@ -69,7 +69,7 @@ internal sealed class RouteAlternativeBuilder(
         // A nearby aerial candidate and a ground crossing are meaningful choices,
         // even when their lines occupy almost the same map corridor.
         if (result.Any(existing => (existing.GasPipelineCandidateIds ?? [])
-            .SequenceEqual(gasCandidates.Order())
+            .SequenceEqual(gasCandidates.OrderBy(value => value))
             && Similar(existing.Geometry, route, projection, options.CellSizeMetres)))
         {
             return null;
@@ -93,7 +93,7 @@ internal sealed class RouteAlternativeBuilder(
                 Array.AsReadOnly(postProcessor.BridgeTransitionPoints(route)
                     .Select(projection.Inverse).ToArray()),
                 terrain.RoadContacts.Analyze(route, ct),
-                Array.AsReadOnly(gasCandidates.Order().ToArray())));
+                Array.AsReadOnly(gasCandidates.OrderBy(value => value).ToArray())));
         return null;
     }
 

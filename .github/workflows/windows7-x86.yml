@@ -1,0 +1,43 @@
+name: Windows 7 x86 offline desktop
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build self-contained x86 package
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - name: Publish the offline Windows 7 package
+        shell: pwsh
+        run: .\tools\Windows7Compatibility\build-win7-x86.ps1
+      - name: Verify package contents
+        shell: pwsh
+        run: |
+          $package = 'artifacts/windows7-x86'
+          $executable = Join-Path $package 'CableRoutePlanner.Desktop.exe'
+          $data = Join-Path $package 'Data/geodata.sqlite'
+          if (-not (Test-Path $executable)) { throw "Missing executable: $executable" }
+          if (-not (Test-Path $data)) { throw "Missing Minsk data: $data" }
+          if ((Get-ChildItem -Path $package -File -Recurse).Count -lt 100) {
+            throw 'The self-contained package unexpectedly has fewer than 100 files.'
+          }
+          Get-Content (Join-Path $package 'SHA256SUMS.txt') | Select-Object -First 5
+      - uses: actions/upload-artifact@v7
+        with:
+          name: CableRoutePlanner-Windows7-x86-${{ github.sha }}
+          path: artifacts/windows7-x86
+          if-no-files-found: error
+          retention-days: 14

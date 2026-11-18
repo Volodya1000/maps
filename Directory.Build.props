@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
+    <TargetFramework Condition="'$(Win7Port)' == 'true'">net6.0</TargetFramework>
     <TargetFramework Condition="'$(TargetFramework)' == ''">net8.0</TargetFramework>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <ReleaseVersion>0.2.2</ReleaseVersion>

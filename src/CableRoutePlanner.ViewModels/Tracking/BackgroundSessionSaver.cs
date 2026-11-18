@@ -17,7 +17,14 @@ internal sealed class BackgroundSessionSaver(
         ArgumentNullException.ThrowIfNull(snapshot);
         lock (_gate)
         {
+#if NET6_0
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(BackgroundSessionSaver));
+            }
+#else
             ObjectDisposedException.ThrowIf(_disposed, this);
+#endif
             _pending = snapshot;
             if (_workerActive)
             {
@@ -35,7 +42,14 @@ internal sealed class BackgroundSessionSaver(
         Task worker;
         lock (_gate)
         {
+#if NET6_0
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(BackgroundSessionSaver));
+            }
+#else
             ObjectDisposedException.ThrowIf(_disposed, this);
+#endif
             worker = _worker;
         }
 
