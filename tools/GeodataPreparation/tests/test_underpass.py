@@ -1,4 +1,5 @@
 import unittest
+from contextlib import closing
 
 from shapely.geometry import LineString
 
@@ -15,6 +16,9 @@ class UnderpassTests(unittest.TestCase):
             {"layer": "-1;0"},
             {"bridge": "yes"},
             {"highway": "residential"},
+            {"footway": "crossing"},
+            {"crossing": "traffic_signals"},
+            {"crossing": "marked"},
         ):
             self.assertFalse(is_underpass(tags | change))
         self.assertFalse(is_underpass({"highway": "footway"}))
@@ -72,8 +76,9 @@ class UnderpassTests(unittest.TestCase):
                 ],
                 check=True,
                 capture_output=False,
+                timeout=60,
             )
-            with sqlite3.connect(output / "geodata.sqlite") as connection:
+            with closing(sqlite3.connect(output / "geodata.sqlite")) as connection:
                 self.assertEqual(
                     [("way/1", "way/2", "PedestrianUnderpassCandidate", "Road")],
                     connection.execute(

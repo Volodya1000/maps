@@ -16,6 +16,7 @@ using Mapsui.Tiling.Layers;
 using Mapsui.UI.Avalonia;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
+using NetTopologySuite.LinearReferencing;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
@@ -79,6 +80,19 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     private IReadOnlyList<RouteVertexRow> _vertices = [];
 
     private const double ChildMarkerSpacingPixels = 48;
+
+    private const double UnderpassDisplayHalfLengthMetres = 8;
+
+    private static readonly Lazy<int> UnderpassSymbolId = new(() =>
+    {
+        using Stream resource = typeof(MapsuiMapAdapter).Assembly.GetManifestResourceStream(
+            "CableRoutePlanner.UI.Assets.underpass.svg")
+            ?? throw new InvalidOperationException("Underpass symbol resource is missing.");
+        MemoryStream bitmap = new();
+        resource.CopyTo(bitmap);
+        bitmap.Position = 0;
+        return BitmapRegistry.Instance.Register(bitmap);
+    });
 
     private readonly Dictionary<int, double> _vertexVisibility = [];
 
@@ -162,6 +176,11 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             {
                 control.Map.Layers.Add(new OfflineCoverageLayer(geodata.Info));
             }
+            control.Map.Layers.Add(new Layer("Знаки подземных переходов")
+            {
+                DataSource = new UnderpassMarkerFeatureProvider(geodata),
+                Style = null
+            });
         }
         control.Map.Layers.Add(_routes);
         control.Map.Layers.Add(_progress);
@@ -319,11 +338,15 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     internal static IFeature[] PrepareFeatures(
         IReadOnlyList<MapFeature> features,
         CancellationToken cancellationToken,
-        double metresPerPixel = 0)
+        double metresPerPixel = 0,
+        bool includeUnderpassMarkers = true)
     {
         var reader = new WKBReader();
         var transform = new MercatorTransformer();
         var terrainStyles = new Dictionary<TerrainKind, IReadOnlyList<IStyle>>();
+        Dictionary<long, NetTopologySuite.Geometries.Geometry> roads = features
+            .Where(feature => feature.Kind == TerrainKind.Road)
+            .ToDictionary(feature => feature.Id, feature => transform.Transform(reader.Read(feature.Wkb)));
         return features
             .Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline
                 && (feature.Kind != TerrainKind.PedestrianUnderpassCandidate || metresPerPixel <= 10))
@@ -332,6 +355,10 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         {
             cancellationToken.ThrowIfCancellationRequested();
             NetTopologySuite.Geometries.Geometry geometry = transform.Transform(reader.Read(f.Wkb));
+            if (f.Kind == TerrainKind.PedestrianUnderpassCandidate)
+            {
+                geometry = DisplayUnderpassSpan(f, geometry, roads);
+            }
             var feature = new GeometryFeature(geometry);
             if (f.Kind == TerrainKind.Settlement)
             {
@@ -357,30 +384,100 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 }
             }
 
-            if (f.Kind != TerrainKind.PedestrianUnderpassCandidate || metresPerPixel > 5)
+            if (f.Kind != TerrainKind.PedestrianUnderpassCandidate
+                || metresPerPixel > 5
+                || !includeUnderpassMarkers)
             {
                 return new IFeature[] { feature };
             }
 
-            var marker = new GeometryFeature(geometry.Centroid);
-            marker.Styles.Add(new SymbolStyle
-            {
-                SymbolType = SymbolType.Triangle,
-                Fill = new Brush(new Color(112, 74, 161)),
-                Outline = new Pen(Color.White, 1.5),
-                SymbolScale = 0.75,
-                MaxVisible = 5
-            });
-            marker.Styles.Add(new LabelStyle
-            {
-                Text = "Подземный переход",
-                ForeColor = Color.White,
-                BackColor = new Brush(new Color(88, 55, 129)),
-                CollisionDetection = true,
-                MaxVisible = 2
-            });
+            GeometryFeature marker = CreateUnderpassMarker(geometry);
             return new IFeature[] { feature, marker };
         }).ToArray();
+    }
+
+    internal static IFeature[] PrepareUnderpassMarkers(
+        IReadOnlyList<MapFeature> features,
+        double metresPerPixel,
+        CancellationToken cancellationToken)
+    {
+        if (metresPerPixel > 5)
+        {
+            return [];
+        }
+
+        WKBReader reader = new();
+        MercatorTransformer transform = new();
+        Dictionary<long, NetTopologySuite.Geometries.Geometry> roads = features
+            .Where(feature => feature.Kind == TerrainKind.Road)
+            .ToDictionary(feature => feature.Id, feature => transform.Transform(reader.Read(feature.Wkb)));
+        return features
+            .Where(feature => feature.Kind == TerrainKind.PedestrianUnderpassCandidate)
+            .Select(feature =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                NetTopologySuite.Geometries.Geometry source = transform.Transform(reader.Read(feature.Wkb));
+                NetTopologySuite.Geometries.Geometry span = DisplayUnderpassSpan(feature, source, roads);
+                return (IFeature)CreateUnderpassMarker(span);
+            })
+            .ToArray();
+    }
+
+    private static GeometryFeature CreateUnderpassMarker(NetTopologySuite.Geometries.Geometry geometry)
+    {
+        GeometryFeature marker = new(geometry.Centroid);
+        marker.Styles.Add(new SymbolStyle
+        {
+            SymbolType = SymbolType.Image,
+            BitmapId = UnderpassSymbolId.Value,
+            RotateWithMap = false,
+            SymbolScale = 0.75,
+            MaxVisible = 5
+        });
+        marker["underpass_label"] = "Подземный переход";
+        marker.Styles.Add(new LabelStyle
+        {
+            LabelColumn = "underpass_label",
+            ForeColor = Color.White,
+            BackColor = new Brush(new Color(26, 111, 210)),
+            CollisionDetection = true,
+            Offset = new Offset(0, 20),
+            MaxVisible = 2
+        });
+        return marker;
+    }
+
+    private static NetTopologySuite.Geometries.Geometry DisplayUnderpassSpan(
+        MapFeature candidate,
+        NetTopologySuite.Geometries.Geometry source,
+        Dictionary<long, NetTopologySuite.Geometries.Geometry> roads)
+    {
+        if (source is not LineString line || candidate.UnderpassRoadIds is null)
+        {
+            return source;
+        }
+
+        foreach (long roadId in candidate.UnderpassRoadIds)
+        {
+            if (!roads.TryGetValue(roadId, out NetTopologySuite.Geometries.Geometry? road))
+            {
+                continue;
+            }
+
+            NetTopologySuite.Geometries.Geometry contact = line.Intersection(road);
+            if (contact is not Point point)
+            {
+                continue;
+            }
+
+            LengthIndexedLine indexed = new(line);
+            double index = indexed.Project(point.Coordinate);
+            double start = Math.Max(indexed.StartIndex, index - UnderpassDisplayHalfLengthMetres);
+            double end = Math.Min(indexed.EndIndex, index + UnderpassDisplayHalfLengthMetres);
+            return indexed.ExtractLine(start, end);
+        }
+
+        return source;
     }
 
     public void SetPoints(IReadOnlyList<WaypointRow> points)

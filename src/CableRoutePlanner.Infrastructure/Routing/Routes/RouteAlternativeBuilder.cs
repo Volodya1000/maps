@@ -40,6 +40,7 @@ internal sealed class RouteAlternativeBuilder(
         var bridgeCandidates = new HashSet<long>();
         HashSet<long> gasCandidates = [];
         HashSet<long> underpassCandidates = [];
+        HashSet<RoadCrossingEvent> roadCrossingEvents = [];
         for (int i = 1; i < route.Count; i++)
         {
             EdgeEvaluation edge = evaluator.Evaluate(route[i - 1], route[i])
@@ -53,6 +54,10 @@ internal sealed class RouteAlternativeBuilder(
             bridgeCandidates.UnionWith(edge.BridgeCandidates);
             gasCandidates.UnionWith(edge.GasCandidates);
             underpassCandidates.UnionWith(edge.UnderpassCandidates);
+            foreach (RoadCrossingEvidence crossing in edge.RoadCrossingEvents)
+            {
+                roadCrossingEvents.Add(new(crossing.RoadId, crossing.Kind, projection.Inverse(crossing.Location)));
+            }
         }
 
         if (length > options.MaxRouteLengthMetres)
@@ -97,7 +102,8 @@ internal sealed class RouteAlternativeBuilder(
                     .Select(projection.Inverse).ToArray()),
                 terrain.RoadContacts.Analyze(route, ct),
                 Array.AsReadOnly(gasCandidates.Order().ToArray()),
-                Array.AsReadOnly(underpassCandidates.Order().ToArray())));
+                Array.AsReadOnly(underpassCandidates.Order().ToArray()),
+                Array.AsReadOnly(roadCrossingEvents.ToArray())));
         return null;
     }
 

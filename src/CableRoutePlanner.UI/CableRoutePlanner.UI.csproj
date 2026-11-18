@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets/app_icon.png" />
+    <EmbeddedResource Include="Assets/underpass.svg" />
     <ProjectReference Include="../CableRoutePlanner.ViewModels/CableRoutePlanner.ViewModels.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Avalonia" />

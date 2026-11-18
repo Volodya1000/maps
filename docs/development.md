@@ -1,6 +1,6 @@
 # Локальная проверка перед отправкой
 
-Нужны Git, Python 3.12, uv 0.12.23 и SDK из `global.json`. Для аудита автономности Linux нужен `strace`. Установите hooks один раз в каждом клоне:
+Нужны Git, Python 3.12, uv 0.13.9 и SDK из `global.json`. Для аудита автономности Linux нужен `strace`. Установите hooks один раз в каждом клоне:
 
 ```sh
 uv sync --locked

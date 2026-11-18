@@ -8,9 +8,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
-
-import osmium
 
 ROOT = Path(__file__).resolve().parents[3]
 CONVERTER = ROOT / "tools/GeodataPreparation/prepare_country.py"
@@ -20,19 +19,13 @@ class CountrySnapshotTests(unittest.TestCase):
     def test_sha256_pbf_to_sqlite_and_deterministic_gzip(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            pbf = root / "small.osm.pbf"
-            header = osmium.io.Header()
-            header.add_box(
-                osmium.osm.Box(osmium.osm.Location(26, 53), osmium.osm.Location(28, 55))
+            pbf = root / "small.osm"
+            pbf.write_text(
+                '<osm version="0.6"><bounds minlon="26" minlat="53" maxlon="28" maxlat="55"/>'
+                '<node id="1" version="1" lon="27" lat="54">'
+                '<tag k="place" v="village"/><tag k="name" v="Fixture"/>'
+                "</node></osm>"
             )
-            with osmium.SimpleWriter(str(pbf), header=header) as writer:
-                writer.add_node(
-                    osmium.osm.mutable.Node(
-                        id=1,
-                        location=(27, 54),
-                        tags={"place": "village", "name": "Fixture"},
-                    )
-                )
             digest = hashlib.sha256(pbf.read_bytes()).hexdigest()
             output = root / "country"
             subprocess.run(
@@ -49,6 +42,7 @@ class CountrySnapshotTests(unittest.TestCase):
                 ],
                 check=True,
                 capture_output=True,
+                timeout=60,
             )
             manifest = json.loads((output / "manifest.json").read_text())
             self.assertEqual(digest, manifest["sources"][0]["sha256"])
@@ -60,7 +54,7 @@ class CountrySnapshotTests(unittest.TestCase):
             self.assertEqual(
                 hashlib.sha256(database).hexdigest(), manifest["database_sha256"]
             )
-            with sqlite3.connect(output / "geodata.sqlite") as connection:
+            with closing(sqlite3.connect(output / "geodata.sqlite")) as connection:
                 self.assertEqual(
                     [("Settlement", "Fixture")],
                     connection.execute("SELECT kind,name FROM features").fetchall(),
@@ -80,6 +74,7 @@ class CountrySnapshotTests(unittest.TestCase):
                 ],
                 check=True,
                 capture_output=True,
+                timeout=60,
             )
             self.assertEqual(first, (output / "geodata.sqlite.gz").read_bytes())
 

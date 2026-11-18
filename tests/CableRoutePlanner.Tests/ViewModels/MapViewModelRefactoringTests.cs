@@ -258,7 +258,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
         string result = RouteMetricsFormatter.Format(route, new RoutingOptions(ReserveFraction: 0.25));
 
         Assert.Contains($"Кабель с запасом {0.25:P0}: {125:N0} м", result);
-        Assert.Contains("Пересечённых дорог: 1", result);
+        Assert.Contains("Пересечения дорог: 1", result);
         Assert.Contains("Переходов по мостам: 0", result);
         Assert.DoesNotContain("Высотные характеристики", result);
         Assert.DoesNotContain("Требуются обследование и согласование.", result);
@@ -266,7 +266,7 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
     }
 
     [Fact]
-    public void RouteMetricsFormattingWarnsWhenRouteUsesPedestrianUnderpass()
+    public void RouteMetricsFormattingDoesNotExposeEngineeringWarningForPedestrianUnderpass()
     {
         var route = new RouteAlternative(
             Guid.NewGuid(),
@@ -277,7 +277,32 @@ public sealed class MapViewModelRefactoringTests : ReactiveTestScope
 
         string result = RouteMetricsFormatter.Format(route, new RoutingOptions());
 
-        Assert.Contains("Подземный переход. Прокладка кабеля требует инженерной проверки", result);
+        Assert.DoesNotContain("Подземный переход. Прокладка кабеля требует инженерной проверки", result);
+    }
+
+    [Fact]
+    public void RouteMetricsFormattingGroupsActualRoadCrossingEventsByMethod()
+    {
+        GeoCoordinate first = TestData.P(10, 10);
+        GeoCoordinate second = TestData.P(20, 20);
+        GeoCoordinate third = TestData.P(30, 30);
+        var route = new RouteAlternative(
+            Guid.NewGuid(),
+            "test",
+            [],
+            new RouteMetrics(100, 0, 0, 3, 0, 0, 100, null),
+            RoadCrossingEvents:
+            [
+                new RoadCrossingEvent(1, RoadCrossingKind.OverheadGasPipeline, first),
+                new RoadCrossingEvent(2, RoadCrossingKind.PedestrianUnderpass, second),
+                new RoadCrossingEvent(3, RoadCrossingKind.PedestrianUnderpass, third)
+            ]);
+
+        string result = RouteMetricsFormatter.Format(route, new RoutingOptions());
+
+        Assert.Contains("Пересечения дорог: 3", result);
+        Assert.Contains("По надземному газопроводу: 1", result);
+        Assert.Contains("Через подземный пешеходный переход: 2", result);
     }
 
     private static MapViewModel CreateVm(IGeodataRepository data) => TestData.CreateMapViewModel(

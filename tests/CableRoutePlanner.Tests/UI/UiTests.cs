@@ -12,9 +12,11 @@ using CableRoutePlanner.Domain;
 using CableRoutePlanner.Infrastructure;
 using CableRoutePlanner.Persistence;
 using CableRoutePlanner.UI;
+using CableRoutePlanner.UI.MapAdapters;
 using CableRoutePlanner.UI.Views;
 using CableRoutePlanner.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using Mapsui.Nts;
 using Xunit;
 
 [assembly: AvaloniaTestApplication(typeof(CableRoutePlanner.Tests.TestApplication))]
@@ -118,9 +120,69 @@ public sealed class UiTests
         Assert.All(strokes, stroke => Assert.Equal(10, stroke.MaxVisible));
         Mapsui.Nts.GeometryFeature marker = Assert.IsType<Mapsui.Nts.GeometryFeature>(
             Assert.Single(detail, feature => feature.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any()));
-        Mapsui.Styles.LabelStyle label = Assert.Single(marker.Styles.OfType<Mapsui.Styles.LabelStyle>());
-        Assert.Equal("Подземный переход", label.GetLabelText(marker));
-        Assert.Equal(2, label.MaxVisible);
+        Mapsui.Styles.SymbolStyle symbol = Assert.Single(marker.Styles.OfType<Mapsui.Styles.SymbolStyle>());
+        Assert.Equal(Mapsui.Styles.SymbolType.Image, symbol.SymbolType);
+        Assert.False(symbol.RotateWithMap);
+        Assert.True(symbol.BitmapId > 0);
+        Mapsui.Styles.LabelStyle[] labels = marker.Styles.OfType<Mapsui.Styles.LabelStyle>().ToArray();
+        Assert.Contains(labels, label => label.GetLabelText(marker) == "Подземный переход" && label.MaxVisible == 2);
+    }
+
+    [AvaloniaFact]
+    public void PedestrianUnderpassDisplaySpanIsLimitedToItsLinkedRoad()
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature underpass = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 80), (160, 220))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+
+        IReadOnlyList<Mapsui.IFeature> detail = MapsuiMapAdapter.PrepareFeatures(
+            [road, underpass], CancellationToken.None, metresPerPixel: 1);
+
+        GeometryFeature span = Assert.Single(detail.OfType<GeometryFeature>(), feature =>
+            feature.Styles.OfType<Mapsui.Styles.VectorStyle>().Any(style =>
+                style.Line?.PenStyle == Mapsui.Styles.PenStyle.ShortDash));
+        Assert.InRange(span.Geometry!.Length, 6, 20);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(0)]
+    [InlineData(90)]
+    [InlineData(180)]
+    [InlineData(270)]
+    public async Task RepositoryUnderpassSignUsesScreenOrientedVectorOverlay(double rotation)
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature underpass = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 80), (160, 220))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+        MemoryData repository = new(road, underpass);
+        Mapsui.UI.Avalonia.MapControl control = new();
+        using MapsuiMapAdapter adapter = new(control, repository.Info.Bounds, repository);
+        control.Map.Navigator.RotateTo(rotation, 0);
+        Mapsui.Layers.Layer overlay = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.Layer>(),
+            layer => layer.Name == "Знаки подземных переходов");
+        Mapsui.Providers.IProvider provider = Assert.IsAssignableFrom<Mapsui.Providers.IProvider>(overlay.DataSource);
+        (double west, double south) = Mapsui.Projections.SphericalMercator.FromLonLat(27, 54);
+        (double east, double north) = Mapsui.Projections.SphericalMercator.FromLonLat(27.006, 54.006);
+
+        Mapsui.IFeature[] features = (await provider.GetFeaturesAsync(new Mapsui.Layers.FetchInfo(
+            new Mapsui.MSection(new Mapsui.MRect(west, south, east, north), 1), "EPSG:3857"))).ToArray();
+
+        Mapsui.IFeature marker = Assert.Single(features);
+        Mapsui.Styles.SymbolStyle symbol = Assert.Single(marker.Styles.OfType<Mapsui.Styles.SymbolStyle>());
+        Assert.False(symbol.RotateWithMap);
+        Assert.Equal(rotation, control.Map.Navigator.Viewport.Rotation, 6);
+        Assert.Contains(marker.Styles.OfType<Mapsui.Styles.LabelStyle>(),
+            label => label.GetLabelText(marker) == "Подземный переход");
+        Mapsui.Tiling.Layers.TileLayer tiled = Assert.Single(control.Map.Layers.OfType<Mapsui.Tiling.Layers.TileLayer>());
+        Mapsui.Layers.Layer source = Assert.IsType<Mapsui.Layers.Layer>(
+            Assert.IsAssignableFrom<Mapsui.Layers.ISourceLayer>(tiled).SourceLayer);
+        Mapsui.Providers.IProvider baseProvider = Assert.IsAssignableFrom<Mapsui.Providers.IProvider>(source.DataSource);
+        Mapsui.IFeature[] rasterizedFeatures = (await baseProvider.GetFeaturesAsync(new Mapsui.Layers.FetchInfo(
+            new Mapsui.MSection(new Mapsui.MRect(west, south, east, north), 1), "EPSG:3857"))).ToArray();
+        Assert.DoesNotContain(rasterizedFeatures,
+            feature => feature.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any());
     }
 
     [AvaloniaFact]

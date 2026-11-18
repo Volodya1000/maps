@@ -2,6 +2,7 @@ using CableRoutePlanner.Domain;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Prepared;
 using NetTopologySuite.Index.Strtree;
+using NetTopologySuite.LinearReferencing;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
 
@@ -10,6 +11,8 @@ internal sealed class GasCrossingIndex
     private const double AlignmentToleranceMetres = 1;
     // A review window around the road axis, not a surveyed carriageway width.
     private const double RoadReviewHalfWidthMetres = 3;
+    private const double UnderpassPortalHalfLengthMetres = 8;
+    private const double MinimumUnderpassPortalHalfLengthMetres = 3.5;
     private sealed record Candidate(long Id, Geometry Span, IPreparedGeometry Corridor, IReadOnlyList<long>? RoadIds);
     private readonly STRtree<Candidate> _index = new();
     public IReadOnlyList<GridPortal> Portals { get; }
@@ -17,18 +20,89 @@ internal sealed class GasCrossingIndex
 
     public GasCrossingIndex(IEnumerable<ProjectedMapFeature> features, TerrainKind kind = TerrainKind.GasPipelineCrossingCandidate)
     {
+        ProjectedMapFeature[] projected = features.ToArray();
+        Dictionary<long, Geometry> roads = projected.Where(feature => feature.Feature.Kind == TerrainKind.Road)
+            .ToDictionary(feature => feature.Feature.Id, feature => feature.Geometry);
+        Geometry[] blocked = projected.Where(feature => TerrainTraversalPolicy.For(feature.Feature.Kind) == TerrainTraversalRule.Blocked)
+            .Select(feature => feature.Geometry).ToArray();
         List<GridPortal> portals = [];
-        foreach (ProjectedMapFeature feature in features.Where(feature => feature.Feature.Kind == kind))
+        foreach (ProjectedMapFeature feature in projected.Where(feature => feature.Feature.Kind == kind))
         {
             Geometry span = feature.Geometry;
             if (span is not LineString || span.IsEmpty)
             { continue; }
+            List<GridPortal> candidatePortals = [];
+            List<long> portalRoadIds = [];
+            if (kind == TerrainKind.PedestrianUnderpassCandidate)
+            {
+                foreach (long roadId in feature.Feature.UnderpassRoadIds ?? [])
+                {
+                    if (roads.TryGetValue(roadId, out Geometry? road))
+                    {
+                        GridPortal? portal = CreateUnderpassPortal((LineString)span, road, blocked);
+                        if (portal is not null)
+                        {
+                            candidatePortals.Add(portal);
+                            portalRoadIds.Add(roadId);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                candidatePortals.Add(new GridPortal(span.Coordinates));
+            }
+            if (candidatePortals.Count == 0)
+            {
+                continue;
+            }
+
             Geometry corridor = span.Buffer(AlignmentToleranceMetres);
-            _index.Insert(corridor.EnvelopeInternal, new Candidate(feature.Feature.Id, span, PreparedGeometryFactory.Prepare(corridor), feature.Feature.UnderpassRoadIds));
-            portals.Add(new GridPortal(span.Coordinates));
+            IReadOnlyList<long>? linkedRoads = kind == TerrainKind.PedestrianUnderpassCandidate
+                ? portalRoadIds : feature.Feature.UnderpassRoadIds;
+            _index.Insert(corridor.EnvelopeInternal, new Candidate(feature.Feature.Id, span, PreparedGeometryFactory.Prepare(corridor), linkedRoads));
+            portals.AddRange(candidatePortals);
         }
         _index.Build();
         Portals = portals.AsReadOnly();
+    }
+
+    private static GridPortal? CreateUnderpassPortal(LineString tunnel, Geometry road, Geometry[] blocked)
+    {
+        if (tunnel.Intersection(road) is not Point crossing)
+        {
+            return null;
+        }
+
+        LengthIndexedLine indexed = new(tunnel);
+        double center = indexed.Project(crossing.Coordinate);
+        double left = FindClearEndpoint(indexed, center, -1, blocked);
+        double right = FindClearEndpoint(indexed, center, 1, blocked);
+        if (center - left < MinimumUnderpassPortalHalfLengthMetres
+            || right - center < MinimumUnderpassPortalHalfLengthMetres)
+        {
+            return null;
+        }
+
+        LineString passage = (LineString)indexed.ExtractLine(left, right);
+        return passage.Crosses(road) ? new GridPortal(passage.Coordinates) : null;
+    }
+
+    private static double FindClearEndpoint(LengthIndexedLine indexed, double center, int direction, Geometry[] blocked)
+    {
+        double limit = direction < 0 ? indexed.StartIndex : indexed.EndIndex;
+        double distance = Math.Min(UnderpassPortalHalfLengthMetres, Math.Abs(limit - center));
+        for (; distance >= MinimumUnderpassPortalHalfLengthMetres; distance -= 0.5)
+        {
+            double endpoint = center + direction * distance;
+            Geometry approach = indexed.ExtractLine(Math.Min(center, endpoint), Math.Max(center, endpoint));
+            if (!blocked.Any(obstacle => obstacle.Intersects(approach)))
+            {
+                return endpoint;
+            }
+        }
+
+        return center;
     }
 
     public IReadOnlyList<long> UsedBy(LineString segment, Geometry road, Geometry intersection, Point crossing, long? requiredRoadId = null)

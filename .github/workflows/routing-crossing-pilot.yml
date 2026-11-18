@@ -33,7 +33,7 @@ jobs:
           global-json-file: global.json
       - uses: astral-sh/setup-uv@v10.3.2
         with:
-          version: '0.12.23'
+          version: '0.13.9'
           python-version: '3.12'
       - run: uv sync --project tools/GeodataPreparation --locked
       - uses: ./.github/actions/country-data
@@ -88,7 +88,7 @@ jobs:
           global-json-file: global.json
       - uses: astral-sh/setup-uv@v10.3.2
         with:
-          version: '0.12.23'
+          version: '0.13.9'
           python-version: '3.12'
       - uses: actions/download-artifact@v8
         with:

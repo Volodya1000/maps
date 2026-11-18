@@ -4,6 +4,7 @@ using CableRoutePlanner.Infrastructure.Geography;
 using CableRoutePlanner.Infrastructure.Routing;
 using CableRoutePlanner.Persistence;
 using NetTopologySuite.Geometries;
+using NetTopologySuite.IO;
 using Xunit;
 
 namespace CableRoutePlanner.Tests;
@@ -23,6 +24,9 @@ public sealed class UnderpassRoutingTests
         RouteAlternative route = Assert.Single(routes);
         Assert.Contains(route.RoadContacts!, contact => contact.Geometry.Any(point => point.DistanceTo(TestData.P(163, 150)) < 2));
         Assert.Equal(new long[] { 2 }, route.UnderpassCandidateIds);
+        RoadCrossingEvent crossing = Assert.Single(route.RoadCrossingEvents!);
+        Assert.Equal(1, crossing.RoadId);
+        Assert.Equal(RoadCrossingKind.PedestrianUnderpass, crossing.Kind);
     }
 
     [Fact]
@@ -58,6 +62,43 @@ public sealed class UnderpassRoutingTests
             default);
 
         Assert.All(routes, route => Assert.Empty(route.UnderpassCandidateIds ?? []));
+    }
+
+    [Fact]
+    public async Task BuildingTouchingSourceLineUsesShortSafeUnderpassPortals()
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature sourceLine = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (163, 130), (163, 175))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+        MapFeature building = TestData.Polygon(3, TerrainKind.Building, 150, 165, 170, 185);
+
+        IReadOnlyList<RouteAlternative> routes = await TestData.Planner(road, sourceLine, building).PlanAsync(
+            [TestData.P(40, 100), TestData.P(280, 200)],
+            TestData.Options with { AllowExperimentalPedestrianUnderpasses = true },
+            default);
+
+        RouteAlternative route = Assert.Single(routes);
+        Assert.Equal(new long[] { 2 }, route.UnderpassCandidateIds);
+        LineString path = new(route.Geometry.Select(point => new Coordinate(point.Longitude, point.Latitude)).ToArray());
+        Assert.False(path.Intersects(new WKBReader().Read(building.Wkb)));
+    }
+
+    [Fact]
+    public async Task UnderpassWithoutClearEntranceDoesNotCreateARoute()
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature tunnel = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (163, 130), (163, 175))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+        MapFeature building = TestData.Polygon(3, TerrainKind.Building, 150, 151, 170, 185);
+
+        PlanningException error = await Assert.ThrowsAsync<PlanningException>(() =>
+            TestData.Planner(road, tunnel, building).PlanAsync(
+                [TestData.P(40, 100), TestData.P(280, 200)],
+                TestData.Options with { AllowExperimentalPedestrianUnderpasses = true }, default));
+
+        Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
     }
 
     [Theory]

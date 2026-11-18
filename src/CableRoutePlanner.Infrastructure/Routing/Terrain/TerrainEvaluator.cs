@@ -51,6 +51,7 @@ internal sealed class TerrainEvaluator
         SortedSet<long>? gasCandidates = null;
         SortedSet<long>? underpassCandidates = null;
         HashSet<long>? gasRoads = null;
+        List<RoadCrossingEvidence>? roadCrossingEvents = null;
         foreach (TerrainObstacle obstacle in Terrain.Index.Query(line.EnvelopeInternal))
         {
             Geometry geometry = obstacle.Geometry;
@@ -111,6 +112,17 @@ internal sealed class TerrainEvaluator
                         underpassCandidates ??= [];
                         underpassCandidates.UnionWith(underpassCandidateIds);
                     }
+
+                    RoadCrossingKind? crossingKind = gasCandidateIds.Count > 0
+                        ? RoadCrossingKind.OverheadGasPipeline
+                        : underpassCandidateIds.Count > 0 && !permittedByExistingRoadCrossing
+                            ? RoadCrossingKind.PedestrianUnderpass
+                            : bridgeCandidates.Length > 0 ? RoadCrossingKind.Bridge : null;
+                    if (crossingKind.HasValue)
+                    {
+                        roadCrossingEvents ??= [];
+                        roadCrossingEvents.Add(new(obstacle.Id, crossingKind.Value, crossing.Coordinate));
+                    }
                 }
             }
 
@@ -136,6 +148,7 @@ internal sealed class TerrainEvaluator
             contribution.BridgeCandidates.ToArray(),
             gasCandidates?.ToArray() ?? [],
             underpassCandidates?.ToArray() ?? [],
+            roadCrossingEvents?.ToArray() ?? [],
             gasRoads?.Count ?? 0,
             _preferGas);
     }

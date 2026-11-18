@@ -40,7 +40,7 @@ internal static class MapsuiStyleFactory
                 new VectorStyle { Line = new Pen(Color.White, 6), MaxVisible = 10 },
                 new VectorStyle
                 {
-                    Line = new Pen(new Color(112, 74, 161), 3)
+                    Line = new Pen(new Color(26, 111, 210), 3)
                     {
                         PenStyle = PenStyle.ShortDash,
                         PenStrokeCap = PenStrokeCap.Round

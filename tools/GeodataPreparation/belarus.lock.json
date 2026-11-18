@@ -9,7 +9,7 @@
   },
   "runtime": {
     "python": "3.12.14",
-    "uv": "0.12.23"
+    "uv": "0.13.9"
   },
   "prepared": {
     "key": "belarus-v1-f94aa250266aee19da6712975170557c920c3e0625bb20d8282fdd4227197557",

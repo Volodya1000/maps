@@ -16,6 +16,8 @@ def is_underpass(tags):
         and tags.get("tunnel") == "yes"
         and level is not None
         and level < 0
+        and tags.get("footway") != "crossing"
+        and "crossing" not in tags
         and tags.get("bridge", "no") == "no"
         and tags.get("covered", "yes") != "no"
         and tags.get("location", "underground") == "underground"

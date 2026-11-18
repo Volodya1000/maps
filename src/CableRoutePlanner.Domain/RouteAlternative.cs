@@ -8,4 +8,5 @@ public sealed record RouteAlternative(
     IReadOnlyList<GeoCoordinate>? TransitionPoints = null,
     IReadOnlyList<RouteRoadContact>? RoadContacts = null,
     IReadOnlyList<long>? GasPipelineCandidateIds = null,
-    IReadOnlyList<long>? UnderpassCandidateIds = null);
+    IReadOnlyList<long>? UnderpassCandidateIds = null,
+    IReadOnlyList<RoadCrossingEvent>? RoadCrossingEvents = null);

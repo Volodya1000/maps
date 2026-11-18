@@ -14,15 +14,25 @@ public static class RouteMetricsFormatter
             $"Кабель с запасом {options.ReserveFraction:P0}: "
                 + $"{metrics.CableLengthMetres(options.ReserveFraction):N0} м",
             $"Лес: {metrics.ForestMetres:N0} м · поле: {metrics.FieldMetres:N0} м",
-            $"Пересечённых дорог: {metrics.RoadCrossings}",
+            $"Пересечения дорог: {route.RoadCrossingEvents?.Count ?? metrics.RoadCrossings}",
             $"Разрешённых водных переходов: {metrics.ApprovedWaterCrossings}",
             $"Переходов по мостам: {metrics.PotentialBridgeCrossings}",
             $"Кандидатов по газопроводам: {metrics.PotentialGasPipelineCrossings}",
             $"Взвешенная стоимость: {metrics.WeightedCost:N0} усл. м"
         ];
-        if ((route.UnderpassCandidateIds?.Count ?? 0) > 0)
+        if (route.RoadCrossingEvents is not null)
         {
-            lines.Add("Подземный переход. Прокладка кабеля требует инженерной проверки");
+            foreach (IGrouping<RoadCrossingKind, RoadCrossingEvent> crossings in route.RoadCrossingEvents.GroupBy(crossing => crossing.Kind))
+            {
+                string name = crossings.Key switch
+                {
+                    RoadCrossingKind.OverheadGasPipeline => "По надземному газопроводу",
+                    RoadCrossingKind.PedestrianUnderpass => "Через подземный пешеходный переход",
+                    RoadCrossingKind.Bridge => "По мосту",
+                    _ => throw new ArgumentOutOfRangeException(nameof(route))
+                };
+                lines.Add($"{name}: {crossings.Count()}");
+            }
         }
 
         return string.Join(Environment.NewLine, lines);

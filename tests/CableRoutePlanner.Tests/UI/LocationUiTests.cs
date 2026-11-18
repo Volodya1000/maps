@@ -105,6 +105,18 @@ public sealed class LocationUiTests
         Assert.False(finish.IsEffectivelyVisible);
 
         Assert.Equal("Начать прокладку кабеля", start.Content);
+        Point disabledButtonPoint = await touch.TargetAsync(start);
+        touch.Send(RawPointerEventType.TouchBegin, disabledButtonPoint);
+        touch.Send(RawPointerEventType.TouchEnd, disabledButtonPoint);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        TextBlock locationRequirement = view.GetVisualDescendants().OfType<TextBlock>()
+            .Single(text => text.Name == "LocationStartRequirement");
+        Button openSettings = view.GetVisualDescendants().OfType<Button>()
+            .Single(button => button.Name == "OpenLocationSettingsButton");
+        Assert.True(locationRequirement.IsEffectivelyVisible);
+        Assert.Equal("Для отслеживания прокладки кабеля необходимо включить геолокацию", locationRequirement.Text);
+        Assert.True(openSettings.IsEffectivelyVisible);
+
         await tracking.SetLocationEnabledAsync(true);
         Point buttonPoint = await touch.TargetAsync(start);
         touch.Send(RawPointerEventType.TouchBegin, buttonPoint);

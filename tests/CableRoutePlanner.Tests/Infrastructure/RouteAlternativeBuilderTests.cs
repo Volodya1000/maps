@@ -46,6 +46,51 @@ public sealed class RouteAlternativeBuilderTests
     }
 
     [Fact]
+    public void CoincidentUnderpassCandidatesCountAsOneRoadCrossing()
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature first = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 130), (160, 170))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+        MapFeature second = first with { Id = 3 };
+        LocalProjection projection = new(TestData.P(0, 0));
+        TerrainEvaluator evaluator = new([road, first, second], projection, allowUnderpasses: true);
+        RouteAlternativeBuilder builder = new(evaluator, new(evaluator, evaluator.Terrain), evaluator.Terrain, TestData.Options);
+
+        Assert.Null(builder.Add([projection.Forward(TestData.P(160, 140)), projection.Forward(TestData.P(160, 160))],
+            CostProfile.Defaults[0], default));
+
+        RouteAlternative route = Assert.Single(builder.Complete());
+        Assert.Single(route.RoadCrossingEvents!);
+        Assert.Equal(new long[] { 2, 3 }, route.UnderpassCandidateIds);
+    }
+
+    [Fact]
+    public void SeparateCrossingsOfTheSameRoadCountAsSeparateEvents()
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature first = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 130), (160, 170))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+        MapFeature second = TestData.Line(3, TerrainKind.PedestrianUnderpassCandidate, (180, 130), (180, 170))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+        LocalProjection projection = new(TestData.P(0, 0));
+        TerrainEvaluator evaluator = new([road, first, second], projection, allowUnderpasses: true);
+        RouteAlternativeBuilder builder = new(evaluator, new(evaluator, evaluator.Terrain), evaluator.Terrain, TestData.Options);
+
+        Assert.Null(builder.Add([
+            projection.Forward(TestData.P(160, 140)),
+            projection.Forward(TestData.P(160, 160)),
+            projection.Forward(TestData.P(180, 160)),
+            projection.Forward(TestData.P(180, 140))], CostProfile.Defaults[0], default));
+
+        RouteAlternative route = Assert.Single(builder.Complete());
+        Assert.Equal(2, route.RoadCrossingEvents!.Count);
+        Assert.All(route.RoadCrossingEvents, crossing => Assert.Equal(1, crossing.RoadId));
+    }
+
+    [Fact]
     public void CompletionKeepsSpecificRejectionMeasurementsAndOtherFailures()
     {
         TerrainEvaluator evaluator = new([], new LocalProjection(TestData.P(0, 0)));
