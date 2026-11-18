@@ -18,7 +18,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 [assembly: AvaloniaTestApplication(typeof(CableRoutePlanner.Tests.TestApplication))]
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+// Avalonia Headless uses one dispatcher session for this assembly. Keeping all
+// tests in one xUnit collection prevents session teardown from racing the next
+// async UI test on Linux runners.
+[assembly: CollectionBehavior(CollectionBehavior.CollectionPerAssembly, DisableTestParallelization = true)]
 namespace CableRoutePlanner.Tests;
 
 public static class TestApplication

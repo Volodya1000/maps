@@ -8,9 +8,8 @@
 
 ## Windows 7
 
-> Этот раздел описывает ранний `net48`-прототип. Для полного Desktop и CI используйте [windows7-offline.md](windows7-offline.md).
 
-Решение по минимизации дублирования UI описано в [`windows7-decision.md`](windows7-decision.md): первым прототипировать Avalonia 11 с совместимыми общими сборками и тонким .NET Framework 4.8 host. Это ещё не готовый Windows 7 порт. Он требует адаптации части .NET API и проверки Avalonia/Mapsui, SQLite и нативного рендеринга на чистой Windows 7 SP1 VM. .NET 8 текущей сборки Windows 7 не поддерживает.
+Для Windows 7 SP1 x86 используйте только [автономный self-contained пакет](windows7-offline.md): он создаётся CI из полного Desktop, содержит runtime и офлайн-карту Минска и не требует установленного .NET, Mono или сети на целевом ноутбуке.
 
 ## Незакрытые инженерные задачи
 
