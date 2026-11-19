@@ -8,7 +8,7 @@ using NetTopologySuite.Geometries;
 
 namespace CableRoutePlanner.UI.MapAdapters;
 
-internal sealed class UnderpassMarkerFeatureProvider(IGeodataRepository geodata) : IProvider
+internal sealed class MapAnnotationFeatureProvider(IGeodataRepository geodata) : IProvider
 {
     public string? CRS { get; set; } = "EPSG:3857";
 
@@ -23,7 +23,7 @@ internal sealed class UnderpassMarkerFeatureProvider(IGeodataRepository geodata)
 
     public async Task<IEnumerable<IFeature>> GetFeaturesAsync(FetchInfo fetchInfo)
     {
-        if (fetchInfo.Resolution > 5)
+        if (fetchInfo.Resolution > MapsuiStyleFactory.CrossingSymbolMaxResolution)
         {
             return [];
         }
@@ -35,9 +35,8 @@ internal sealed class UnderpassMarkerFeatureProvider(IGeodataRepository geodata)
             new GeoBounds(west, south, east, north),
             fetchInfo.Resolution,
             CancellationToken.None).ConfigureAwait(false);
-        return MapsuiMapAdapter.PrepareUnderpassMarkers(
+        return MapsuiMapAdapter.PrepareAnnotations(
             features,
-            fetchInfo.Resolution,
             CancellationToken.None);
     }
 }

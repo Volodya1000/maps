@@ -73,6 +73,7 @@ public sealed class LocationUiTests
         {
             ViewModel = viewModel
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 600, Height = 800 };
         window.Show();
         viewModel.SelectedRoute = new RouteAlternative(
@@ -161,6 +162,7 @@ public sealed class LocationUiTests
         {
             ViewModel = viewModel
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 600, Height = 800 };
         window.Show();
         viewModel.SelectedRoute = new RouteAlternative(

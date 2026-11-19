@@ -46,7 +46,7 @@ public sealed class BridgeRenderingTests
         // The bridge must have a contrasting deck at the default 7 m viewport
         // as well as at close zoom, independently of route overlays.
         Assert.Contains(bitmap.Pixels, pixel => pixel.Red < 110 && pixel.Green < 130 && pixel.Blue < 140);
-        Assert.Contains(layer.Features, feature => feature.Styles.OfType<Mapsui.Styles.LabelStyle>()
-            .Any(label => label.GetLabelText(feature) == "Мост"));
+        Assert.Equal(resolution <= 5, layer.Features.Any(feature => feature.Styles.OfType<Mapsui.Styles.LabelStyle>()
+            .Any(label => label.GetLabelText(feature) == "Мост")));
     }
 }

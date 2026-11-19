@@ -19,6 +19,7 @@ public sealed class ResponsiveLayoutTests
     {
         using MapViewModel viewModel = CreateViewModel();
         MapView view = CreateView(viewModel);
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         Window window = new() { Content = view, Width = 1280, Height = 850 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -37,6 +38,7 @@ public sealed class ResponsiveLayoutTests
     {
         using MapViewModel viewModel = CreateViewModel();
         MapView view = CreateView(viewModel);
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         Window window = new() { Content = view, Width = width, Height = height };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -68,6 +70,7 @@ public sealed class ResponsiveLayoutTests
     {
         using MapViewModel viewModel = CreateViewModel();
         MapView view = CreateView(viewModel);
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         Window window = new() { Content = view, Width = width, Height = height };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -120,6 +123,7 @@ public sealed class ResponsiveLayoutTests
     {
         using MapViewModel viewModel = CreateViewModel();
         MapView view = CreateView(viewModel);
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         Window window = new() { Content = view, Width = 420, Height = 620 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -141,6 +145,7 @@ public sealed class ResponsiveLayoutTests
     {
         using MapViewModel viewModel = CreateViewModel();
         MapView view = CreateView(viewModel);
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         Window window = new() { Content = view, Width = 420, Height = 620 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();

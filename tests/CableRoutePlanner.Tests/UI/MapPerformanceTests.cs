@@ -24,7 +24,7 @@ public sealed class MapPerformanceTests
     public async Task ClosingMapDuringDispatcherFetchLeavesNoLateRenderedTiles()
     {
         ObservedRepository repository = new(block: true);
-        Mapsui.UI.Avalonia.MapControl control = new();
+        using Mapsui.UI.Avalonia.MapControl control = new();
         using MapsuiMapAdapter adapter = new(control, repository.Info.Bounds, repository);
         TileLayer layer = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         double resolution = layer.TileSource.Schema.Resolutions[10].UnitsPerPixel;
@@ -63,7 +63,7 @@ public sealed class MapPerformanceTests
         MapFeature first = new(21, TerrainKind.Settlement, new WKBWriter().Write(new Point(27.001, 54.001)), "First", null);
         MapFeature second = new(22, TerrainKind.Settlement, new WKBWriter().Write(new Point(27.002, 54.002)), "Second", null);
         var repository = new MemoryData([.. roads, first, second]);
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, repository.Info.Bounds, repository);
         TileLayer tiled = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         Layer source = Assert.IsType<Layer>(((ISourceLayer)tiled).SourceLayer);
@@ -82,7 +82,7 @@ public sealed class MapPerformanceTests
     public async Task ReturningToRecentViewportUsesCachedTiles()
     {
         var repository = new ObservedRepository();
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, repository.Info.Bounds, repository);
         TileLayer layer = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         double resolution = layer.TileSource.Schema.Resolutions[10].UnitsPerPixel;
@@ -107,7 +107,7 @@ public sealed class MapPerformanceTests
     public async Task RasterPreparationRunsOffUiThreadWithAtMostTwoJobs()
     {
         var repository = new ObservedRepository(block: true);
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, repository.Info.Bounds, repository);
         TileLayer layer = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         Task<byte[]?>[] jobs = StartTiles(layer);
@@ -130,7 +130,7 @@ public sealed class MapPerformanceTests
     public async Task DisposingMapCancelsQueuedTilesAndLetsRunningTilesFinish()
     {
         var repository = new ObservedRepository(block: true);
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var adapter = new MapsuiMapAdapter(control, repository.Info.Bounds, repository);
         bool disposed = false;
         TileLayer layer = Assert.Single(control.Map.Layers.OfType<TileLayer>());
@@ -161,7 +161,7 @@ public sealed class MapPerformanceTests
     public async Task FailedRasterJobReleasesCapacityForNextTile()
     {
         var repository = new ObservedRepository(failFirst: true);
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, repository.Info.Bounds, repository);
         TileLayer layer = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         await Assert.ThrowsAsync<InvalidDataException>(() => layer.TileSource.GetTileAsync(Tile(layer, 0)));

@@ -1,5 +1,8 @@
 # PR #55: связные подземные сети, проходы и выходы
 
+Финальная полировка подписей и пиктограммы с новыми снимками и проверками:
+[дополнительный технический отчёт](../pr55-map-polish/report.md).
+
 Проверка 19 ноября 2026 года, Windows. Базовый HEAD:
 `7fbad6bf084455d7e056b83e627bdbdaed99c10e`.
 В исходном Verify заменена только эквивалентная сортировка Order → OrderBy
@@ -82,7 +85,7 @@ PBF SHA-256:
 | Запуск | Результат |
 | --- | --- |
 | До, максимальная длина 1000000 м | Обход 656,15 м; кольцо не используется |
-| После, те же параметры | 192,84 м по подтверждённой сети, одно прохождение, шесть дорожных контактов |
+| После, те же параметры | 192,84 м по подтверждённой сети, одно прохождение, шесть дорожных контактов с пятью различными дорогами |
 | До, максимум 300 м | `no_route`, `RouteLengthLimitExceeded` во всех профилях |
 | После, максимум 300 м | 192,84 м, одно прохождение |
 | После, underpasses=false, максимум 300 м | `NoRouteInSearchArea` во всех профилях |
@@ -169,7 +172,7 @@ SVG исправлен вручную, внешний фон прозрачен.
 | Два значка, одна/две дороги | `ConfirmedEntrancesRenderOnBothSidesOfSingleOrDividedRoad` |
 | Шесть подтверждённых выходов | `VictorySquareRendersSixConfirmedSurfaceEntrancesAndOneLabel` |
 | Четырёхвходовая схема | `RectangularNetworkRendersFourEntrancesWithoutDiagonalShortcuts` |
-| Размеры SVG и прозрачность | `SignHasTransparentExteriorAndReadableBlueAndWhitePixels` |
+| Размеры SVG, прозрачность и вертикальность | `SignMatchesReviewedSilhouetteAtSmallSizesAndAllRotations` |
 | Мост виден без расчёта маршрута | `ProletarskayaFootbridgeIsReadableWithoutBuildingARoute` |
 | Новые и старые SQLite | `OptionalTopologyRoundTripsForRoutingAndDetailMap`, `VersionedPackagesLoadUnderpassLinksOnlyFromNewSchema` |
 | Подготовка сохраняет внутренние ways | `test_network_keeps_internal_ways_and_only_source_confirmed_surface_entrances` |

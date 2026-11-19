@@ -48,6 +48,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
 
     private readonly OfflineRasterLayer? _tiledBase;
 
+    private readonly MapAnnotationLayer _annotations = new();
+
     private readonly MemoryLayer _routes = new("Маршруты")
     {
         Style = null
@@ -176,12 +178,9 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             {
                 control.Map.Layers.Add(new OfflineCoverageLayer(geodata.Info));
             }
-            control.Map.Layers.Add(new Layer("Знаки подземных переходов")
-            {
-                DataSource = new UnderpassMarkerFeatureProvider(geodata),
-                Style = null
-            });
+            _annotations.DataSource = new MapAnnotationFeatureProvider(geodata);
         }
+        control.Map.Layers.Add(_annotations);
         control.Map.Layers.Add(_routes);
         control.Map.Layers.Add(_progress);
         control.Map.Layers.Add(_roadContacts);
@@ -306,8 +305,9 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         double metresPerPixel = _control.Map.Navigator.Viewport.Resolution;
         try
         {
-            IFeature[] prepared = await Task.Run(
-                () => PrepareFeatures(snapshot, cancellationToken, metresPerPixel), cancellationToken);
+            (IFeature[] Terrain, IFeature[] Annotations) prepared = await Task.Run(() =>
+                (PrepareFeatures(snapshot, cancellationToken, metresPerPixel, includeAnnotations: false),
+                    PrepareAnnotations(snapshot, cancellationToken)), cancellationToken);
             void Publish()
             {
                 if (_disposed || cancellationToken.IsCancellationRequested)
@@ -315,7 +315,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                     return;
                 }
 
-                _base.Features = prepared;
+                _base.Features = prepared.Terrain;
+                _annotations.SetFeatures(prepared.Annotations);
                 _base.DataHasChanged();
                 _control.RefreshGraphics();
             }
@@ -339,7 +340,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         IReadOnlyList<MapFeature> features,
         CancellationToken cancellationToken,
         double metresPerPixel = 0,
-        bool includeUnderpassMarkers = true)
+        bool includeAnnotations = true)
     {
         var reader = new WKBReader();
         var transform = new MercatorTransformer();
@@ -347,11 +348,9 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         Dictionary<long, NetTopologySuite.Geometries.Geometry> roads = features
             .Where(feature => feature.Kind == TerrainKind.Road)
             .ToDictionary(feature => feature.Id, feature => transform.Transform(reader.Read(feature.Wkb)));
-        HashSet<(long Network, long Node)> markedNodes = [];
-        HashSet<long> labelledNetworks = [];
-        return features
+        IFeature[] terrain = features
             .Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline
-                && (feature.Kind != TerrainKind.PedestrianUnderpassCandidate || metresPerPixel <= 10))
+                && (feature.Kind != TerrainKind.PedestrianUnderpassCandidate || metresPerPixel <= MapsuiStyleFactory.UnderpassLineMaxResolution))
             .OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind))
             .SelectMany(f =>
         {
@@ -386,27 +385,44 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 }
             }
 
-            if (f.Kind != TerrainKind.PedestrianUnderpassCandidate
-                || metresPerPixel > 5
-                || !includeUnderpassMarkers)
-            {
-                return new IFeature[] { feature };
-            }
-
-            return new IFeature[] { feature }.Concat(EntranceMarkers(f, geometry, markedNodes, labelledNetworks));
+            return new IFeature[] { feature };
         }).ToArray();
+        return includeAnnotations && metresPerPixel <= MapsuiStyleFactory.CrossingSymbolMaxResolution
+            ? terrain.Concat(PrepareAnnotations(features, cancellationToken)).ToArray()
+            : terrain;
+    }
+
+    internal static IFeature[] PrepareAnnotations(
+        IReadOnlyList<MapFeature> features, CancellationToken cancellationToken)
+    {
+        MapFeature[] unique = features.DistinctBy(feature => feature.Id).OrderBy(feature => feature.Id).ToArray();
+        List<IFeature> annotations = [.. PrepareUnderpassMarkers(unique, cancellationToken)];
+        WKBReader reader = new();
+        MercatorTransformer transform = new();
+        foreach (MapFeature bridge in unique.Where(feature => feature.Kind == TerrainKind.BridgeCandidate))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Geometry geometry = transform.Transform(reader.Read(bridge.Wkb));
+            Point anchor = geometry is LineString or MultiLineString
+                ? new Point(new LengthIndexedLine(geometry).ExtractPoint(geometry.Length / 2))
+                : geometry.InteriorPoint;
+            GeometryFeature label = new(anchor);
+            label[MapAnnotationLayer.LabelKeyField] = $"bridge/{bridge.Id.ToString(CultureInfo.InvariantCulture)}";
+            label.Styles.Add(MapsuiStyleFactory.MapLabel("Мост", new Color(77, 91, 99),
+                new Brush(MapsuiStyleFactory.MapBackground), new Offset(0, 16), MapsuiStyleFactory.CrossingSymbolMaxResolution));
+            annotations.Add(label);
+        }
+        for (int index = 0; index < annotations.Count; index++)
+        {
+            annotations[index][MapAnnotationLayer.OrderField] = index;
+        }
+        return annotations.ToArray();
     }
 
     internal static IFeature[] PrepareUnderpassMarkers(
         IReadOnlyList<MapFeature> features,
-        double metresPerPixel,
         CancellationToken cancellationToken)
     {
-        if (metresPerPixel > 5)
-        {
-            return [];
-        }
-
         WKBReader reader = new();
         MercatorTransformer transform = new();
         Dictionary<long, NetTopologySuite.Geometries.Geometry> roads = features
@@ -432,7 +448,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
     {
         if (feature.UnderpassTopology is not { } topology)
         {
-            yield return CreateUnderpassMarker(geometry);
+            yield return CreateUnderpassMarker(geometry, feature.Id);
             yield break;
         }
         Coordinate[] coordinates = geometry.Coordinates;
@@ -443,7 +459,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             {
                 continue;
             }
-            GeometryFeature marker = CreateUnderpassMarker(new Point(coordinates[i]));
+            GeometryFeature marker = CreateUnderpassMarker(new Point(coordinates[i]), topology.NetworkId);
             if (!labelledNetworks.Add(topology.NetworkId))
             {
                 foreach (LabelStyle label in marker.Styles.OfType<LabelStyle>().ToArray())
@@ -455,27 +471,21 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         }
     }
 
-    private static GeometryFeature CreateUnderpassMarker(NetTopologySuite.Geometries.Geometry geometry)
+    private static GeometryFeature CreateUnderpassMarker(NetTopologySuite.Geometries.Geometry geometry, long networkId)
     {
         GeometryFeature marker = new(geometry.Centroid);
+        marker[MapAnnotationLayer.LabelKeyField] = $"underpass/{networkId.ToString(CultureInfo.InvariantCulture)}";
+        marker[MapAnnotationLayer.CacheAnchorField] = true;
         marker.Styles.Add(new SymbolStyle
         {
             SymbolType = SymbolType.Image,
             BitmapId = UnderpassSymbolId.Value,
             RotateWithMap = false,
             SymbolScale = 0.75,
-            MaxVisible = 5
+            MaxVisible = MapsuiStyleFactory.CrossingSymbolMaxResolution
         });
-        marker["underpass_label"] = "Подземный переход";
-        marker.Styles.Add(new LabelStyle
-        {
-            LabelColumn = "underpass_label",
-            ForeColor = Color.White,
-            BackColor = new Brush(new Color(26, 111, 210)),
-            CollisionDetection = true,
-            Offset = new Offset(0, 20),
-            MaxVisible = 2
-        });
+        marker.Styles.Add(MapsuiStyleFactory.MapLabel("Подземный переход", Color.White,
+            new Brush(new Color(26, 111, 210)), new Offset(0, 20), MapsuiStyleFactory.UnderpassLabelMaxResolution));
         return marker;
     }
 

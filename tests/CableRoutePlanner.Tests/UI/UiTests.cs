@@ -66,6 +66,7 @@ public sealed class UiTests
         vm.RouteVertices.Add(new RouteVertexRow(1, TestData.P(100, 100), LegIndex: 1, LegSubIndex: 1));
         vm.RouteVertices.Add(new RouteVertexRow(2, TestData.P(101, 100), LegIndex: 1, LegSubIndex: 2));
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds)) { ViewModel = vm };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 420, Height = 850 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -80,7 +81,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task GasPipelineCandidateRendersCrossingSpanAndLabelWithoutTheWholePipeline()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
         await adapter.SetFeaturesAsync([
             TestData.Line(1, TerrainKind.OverheadGasPipeline, (100, 0), (100, 500)),
@@ -157,11 +158,11 @@ public sealed class UiTests
             with
         { UnderpassRoadIds = new long[] { 1 } };
         MemoryData repository = new(road, underpass);
-        Mapsui.UI.Avalonia.MapControl control = new();
+        using Mapsui.UI.Avalonia.MapControl control = new();
         using MapsuiMapAdapter adapter = new(control, repository.Info.Bounds, repository);
         control.Map.Navigator.RotateTo(rotation, 0);
         Mapsui.Layers.Layer overlay = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.Layer>(),
-            layer => layer.Name == "Знаки подземных переходов");
+            layer => layer.Name == "Подписи и знаки карты");
         Mapsui.Providers.IProvider provider = Assert.IsAssignableFrom<Mapsui.Providers.IProvider>(overlay.DataSource);
         (double west, double south) = Mapsui.Projections.SphericalMercator.FromLonLat(27, 54);
         (double east, double north) = Mapsui.Projections.SphericalMercator.FromLonLat(27.006, 54.006);
@@ -193,6 +194,7 @@ public sealed class UiTests
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         { ViewModel = vm };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 420, Height = 850 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -241,6 +243,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 1100, Height = 900 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -283,7 +286,7 @@ public sealed class UiTests
     public async Task MapAdapterRendersEveryTerrainCategory()
     {
         // Arrange
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(
             control,
             new CableRoutePlanner.Domain.GeoBounds(27, 53, 28, 54));
@@ -315,7 +318,7 @@ public sealed class UiTests
         MapFeature road = TestData.Line(1, Domain.TerrainKind.Road, (10, 10), (200, 200));
         MapFeature bridge = TestData.Line(2, Domain.TerrainKind.BridgeCandidate, (20, 10), (20, 200));
         var repository = new TileRepository(road, bridge);
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(
             control,
             repository.Info.Bounds,
@@ -350,7 +353,7 @@ public sealed class UiTests
         Assert.InRange(roadStyle.Line.Width, 0.5, 1.1);
         Mapsui.IFeature renderedBridge = rendered[2];
         Assert.Equal(2, renderedBridge.Styles.OfType<Mapsui.Styles.VectorStyle>().Count());
-        Assert.Contains(renderedBridge.Styles.OfType<Mapsui.Styles.LabelStyle>(),
+        Assert.DoesNotContain(renderedBridge.Styles.OfType<Mapsui.Styles.LabelStyle>(),
             label => label.GetLabelText(renderedBridge) == "Мост");
         Mapsui.Styles.VectorStyle bridgeMask = Assert.IsType<Mapsui.Styles.VectorStyle>(
             renderedBridge.Styles.First());
@@ -365,7 +368,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task MapAdapterKeepsPreviousLayerWhenNewGeometryCannotBeRead()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 53, 28, 54));
         MapFeature original = TestData.Polygon(1, Domain.TerrainKind.Field, 10, 10, 12, 12);
         await adapter.SetFeaturesAsync([original]);
@@ -382,7 +385,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task MapAdapterPublishesLatestFeaturesAfterOverlappingPreparations()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 53, 28, 54));
         MapFeature[] oldFeatures = Enumerable.Range(0, 200).Select(index => TestData.Polygon(
             index + 1, Domain.TerrainKind.Field, 10 + index * 0.01, 10,
@@ -402,7 +405,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task DisposingMapAdapterCancelsPendingFeaturePreparation()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 53, 28, 54));
         MapFeature[] features = Enumerable.Range(0, 200).Select(index => TestData.Polygon(
             index + 1, Domain.TerrainKind.Field, 10 + index * 0.01, 10,
@@ -426,6 +429,7 @@ public sealed class UiTests
         var window = new Window { Content = shell, Width = 900, Height = 700 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        using Mapsui.UI.Avalonia.MapControl initialMap = shell.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         await vm.ShowSettings.Execute();
         settings.CellSize = 40;
         var back = new Avalonia.Interactivity.RoutedEventArgs(TopLevel.BackRequestedEvent);
@@ -495,6 +499,7 @@ public sealed class UiTests
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
+        using Mapsui.UI.Avalonia.MapControl initialMap = shell.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         await shell.ViewModel!.ShowSettings.Execute();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         NumericUpDown[] inputs = shell.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
@@ -505,6 +510,7 @@ public sealed class UiTests
 
         await shell.ViewModel.ShowMap.Execute();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        using Mapsui.UI.Avalonia.MapControl restoredMap = shell.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         Assert.Equal(cellSize, settings.CellSize);
         Assert.Equal(reservePercent, settings.ReservePercent);
 
@@ -527,6 +533,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 1100, Height = 900 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -567,6 +574,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 412, Height = 860 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -609,7 +617,8 @@ public sealed class UiTests
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());
         TypedViewLocator locator = provider.GetRequiredService<TypedViewLocator>();
-        Assert.IsType<MapView>(locator.ResolveView(provider.GetRequiredService<MapViewModel>()));
+        MapView mapView = Assert.IsType<MapView>(locator.ResolveView(provider.GetRequiredService<MapViewModel>()));
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = mapView.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         Assert.IsType<SettingsView>(locator.ResolveView(provider.GetRequiredService<SettingsViewModel>()));
         ShellView shell = provider.GetRequiredService<ShellView>();
         var window = new Window
@@ -617,6 +626,8 @@ public sealed class UiTests
             Content = shell
         };
         window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        using Mapsui.UI.Avalonia.MapControl shellMap = shell.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         Assert.NotNull(shell.ViewModel);
         window.Close();
     }
@@ -631,6 +642,7 @@ public sealed class UiTests
         MapViewModel vm = provider.GetRequiredService<MapViewModel>();
         IPlanningSession session = provider.GetRequiredService<CableRoutePlanner.Application.IPlanningSession>();
         var view = (MapView)provider.GetRequiredService<TypedViewLocator>().ResolveView(vm)!;
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window
         {
             Content = view,
@@ -688,6 +700,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 1100, Height = 1100 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -783,6 +796,7 @@ public sealed class UiTests
         Assert.True(prepared);
         Assert.NotNull(view.ViewModel!.Shell);
         Assert.NotEmpty(view.GetVisualDescendants().OfType<ShellView>());
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         window.Close();
     }
 
@@ -797,6 +811,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 412, Height = 860 };
         window.Show();
         for (int attempt = 0; attempt < 100 && repository.LastBounds is null; attempt++)
@@ -821,6 +836,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 412, Height = 860 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -855,7 +871,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public void InitialCameraUsesFinalLayoutSizeAndPreservesUserZoom()
     {
-        var map = new Mapsui.UI.Avalonia.MapControl();
+        using var map = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = map, Width = 60, Height = 400 };
         window.Show();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(

@@ -18,7 +18,7 @@ public sealed class MapLocationTests
     [Avalonia.Headless.XUnit.AvaloniaFact]
     public void LocationAndProgressLayersAreSeparateAndGPSIsAboveRouteObjects()
     {
-        Mapsui.UI.Avalonia.MapControl control = new();
+        using Mapsui.UI.Avalonia.MapControl control = new();
         using MapsuiMapAdapter adapter = new(control, new(27, 54, 28, 55));
         RouteAlternative route = Route();
         adapter.SetRoutes([route], route.Id);
@@ -39,7 +39,7 @@ public sealed class MapLocationTests
     [Avalonia.Headless.XUnit.AvaloniaFact]
     public void GPSLayerContainsAccuracyHeadingAndBlueMarkerWithoutAddingWaypoint()
     {
-        Mapsui.UI.Avalonia.MapControl control = new();
+        using Mapsui.UI.Avalonia.MapControl control = new();
         using MapsuiMapAdapter adapter = new(control, new(27, 54, 28, 55));
         adapter.SetPoints([]);
         adapter.SetLocation(new LocationMeasurement(new(54.5, 27.5), 25, Timestamp),
@@ -60,7 +60,7 @@ public sealed class MapLocationTests
     [Avalonia.Headless.XUnit.AvaloniaFact]
     public void MissingHeadingHidesSectorButKeepsGPSMarkerAndAccuracy()
     {
-        Mapsui.UI.Avalonia.MapControl control = new();
+        using Mapsui.UI.Avalonia.MapControl control = new();
         using MapsuiMapAdapter adapter = new(control, new(27, 54, 28, 55));
 
         adapter.SetLocation(new LocationMeasurement(new(54.5, 27.5), 25, Timestamp), null, true);
@@ -78,7 +78,7 @@ public sealed class MapLocationTests
     [InlineData(270)]
     public void HeadingSectorKeepsItsGeographicBearingWhenMapRotates(double rotation)
     {
-        Mapsui.UI.Avalonia.MapControl control = new();
+        using Mapsui.UI.Avalonia.MapControl control = new();
         using MapsuiMapAdapter adapter = new(control, new(27, 54, 28, 55));
         LocationMeasurement location = new(new(54.5, 27.5), 25, Timestamp);
         HeadingMeasurement heading = new(0, true, Timestamp);
@@ -110,7 +110,7 @@ public sealed class MapLocationTests
     [Avalonia.Headless.XUnit.AvaloniaFact]
     public void FirstFixDoesNotMoveCameraButExplicitCenterEnablesFollow()
     {
-        Mapsui.UI.Avalonia.MapControl control = new();
+        using Mapsui.UI.Avalonia.MapControl control = new();
         Window window = new() { Content = control, Width = 900, Height = 600 };
         window.Show();
         using MapsuiMapAdapter adapter = new(control, new(27, 54, 28, 55));
@@ -134,7 +134,7 @@ public sealed class MapLocationTests
     [Avalonia.Headless.XUnit.AvaloniaFact]
     public void ManualPanDisablesFollowWhileGPSUpdatesRemainIndependent()
     {
-        Mapsui.UI.Avalonia.MapControl control = new();
+        using Mapsui.UI.Avalonia.MapControl control = new();
         Window window = new() { Content = control, Width = 900, Height = 600 };
         window.Show();
         using MapsuiMapAdapter adapter = new(control, new(27, 54, 28, 55));

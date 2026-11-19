@@ -33,7 +33,7 @@ public sealed class MapCameraTests
     [InlineData(412, 860)]
     public void ZoomingOutCannotShrinkOfflineAreaBeyondOverview(int width, int height)
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = width, Height = height };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(23.17, 51.23, 32.77, 56.18));
@@ -60,7 +60,7 @@ public sealed class MapCameraTests
     [InlineData(1, 1)]
     public void PanningKeepsMapViewportInsideCoverageAtEveryCorner(int horizontal, int vertical)
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(23.17, 51.23, 32.77, 56.18));
@@ -97,7 +97,7 @@ public sealed class MapCameraTests
     [InlineData(270)]
     public void RotatedViewportKeepsHalfOfMapViewportVisibleAtEveryAngle(double angle)
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         var extent = new MRect(-500, -400, 500, 400);
@@ -186,7 +186,7 @@ public sealed class MapCameraTests
     [AvaloniaFact]
     public void IntermediateVerticesOfOneLegAppearTogetherAndCanBeForcedVisible()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
         RouteVertexRow first = new(2, TestData.P(10, 150), LegIndex: 1, LegSubIndex: 1);
         RouteVertexRow second = new(3, TestData.P(100, 150), LegIndex: 1, LegSubIndex: 2);
@@ -209,7 +209,7 @@ public sealed class MapCameraTests
     [AvaloniaFact]
     public void CompassResetReturnsNorthAndPreservesCameraCenterAndScale()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
@@ -244,7 +244,7 @@ public sealed class MapCameraTests
     public void ViewportStateSurvivesAdapterRecreationAndIsNotReplacedByInitialFit()
     {
         MapViewportState saved = new(3026545.647585, 7201022.31875, 123.5, 37);
-        var firstControl = new Mapsui.UI.Avalonia.MapControl();
+        using var firstControl = new Mapsui.UI.Avalonia.MapControl();
         var firstWindow = new Window { Content = firstControl, Width = 900, Height = 600 };
         firstWindow.Show();
         using (var firstAdapter = new MapsuiMapAdapter(firstControl, new(23.17, 51.23, 32.77, 56.18)))
@@ -258,7 +258,7 @@ public sealed class MapCameraTests
         }
         firstWindow.Close();
 
-        var secondControl = new Mapsui.UI.Avalonia.MapControl();
+        using var secondControl = new Mapsui.UI.Avalonia.MapControl();
         var secondWindow = new Window { Content = secondControl, Width = 420, Height = 620 };
         secondWindow.Show();
         using var secondAdapter = new MapsuiMapAdapter(secondControl, new(23.17, 51.23, 32.77, 56.18));
@@ -275,7 +275,7 @@ public sealed class MapCameraTests
     [AvaloniaFact]
     public async Task CompassResetRequestsARenderWithoutAnotherPointerEvent()
     {
-        var control = new RenderCountingMapControl();
+        using var control = new RenderCountingMapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
@@ -308,7 +308,7 @@ public sealed class MapCameraTests
     [AvaloniaFact]
     public void RotationUpdatesCompassWithoutReloadingMapData()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
@@ -330,7 +330,7 @@ public sealed class MapCameraTests
     [AvaloniaFact]
     public void DesktopRightDragRotatesMapAndResetLeavesRotationAvailable()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
@@ -354,7 +354,7 @@ public sealed class MapCameraTests
     [AvaloniaFact]
     public void ListedBridgeTransitionsAndTurnsRenderWithoutDuplicatingUserWaypoints()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
         adapter.SetRouteVertices(
         [
@@ -390,7 +390,7 @@ public sealed class MapCameraTests
     public void ListedStraightBridgeTransitionCanBeSelectedOnMap()
     {
         GeoCoordinate coordinate = TestData.P(100, 150);
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
@@ -432,7 +432,7 @@ public sealed class MapCameraTests
             vertex => vertex.Kind == RouteVertexKind.Turn);
         Assert.Equal(bend, listedTurn.Coordinate);
 
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
@@ -466,7 +466,7 @@ public sealed class MapCameraTests
     [AvaloniaFact]
     public void MapRouteVertexLayerAndPointerSelectionMatchListedNumber()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(27, 53, 28, 54));
@@ -501,7 +501,7 @@ public sealed class MapCameraTests
     {
         GeoCoordinate first = TestData.P(100, 150);
         GeoCoordinate second = TestData.P(108, 150);
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
@@ -533,7 +533,7 @@ public sealed class MapCameraTests
     [AvaloniaFact]
     public void PrimaryListSelectionHighlightsWaypointAndUsesDifferentColourForGeneratedVertices()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
         var point = new WaypointRow(Guid.NewGuid(), 1, TestData.P(100, 150));
         adapter.SetPoints([point]);

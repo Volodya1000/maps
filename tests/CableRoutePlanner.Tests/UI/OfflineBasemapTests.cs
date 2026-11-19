@@ -24,7 +24,7 @@ public sealed class OfflineBasemapTests
     public async Task BasemapFetchesCurrentAndSingleParentResolution()
     {
         var repository = new ResolutionRepository();
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, repository.Info.Bounds, repository);
         TileLayer tiled = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         double resolution = tiled.TileSource.Schema.Resolutions[10].UnitsPerPixel;
@@ -64,7 +64,7 @@ public sealed class OfflineBasemapTests
         MapFeature[] features = hasForest ? [ForestInside(extent)] : [];
 
         // Use the real production provider and tile renderer with controlled map data.
-        var populatedControl = new Mapsui.UI.Avalonia.MapControl();
+        using var populatedControl = new Mapsui.UI.Avalonia.MapControl();
         using var populatedAdapter = new MapsuiMapAdapter(populatedControl, new(27, 54, 27.006, 54.006), new MemoryData(features));
         TileLayer populated = Assert.Single(populatedControl.Map.Layers.OfType<TileLayer>());
         byte[]? bytes = await populated.TileSource.GetTileAsync(tile);
@@ -84,7 +84,7 @@ public sealed class OfflineBasemapTests
         var point = new BruTile.Extent(x, y, x + 1, y + 1);
         BruTile.TileInfo child = Assert.Single(schema.GetTileInfos(point, 15));
         BruTile.TileInfo parent = Assert.Single(schema.GetTileInfos(point, 14));
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006), new MemoryData());
         TileLayer tiled = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         byte[] childImage = Assert.IsType<byte[]>(await tiled.TileSource.GetTileAsync(child));

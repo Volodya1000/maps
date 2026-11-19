@@ -15,6 +15,7 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class UnderpassRenderingTests
 {
+    private static readonly double[] SignRotations = [0, 45, 90, 180, 270, 317];
     [AvaloniaFact]
     public void RectangularNetworkRendersFourEntrancesWithoutDiagonalShortcuts()
     {
@@ -91,10 +92,10 @@ public sealed class UnderpassRenderingTests
     [InlineData(24)]
     [InlineData(32)]
     [InlineData(40)]
-    public void SignHasTransparentExteriorAndReadableBlueAndWhitePixels(int size)
+    public void SignMatchesReviewedSilhouetteAtSmallSizesAndAllRotations(int size)
     {
         MapFeature tunnel = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 100), (160, 200));
-        IFeature marker = Assert.Single(MapsuiMapAdapter.PrepareUnderpassMarkers([tunnel], 1, default));
+        IFeature marker = Assert.Single(MapsuiMapAdapter.PrepareUnderpassMarkers([tunnel], default));
         marker.Styles.Remove(Assert.Single(marker.Styles.OfType<LabelStyle>()));
         Assert.Single(marker.Styles.OfType<SymbolStyle>()).SymbolScale = size / 40d;
         NetTopologySuite.Geometries.Coordinate center = MapsuiMapAdapter.Project(TestData.P(160, 150));
@@ -104,6 +105,23 @@ public sealed class UnderpassRenderingTests
         Assert.Equal(0, bitmap.GetPixel(0, 0).Alpha);
         Assert.Contains(bitmap.Pixels, pixel => pixel.Blue > pixel.Red + 50 && pixel.Alpha > 200);
         Assert.Contains(bitmap.Pixels, pixel => pixel.Red > 240 && pixel.Green > 240 && pixel.Blue > 240 && pixel.Alpha > 200);
+        using SKBitmap approved = SKBitmap.Decode(Path.Combine(AppContext.BaseDirectory,
+            "Fixtures", "MapAnnotations", $"underpass-{size}.png"));
+        SKColor[] expected = approved.Pixels;
+        foreach (double rotation in SignRotations)
+        {
+            MPoint anchor = marker.Extent!.Centroid;
+            using SKBitmap rotated = MapAnnotationRenderingTests.Render(new Viewport(anchor.X, anchor.Y, 1, rotation, size, size), layer);
+            SKColor[] actual = rotated.Pixels;
+            // The reviewed silhouette, limb proportions and blue gaps are the
+            // contract. Allow only small platform rasterization differences.
+            int changed = expected.Where((pixel, index) =>
+                Math.Abs(pixel.Red - actual[index].Red) > 8
+                || Math.Abs(pixel.Green - actual[index].Green) > 8
+                || Math.Abs(pixel.Blue - actual[index].Blue) > 8
+                || Math.Abs(pixel.Alpha - actual[index].Alpha) > 8).Count();
+            Assert.InRange(changed, 0, size * size / 50);
+        }
         SaveEvidence($"underpass-{size}.png", png.ToArray());
     }
 

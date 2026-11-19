@@ -38,7 +38,7 @@ internal sealed class GeodataFeatureProvider(IGeodataRepository geodata) : IProv
             features,
             CancellationToken.None,
             fetchInfo.Resolution,
-            includeUnderpassMarkers: false);
+            includeAnnotations: false);
         if (prepared.Length > 0 && Interlocked.Exchange(ref _readyAnnounced, 1) == 0)
         {
             // Android routes stdout to logcat for the offline-map startup smoke test.
