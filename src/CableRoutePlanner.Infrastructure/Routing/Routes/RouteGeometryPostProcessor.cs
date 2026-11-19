@@ -118,6 +118,12 @@ internal sealed class RouteGeometryPostProcessor(TerrainEvaluator evaluator, Pre
             int lastCandidate = Math.Min(path.Count - 1, anchor + MaximumSimplificationLookahead);
             for (int candidate = anchor + 1; candidate <= lastCandidate; candidate++)
             {
+                if (candidate > anchor + 1 && terrain.UnderpassCrossings.IsNetworkVertex(path[candidate - 1]))
+                {
+                    // A tunnel bend or junction is a source topology vertex,
+                    // not an invitation to cut across the surface above it.
+                    break;
+                }
                 EdgeEvaluation? originalEdge = evaluator.Evaluate(path[candidate - 1], path[candidate]);
                 if (originalEdge is null)
                 {

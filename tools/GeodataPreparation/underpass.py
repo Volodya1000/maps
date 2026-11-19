@@ -1,5 +1,6 @@
 """Conservative OSM evidence for pedestrian underpasses, not cable approval."""
 
+import json
 import re
 
 
@@ -57,7 +58,12 @@ def crossing(tunnel, road):
         return False
     if not tunnel.is_simple or not road.is_simple or not tunnel.crosses(road):
         return False
-    return tunnel.intersection(road).geom_type == "Point"
+    contacts = tunnel.intersection(road)
+    return (
+        contacts.geom_type in ("Point", "MultiPoint")
+        and not contacts.intersects(tunnel.boundary)
+        and not contacts.intersects(road.boundary)
+    )
 
 
 def create_staging(connection):
@@ -69,6 +75,10 @@ def create_staging(connection):
             road_id INTEGER NOT NULL REFERENCES features(id),
             tunnel_osm_id TEXT NOT NULL,road_osm_id TEXT NOT NULL,
             PRIMARY KEY(candidate_id,road_id));
+        CREATE TEMP TABLE underpass_source_nodes(source TEXT PRIMARY KEY,nodes TEXT);
+        CREATE TEMP TABLE underpass_surface_nodes(node_id INTEGER PRIMARY KEY);
+        CREATE TABLE underpass_topology(candidate_id INTEGER PRIMARY KEY REFERENCES features(id),
+            network_id INTEGER NOT NULL,node_ids TEXT NOT NULL,entrance_node_ids TEXT NOT NULL);
     """)
 
 
@@ -95,9 +105,30 @@ def stage(connection, kind, geometry, tags, source, feature_id=None):
 def import_candidates(connection, add):
     from shapely import from_wkb
 
-    for source, raw, level in connection.execute(
+    sources = connection.execute(
         "SELECT * FROM underpass_sources ORDER BY source"
-    ).fetchall():
+    ).fetchall()
+    nodes = {
+        source: json.loads(raw)
+        for source, raw in connection.execute("SELECT * FROM underpass_source_nodes")
+    }
+    # Identity and layer, never proximity, establish connectivity.
+    groups = {source: source for source, _, _ in sources}
+
+    def root(source):
+        while groups[source] != source:
+            source = groups[source]
+        return source
+
+    owners = {}
+    for source, _, level in sources:
+        for node in nodes.get(source, []):
+            key = (level, node)
+            if key in owners:
+                groups[root(source)] = root(owners[key])
+            owners[key] = source
+    matches_by_source = {}
+    for source, raw, level in sources:
         tunnel = from_wkb(raw)
         west, south, east, north = tunnel.bounds
         roads = connection.execute(
@@ -112,10 +143,39 @@ def import_candidates(connection, add):
         matches = [
             (rid, osm) for rid, osm, road in roads if crossing(tunnel, from_wkb(road))
         ]
-        if not matches:
+        matches_by_source[source] = matches
+    active = {root(source) for source, matches in matches_by_source.items() if matches}
+    degrees = {}
+    for source, _, _level in sources:
+        refs = nodes.get(source, [])
+        for a, b in zip(refs, refs[1:], strict=False):
+            for node in (a, b):
+                key = (root(source), node)
+                degrees[key] = degrees.get(key, 0) + 1
+    surface_nodes = {
+        row[0]
+        for row in connection.execute("SELECT node_id FROM underpass_surface_nodes")
+    }
+    network_ids = {}
+    for source, raw, _ in sources:
+        group = root(source)
+        if group not in active:
             continue
+        tunnel = from_wkb(raw)
         candidate_id = add("PedestrianUnderpassCandidate", tunnel, {}, source)
-        for road_id, road_osm in matches:
+        if source in nodes:
+            network_id = network_ids.setdefault(group, candidate_id)
+            refs = nodes[source]
+            entrances = [
+                node
+                for node in refs
+                if degrees[(group, node)] == 1 and node in surface_nodes
+            ]
+            connection.execute(
+                "INSERT INTO underpass_topology VALUES(?,?,?,?)",
+                (candidate_id, network_id, json.dumps(refs), json.dumps(entrances)),
+            )
+        for road_id, road_osm in matches_by_source[source]:
             connection.execute(
                 "INSERT INTO underpass_roads VALUES(?,?,?,?)",
                 (candidate_id, road_id, source, road_osm),

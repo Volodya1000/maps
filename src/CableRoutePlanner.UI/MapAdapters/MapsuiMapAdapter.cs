@@ -347,6 +347,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         Dictionary<long, NetTopologySuite.Geometries.Geometry> roads = features
             .Where(feature => feature.Kind == TerrainKind.Road)
             .ToDictionary(feature => feature.Id, feature => transform.Transform(reader.Read(feature.Wkb)));
+        HashSet<(long Network, long Node)> markedNodes = [];
+        HashSet<long> labelledNetworks = [];
         return features
             .Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline
                 && (feature.Kind != TerrainKind.PedestrianUnderpassCandidate || metresPerPixel <= 10))
@@ -391,8 +393,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 return new IFeature[] { feature };
             }
 
-            GeometryFeature marker = CreateUnderpassMarker(geometry);
-            return new IFeature[] { feature, marker };
+            return new IFeature[] { feature }.Concat(EntranceMarkers(f, geometry, markedNodes, labelledNetworks));
         }).ToArray();
     }
 
@@ -411,16 +412,47 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         Dictionary<long, NetTopologySuite.Geometries.Geometry> roads = features
             .Where(feature => feature.Kind == TerrainKind.Road)
             .ToDictionary(feature => feature.Id, feature => transform.Transform(reader.Read(feature.Wkb)));
+        HashSet<(long Network, long Node)> markedNodes = [];
+        HashSet<long> labelledNetworks = [];
         return features
             .Where(feature => feature.Kind == TerrainKind.PedestrianUnderpassCandidate)
-            .Select(feature =>
+            .SelectMany(feature =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 NetTopologySuite.Geometries.Geometry source = transform.Transform(reader.Read(feature.Wkb));
                 NetTopologySuite.Geometries.Geometry span = DisplayUnderpassSpan(feature, source, roads);
-                return (IFeature)CreateUnderpassMarker(span);
+                return EntranceMarkers(feature, span, markedNodes, labelledNetworks);
             })
             .ToArray();
+    }
+
+    private static IEnumerable<IFeature> EntranceMarkers(MapFeature feature,
+        NetTopologySuite.Geometries.Geometry geometry, HashSet<(long Network, long Node)> markedNodes,
+        HashSet<long> labelledNetworks)
+    {
+        if (feature.UnderpassTopology is not { } topology)
+        {
+            yield return CreateUnderpassMarker(geometry);
+            yield break;
+        }
+        Coordinate[] coordinates = geometry.Coordinates;
+        for (int i = 0; i < topology.NodeIds.Count; i++)
+        {
+            long node = topology.NodeIds[i];
+            if (!topology.EntranceNodeIds.Contains(node) || !markedNodes.Add((topology.NetworkId, node)))
+            {
+                continue;
+            }
+            GeometryFeature marker = CreateUnderpassMarker(new Point(coordinates[i]));
+            if (!labelledNetworks.Add(topology.NetworkId))
+            {
+                foreach (LabelStyle label in marker.Styles.OfType<LabelStyle>().ToArray())
+                {
+                    marker.Styles.Remove(label);
+                }
+            }
+            yield return marker;
+        }
     }
 
     private static GeometryFeature CreateUnderpassMarker(NetTopologySuite.Geometries.Geometry geometry)
@@ -452,7 +484,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         NetTopologySuite.Geometries.Geometry source,
         Dictionary<long, NetTopologySuite.Geometries.Geometry> roads)
     {
-        if (source is not LineString line || candidate.UnderpassRoadIds is null)
+        if (candidate.UnderpassTopology is not null || source is not LineString line || candidate.UnderpassRoadIds is null)
         {
             return source;
         }

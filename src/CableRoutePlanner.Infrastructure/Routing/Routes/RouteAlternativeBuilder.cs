@@ -40,7 +40,8 @@ internal sealed class RouteAlternativeBuilder(
         var bridgeCandidates = new HashSet<long>();
         HashSet<long> gasCandidates = [];
         HashSet<long> underpassCandidates = [];
-        HashSet<RoadCrossingEvent> roadCrossingEvents = [];
+        List<RoadCrossingEvent> roadCrossingEvents = [];
+        HashSet<RoadCrossingEvent> previousEdgeContacts = [];
         for (int i = 1; i < route.Count; i++)
         {
             EdgeEvaluation edge = evaluator.Evaluate(route[i - 1], route[i])
@@ -54,10 +55,17 @@ internal sealed class RouteAlternativeBuilder(
             bridgeCandidates.UnionWith(edge.BridgeCandidates);
             gasCandidates.UnionWith(edge.GasCandidates);
             underpassCandidates.UnionWith(edge.UnderpassCandidates);
+            HashSet<RoadCrossingEvent> currentEdgeContacts = [];
             foreach (RoadCrossingEvidence crossing in edge.RoadCrossingEvents)
             {
-                roadCrossingEvents.Add(new(crossing.RoadId, crossing.Kind, projection.Inverse(crossing.Location)));
+                RoadCrossingEvent contact = new(crossing.RoadId, crossing.Kind, projection.Inverse(crossing.Location));
+                if (currentEdgeContacts.Add(contact)
+                    && !(crossing.Location.Equals2D(route[i - 1]) && previousEdgeContacts.Contains(contact)))
+                {
+                    roadCrossingEvents.Add(contact);
+                }
             }
+            previousEdgeContacts = currentEdgeContacts;
         }
 
         if (length > options.MaxRouteLengthMetres)
@@ -76,8 +84,8 @@ internal sealed class RouteAlternativeBuilder(
         // A nearby aerial candidate and a ground crossing are meaningful choices,
         // even when their lines occupy almost the same map corridor.
         if (result.Any(existing => (existing.GasPipelineCandidateIds ?? [])
-            .SequenceEqual(gasCandidates.Order())
-            && (existing.UnderpassCandidateIds ?? []).SequenceEqual(underpassCandidates.Order())
+            .SequenceEqual(gasCandidates.OrderBy(id => id))
+            && (existing.UnderpassCandidateIds ?? []).SequenceEqual(underpassCandidates.OrderBy(id => id))
             && Similar(existing.Geometry, route, projection, options.CellSizeMetres)))
         {
             return null;
@@ -101,9 +109,10 @@ internal sealed class RouteAlternativeBuilder(
                 Array.AsReadOnly(postProcessor.BridgeTransitionPoints(route)
                     .Select(projection.Inverse).ToArray()),
                 terrain.RoadContacts.Analyze(route, ct),
-                Array.AsReadOnly(gasCandidates.Order().ToArray()),
-                Array.AsReadOnly(underpassCandidates.Order().ToArray()),
-                Array.AsReadOnly(roadCrossingEvents.ToArray())));
+                Array.AsReadOnly(gasCandidates.OrderBy(id => id).ToArray()),
+                Array.AsReadOnly(underpassCandidates.OrderBy(id => id).ToArray()),
+                Array.AsReadOnly(roadCrossingEvents.ToArray()),
+                terrain.UnderpassCrossings.Passages(route, underpassCandidates, projection)));
         return null;
     }
 

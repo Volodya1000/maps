@@ -62,13 +62,16 @@ internal static class MapsuiStyleFactory
         };
 
         double roadWidth = RoadWidth(metresPerPixel);
+        bool detailedBridge = kind == TerrainKind.BridgeCandidate && metresPerPixel <= 10;
         var main = new VectorStyle
         {
             Fill = new Brush(color),
             Outline = new Pen(new Color(182, 187, 174), 0.5),
             Line = new Pen(
-                kind == TerrainKind.Road ? new Color(195, 182, 155) : color,
+                kind == TerrainKind.Road ? new Color(195, 182, 155)
+                    : detailedBridge ? new Color(77, 91, 99) : color,
                 kind == TerrainKind.Road ? roadWidth
+                    : detailedBridge ? 3
                     : kind is TerrainKind.BridgeCandidate or TerrainKind.ApprovedCrossing ? Math.Max(1, roadWidth)
                     : 3)
             {
@@ -81,20 +84,33 @@ internal static class MapsuiStyleFactory
             return [main];
         }
 
-        return
+        List<IStyle> bridgeStyles =
         [
             new VectorStyle
             {
                 // The light casing masks the water below the OSM bridge centreline.
                 // Square caps extend half a stroke beyond the tagged span and make
                 // small shoreline mismatches less prominent without changing geometry.
-                Line = new Pen(MapBackground, Math.Max(3, roadWidth + 2))
+                Line = new Pen(MapBackground, detailedBridge ? 6 : Math.Max(3, roadWidth + 2))
                 {
                     PenStrokeCap = PenStrokeCap.Square
                 }
             },
             main
         ];
+        if (detailedBridge)
+        {
+            bridgeStyles.Add(new LabelStyle
+            {
+                Text = "Мост",
+                ForeColor = new Color(77, 91, 99),
+                BackColor = new Brush(MapBackground),
+                CollisionDetection = true,
+                Offset = new Offset(0, 16),
+                MaxVisible = 5
+            });
+        }
+        return bridgeStyles;
     }
 
     private static double RoadWidth(double metresPerPixel) => metresPerPixel switch

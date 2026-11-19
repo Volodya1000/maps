@@ -134,9 +134,22 @@ def main():
         def way(self, way):
             tags = dict(way.tags)
             kind = classify(tags)
+            if (
+                tags.get("highway") in ("footway", "path", "pedestrian", "steps")
+                and tags.get("tunnel", "no") == "no"
+                and tags.get("location") != "underground"
+            ):
+                connection.executemany(
+                    "INSERT OR IGNORE INTO underpass_surface_nodes VALUES(?)",
+                    ((node.ref,) for node in way.nodes),
+                )
             if is_underpass(tags):
                 geometry = from_wkb(bytes.fromhex(factory.create_linestring(way)))
                 stage(connection, None, geometry, tags, f"way/{way.id}")
+                connection.execute(
+                    "INSERT OR REPLACE INTO underpass_source_nodes VALUES(?,?)",
+                    (f"way/{way.id}", json.dumps([node.ref for node in way.nodes])),
+                )
             # Areas are handled by osmium's multipolygon assembler, including closed ways and holes.
             if kind not in (
                 "Road",

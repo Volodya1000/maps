@@ -31,7 +31,9 @@ public static class RouteMetricsFormatter
                     RoadCrossingKind.Bridge => "По мосту",
                     _ => throw new ArgumentOutOfRangeException(nameof(route))
                 };
-                lines.Add($"{name}: {crossings.Count()}");
+                int count = crossings.Key == RoadCrossingKind.PedestrianUnderpass
+                    ? route.UnderpassPassages?.Count ?? crossings.Count() : crossings.Count();
+                lines.Add($"{name}: {count}");
             }
         }
 

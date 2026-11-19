@@ -9,6 +9,58 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class RouteAlternativeBuilderTests
 {
+    [Theory]
+    [InlineData(false, 1)]
+    [InlineData(true, 2)]
+    public void ContinuousUnderpassCountsOnceAcrossTwoRoadsAndCountsReentry(bool reenter, int expected)
+    {
+        MapFeature first = TestData.Line(1, TerrainKind.Road, (-100, 145), (700, 145));
+        MapFeature second = TestData.Line(3, TerrainKind.Road, (-100, 155), (700, 155));
+        MapFeature tunnel = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 130), (160, 170))
+            with
+        { UnderpassRoadIds = new long[] { 1, 3 } };
+        LocalProjection projection = new(TestData.P(0, 0));
+        TerrainEvaluator evaluator = new([first, second, tunnel], projection, allowUnderpasses: true);
+        RouteAlternativeBuilder builder = new(evaluator, new(evaluator, evaluator.Terrain), evaluator.Terrain, TestData.Options);
+        List<GeoCoordinate> points = [TestData.P(160, 120), TestData.P(160, 150), TestData.P(160, 180)];
+        if (reenter)
+        {
+            points.Add(TestData.P(160, 150));
+            points.Add(TestData.P(160, 120));
+        }
+        Assert.Null(builder.Add(points.Select(projection.Forward).ToArray(), CostProfile.Defaults[0], default));
+        RouteAlternative route = Assert.Single(builder.Complete());
+        Assert.Equal(expected, route.UnderpassPassages!.Count);
+        Assert.Equal(2, route.Metrics.RoadCrossings);
+        Assert.Equal(reenter ? 4 : 2, route.RoadCrossingEvents!.Count);
+        Assert.All(route.UnderpassPassages, passage => Assert.Equal(2, passage.NetworkId));
+        string text = CableRoutePlanner.ViewModels.RouteMetricsFormatter.Format(route, TestData.Options);
+        Assert.Contains($"Через подземный пешеходный переход: {expected}", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SharedOsmNodeUnitesPassageButNearbyUnconnectedWaysRemainSeparate()
+    {
+        MapFeature firstRoad = TestData.Line(1, TerrainKind.Road, (-100, 140), (700, 140));
+        MapFeature secondRoad = TestData.Line(3, TerrainKind.Road, (-100, 160), (700, 160));
+        MapFeature first = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 130), (160, 150))
+            with
+        { UnderpassRoadIds = new long[] { 1 }, UnderpassTopology = new(2, [10, 11], [10]) };
+        MapFeature second = TestData.Line(4, TerrainKind.PedestrianUnderpassCandidate, (160, 150), (160, 170))
+            with
+        { UnderpassRoadIds = new long[] { 3 }, UnderpassTopology = new(2, [11, 12], [12]) };
+        foreach (bool connected in new[] { true, false })
+        {
+            LocalProjection projection = new(TestData.P(0, 0));
+            TerrainEvaluator evaluator = new([firstRoad, secondRoad, first, connected ? second : second with { UnderpassTopology = new(4, [20, 21], [20, 21]) }], projection, allowUnderpasses: true);
+            RouteAlternativeBuilder builder = new(evaluator, new(evaluator, evaluator.Terrain), evaluator.Terrain, TestData.Options);
+            Assert.Null(builder.Add(new[] { TestData.P(160, 120), TestData.P(160, 150), TestData.P(160, 180) }.Select(projection.Forward).ToArray(), CostProfile.Defaults[0], default));
+            RouteAlternative route = Assert.Single(builder.Complete());
+            Assert.Equal(connected ? 1 : 2, route.UnderpassPassages!.Count);
+            Assert.Equal(2, route.RoadCrossingEvents!.Count);
+        }
+    }
+
     [Fact]
     public void FinalCountsAreUniqueWhileDomainCostsRemainPerSegment()
     {

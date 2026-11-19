@@ -33,13 +33,13 @@ internal sealed class TerrainEvaluator
 
     /// <summary>Returns complete segment facts with geodesic length, or null when coverage or policy forbids it.</summary>
     public EdgeEvaluation? Evaluate(Coordinate a, Coordinate b)
-        => Evaluate(a, b, useProjectedLength: false);
+        => Evaluate(a, b, useProjectedLength: false, traversingUnderpassPortal: true);
 
-    /// <summary>Uses the same permissions with planar metre lengths consistent with the graph's heuristic.</summary>
-    public EdgeEvaluation? EvaluateForSearch(Coordinate a, Coordinate b)
-        => Evaluate(a, b, useProjectedLength: true);
+    /// <summary>Uses planar metres; a mapped underground network may be entered only through its portal graph.</summary>
+    public EdgeEvaluation? EvaluateForSearch(Coordinate a, Coordinate b, bool traversingUnderpassPortal = false)
+        => Evaluate(a, b, useProjectedLength: true, traversingUnderpassPortal);
 
-    private EdgeEvaluation? Evaluate(Coordinate a, Coordinate b, bool useProjectedLength)
+    private EdgeEvaluation? Evaluate(Coordinate a, Coordinate b, bool useProjectedLength, bool traversingUnderpassPortal)
     {
         LineString line = _factory.CreateLineString([a, b]);
         if (Terrain.Coverage is not null && !(Terrain.FullyCoveredArea?.Covers(line.EnvelopeInternal) ?? false)
@@ -88,7 +88,7 @@ internal sealed class TerrainEvaluator
                         .ToArray();
                     IReadOnlyList<long> gasCandidateIds = Terrain.GasCrossings.UsedBy(line, geometry, intersection, crossing);
                     IReadOnlyList<long> underpassCandidateIds = _allowUnderpasses
-                        ? Terrain.UnderpassCrossings.UsedBy(line, geometry, intersection, crossing, obstacle.Id)
+                        ? Terrain.UnderpassCrossings.UsedBy(line, geometry, intersection, crossing, obstacle.Id, traversingUnderpassPortal)
                         : [];
                     bool underpass = underpassCandidateIds.Count > 0;
                     bool permittedByExistingRoadCrossing = TerrainTraversalPolicy.AllowsRoadCrossing(

@@ -50,7 +50,7 @@ internal sealed class RouteGeometryBuilder
                 continue;
             }
 
-            EdgeEvaluation? direct = _evaluator.Evaluate(start, end);
+            EdgeEvaluation? direct = _evaluator.EvaluateForSearch(start, end);
             // The direct segment is globally optimal only for a pure length
             // profile: Euclidean distance is a lower bound, and every terrain
             // contribution is nonnegative. Other profiles must search because

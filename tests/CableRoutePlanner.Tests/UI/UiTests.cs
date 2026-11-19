@@ -349,7 +349,9 @@ public sealed class UiTests
         Assert.NotNull(roadStyle.Line);
         Assert.InRange(roadStyle.Line.Width, 0.5, 1.1);
         Mapsui.IFeature renderedBridge = rendered[2];
-        Assert.Equal(2, renderedBridge.Styles.Count);
+        Assert.Equal(2, renderedBridge.Styles.OfType<Mapsui.Styles.VectorStyle>().Count());
+        Assert.Contains(renderedBridge.Styles.OfType<Mapsui.Styles.LabelStyle>(),
+            label => label.GetLabelText(renderedBridge) == "Мост");
         Mapsui.Styles.VectorStyle bridgeMask = Assert.IsType<Mapsui.Styles.VectorStyle>(
             renderedBridge.Styles.First());
         Mapsui.Styles.Pen bridgeMaskLine = Assert.IsType<Mapsui.Styles.Pen>(bridgeMask.Line);

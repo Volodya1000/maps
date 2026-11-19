@@ -6,7 +6,7 @@ using NetTopologySuite.Geometries;
 namespace CableRoutePlanner.Infrastructure.Routing;
 
 /// <summary>A mapped transition polyline whose full segments and endpoint connectors must pass terrain checks.</summary>
-public sealed record GridPortal(Coordinate[] Coordinates);
+public sealed record GridPortal(Coordinate[] Coordinates, UnderpassTopology? UnderpassTopology = null);
 
 /// <summary>Row-major regular nodes with actual (possibly coarsened) spacing and optional mapped transitions.</summary>
 /// <remarks>Coordinates and portal arrays are treated as read-only for the lifetime of a calculation.</remarks>

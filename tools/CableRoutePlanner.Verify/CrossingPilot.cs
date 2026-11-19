@@ -51,7 +51,9 @@ internal static class CrossingPilot
                     metrics = route.Metrics,
                     roadContacts = route.RoadContacts,
                     gasCandidateIds = route.GasPipelineCandidateIds,
-                    underpassCandidateIds = route.UnderpassCandidateIds
+                    underpassCandidateIds = route.UnderpassCandidateIds,
+                    roadCrossingEvents = route.RoadCrossingEvents,
+                    underpassPassages = route.UnderpassPassages
                 }),
                 error = (object?)null
             };

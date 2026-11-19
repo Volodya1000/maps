@@ -1,0 +1,369 @@
+{
+  "victory-before": {
+    "status": "success",
+    "error": null,
+    "alternatives": [
+      {
+        "lengthMetres": 656.1506494320328,
+        "roadCrossings": 6,
+        "passages": null
+      }
+    ],
+    "audits": [
+      {
+        "status": "valid",
+        "findings": [
+          {
+            "reason": "road_contact",
+            "roadId": 37625,
+            "coordinate": [
+              92.15313991503389,
+              -78.73909772808025
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4606229
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 37634,
+            "coordinate": [
+              93.34986560462796,
+              -77.4977361077607
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4606229
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 2203938,
+            "coordinate": [
+              -182.1012513053084,
+              -242.8166967062655
+            ],
+            "bridgeIds": [
+              59317
+            ],
+            "gasIds": [],
+            "underpassIds": [],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 3727659,
+            "coordinate": [
+              -189.75839898965918,
+              -233.68758061907337
+            ],
+            "bridgeIds": [
+              59318
+            ],
+            "gasIds": [],
+            "underpassIds": [],
+            "allowed": true
+          }
+        ]
+      }
+    ]
+  },
+  "victory-after": {
+    "status": "success",
+    "error": null,
+    "alternatives": [
+      {
+        "lengthMetres": 192.8394101385862,
+        "roadCrossings": 6,
+        "passages": [
+          {
+            "NetworkId": 4605959,
+            "Entry": {
+              "Latitude": 53.9089564,
+              "Longitude": 27.5742584
+            },
+            "Exit": {
+              "Latitude": 53.9081863,
+              "Longitude": 27.5759061
+            }
+          }
+        ]
+      }
+    ],
+    "audits": [
+      {
+        "status": "valid",
+        "findings": [
+          {
+            "reason": "road_contact",
+            "roadId": 37625,
+            "coordinate": [
+              92.15313991503389,
+              -78.73909772808025
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 37625,
+            "coordinate": [
+              91.85937458684438,
+              -78.55261155086896
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 37634,
+            "coordinate": [
+              93.34986560462796,
+              -77.4977361077607
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 37699,
+            "coordinate": [
+              14.656946503235828,
+              12.295716976288045
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 174724,
+            "coordinate": [
+              31.36842888578277,
+              -4.268181979955293
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 174728,
+            "coordinate": [
+              75.631092141534,
+              -57.391043620978756
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          }
+        ],
+        "entireRouteInsideMappedNetwork1m": true
+      }
+    ]
+  },
+  "victory-300-before": {
+    "status": "no_route",
+    "error": {
+      "reason": "RouteLengthLimitExceeded",
+      "terrainKind": null,
+      "searchFailures": [
+        {
+          "profile": "\u041a\u043e\u0440\u043e\u0447\u0435",
+          "reason": "RouteLengthLimitExceeded"
+        },
+        {
+          "profile": "\u0411\u0430\u043b\u0430\u043d\u0441",
+          "reason": "RouteLengthLimitExceeded"
+        },
+        {
+          "profile": "\u041f\u0440\u043e\u0449\u0435 \u043f\u0440\u043e\u043a\u043b\u0430\u0434\u043a\u0430",
+          "reason": "RouteLengthLimitExceeded"
+        }
+      ]
+    },
+    "alternatives": [],
+    "audits": []
+  },
+  "victory-300-after": {
+    "status": "success",
+    "error": null,
+    "alternatives": [
+      {
+        "lengthMetres": 192.8394101385862,
+        "roadCrossings": 6,
+        "passages": [
+          {
+            "NetworkId": 4605959,
+            "Entry": {
+              "Latitude": 53.9089564,
+              "Longitude": 27.5742584
+            },
+            "Exit": {
+              "Latitude": 53.9081863,
+              "Longitude": 27.5759061
+            }
+          }
+        ]
+      }
+    ],
+    "audits": [
+      {
+        "status": "valid",
+        "findings": [
+          {
+            "reason": "road_contact",
+            "roadId": 37625,
+            "coordinate": [
+              92.15313991503389,
+              -78.73909772808025
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 37625,
+            "coordinate": [
+              91.85937458684438,
+              -78.55261155086896
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 37634,
+            "coordinate": [
+              93.34986560462796,
+              -77.4977361077607
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 37699,
+            "coordinate": [
+              14.656946503235828,
+              12.295716976288045
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 174724,
+            "coordinate": [
+              31.36842888578277,
+              -4.268181979955293
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          },
+          {
+            "reason": "road_contact",
+            "roadId": 174728,
+            "coordinate": [
+              75.631092141534,
+              -57.391043620978756
+            ],
+            "bridgeIds": [],
+            "gasIds": [],
+            "underpassIds": [
+              4605959
+            ],
+            "allowed": true
+          }
+        ],
+        "entireRouteInsideMappedNetwork1m": true
+      }
+    ]
+  },
+  "victory-disabled": {
+    "status": "no_route",
+    "error": {
+      "reason": "NoRouteInSearchArea",
+      "terrainKind": null,
+      "searchFailures": [
+        {
+          "profile": "\u041a\u043e\u0440\u043e\u0447\u0435",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "\u0411\u0430\u043b\u0430\u043d\u0441",
+          "reason": "NoRouteInSearchArea"
+        },
+        {
+          "profile": "\u041f\u0440\u043e\u0449\u0435 \u043f\u0440\u043e\u043a\u043b\u0430\u0434\u043a\u0430",
+          "reason": "NoRouteInSearchArea"
+        }
+      ]
+    },
+    "alternatives": [],
+    "audits": []
+  },
+  "bridge-before": {
+    "status": "success",
+    "error": null,
+    "alternatives": [
+      {
+        "lengthMetres": 136.9353337278526,
+        "roadCrossings": 0,
+        "passages": null
+      }
+    ],
+    "audits": [
+      {
+        "status": "valid",
+        "findings": []
+      }
+    ]
+  }
+}

@@ -158,26 +158,50 @@ internal sealed class GridSearchGraph : IRoutingGraph
         return connections;
     }
 
-    private double? Cost(Coordinate from, Coordinate to) => _evaluator.EvaluateForSearch(from, to)?.Cost(Profile);
+    private double? Cost(Coordinate from, Coordinate to, bool traversingUnderpassPortal = false) =>
+        _evaluator.EvaluateForSearch(from, to, traversingUnderpassPortal)?.Cost(Profile);
 
     private void ConnectPortals(IReadOnlyList<GridPortal> portals, CancellationToken cancellationToken)
     {
         int offset = 0;
+        Dictionary<(long Network, long Node), int> networkNodes = [];
         foreach (GridPortal portal in portals)
         {
             int firstId = _portalStartId + offset;
+            if (portal.UnderpassTopology is { } topology)
+            {
+                for (int index = 0; index < portal.Coordinates.Length; index++)
+                {
+                    (long, long) key = (topology.NetworkId, topology.NodeIds[index]);
+                    int current = firstId + index;
+                    if (networkNodes.TryGetValue(key, out int other)
+                        && GetCoordinate(other).Equals2D(GetCoordinate(current)))
+                    {
+                        AddPortalConnection(other, current, 0);
+                        AddPortalConnection(current, other, 0);
+                    }
+                    networkNodes[key] = current;
+                    if (topology.EntranceNodeIds.Contains(topology.NodeIds[index]))
+                    {
+                        ConnectPortalEnd(current, cancellationToken);
+                    }
+                }
+            }
             for (int index = 1; index < portal.Coordinates.Length; index++)
             {
                 int previous = firstId + index - 1;
                 int current = firstId + index;
-                if (Cost(GetCoordinate(previous), GetCoordinate(current)) is { } cost)
+                if (Cost(GetCoordinate(previous), GetCoordinate(current), portal.UnderpassTopology is not null) is { } cost)
                 {
                     AddPortalConnection(previous, current, cost);
                     AddPortalConnection(current, previous, cost);
                 }
             }
-            ConnectPortalEnd(firstId, cancellationToken);
-            ConnectPortalEnd(firstId + portal.Coordinates.Length - 1, cancellationToken);
+            if (portal.UnderpassTopology is null)
+            {
+                ConnectPortalEnd(firstId, cancellationToken);
+                ConnectPortalEnd(firstId + portal.Coordinates.Length - 1, cancellationToken);
+            }
             offset += portal.Coordinates.Length;
         }
     }

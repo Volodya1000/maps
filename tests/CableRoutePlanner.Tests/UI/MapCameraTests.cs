@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using System.Reactive.Linq;
 using Avalonia.Media;
 using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Headless.XUnit;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.UI.MapAdapters;
@@ -446,9 +447,17 @@ public sealed class MapCameraTests
         int selectedNumber = 0;
         adapter.RouteVertexSelected += number => selectedNumber = number;
         (double worldX, double worldY) = SphericalMercator.FromLonLat(bend.Longitude, bend.Latitude);
-        MPoint screen = control.Map.Navigator.Viewport.WorldToScreen(worldX, worldY);
-
-        Click(window, new Avalonia.Point(screen.X, screen.Y));
+        Avalonia.Point position = default;
+        // Bounds alone do not prove that the headless renderer has published
+        // the window's hit-test scene. Wait for the actual click target.
+        await HeadlessTouch.UntilAsync(() =>
+        {
+            control.Map.Navigator.CenterOnAndZoomTo(new MPoint(worldX, worldY), 1, 0);
+            MPoint screen = control.Map.Navigator.Viewport.WorldToScreen(worldX, worldY);
+            position = new(screen.X, screen.Y);
+            return ReferenceEquals(control, window.InputHitTest(position));
+        }, "The bridge bend did not become available for pointer input.");
+        Click(window, position);
 
         Assert.Equal(listedTurn.Number, selectedNumber);
         window.Close();
