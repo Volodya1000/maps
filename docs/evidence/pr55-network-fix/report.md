@@ -25,6 +25,12 @@
 ways одной компоненты; конкретная дорога всё равно требует исходной связи, а
 сам контакт должен лежать на соответствующем way. Здания, вода и прочие
 запрещённые препятствия проверяются для каждого полного сегмента.
+Если стык ways лежит на оси дороги, подготовка проверяет двухрёберный путь
+через общий OSM node ID на одном layer. Это сохраняет Т-образные переходы,
+даже когда отдельные ways только касаются дороги своими концами. Совпадение
+координат без общего node ID не даёт разрешения. Повтор одного дорожного
+контакта в общей вершине удаляется по расстоянию вдоль маршрута с допуском
+1 мм; повторное пересечение после выхода и возврата сохраняется.
 
 `RoadCrossingEvent` описывает контакт с дорогой, `UnderpassPassage` — непрерывный
 визит в сооружение. Интервалы измеряются вдоль маршрута, поэтому выход и
@@ -145,6 +151,9 @@ SVG исправлен вручную, внешний фон прозрачен.
 Полный проход PBF: 1293 исходных подземных ways; [все семь](classification.json)
 ранее исключённых ложных кандидатов по-прежнему исключены.
 `way/24422904`: true — 87,99 м; false — `NoRouteInSearchArea`.
+На заново подготовленной выборке PBF тот же сценарий даёт 54,23 м,
+два дорожных контакта и одно прохождение; GEOS-аудит — valid, false снова
+даёт `NoRouteInSearchArea`. [Результат новой подготовки](way24422904-prepared-true.json).
 Старые настройки, GPS, газовые переходы и мостовые правила не менялись;
 пользовательское предупреждение об инженерной проверке не возвращено.
 
@@ -153,6 +162,7 @@ SVG исправлен вручную, внешний фон прозрачен.
 | Два дорожных контакта и повторный вход | `ContinuousUnderpassCountsOnceAcrossTwoRoadsAndCountsReentry` |
 | Разные сооружения не объединяются по близости | `SharedOsmNodeUnitesPassageButNearbyUnconnectedWaysRemainSeparate` |
 | Связный стык и отрицательная пара | `OnlyConfirmedNetworkContinuationCoversRoadReviewWindow` |
+| Т-образный стык на оси дороги | `SharedUnderpassJunctionOnRoadAxisConnectsThreeConfirmedBranches`, `test_shared_source_junction_on_road_axis_proves_crossing_without_proximity_join` |
 | Нет входа у произвольного дорожного контакта | `NetworkWithoutConfirmedSurfaceEntrancesCannotBeEnteredAtRoadContact` (до защиты тест падал, после проходит) |
 | Четыре входа, кольцо, препятствие | `FourEntranceRingPreservesConnectedTunnelAndAvoidsCentralBuilding` |
 | Реальная площадь Победы | `VictorySquareRealOsmNetworkConnectsOppositeEntrancesInOnePassage` |
@@ -165,9 +175,10 @@ SVG исправлен вручную, внешний фон прозрачен.
 | Подготовка сохраняет внутренние ways | `test_network_keeps_internal_ways_and_only_source_confirmed_surface_entrances` |
 | Замкнутая сеть пересекает одну дорогу дважды | `test_closed_network_can_cross_the_same_road_twice` |
 
-Локальные gates: `lint` — PASS; `data` — 71/71, sample rebuild PASS;
-`desktop` — 646/646, line 95,7%, branch 87,4%, win-x64 publish PASS.
-Финальный pre-commit повторяет gate после дополнения подготовки замкнутых сетей.
+Локальные gates: `lint` — PASS; `data` — 72/72, sample rebuild PASS;
+полный повторный запуск .NET — 648/648. Предыдущий полный desktop gate:
+line 95,7%, branch 87,4%, win-x64 publish PASS. Финальный pre-commit
+повторяет gate после дополнения Т-образных стыков.
 Windows 7 x86 net6.0 publish — PASS, четыре CS1061 устранены.
 Android Release/permissions — PASS; финальный pre-push повторяет Android gate.
 Результаты окончательных CI jobs публикуются в PR отдельным комментарием.
@@ -175,6 +186,13 @@ Android Release/permissions — PASS; финальный pre-push повторя
 В существующем headless-тесте выбора вершины устранено попадание клика до
 готовности hit-test сцены окна: тест ожидает реальную доступность цели ввода,
 сохраняя проверку выбранного номера. Фиксированные задержки не добавлялись.
+В одном последующем полном запуске возникли два нестабильных сбоя:
+`BridgeTransitionAtCableBendIsVisibleAndSelectableWithItsListNumber`
+(`PlatformNotSupportedException` в headless Dispatcher.PushFrame) и
+`ReorderingDuringCalculationCancelsAndBuildsLatestOrder` (HasRoute=false).
+Отдельный запуск обеих групп (46/46) и повтор полного набора (648/648)
+прошли без изменений кода. Эти сбои не считаются доказанно устранёнными;
+проверки не исключались и утверждения не ослаблялись.
 
 ## Воспроизведение
 

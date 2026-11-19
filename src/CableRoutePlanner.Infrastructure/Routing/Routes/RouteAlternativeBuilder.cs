@@ -9,7 +9,8 @@ namespace CableRoutePlanner.Infrastructure.Routing;
 /// <summary>Validates and measures completed paths, retaining distinct alternatives and all profile failures.</summary>
 /// <remarks>
 /// One instance belongs to one calculation. Costs are summed per segment while
-/// displayed object counts are unique across the route. Profiles retain their
+/// object counts retain distinct IDs while underground passages retain separate
+/// route visits. Profiles retain their
 /// declared order; gas preference is a stable partition applied only at completion.
 /// </remarks>
 internal sealed class RouteAlternativeBuilder(
@@ -18,6 +19,7 @@ internal sealed class RouteAlternativeBuilder(
     PreparedTerrainData terrain,
     RoutingOptions options)
 {
+    private const double RoadContactStationToleranceMetres = 0.001;
     private readonly LocalProjection projection = terrain.Projection;
     private List<RouteAlternative> result = [];
     private readonly List<ProfileSearchFailure> failures = [];
@@ -41,7 +43,8 @@ internal sealed class RouteAlternativeBuilder(
         HashSet<long> gasCandidates = [];
         HashSet<long> underpassCandidates = [];
         List<RoadCrossingEvent> roadCrossingEvents = [];
-        HashSet<RoadCrossingEvent> previousEdgeContacts = [];
+        Dictionary<(long RoadId, RoadCrossingKind Kind), double> lastContactStations = [];
+        double projectedOffset = 0;
         for (int i = 1; i < route.Count; i++)
         {
             EdgeEvaluation edge = evaluator.Evaluate(route[i - 1], route[i])
@@ -55,17 +58,19 @@ internal sealed class RouteAlternativeBuilder(
             bridgeCandidates.UnionWith(edge.BridgeCandidates);
             gasCandidates.UnionWith(edge.GasCandidates);
             underpassCandidates.UnionWith(edge.UnderpassCandidates);
-            HashSet<RoadCrossingEvent> currentEdgeContacts = [];
-            foreach (RoadCrossingEvidence crossing in edge.RoadCrossingEvents)
+            foreach (RoadCrossingEvidence crossing in edge.RoadCrossingEvents.OrderBy(crossing => route[i - 1].Distance(crossing.Location)))
             {
                 RoadCrossingEvent contact = new(crossing.RoadId, crossing.Kind, projection.Inverse(crossing.Location));
-                if (currentEdgeContacts.Add(contact)
-                    && !(crossing.Location.Equals2D(route[i - 1]) && previousEdgeContacts.Contains(contact)))
+                double station = projectedOffset + route[i - 1].Distance(crossing.Location);
+                (long, RoadCrossingKind) key = (crossing.RoadId, crossing.Kind);
+                if (!lastContactStations.TryGetValue(key, out double previous)
+                    || Math.Abs(station - previous) > RoadContactStationToleranceMetres)
                 {
                     roadCrossingEvents.Add(contact);
                 }
+                lastContactStations[key] = station;
             }
-            previousEdgeContacts = currentEdgeContacts;
+            projectedOffset += route[i - 1].Distance(route[i]);
         }
 
         if (length > options.MaxRouteLengthMetres)

@@ -11,6 +11,33 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class UnderpassRoutingTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SharedUnderpassJunctionOnRoadAxisConnectsThreeConfirmedBranches(bool connected)
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-500, 150), (1000, 150));
+        MapFeature lower = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 130), (160, 150)) with
+        { UnderpassRoadIds = new long[] { 1 }, UnderpassTopology = new(2, [10, 11], [10]) };
+        MapFeature upper = TestData.Line(3, TerrainKind.PedestrianUnderpassCandidate, (160, 150), (160, 170)) with
+        { UnderpassRoadIds = new long[] { 1 }, UnderpassTopology = new(connected ? 2 : 3, [connected ? 11 : 20, 12], [12]) };
+        MapFeature branch = TestData.Line(4, TerrainKind.PedestrianUnderpassCandidate, (160, 150), (200, 170)) with
+        { UnderpassRoadIds = new long[] { 1 }, UnderpassTopology = new(connected ? 2 : 4, [connected ? 11 : 21, 13], [13]) };
+        IRoutePlanner planner = TestData.Planner(road, lower, upper, branch);
+        GeoCoordinate[] points = [TestData.P(160, 120), TestData.P(200, 190)];
+        RoutingOptions options = TestData.Options with { AllowExperimentalPedestrianUnderpasses = true };
+        if (!connected)
+        {
+            PlanningException error = await Assert.ThrowsAsync<PlanningException>(() => planner.PlanAsync(points, options, default));
+            Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
+            return;
+        }
+        RouteAlternative route = Assert.Single(await planner.PlanAsync(points, options, default));
+        Assert.Single(route.UnderpassPassages!);
+        Assert.Single(route.RoadCrossingEvents!);
+        Assert.Contains(route.Geometry, point => point.DistanceTo(TestData.P(160, 150)) < 1);
+    }
+
     [Fact]
     public async Task NetworkWithoutConfirmedSurfaceEntrancesCannotBeEnteredAtRoadContact()
     {

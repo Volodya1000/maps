@@ -2,6 +2,7 @@
 
 import json
 import re
+from itertools import combinations
 
 
 def _layer(value):
@@ -66,6 +67,56 @@ def crossing(tunnel, road):
     )
 
 
+def _junction_crossing(span, center, road):
+    from shapely.geometry import LineString
+
+    if not crossing(span, road):
+        return False
+    origin = center.coords[0]
+    road_rays = []
+    coordinates = list(road.coords)
+    for first, second in zip(coordinates, coordinates[1:], strict=False):
+        if LineString([first, second]).covers(center):
+            for point in (first, second):
+                ray = (point[0] - origin[0], point[1] - origin[1])
+                if ray != (0, 0):
+                    road_rays.append(ray)
+    if len(road_rays) != 2:
+        return False
+    tunnel_rays = [
+        (point[0] - origin[0], point[1] - origin[1])
+        for point in (span.coords[0], span.coords[-1])
+    ]
+
+    def cross(first, second):
+        return first[0] * second[1] - first[1] * second[0]
+
+    if any(
+        cross(first, second) == 0 and first[0] * second[0] + first[1] * second[1] > 0
+        for first in road_rays
+        for second in tunnel_rays
+    ):
+        return False
+    first, second = road_rays
+    turn = cross(first, second)
+    if turn == 0 and first[0] * second[0] + first[1] * second[1] >= 0:
+        return False
+
+    # At a bend, the road's outgoing rays divide the local plane into two
+    # sectors. A transverse passage must enter one and leave through the other;
+    # GEOS crosses alone also accepts a V-shaped tangent at an interior point.
+    def inside(ray):
+        left = cross(first, ray) > 0
+        right = cross(ray, second) > 0
+        if turn > 0:
+            return left and right
+        if turn < 0:
+            return left or right
+        return left
+
+    return inside(tunnel_rays[0]) != inside(tunnel_rays[1])
+
+
 def create_staging(connection):
     connection.executescript("""
         CREATE TEMP TABLE underpass_sources(source TEXT PRIMARY KEY,wkb BLOB,layer INTEGER);
@@ -104,6 +155,7 @@ def stage(connection, kind, geometry, tags, source, feature_id=None):
 
 def import_candidates(connection, add):
     from shapely import from_wkb
+    from shapely.geometry import LineString, Point
 
     sources = connection.execute(
         "SELECT * FROM underpass_sources ORDER BY source"
@@ -127,6 +179,40 @@ def import_candidates(connection, add):
             if key in owners:
                 groups[root(source)] = root(owners[key])
             owners[key] = source
+    # A transverse passage can be split at a junction on the road axis. Build
+    # only two-edge paths through the same source node and layer, never by XY
+    # proximity. Such a path proves a crossing even at an odd-degree T junction.
+    neighbors = {}
+    centers = {}
+    for source, raw, level in sources:
+        refs = nodes.get(source, [])
+        geometry = from_wkb(raw)
+        if not refs or geometry.geom_type != "LineString" or not geometry.is_simple:
+            continue
+        coordinates = list(geometry.coords)
+        if len(refs) != len(coordinates):
+            raise ValueError(
+                f"{source} node_ids count {len(refs)} differs from coordinate count {len(coordinates)}"
+            )
+        for index, node in enumerate(refs):
+            key = (level, node)
+            center = coordinates[index]
+            if key in centers and centers[key] != center:
+                raise ValueError(
+                    f"node/{node} coordinates {center!r} differ from shared coordinates {centers[key]!r}"
+                )
+            centers[key] = center
+            adjacent = neighbors.setdefault(key, {})
+            for other in (index - 1, index + 1):
+                if 0 <= other < len(refs):
+                    adjacent[(source, refs[other])] = coordinates[other]
+    junctions = {}
+    for key, adjacent in neighbors.items():
+        for (first, a), (second, b) in combinations(adjacent.items(), 2):
+            center = centers[key]
+            span = LineString([a, center, b])
+            for source in dict.fromkeys((first[0], second[0])):
+                junctions.setdefault(source, []).append((span, Point(center)))
     matches_by_source = {}
     for source, raw, level in sources:
         tunnel = from_wkb(raw)
@@ -140,9 +226,14 @@ def import_candidates(connection, add):
         """,
             (level, east, west, north, south),
         ).fetchall()
-        matches = [
-            (rid, osm) for rid, osm, road in roads if crossing(tunnel, from_wkb(road))
-        ]
+        matches = []
+        for rid, osm, raw_road in roads:
+            road = from_wkb(raw_road)
+            if crossing(tunnel, road) or any(
+                _junction_crossing(span, center, road)
+                for span, center in junctions.get(source, [])
+            ):
+                matches.append((rid, osm))
         matches_by_source[source] = matches
     active = {root(source) for source, matches in matches_by_source.items() if matches}
     degrees = {}

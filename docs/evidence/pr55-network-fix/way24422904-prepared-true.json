@@ -1,0 +1,146 @@
+{
+  "status": "success",
+  "elapsedMilliseconds": 1537,
+  "alternatives": [
+    {
+      "name": "\u041a\u043e\u0440\u043e\u0447\u0435",
+      "geometry": [
+        {
+          "Latitude": 53.89414631025989,
+          "Longitude": 27.452780586088508
+        },
+        {
+          "Latitude": 53.8941037,
+          "Longitude": 27.4526211
+        },
+        {
+          "Latitude": 53.8941522,
+          "Longitude": 27.4526283
+        },
+        {
+          "Latitude": 53.8941522,
+          "Longitude": 27.4526283
+        },
+        {
+          "Latitude": 53.8941668,
+          "Longitude": 27.4522508
+        },
+        {
+          "Latitude": 53.8941668,
+          "Longitude": 27.4522508
+        },
+        {
+          "Latitude": 53.8941846,
+          "Longitude": 27.4522578
+        },
+        {
+          "Latitude": 53.89417268974011,
+          "Longitude": 27.452098513911494
+        }
+      ],
+      "metrics": {
+        "LengthMetres": 54.22927778550406,
+        "ForestMetres": 0,
+        "FieldMetres": 0,
+        "RoadCrossings": 2,
+        "ApprovedWaterCrossings": 0,
+        "PotentialBridgeCrossings": 0,
+        "WeightedCost": 54.22927778550406,
+        "AscentMetres": null,
+        "PotentialGasPipelineCrossings": 0
+      },
+      "roadContacts": [
+        {
+          "RoadId": 193126,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.89414814524359,
+              "Longitude": 27.45262769805678
+            }
+          ]
+        },
+        {
+          "RoadId": 2868696,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.89416013257135,
+              "Longitude": 27.45242319413123
+            }
+          ]
+        }
+      ],
+      "gasCandidateIds": [],
+      "underpassCandidateIds": [
+        4300398,
+        4300399
+      ],
+      "roadCrossingEvents": [
+        {
+          "RoadId": 193126,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.89414814524359,
+            "Longitude": 27.45262769805678
+          }
+        },
+        {
+          "RoadId": 2868696,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.89416013257135,
+            "Longitude": 27.45242319413123
+          }
+        }
+      ],
+      "underpassPassages": [
+        {
+          "NetworkId": 4300398,
+          "Entry": {
+            "Latitude": 53.89410796203206,
+            "Longitude": 27.452637052374477
+          },
+          "Exit": {
+            "Latitude": 53.89418339313664,
+            "Longitude": 27.452241659584423
+          }
+        }
+      ]
+    }
+  ],
+  "error": null,
+  "independentAudit": {
+    "status": "valid",
+    "findings": [
+      {
+        "reason": "road_contact",
+        "roadId": 193126,
+        "coordinate": [
+          -10.017975276494084,
+          0.20404115985327873
+        ],
+        "bridgeIds": [],
+        "gasIds": [],
+        "underpassIds": [
+          4300398
+        ],
+        "allowed": true
+      },
+      {
+        "reason": "road_contact",
+        "roadId": 2868696,
+        "coordinate": [
+          -23.418077606145907,
+          1.5369730315284929
+        ],
+        "bridgeIds": [],
+        "gasIds": [],
+        "underpassIds": [
+          4300398
+        ],
+        "allowed": true
+      }
+    ]
+  }
+}

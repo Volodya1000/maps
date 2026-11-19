@@ -214,7 +214,10 @@ internal sealed class GasCrossingIndex
             { continue; }
             if (requiredRoadId.HasValue && !(candidate.RoadIds?.Contains(requiredRoadId.Value) ?? false))
             { continue; }
-            if (!candidate.Span.Crosses(road))
+            // Topology-backed links also retain crossings split between ways
+            // at their shared OSM node. Legacy candidates still need a single
+            // transverse source span; local and network corridors remain required.
+            if (!candidate.HasTopology && !candidate.Span.Crosses(road))
             { continue; }
             if (crossingSections.Length > 0 && candidate.LocalCorridor.Covers(crossing)
                 && crossingSections.All(candidate.Corridor.Covers))

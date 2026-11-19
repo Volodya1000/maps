@@ -1,0 +1,23 @@
+{
+  "status": "no_route",
+  "elapsedMilliseconds": 767,
+  "alternatives": [],
+  "error": {
+    "reason": "NoRouteInSearchArea",
+    "terrainKind": null,
+    "searchFailures": [
+      {
+        "profile": "\u041A\u043E\u0440\u043E\u0447\u0435",
+        "reason": "NoRouteInSearchArea"
+      },
+      {
+        "profile": "\u0411\u0430\u043B\u0430\u043D\u0441",
+        "reason": "NoRouteInSearchArea"
+      },
+      {
+        "profile": "\u041F\u0440\u043E\u0449\u0435 \u043F\u0440\u043E\u043A\u043B\u0430\u0434\u043A\u0430",
+        "reason": "NoRouteInSearchArea"
+      }
+    ]
+  }
+}

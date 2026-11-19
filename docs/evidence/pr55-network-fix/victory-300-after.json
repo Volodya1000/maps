@@ -1,6 +1,6 @@
 {
   "status": "success",
-  "elapsedMilliseconds": 6105,
+  "elapsedMilliseconds": 6523,
   "alternatives": [
     {
       "name": "\u041A\u043E\u0440\u043E\u0447\u0435",
@@ -232,19 +232,19 @@
           }
         },
         {
-          "RoadId": 37625,
-          "Kind": 1,
-          "Location": {
-            "Latitude": 53.90824996036809,
-            "Longitude": 27.575660796993205
-          }
-        },
-        {
           "RoadId": 174728,
           "Kind": 1,
           "Location": {
             "Latitude": 53.90844027065776,
             "Longitude": 27.575413043352288
+          }
+        },
+        {
+          "RoadId": 37625,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.90824996036809,
+            "Longitude": 27.575660796993205
           }
         },
         {
