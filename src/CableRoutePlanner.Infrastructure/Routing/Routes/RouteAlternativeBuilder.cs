@@ -9,7 +9,8 @@ namespace CableRoutePlanner.Infrastructure.Routing;
 /// <summary>Validates and measures completed paths, retaining distinct alternatives and all profile failures.</summary>
 /// <remarks>
 /// One instance belongs to one calculation. Costs are summed per segment while
-/// displayed object counts are unique across the route. Profiles retain their
+/// object counts retain distinct IDs while underground passages retain separate
+/// route visits. Profiles retain their
 /// declared order; gas preference is a stable partition applied only at completion.
 /// </remarks>
 internal sealed class RouteAlternativeBuilder(
@@ -18,6 +19,7 @@ internal sealed class RouteAlternativeBuilder(
     PreparedTerrainData terrain,
     RoutingOptions options)
 {
+    private const double RoadContactStationToleranceMetres = 0.001;
     private readonly LocalProjection projection = terrain.Projection;
     private List<RouteAlternative> result = [];
     private readonly List<ProfileSearchFailure> failures = [];
@@ -39,6 +41,10 @@ internal sealed class RouteAlternativeBuilder(
         var crossings = new HashSet<long>();
         var bridgeCandidates = new HashSet<long>();
         HashSet<long> gasCandidates = [];
+        HashSet<long> underpassCandidates = [];
+        List<RoadCrossingEvent> roadCrossingEvents = [];
+        Dictionary<(long RoadId, RoadCrossingKind Kind), double> lastContactStations = [];
+        double projectedOffset = 0;
         for (int i = 1; i < route.Count; i++)
         {
             EdgeEvaluation edge = evaluator.Evaluate(route[i - 1], route[i])
@@ -51,6 +57,20 @@ internal sealed class RouteAlternativeBuilder(
             crossings.UnionWith(edge.Crossings);
             bridgeCandidates.UnionWith(edge.BridgeCandidates);
             gasCandidates.UnionWith(edge.GasCandidates);
+            underpassCandidates.UnionWith(edge.UnderpassCandidates);
+            foreach (RoadCrossingEvidence crossing in edge.RoadCrossingEvents.OrderBy(crossing => route[i - 1].Distance(crossing.Location)))
+            {
+                RoadCrossingEvent contact = new(crossing.RoadId, crossing.Kind, projection.Inverse(crossing.Location));
+                double station = projectedOffset + route[i - 1].Distance(crossing.Location);
+                (long, RoadCrossingKind) key = (crossing.RoadId, crossing.Kind);
+                if (!lastContactStations.TryGetValue(key, out double previous)
+                    || Math.Abs(station - previous) > RoadContactStationToleranceMetres)
+                {
+                    roadCrossingEvents.Add(contact);
+                }
+                lastContactStations[key] = station;
+            }
+            projectedOffset += route[i - 1].Distance(route[i]);
         }
 
         if (length > options.MaxRouteLengthMetres)
@@ -69,7 +89,8 @@ internal sealed class RouteAlternativeBuilder(
         // A nearby aerial candidate and a ground crossing are meaningful choices,
         // even when their lines occupy almost the same map corridor.
         if (result.Any(existing => (existing.GasPipelineCandidateIds ?? [])
-            .SequenceEqual(gasCandidates.OrderBy(value => value))
+            .SequenceEqual(gasCandidates.OrderBy(id => id))
+            && (existing.UnderpassCandidateIds ?? []).SequenceEqual(underpassCandidates.OrderBy(id => id))
             && Similar(existing.Geometry, route, projection, options.CellSizeMetres)))
         {
             return null;
@@ -93,7 +114,10 @@ internal sealed class RouteAlternativeBuilder(
                 Array.AsReadOnly(postProcessor.BridgeTransitionPoints(route)
                     .Select(projection.Inverse).ToArray()),
                 terrain.RoadContacts.Analyze(route, ct),
-                Array.AsReadOnly(gasCandidates.OrderBy(value => value).ToArray())));
+                Array.AsReadOnly(gasCandidates.OrderBy(id => id).ToArray()),
+                Array.AsReadOnly(underpassCandidates.OrderBy(id => id).ToArray()),
+                Array.AsReadOnly(roadCrossingEvents.ToArray()),
+                terrain.UnderpassCrossings.Passages(route, underpassCandidates, projection)));
         return null;
     }
 

@@ -7,6 +7,7 @@ import gzip
 import hashlib
 import json
 import math
+import os
 import shutil
 import sqlite3
 from collections import Counter
@@ -133,9 +134,22 @@ def main():
         def way(self, way):
             tags = dict(way.tags)
             kind = classify(tags)
+            if (
+                tags.get("highway") in ("footway", "path", "pedestrian", "steps")
+                and tags.get("tunnel", "no") == "no"
+                and tags.get("location") != "underground"
+            ):
+                connection.executemany(
+                    "INSERT OR IGNORE INTO underpass_surface_nodes VALUES(?)",
+                    ((node.ref,) for node in way.nodes),
+                )
             if is_underpass(tags):
                 geometry = from_wkb(bytes.fromhex(factory.create_linestring(way)))
                 stage(connection, None, geometry, tags, f"way/{way.id}")
+                connection.execute(
+                    "INSERT OR REPLACE INTO underpass_source_nodes VALUES(?,?)",
+                    (f"way/{way.id}", json.dumps([node.ref for node in way.nodes])),
+                )
             # Areas are handled by osmium's multipolygon assembler, including closed ways and holes.
             if kind not in (
                 "Road",
@@ -206,7 +220,11 @@ def main():
                 errors[kind + ":" + type(error).__name__] += 1
 
     if not args.finalize_only:
-        Handler().apply_file(str(args.pbf), locations=True, idx="flex_mem")
+        handler = Handler()
+        handler.apply_file(str(args.pbf), locations=True, idx="flex_mem")
+        # pyosmium owns native worker resources. Release them before interpreter
+        # shutdown, which can otherwise wait indefinitely on Windows.
+        del handler
         if not args.audit_only:
             import_candidates(connection, add)
             for geometry, source in pipeline_road_candidates(connection):
@@ -300,6 +318,19 @@ def main():
             ) as compressed:
                 shutil.copyfileobj(source, compressed, 1024 * 1024)
     print(json.dumps(manifest, ensure_ascii=False), flush=True)
+    # pyosmium/libosmium may leave its native reader thread alive after all work
+    # is complete on Windows. Every database and archive stream is closed here;
+    # terminate before libosmium's affected DLL finalization path. os._exit()
+    # still calls ExitProcess on Windows and can wait in that same path.
+    if os.name == "nt":
+        import ctypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+        kernel32.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+        kernel32.TerminateProcess.restype = ctypes.c_int
+        kernel32.TerminateProcess(kernel32.GetCurrentProcess(), 0)
+        raise OSError(ctypes.get_last_error(), "TerminateProcess failed")
 
 
 if __name__ == "__main__":

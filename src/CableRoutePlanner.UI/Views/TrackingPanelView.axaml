@@ -28,6 +28,32 @@
                 Text="{Binding LocationState.Message}"
                 TextWrapping="Wrap" />
             <TextBlock
+                x:Name="LocationStartRequirement"
+                Classes="view-hint"
+                IsVisible="{Binding HasLocationStartMessage}"
+                Text="{Binding LocationStartMessage}"
+                TextWrapping="Wrap" />
+            <WrapPanel IsVisible="{Binding HasLocationStartMessage}">
+                <Button
+                    x:Name="RequestLocationPermissionButton"
+                    Command="{Binding RequestLocationPermissionCommand}"
+                    Content="Предоставить доступ"
+                    IsVisible="{Binding HasLocationPermissionRequest}" />
+                <Button
+                    x:Name="EnableLocationButton"
+                    Command="{Binding RequestLocationPermissionCommand}"
+                    Content="Включить геолокацию"
+                    IsVisible="{Binding HasEnableLocationAction}" />
+                <Button
+                    x:Name="OpenLocationSettingsButton"
+                    Command="{Binding OpenLocationSettingsCommand}"
+                    Content="Открыть настройки" />
+                <Button
+                    x:Name="CancelLocationStartButton"
+                    Command="{Binding DismissLocationRequirementCommand}"
+                    Content="Отмена" />
+            </WrapPanel>
+            <TextBlock
                 Classes="view-hint"
                 Text="{Binding PersistenceStatus}"
                 IsVisible="{Binding HasPersistenceError}"

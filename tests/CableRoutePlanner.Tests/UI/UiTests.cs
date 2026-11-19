@@ -12,9 +12,11 @@ using CableRoutePlanner.Domain;
 using CableRoutePlanner.Infrastructure;
 using CableRoutePlanner.Persistence;
 using CableRoutePlanner.UI;
+using CableRoutePlanner.UI.MapAdapters;
 using CableRoutePlanner.UI.Views;
 using CableRoutePlanner.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using Mapsui.Nts;
 using Xunit;
 
 [assembly: AvaloniaTestApplication(typeof(CableRoutePlanner.Tests.TestApplication))]
@@ -64,6 +66,7 @@ public sealed class UiTests
         vm.RouteVertices.Add(new RouteVertexRow(1, TestData.P(100, 100), LegIndex: 1, LegSubIndex: 1));
         vm.RouteVertices.Add(new RouteVertexRow(2, TestData.P(101, 100), LegIndex: 1, LegSubIndex: 2));
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds)) { ViewModel = vm };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 420, Height = 850 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -78,7 +81,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task GasPipelineCandidateRendersCrossingSpanAndLabelWithoutTheWholePipeline()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 54, 27.006, 54.006));
         await adapter.SetFeaturesAsync([
             TestData.Line(1, TerrainKind.OverheadGasPipeline, (100, 0), (100, 500)),
@@ -92,6 +95,98 @@ public sealed class UiTests
     }
 
     [AvaloniaFact]
+    public void PedestrianUnderpassWay24422904IsHiddenAtOverviewAndMarkedAtDetail()
+    {
+        NetTopologySuite.Geometries.GeometryFactory factory = new();
+        MapFeature underpass = new(
+            24422904,
+            TerrainKind.PedestrianUnderpassCandidate,
+            new NetTopologySuite.IO.WKBWriter().Write(factory.CreateLineString(
+            [
+                new NetTopologySuite.Geometries.Coordinate(27.4526283, 53.8941522),
+                new NetTopologySuite.Geometries.Coordinate(27.4522508, 53.8941668)
+            ])),
+            "way/24422904");
+
+        IReadOnlyList<Mapsui.IFeature> overview = CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter
+            .PrepareFeatures([underpass], CancellationToken.None, metresPerPixel: 50);
+        IReadOnlyList<Mapsui.IFeature> detail = CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter
+            .PrepareFeatures([underpass], CancellationToken.None, metresPerPixel: 1);
+
+        Assert.Empty(overview);
+        Mapsui.Nts.GeometryFeature line = Assert.IsType<Mapsui.Nts.GeometryFeature>(detail[0]);
+        Mapsui.Styles.VectorStyle[] strokes = line.Styles.OfType<Mapsui.Styles.VectorStyle>().ToArray();
+        Assert.Equal(2, strokes.Length);
+        Assert.Equal(Mapsui.Styles.PenStyle.ShortDash, strokes[1].Line!.PenStyle);
+        Assert.All(strokes, stroke => Assert.Equal(10, stroke.MaxVisible));
+        Mapsui.Nts.GeometryFeature marker = Assert.IsType<Mapsui.Nts.GeometryFeature>(
+            Assert.Single(detail, feature => feature.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any()));
+        Mapsui.Styles.SymbolStyle symbol = Assert.Single(marker.Styles.OfType<Mapsui.Styles.SymbolStyle>());
+        Assert.Equal(Mapsui.Styles.SymbolType.Image, symbol.SymbolType);
+        Assert.False(symbol.RotateWithMap);
+        Assert.True(symbol.BitmapId > 0);
+        Mapsui.Styles.LabelStyle[] labels = marker.Styles.OfType<Mapsui.Styles.LabelStyle>().ToArray();
+        Assert.Contains(labels, label => label.GetLabelText(marker) == "Подземный переход" && label.MaxVisible == 2);
+    }
+
+    [AvaloniaFact]
+    public void PedestrianUnderpassDisplaySpanIsLimitedToItsLinkedRoad()
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature underpass = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 80), (160, 220))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+
+        IReadOnlyList<Mapsui.IFeature> detail = MapsuiMapAdapter.PrepareFeatures(
+            [road, underpass], CancellationToken.None, metresPerPixel: 1);
+
+        GeometryFeature span = Assert.Single(detail.OfType<GeometryFeature>(), feature =>
+            feature.Styles.OfType<Mapsui.Styles.VectorStyle>().Any(style =>
+                style.Line?.PenStyle == Mapsui.Styles.PenStyle.ShortDash));
+        Assert.InRange(span.Geometry!.Length, 6, 20);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(0)]
+    [InlineData(90)]
+    [InlineData(180)]
+    [InlineData(270)]
+    public async Task RepositoryUnderpassSignUsesScreenOrientedVectorOverlay(double rotation)
+    {
+        MapFeature road = TestData.Line(1, TerrainKind.Road, (-100, 150), (700, 150));
+        MapFeature underpass = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (160, 80), (160, 220))
+            with
+        { UnderpassRoadIds = new long[] { 1 } };
+        MemoryData repository = new(road, underpass);
+        using Mapsui.UI.Avalonia.MapControl control = new();
+        using MapsuiMapAdapter adapter = new(control, repository.Info.Bounds, repository);
+        control.Map.Navigator.RotateTo(rotation, 0);
+        Mapsui.Layers.Layer overlay = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.Layer>(),
+            layer => layer.Name == "Подписи и знаки карты");
+        Mapsui.Providers.IProvider provider = Assert.IsAssignableFrom<Mapsui.Providers.IProvider>(overlay.DataSource);
+        (double west, double south) = Mapsui.Projections.SphericalMercator.FromLonLat(27, 54);
+        (double east, double north) = Mapsui.Projections.SphericalMercator.FromLonLat(27.006, 54.006);
+
+        Mapsui.IFeature[] features = (await provider.GetFeaturesAsync(new Mapsui.Layers.FetchInfo(
+            new Mapsui.MSection(new Mapsui.MRect(west, south, east, north), 1), "EPSG:3857"))).ToArray();
+
+        Mapsui.IFeature marker = Assert.Single(features);
+        Mapsui.Styles.SymbolStyle symbol = Assert.Single(marker.Styles.OfType<Mapsui.Styles.SymbolStyle>());
+        Assert.False(symbol.RotateWithMap);
+        Assert.Equal(rotation, control.Map.Navigator.Viewport.Rotation, 6);
+        Assert.Contains(marker.Styles.OfType<Mapsui.Styles.LabelStyle>(),
+            label => label.GetLabelText(marker) == "Подземный переход");
+        Mapsui.Tiling.Layers.TileLayer tiled = Assert.Single(control.Map.Layers.OfType<Mapsui.Tiling.Layers.TileLayer>());
+        Mapsui.Layers.Layer source = Assert.IsType<Mapsui.Layers.Layer>(
+            Assert.IsAssignableFrom<Mapsui.Layers.ISourceLayer>(tiled).SourceLayer);
+        Mapsui.Providers.IProvider baseProvider = Assert.IsAssignableFrom<Mapsui.Providers.IProvider>(source.DataSource);
+        Mapsui.IFeature[] rasterizedFeatures = (await baseProvider.GetFeaturesAsync(new Mapsui.Layers.FetchInfo(
+            new Mapsui.MSection(new Mapsui.MRect(west, south, east, north), 1), "EPSG:3857"))).ToArray();
+        Assert.DoesNotContain(rasterizedFeatures,
+            feature => feature.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any());
+    }
+
+    [AvaloniaFact]
     public async Task RoadContactToggleShowsSelectedAlternativeAndClearsOnDisableOrRouteRemoval()
     {
         using MapViewModel vm = TestData.CreateMapViewModel(new NavigationHost(),
@@ -99,6 +194,7 @@ public sealed class UiTests
             new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
         var view = new MapView((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
         { ViewModel = vm };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 420, Height = 850 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -147,6 +243,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 1100, Height = 900 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -189,7 +286,7 @@ public sealed class UiTests
     public async Task MapAdapterRendersEveryTerrainCategory()
     {
         // Arrange
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(
             control,
             new CableRoutePlanner.Domain.GeoBounds(27, 53, 28, 54));
@@ -211,6 +308,7 @@ public sealed class UiTests
         // Source pipelines are calculation data; only their derived road spans are displayed.
         Assert.Equal(kinds.Count(kind => kind != TerrainKind.OverheadGasPipeline), rendered.Features!.Count());
         Assert.All(rendered.Features, feature => Assert.NotEmpty(feature.Styles));
+        Assert.DoesNotContain(rendered.Features, feature => feature.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any());
     }
 
     [AvaloniaFact]
@@ -220,7 +318,7 @@ public sealed class UiTests
         MapFeature road = TestData.Line(1, Domain.TerrainKind.Road, (10, 10), (200, 200));
         MapFeature bridge = TestData.Line(2, Domain.TerrainKind.BridgeCandidate, (20, 10), (20, 200));
         var repository = new TileRepository(road, bridge);
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(
             control,
             repository.Info.Bounds,
@@ -254,7 +352,9 @@ public sealed class UiTests
         Assert.NotNull(roadStyle.Line);
         Assert.InRange(roadStyle.Line.Width, 0.5, 1.1);
         Mapsui.IFeature renderedBridge = rendered[2];
-        Assert.Equal(2, renderedBridge.Styles.Count);
+        Assert.Equal(2, renderedBridge.Styles.OfType<Mapsui.Styles.VectorStyle>().Count());
+        Assert.DoesNotContain(renderedBridge.Styles.OfType<Mapsui.Styles.LabelStyle>(),
+            label => label.GetLabelText(renderedBridge) == "Мост");
         Mapsui.Styles.VectorStyle bridgeMask = Assert.IsType<Mapsui.Styles.VectorStyle>(
             renderedBridge.Styles.First());
         Mapsui.Styles.Pen bridgeMaskLine = Assert.IsType<Mapsui.Styles.Pen>(bridgeMask.Line);
@@ -268,7 +368,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task MapAdapterKeepsPreviousLayerWhenNewGeometryCannotBeRead()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 53, 28, 54));
         MapFeature original = TestData.Polygon(1, Domain.TerrainKind.Field, 10, 10, 12, 12);
         await adapter.SetFeaturesAsync([original]);
@@ -285,7 +385,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task MapAdapterPublishesLatestFeaturesAfterOverlappingPreparations()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 53, 28, 54));
         MapFeature[] oldFeatures = Enumerable.Range(0, 200).Select(index => TestData.Polygon(
             index + 1, Domain.TerrainKind.Field, 10 + index * 0.01, 10,
@@ -305,7 +405,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public async Task DisposingMapAdapterCancelsPendingFeaturePreparation()
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, new(27, 53, 28, 54));
         MapFeature[] features = Enumerable.Range(0, 200).Select(index => TestData.Polygon(
             index + 1, Domain.TerrainKind.Field, 10 + index * 0.01, 10,
@@ -329,6 +429,7 @@ public sealed class UiTests
         var window = new Window { Content = shell, Width = 900, Height = 700 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        using Mapsui.UI.Avalonia.MapControl initialMap = shell.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         await vm.ShowSettings.Execute();
         settings.CellSize = 40;
         var back = new Avalonia.Interactivity.RoutedEventArgs(TopLevel.BackRequestedEvent);
@@ -398,6 +499,7 @@ public sealed class UiTests
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
+        using Mapsui.UI.Avalonia.MapControl initialMap = shell.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         await shell.ViewModel!.ShowSettings.Execute();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         NumericUpDown[] inputs = shell.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
@@ -408,6 +510,7 @@ public sealed class UiTests
 
         await shell.ViewModel.ShowMap.Execute();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        using Mapsui.UI.Avalonia.MapControl restoredMap = shell.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         Assert.Equal(cellSize, settings.CellSize);
         Assert.Equal(reservePercent, settings.ReservePercent);
 
@@ -430,6 +533,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 1100, Height = 900 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -470,6 +574,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 412, Height = 860 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -512,7 +617,8 @@ public sealed class UiTests
             Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"),
             new MemoryClipboard());
         TypedViewLocator locator = provider.GetRequiredService<TypedViewLocator>();
-        Assert.IsType<MapView>(locator.ResolveView(provider.GetRequiredService<MapViewModel>()));
+        MapView mapView = Assert.IsType<MapView>(locator.ResolveView(provider.GetRequiredService<MapViewModel>()));
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = mapView.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         Assert.IsType<SettingsView>(locator.ResolveView(provider.GetRequiredService<SettingsViewModel>()));
         ShellView shell = provider.GetRequiredService<ShellView>();
         var window = new Window
@@ -520,6 +626,8 @@ public sealed class UiTests
             Content = shell
         };
         window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        using Mapsui.UI.Avalonia.MapControl shellMap = shell.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         Assert.NotNull(shell.ViewModel);
         window.Close();
     }
@@ -534,6 +642,7 @@ public sealed class UiTests
         MapViewModel vm = provider.GetRequiredService<MapViewModel>();
         IPlanningSession session = provider.GetRequiredService<CableRoutePlanner.Application.IPlanningSession>();
         var view = (MapView)provider.GetRequiredService<TypedViewLocator>().ResolveView(vm)!;
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window
         {
             Content = view,
@@ -591,6 +700,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 1100, Height = 1100 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -686,6 +796,7 @@ public sealed class UiTests
         Assert.True(prepared);
         Assert.NotNull(view.ViewModel!.Shell);
         Assert.NotEmpty(view.GetVisualDescendants().OfType<ShellView>());
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.GetVisualDescendants().OfType<Mapsui.UI.Avalonia.MapControl>().Single();
         window.Close();
     }
 
@@ -700,6 +811,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 412, Height = 860 };
         window.Show();
         for (int attempt = 0; attempt < 100 && repository.LastBounds is null; attempt++)
@@ -724,6 +836,7 @@ public sealed class UiTests
         {
             ViewModel = vm
         };
+        using Mapsui.UI.Avalonia.MapControl mapControlLifetime = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
         var window = new Window { Content = view, Width = 412, Height = 860 };
         window.Show();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -758,7 +871,7 @@ public sealed class UiTests
     [AvaloniaFact]
     public void InitialCameraUsesFinalLayoutSizeAndPreservesUserZoom()
     {
-        var map = new Mapsui.UI.Avalonia.MapControl();
+        using var map = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = map, Width = 60, Height = 400 };
         window.Show();
         using var adapter = new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(

@@ -3,7 +3,10 @@ using CableRoutePlanner.Domain;
 namespace CableRoutePlanner.Application;
 
 // Geometry is portable WKB in EPSG:4326; neither Domain nor ViewModels reference a GIS library.
-public sealed record MapFeature(long Id, TerrainKind Kind, byte[] Wkb, string Name, string? ApprovalId = null, IReadOnlyList<long>? UnderpassRoadIds = null);
+public sealed record MapFeature(long Id, TerrainKind Kind, byte[] Wkb, string Name, string? ApprovalId = null, IReadOnlyList<long>? UnderpassRoadIds = null, UnderpassTopology? UnderpassTopology = null);
+
+/// <summary>Source OSM node identities; entrances are terminal underground nodes shared with mapped surface pedestrian ways.</summary>
+public sealed record UnderpassTopology(long NetworkId, IReadOnlyList<long> NodeIds, IReadOnlyList<long> EntranceNodeIds);
 
 public sealed record DataPackageInfo(
     string RegionId,

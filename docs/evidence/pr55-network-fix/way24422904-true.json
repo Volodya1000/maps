@@ -1,0 +1,134 @@
+{
+  "status": "success",
+  "elapsedMilliseconds": 1796,
+  "alternatives": [
+    {
+      "name": "\u041A\u043E\u0440\u043E\u0447\u0435",
+      "geometry": [
+        {
+          "Latitude": 53.89414631025989,
+          "Longitude": 27.452780586088508
+        },
+        {
+          "Latitude": 53.8941037,
+          "Longitude": 27.4526211
+        },
+        {
+          "Latitude": 53.8941973,
+          "Longitude": 27.4526334
+        },
+        {
+          "Latitude": 53.89414631025989,
+          "Longitude": 27.452861582674203
+        },
+        {
+          "Latitude": 53.89417268974011,
+          "Longitude": 27.452098513911494
+        }
+      ],
+      "metrics": {
+        "LengthMetres": 87.98979800698496,
+        "ForestMetres": 0,
+        "FieldMetres": 0,
+        "RoadCrossings": 2,
+        "ApprovedWaterCrossings": 0,
+        "PotentialBridgeCrossings": 0,
+        "WeightedCost": 87.98979800698496,
+        "AscentMetres": null,
+        "PotentialGasPipelineCrossings": 0
+      },
+      "roadContacts": [
+        {
+          "RoadId": 193126,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.89414814318631,
+              "Longitude": 27.45262694029051
+            }
+          ]
+        },
+        {
+          "RoadId": 2868696,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.89416145884624,
+              "Longitude": 27.452423385524558
+            }
+          ]
+        }
+      ],
+      "gasCandidateIds": [],
+      "underpassCandidateIds": [
+        4606095,
+        4606360
+      ],
+      "roadCrossingEvents": [
+        {
+          "RoadId": 193126,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.89414814318631,
+            "Longitude": 27.45262694029051
+          }
+        },
+        {
+          "RoadId": 2868696,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.89416145884624,
+            "Longitude": 27.452423385524558
+          }
+        }
+      ],
+      "underpassPassages": [
+        {
+          "NetworkId": 4606095,
+          "Entry": {
+            "Latitude": 53.894143264828834,
+            "Longitude": 27.452626299224303
+          },
+          "Exit": {
+            "Latitude": 53.89416119878638,
+            "Longitude": 27.452628655930262
+          }
+        },
+        {
+          "NetworkId": 4606095,
+          "Entry": {
+            "Latitude": 53.89415385845587,
+            "Longitude": 27.452643239002594
+          },
+          "Exit": {
+            "Latitude": 53.8941679462281,
+            "Longitude": 27.452235727602236
+          }
+        },
+        {
+          "NetworkId": 4606360,
+          "Entry": {
+            "Latitude": 53.89410796203206,
+            "Longitude": 27.452637052374477
+          },
+          "Exit": {
+            "Latitude": 53.89419396640907,
+            "Longitude": 27.452648318053956
+          }
+        },
+        {
+          "NetworkId": 4606360,
+          "Entry": {
+            "Latitude": 53.89415383983814,
+            "Longitude": 27.45264377755037
+          },
+          "Exit": {
+            "Latitude": 53.89415489313245,
+            "Longitude": 27.45261330932336
+          }
+        }
+      ]
+    }
+  ],
+  "error": null
+}

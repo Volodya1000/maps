@@ -20,7 +20,7 @@ public sealed class MapMultitouchTests
     [InlineData(false, true)]
     public void PinchBeginningOnWaypointUsesLibraryGestureWithoutEditingPoints(bool previewFirst, bool rotate)
     {
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         var window = new Window { Content = control, Width = 900, Height = 600 };
         window.Show();
         using var adapter = new MapsuiMapAdapter(control, new GeoBounds(27, 53, 28, 54));

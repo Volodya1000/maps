@@ -6,6 +6,10 @@ namespace CableRoutePlanner.UI.MapAdapters;
 
 internal static class MapsuiStyleFactory
 {
+    public const double CrossingSymbolMaxResolution = 5;
+    public const double UnderpassLabelMaxResolution = 2;
+    public const double UnderpassLineMaxResolution = 10;
+    private const double DetailedBridgeMaxResolution = 10;
     public static Color MapBackground { get; } = new(244, 242, 233);
 
     public static int DrawingOrder(TerrainKind kind) => kind switch
@@ -18,6 +22,7 @@ internal static class MapsuiStyleFactory
         TerrainKind.BridgeCandidate or TerrainKind.ApprovedCrossing => 5,
         TerrainKind.Settlement => 6,
         TerrainKind.GasPipelineCrossingCandidate => 7,
+        TerrainKind.PedestrianUnderpassCandidate => 8,
         _ => 3
     };
 
@@ -30,6 +35,22 @@ internal static class MapsuiStyleFactory
                 new VectorStyle { Line = new Pen(new Color(0, 143, 157), 4) },
                 new LabelStyle { Text = "ГАЗ", ForeColor = Color.White,
                     BackColor = new Brush(new Color(0, 112, 126)), CollisionDetection = true }
+            ];
+        }
+        if (kind == TerrainKind.PedestrianUnderpassCandidate)
+        {
+            return
+            [
+                new VectorStyle { Line = new Pen(Color.White, 6), MaxVisible = UnderpassLineMaxResolution },
+                new VectorStyle
+                {
+                    Line = new Pen(new Color(26, 111, 210), 3)
+                    {
+                        PenStyle = PenStyle.ShortDash,
+                        PenStrokeCap = PenStrokeCap.Round
+                    },
+                    MaxVisible = UnderpassLineMaxResolution
+                },
             ];
         }
         Color color = kind switch
@@ -45,13 +66,16 @@ internal static class MapsuiStyleFactory
         };
 
         double roadWidth = RoadWidth(metresPerPixel);
+        bool detailedBridge = kind == TerrainKind.BridgeCandidate && metresPerPixel <= DetailedBridgeMaxResolution;
         var main = new VectorStyle
         {
             Fill = new Brush(color),
             Outline = new Pen(new Color(182, 187, 174), 0.5),
             Line = new Pen(
-                kind == TerrainKind.Road ? new Color(195, 182, 155) : color,
+                kind == TerrainKind.Road ? new Color(195, 182, 155)
+                    : detailedBridge ? new Color(77, 91, 99) : color,
                 kind == TerrainKind.Road ? roadWidth
+                    : detailedBridge ? 3
                     : kind is TerrainKind.BridgeCandidate or TerrainKind.ApprovedCrossing ? Math.Max(1, roadWidth)
                     : 3)
             {
@@ -64,21 +88,37 @@ internal static class MapsuiStyleFactory
             return [main];
         }
 
-        return
+        List<IStyle> bridgeStyles =
         [
             new VectorStyle
             {
                 // The light casing masks the water below the OSM bridge centreline.
                 // Square caps extend half a stroke beyond the tagged span and make
                 // small shoreline mismatches less prominent without changing geometry.
-                Line = new Pen(MapBackground, Math.Max(3, roadWidth + 2))
+                Line = new Pen(MapBackground, detailedBridge ? 6 : Math.Max(3, roadWidth + 2))
                 {
                     PenStrokeCap = PenStrokeCap.Square
                 }
             },
             main
         ];
+        return bridgeStyles;
     }
+
+    // Point labels are drawn directly by Mapsui in screen coordinates. They
+    // must never be included in an OfflineRasterLayer source feature.
+    public static LabelStyle MapLabel(string text, Color color, Brush background,
+        Offset offset, double maxVisible) => new()
+        {
+            Text = text,
+            ForeColor = color,
+            BackColor = background,
+            Offset = offset,
+            MaxVisible = maxVisible,
+            CollisionDetection = true,
+            HorizontalAlignment = LabelStyle.HorizontalAlignmentEnum.Center,
+            VerticalAlignment = LabelStyle.VerticalAlignmentEnum.Center
+        };
 
     private static double RoadWidth(double metresPerPixel) => metresPerPixel switch
     {

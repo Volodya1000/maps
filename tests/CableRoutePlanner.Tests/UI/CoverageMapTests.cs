@@ -32,7 +32,7 @@ public sealed class CoverageMapTests
                 }
             };
         }
-        var control = new Mapsui.UI.Avalonia.MapControl();
+        using var control = new Mapsui.UI.Avalonia.MapControl();
         using var adapter = new MapsuiMapAdapter(control, repository.Info.Bounds, repository);
         ILayer coverage = Assert.Single(control.Map.Layers, layer => layer.Name == "Граница офлайн-пакета");
         (double cx, double cy) = SphericalMercator.FromLonLat(TestData.P(x, 500).Longitude, TestData.P(x, 500).Latitude);

@@ -163,8 +163,20 @@ internal sealed class AndroidLocationService : Java.Lang.Object, ILocationServic
 
     public void ResumeUpdates()
     {
-        if (_disposed || !_featureEnabled)
+        if (_disposed)
         {
+            return;
+        }
+
+        if (!_featureEnabled)
+        {
+            // A permission changed in Android settings must be visible after return,
+            // while starting location updates still requires a new user action.
+            Publish(new LocationServiceState(false, PermissionState(),
+                _locationManager.IsProviderEnabled(LocationManager.GpsProvider)
+                    ? SystemLocationState.Enabled : SystemLocationState.Disabled,
+                false));
+
             return;
         }
 

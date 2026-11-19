@@ -109,6 +109,19 @@ internal sealed class SqliteGeodataFixture : IDisposable
                     command.ExecuteNonQuery();
                 }
             }
+            if (schemaVersion >= 3 && feature.UnderpassTopology is { } topology)
+            {
+                command.Parameters.Clear();
+                command.CommandText = """
+                    CREATE TABLE IF NOT EXISTS underpass_topology(candidate_id INTEGER PRIMARY KEY,network_id INTEGER,node_ids TEXT,entrance_node_ids TEXT);
+                    INSERT INTO underpass_topology VALUES($candidate,$network,$nodes,$entrances);
+                    """;
+                command.Parameters.AddWithValue("$candidate", feature.Id);
+                command.Parameters.AddWithValue("$network", topology.NetworkId);
+                command.Parameters.AddWithValue("$nodes", JsonSerializer.Serialize(topology.NodeIds));
+                command.Parameters.AddWithValue("$entrances", JsonSerializer.Serialize(topology.EntranceNodeIds));
+                command.ExecuteNonQuery();
+            }
         }
 
         transaction.Commit();

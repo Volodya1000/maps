@@ -12,6 +12,8 @@ internal sealed record EdgeEvaluation(
     IReadOnlyList<long> Crossings,
     IReadOnlyList<long> BridgeCandidates,
     IReadOnlyList<long> GasCandidates,
+    IReadOnlyList<long> UnderpassCandidates,
+    IReadOnlyList<RoadCrossingEvidence> RoadCrossingEvents,
     int GasRoadCrossings,
     bool PreferGas)
 {
@@ -27,3 +29,5 @@ internal sealed record EdgeEvaluation(
             PreferGas ? GasRoadCrossings : 0),
         profile);
 }
+
+internal sealed record RoadCrossingEvidence(long RoadId, RoadCrossingKind Kind, NetTopologySuite.Geometries.Coordinate Location);

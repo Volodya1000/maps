@@ -1,4 +1,5 @@
 using System.Reactive.Subjects;
+using System.Reactive.Threading.Tasks;
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.ViewModels;
@@ -70,6 +71,73 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
 
         Assert.False(viewModel.IsLocationEnabled);
         Assert.Equal(0, location.EnableCalls);
+    }
+
+    [Fact]
+    public void StartingCableLayingWithDisabledLocationKeepsTraversalReadyAndExplainsRequirement()
+    {
+        FakeLocation location = new();
+        using TrackingViewModel viewModel = CreateViewModel(location);
+        viewModel.SetRoute(Route());
+
+        viewModel.StartTraversal();
+
+        Assert.Equal(ProgressTrackingStatus.Ready, viewModel.Progress!.Status);
+        Assert.Equal("Для отслеживания прокладки кабеля необходимо включить геолокацию", viewModel.LocationStartMessage);
+    }
+
+    [Fact]
+    public async Task StartingCableLayingWithEnabledLocationAwaitingFirstFixStartsTraversal()
+    {
+        FakeLocation location = new();
+        using TrackingViewModel viewModel = CreateViewModel(location);
+        viewModel.SetRoute(Route());
+        await viewModel.SetLocationEnabledAsync(true);
+
+        viewModel.StartTraversal();
+
+        Assert.Equal(ProgressTrackingStatus.Active, viewModel.Progress!.Status);
+        Assert.Contains("Ожидание GPS", viewModel.TrackingStatusText);
+    }
+
+    [Fact]
+    public async Task DeniedLocationCanBeRequestedAgainWithoutStartingTraversal()
+    {
+        FakeLocation location = new();
+        using TrackingViewModel viewModel = CreateViewModel(location);
+        viewModel.SetRoute(Route());
+        location.EmitState(new LocationServiceState(false, LocationPermissionState.Denied,
+            SystemLocationState.Unknown, false));
+
+        viewModel.StartTraversal();
+
+        Assert.Contains("предоставить доступ", viewModel.LocationStartMessage);
+        Assert.True(viewModel.HasLocationPermissionRequest);
+        await viewModel.RequestLocationPermissionCommand.Execute().ToTask();
+        Assert.Equal(ProgressTrackingStatus.Ready, viewModel.Progress!.Status);
+        viewModel.StartTraversal();
+        Assert.Equal(ProgressTrackingStatus.Active, viewModel.Progress.Status);
+    }
+
+    [Fact]
+    public async Task PermissionGrantedInSettingsStillRequiresExplicitStart()
+    {
+        FakeLocation location = new();
+        using TrackingViewModel viewModel = CreateViewModel(location);
+        viewModel.SetRoute(Route());
+        location.EmitState(new LocationServiceState(false, LocationPermissionState.Denied,
+            SystemLocationState.Unknown, false));
+        viewModel.StartTraversal();
+
+        location.EmitState(new LocationServiceState(false, LocationPermissionState.Fine,
+            SystemLocationState.Enabled, false));
+
+        Assert.True(viewModel.HasEnableLocationAction);
+        Assert.Equal(ProgressTrackingStatus.Ready, viewModel.Progress!.Status);
+        await viewModel.RequestLocationPermissionCommand.Execute().ToTask();
+        Assert.Equal(ProgressTrackingStatus.Ready, viewModel.Progress.Status);
+        viewModel.StartTraversal();
+        Assert.Equal(ProgressTrackingStatus.Active, viewModel.Progress.Status);
     }
 
     [Fact]
@@ -160,7 +228,8 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
     {
         FakeLocation location = new();
         MemoryTrackingSessions sessions = new();
-        using TrackingViewModel viewModel = CreateViewModel(location, sessions: sessions);
+        MemoryLocationPreferences preferences = new();
+        using TrackingViewModel viewModel = CreateViewModel(location, preferences, sessions);
         RouteAlternative route = Route();
         viewModel.SetRoute(route);
         await viewModel.SetLocationEnabledAsync(true);
@@ -172,7 +241,7 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
         Assert.Equal(400, viewModel.Progress!.CoveredDistanceMetres, 2);
         Assert.NotNull(sessions.Value);
 
-        using TrackingViewModel restored = CreateViewModel(location, sessions: sessions);
+        using TrackingViewModel restored = CreateViewModel(location, preferences, sessions);
         restored.SetRoute(route);
 
         Assert.False(restored.IsTraversalActive);
@@ -292,10 +361,12 @@ public sealed class TrackingViewModelTests : ReactiveTestScope
     }
 
     [Fact]
-    public void TraversalActionsMatchTheCurrentLifecycleState()
+    public async Task TraversalActionsMatchTheCurrentLifecycleStateWhenLocationIsEnabled()
     {
-        using TrackingViewModel viewModel = CreateViewModel(new FakeLocation());
+        FakeLocation location = new();
+        using TrackingViewModel viewModel = CreateViewModel(location);
         viewModel.SetRoute(Route());
+        await viewModel.SetLocationEnabledAsync(true);
 
         Assert.True(viewModel.CanStartTraversal);
         Assert.False(viewModel.CanPauseTraversal);

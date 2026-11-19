@@ -118,6 +118,7 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
         Dictionary<long, List<long>> underpassRoads = [];
+        Dictionary<long, UnderpassTopology> topology = [];
         if (_schemaVersion >= 3 && !lod.HasValue)
         {
             using SqliteCommand links = connection.CreateCommand();
@@ -132,6 +133,23 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
                     underpassRoads.Add(candidateId, roads);
                 }
                 roads.Add(linkReader.GetInt64(1));
+            }
+        }
+        if (_schemaVersion >= 3 && !lod.HasValue)
+        {
+            using SqliteCommand exists = connection.CreateCommand();
+            exists.CommandText = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='underpass_topology'";
+            if (Convert.ToInt64(exists.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture) > 0)
+            {
+                using SqliteCommand nodes = connection.CreateCommand();
+                nodes.CommandText = "SELECT candidate_id,network_id,node_ids,entrance_node_ids FROM underpass_topology";
+                using SqliteDataReader nodeReader = nodes.ExecuteReader();
+                while (nodeReader.Read())
+                {
+                    topology.Add(nodeReader.GetInt64(0), new(nodeReader.GetInt64(1),
+                        JsonSerializer.Deserialize<long[]>(nodeReader.GetString(2))!,
+                        JsonSerializer.Deserialize<long[]>(nodeReader.GetString(3))!));
+                }
             }
         }
         using SqliteCommand command = connection.CreateCommand();
@@ -176,7 +194,8 @@ public sealed class SqliteGeodataRepository : IGeodataRepository
                     (byte[])reader[2],
                     reader.GetString(3),
                     reader.IsDBNull(4) ? null : reader.GetString(4),
-                    underpassRoads.TryGetValue(reader.GetInt64(0), out List<long>? linkedRoads) ? linkedRoads.AsReadOnly() : null));
+                    underpassRoads.TryGetValue(reader.GetInt64(0), out List<long>? linkedRoads) ? linkedRoads.AsReadOnly() : null,
+                    topology.GetValueOrDefault(reader.GetInt64(0))));
         }
 
         return result;

@@ -33,7 +33,7 @@ class CountryDataTests(unittest.TestCase):
                 "sha256": hashlib.sha256(self.raw).hexdigest(),
                 "urls": ["https://primary.test/map.pbf", "https://backup.test/map.pbf"],
             },
-            "runtime": {"python": "3.12.14", "uv": "0.12.23"},
+            "runtime": {"python": "3.12.14", "uv": "0.13.9"},
         }
         for name in country.INPUTS:
             path = self.root / name
@@ -266,7 +266,7 @@ class CountryDataTests(unittest.TestCase):
 
         with (
             patch.object(country, "download", side_effect=source),
-            patch.object(country.subprocess, "check_output", return_value="uv 0.12.23"),
+            patch.object(country.subprocess, "check_output", return_value="uv 0.13.9"),
             patch.object(country.subprocess, "run", side_effect=command),
         ):
             with self.assertRaises(subprocess.CalledProcessError):

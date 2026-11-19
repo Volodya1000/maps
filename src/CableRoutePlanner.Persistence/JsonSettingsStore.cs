@@ -10,7 +10,7 @@ public sealed class JsonSettingsStore(string path) : ISettingsStore
     {
         if (!File.Exists(path))
         {
-            return new();
+            return NormalizeMandatoryCrossingPreferences(new());
         }
 
         try
@@ -18,10 +18,7 @@ public sealed class JsonSettingsStore(string path) : ISettingsStore
             RoutingOptions options = JsonSerializer.Deserialize<RoutingOptions>(File.ReadAllText(path))
                 ?? throw new JsonException("Настройки имеют значение null.");
             options.Validate();
-            // The gas-crossing preference is now always enabled by the application.
-            // Keep reading the legacy field so existing settings files remain valid,
-            // but normalize an old `false` value before it reaches routing.
-            return options with { PreferOverheadGasCrossings = true };
+            return NormalizeMandatoryCrossingPreferences(options);
         }
         catch (JsonException ex)
         {
@@ -35,11 +32,19 @@ public sealed class JsonSettingsStore(string path) : ISettingsStore
 
     public void Save(RoutingOptions options)
     {
-        options = options with { PreferOverheadGasCrossings = true };
+        options = NormalizeMandatoryCrossingPreferences(options);
         options.Validate();
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         string temp = path + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(options));
         File.Move(temp, path, true);
     }
+
+    private static RoutingOptions NormalizeMandatoryCrossingPreferences(RoutingOptions options) => options with
+    {
+        // Keep legacy JSON readable, but user settings cannot disable mapped
+        // crossing support. Verify and tests pass RoutingOptions directly.
+        PreferOverheadGasCrossings = true,
+        AllowExperimentalPedestrianUnderpasses = true
+    };
 }

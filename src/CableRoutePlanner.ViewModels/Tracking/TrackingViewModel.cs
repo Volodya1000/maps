@@ -45,6 +45,9 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
         Resume = ReactiveCommand.Create(ResumeTraversal, this.WhenAnyValue(vm => vm.CanResumeTraversal));
         Finish = ReactiveCommand.Create(FinishTraversal, this.WhenAnyValue(vm => vm.CanFinishTraversal));
         ToggleFollowCommand = ReactiveCommand.Create(ToggleFollow);
+        OpenLocationSettingsCommand = ReactiveCommand.Create(OpenSystemLocationSettings);
+        RequestLocationPermissionCommand = ReactiveCommand.CreateFromTask(() => SetLocationEnabledAsync(true));
+        DismissLocationRequirementCommand = ReactiveCommand.Create(DismissLocationRequirement);
 
         if (_locationController.IsEnabled)
         {
@@ -142,7 +145,17 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
 
     [Reactive] public string PersistenceStatus { get; private set; } = "";
 
+    [Reactive] public string LocationStartMessage { get; private set; } = "";
+
     public bool HasPersistenceError => !string.IsNullOrWhiteSpace(PersistenceStatus);
+
+    public bool HasLocationStartMessage => !string.IsNullOrWhiteSpace(LocationStartMessage);
+
+    public bool HasLocationPermissionRequest => HasLocationStartMessage
+        && LocationState.Permission is LocationPermissionState.NotRequested or LocationPermissionState.Denied;
+
+    public bool HasEnableLocationAction => HasLocationStartMessage && !IsLocationEnabled
+        && LocationState.Permission is LocationPermissionState.Fine or LocationPermissionState.Approximate;
 
     public ReactiveCommand<Unit, Unit> Start { get; }
 
@@ -153,6 +166,12 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
     public ReactiveCommand<Unit, Unit> Finish { get; }
 
     public ReactiveCommand<Unit, Unit> ToggleFollowCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> OpenLocationSettingsCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> RequestLocationPermissionCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> DismissLocationRequirementCommand { get; }
 
     public async Task SetLocationEnabledAsync(bool enabled, CancellationToken cancellationToken = default)
     {
@@ -217,6 +236,10 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
             return;
         }
 
+        if (!RequireLocationForTraversal())
+        {
+            return;
+        }
         Progress = _tracker.Resume();
         SaveSession();
         NotifyProgressChanged();
@@ -236,7 +259,7 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
 
     public void ResumeTraversal()
     {
-        if (!CanResumeTraversal || _tracker is null)
+        if (!CanResumeTraversal || _tracker is null || !RequireLocationForTraversal())
         {
             return;
         }
@@ -263,6 +286,32 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
     public void DisableFollowing() => IsFollowing = false;
 
     public void OpenSystemLocationSettings() => _locationController.OpenSystemSettings();
+
+    private void DismissLocationRequirement()
+    {
+        LocationStartMessage = "";
+        this.RaisePropertyChanged(nameof(HasLocationStartMessage));
+        this.RaisePropertyChanged(nameof(HasLocationPermissionRequest));
+        this.RaisePropertyChanged(nameof(HasEnableLocationAction));
+    }
+
+    private bool RequireLocationForTraversal()
+    {
+        if (CanTrackLocation())
+        {
+            DismissLocationRequirement();
+            return true;
+        }
+
+        LocationStartMessage = LocationState.Permission is LocationPermissionState.Denied
+            or LocationPermissionState.PermanentlyDenied
+            ? "Для отслеживания прокладки кабеля необходимо предоставить доступ к геолокации"
+            : "Для отслеживания прокладки кабеля необходимо включить геолокацию";
+        this.RaisePropertyChanged(nameof(HasLocationStartMessage));
+        this.RaisePropertyChanged(nameof(HasLocationPermissionRequest));
+        this.RaisePropertyChanged(nameof(HasEnableLocationAction));
+        return false;
+    }
 
     public void SetCoverage(bool? isInsideCoverage)
     {
@@ -311,6 +360,16 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
     {
         LocationState = state;
         IsLocationEnabled = _locationController.IsEnabled;
+        if (CanTrackLocation() && HasLocationStartMessage)
+        {
+            DismissLocationRequirement();
+        }
+        else if (HasLocationStartMessage)
+        {
+            RequireLocationForTraversal();
+        }
+        this.RaisePropertyChanged(nameof(HasLocationPermissionRequest));
+        this.RaisePropertyChanged(nameof(HasEnableLocationAction));
         if (state.Permission is LocationPermissionState.Denied
             or LocationPermissionState.PermanentlyDenied)
         {
@@ -332,6 +391,10 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
         this.RaisePropertyChanged(nameof(CompactProgressText));
         this.RaisePropertyChanged(nameof(TrackingStatusText));
     }
+
+    private bool CanTrackLocation() => IsLocationEnabled && LocationState.IsEnabled
+        && LocationState.Permission is LocationPermissionState.Fine or LocationPermissionState.Approximate
+        && LocationState.SystemLocation != SystemLocationState.Disabled;
 
     private async Task RestoreLocationAsync(CancellationToken cancellationToken)
     {
@@ -446,5 +509,8 @@ public sealed class TrackingViewModel : ReactiveObject, ITrackingViewModel, IDis
         Resume.Dispose();
         Finish.Dispose();
         ToggleFollowCommand.Dispose();
+        OpenLocationSettingsCommand.Dispose();
+        RequestLocationPermissionCommand.Dispose();
+        DismissLocationRequirementCommand.Dispose();
     }
 }

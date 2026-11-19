@@ -8,6 +8,25 @@ namespace CableRoutePlanner.Tests;
 
 public sealed class PersistenceTests
 {
+    [Fact]
+    public async Task OptionalTopologyRoundTripsForRoutingAndDetailMap()
+    {
+        MapFeature tunnel = TestData.Line(2, TerrainKind.PedestrianUnderpassCandidate, (50, 100), (150, 100)) with
+        { UnderpassRoadIds = new long[] { 1 }, UnderpassTopology = new(2, [10, 11], [10, 11]) };
+        using SqliteGeodataFixture fixture = new([tunnel], null, schemaVersion: 3);
+        foreach (IReadOnlyList<MapFeature> loaded in new[]
+        {
+            await fixture.Repository.QueryAsync(fixture.Repository.Info.Bounds, default),
+            await fixture.Repository.QueryMapAsync(fixture.Repository.Info.Bounds, 1, default)
+        })
+        {
+            UnderpassTopology topology = Assert.IsType<UnderpassTopology>(Assert.Single(loaded).UnderpassTopology);
+            Assert.Equal(2, topology.NetworkId);
+            Assert.Equal(new long[] { 10, 11 }, topology.NodeIds);
+            Assert.Equal(new long[] { 10, 11 }, topology.EntranceNodeIds);
+        }
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(2)]

@@ -1,0 +1,283 @@
+{
+  "status": "success",
+  "elapsedMilliseconds": 6556,
+  "alternatives": [
+    {
+      "name": "\u041A\u043E\u0440\u043E\u0447\u0435",
+      "geometry": [
+        {
+          "Latitude": 53.9089564,
+          "Longitude": 27.5742584
+        },
+        {
+          "Latitude": 53.9089564,
+          "Longitude": 27.5742584
+        },
+        {
+          "Latitude": 53.909018,
+          "Longitude": 27.5743899
+        },
+        {
+          "Latitude": 53.909018,
+          "Longitude": 27.5743899
+        },
+        {
+          "Latitude": 53.9090791,
+          "Longitude": 27.574505
+        },
+        {
+          "Latitude": 53.9090791,
+          "Longitude": 27.574505
+        },
+        {
+          "Latitude": 53.9088547,
+          "Longitude": 27.5748286
+        },
+        {
+          "Latitude": 53.9088547,
+          "Longitude": 27.5748286
+        },
+        {
+          "Latitude": 53.9088751,
+          "Longitude": 27.5748788
+        },
+        {
+          "Latitude": 53.9088908,
+          "Longitude": 27.5749402
+        },
+        {
+          "Latitude": 53.9089068,
+          "Longitude": 27.5750201
+        },
+        {
+          "Latitude": 53.9089066,
+          "Longitude": 27.5751211
+        },
+        {
+          "Latitude": 53.9089066,
+          "Longitude": 27.5751211
+        },
+        {
+          "Latitude": 53.9088889,
+          "Longitude": 27.5752237
+        },
+        {
+          "Latitude": 53.9088616,
+          "Longitude": 27.5753122
+        },
+        {
+          "Latitude": 53.9088185,
+          "Longitude": 27.5753897
+        },
+        {
+          "Latitude": 53.9087717,
+          "Longitude": 27.5754386
+        },
+        {
+          "Latitude": 53.908714,
+          "Longitude": 27.5754693
+        },
+        {
+          "Latitude": 53.9086559,
+          "Longitude": 27.5754752
+        },
+        {
+          "Latitude": 53.9086117,
+          "Longitude": 27.5754651
+        },
+        {
+          "Latitude": 53.9085713,
+          "Longitude": 27.5754418
+        },
+        {
+          "Latitude": 53.9085343,
+          "Longitude": 27.575408
+        },
+        {
+          "Latitude": 53.908492,
+          "Longitude": 27.5753457
+        },
+        {
+          "Latitude": 53.908492,
+          "Longitude": 27.5753457
+        },
+        {
+          "Latitude": 53.9082475,
+          "Longitude": 27.575664
+        },
+        {
+          "Latitude": 53.9082475,
+          "Longitude": 27.575664
+        },
+        {
+          "Latitude": 53.9082962,
+          "Longitude": 27.5757437
+        },
+        {
+          "Latitude": 53.9082962,
+          "Longitude": 27.5757437
+        },
+        {
+          "Latitude": 53.9082646,
+          "Longitude": 27.5757924
+        },
+        {
+          "Latitude": 53.9082646,
+          "Longitude": 27.5757924
+        },
+        {
+          "Latitude": 53.9081863,
+          "Longitude": 27.5759061
+        },
+        {
+          "Latitude": 53.9081863,
+          "Longitude": 27.5759061
+        }
+      ],
+      "metrics": {
+        "LengthMetres": 192.8394101385862,
+        "ForestMetres": 0,
+        "FieldMetres": 0,
+        "RoadCrossings": 5,
+        "ApprovedWaterCrossings": 0,
+        "PotentialBridgeCrossings": 0,
+        "WeightedCost": 192.8394101385862,
+        "AscentMetres": null,
+        "PotentialGasPipelineCrossings": 0
+      },
+      "roadContacts": [
+        {
+          "RoadId": 37625,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.90824996036809,
+              "Longitude": 27.575660796993205
+            }
+          ]
+        },
+        {
+          "RoadId": 37625,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.90824828325992,
+              "Longitude": 27.57566528184426
+            }
+          ]
+        },
+        {
+          "RoadId": 37634,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.90825944707776,
+              "Longitude": 27.57568355199378
+            }
+          ]
+        },
+        {
+          "RoadId": 37699,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.90906697788663,
+              "Longitude": 27.574482164398553
+            }
+          ]
+        },
+        {
+          "RoadId": 174724,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.9089180153703,
+              "Longitude": 27.574737294947294
+            }
+          ]
+        },
+        {
+          "RoadId": 174728,
+          "Kind": 0,
+          "Geometry": [
+            {
+              "Latitude": 53.90844027065776,
+              "Longitude": 27.575413043352288
+            }
+          ]
+        }
+      ],
+      "gasCandidateIds": [],
+      "underpassCandidateIds": [
+        4605969,
+        4605970,
+        4605974,
+        4605979
+      ],
+      "roadCrossingEvents": [
+        {
+          "RoadId": 37699,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.90906697788663,
+            "Longitude": 27.574482164398553
+          }
+        },
+        {
+          "RoadId": 174724,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.9089180153703,
+            "Longitude": 27.574737294947294
+          }
+        },
+        {
+          "RoadId": 174728,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.90844027065776,
+            "Longitude": 27.575413043352288
+          }
+        },
+        {
+          "RoadId": 37625,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.90824996036809,
+            "Longitude": 27.575660796993205
+          }
+        },
+        {
+          "RoadId": 37625,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.90824828325992,
+            "Longitude": 27.57566528184426
+          }
+        },
+        {
+          "RoadId": 37634,
+          "Kind": 1,
+          "Location": {
+            "Latitude": 53.90825944707776,
+            "Longitude": 27.57568355199378
+          }
+        }
+      ],
+      "underpassPassages": [
+        {
+          "NetworkId": 4605959,
+          "Entry": {
+            "Latitude": 53.9089564,
+            "Longitude": 27.5742584
+          },
+          "Exit": {
+            "Latitude": 53.9081863,
+            "Longitude": 27.5759061
+          }
+        }
+      ]
+    }
+  ],
+  "error": null
+}

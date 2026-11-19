@@ -87,17 +87,19 @@ public sealed class InfrastructureTests
     }
 
     [Fact]
-    public void LegacyDisabledGasPreferenceIsMigratedToAlwaysOn()
+    public void LegacyDisabledMandatoryCrossingPreferencesAreMigratedToAlwaysOn()
     {
         using var fixture = new TemporaryDirectory();
         string path = Path.Combine(fixture.DirectoryPath, "settings.json");
-        File.WriteAllText(path, "{\"PreferOverheadGasCrossings\":false}");
+        File.WriteAllText(path, "{\"PreferOverheadGasCrossings\":false,\"AllowExperimentalPedestrianUnderpasses\":false}");
 
         var store = new JsonSettingsStore(path);
 
         Assert.True(store.Load().PreferOverheadGasCrossings);
+        Assert.True(store.Load().AllowExperimentalPedestrianUnderpasses);
         store.Save(store.Load());
         Assert.Contains("\"PreferOverheadGasCrossings\":true", File.ReadAllText(path));
+        Assert.Contains("\"AllowExperimentalPedestrianUnderpasses\":true", File.ReadAllText(path));
     }
 
     [Fact]
@@ -120,6 +122,7 @@ public sealed class InfrastructureTests
 
         // Assert
         Assert.Equal(new RoutingOptions().CellSizeMetres, missing.CellSizeMetres);
+        Assert.True(missing.AllowExperimentalPedestrianUnderpasses);
         Assert.IsType<JsonException>(malformed.InnerException);
         Assert.IsType<JsonException>(nullSettings.InnerException);
         Assert.IsType<ArgumentOutOfRangeException>(invalid.InnerException);

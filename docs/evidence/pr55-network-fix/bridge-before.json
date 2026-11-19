@@ -1,0 +1,34 @@
+{
+  "status": "success",
+  "elapsedMilliseconds": 4780,
+  "alternatives": [
+    {
+      "name": "\u041A\u043E\u0440\u043E\u0447\u0435",
+      "geometry": [
+        {
+          "Latitude": 53.891348,
+          "Longitude": 27.585238
+        },
+        {
+          "Latitude": 53.890267,
+          "Longitude": 27.586239
+        }
+      ],
+      "metrics": {
+        "LengthMetres": 136.9353337278526,
+        "ForestMetres": 0,
+        "FieldMetres": 0,
+        "RoadCrossings": 0,
+        "ApprovedWaterCrossings": 0,
+        "PotentialBridgeCrossings": 0,
+        "WeightedCost": 136.9353337278526,
+        "AscentMetres": null,
+        "PotentialGasPipelineCrossings": 0
+      },
+      "roadContacts": [],
+      "gasCandidateIds": [],
+      "underpassCandidateIds": []
+    }
+  ],
+  "error": null
+}

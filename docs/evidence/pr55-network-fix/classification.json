@@ -1,0 +1,13 @@
+{
+  "sourceUnderpassWays": 1293,
+  "excludedFalseWays": [
+    25648646,
+    211623813,
+    682304036,
+    785856208,
+    935786355,
+    935786356,
+    1356833598
+  ],
+  "allSevenExcluded": true
+}
