@@ -39,7 +39,9 @@ public sealed class MapAnnotationRenderingTests
         TileLayer raster = Assert.Single(control.Map.Layers.OfType<TileLayer>());
         NetTopologySuite.Geometries.Coordinate center = MapsuiMapAdapter.Project(new(53.8905, 27.5857));
         double resolution = raster.TileSource.Schema.Resolutions[17].UnitsPerPixel;
-        Viewport viewport = new(center.X, center.Y, resolution, rotation, 720, 640);
+        // Fit both anchors at every rotation while remaining inside the underpass label's visibility limit.
+        Viewport viewport = new(center.X, center.Y,
+            MapsuiStyleFactory.UnderpassLabelMaxResolution - 0.01, rotation, 1120, 1120);
         MRect extent = new(center.X - 700, center.Y - 700, center.X + 700, center.Y + 700);
         List<IFeature> tiles = [];
         foreach (BruTile.TileInfo tile in raster.TileSource.Schema.GetTileInfos(
@@ -66,9 +68,11 @@ public sealed class MapAnnotationRenderingTests
         {
             using MemoryLayer isolated = new() { Features = [annotation], Style = null };
             using SKBitmap mask = Render(viewport, isolated);
-            Assert.True(mask.Pixels.Where((pixel, index) => pixel.Alpha > 200
-                && compositePixels[index] != terrainPixels[index]).Take(11).Count() > 10,
-                "The label must contribute visible pixels to the real raster/vector composite.");
+            int inkPixels = mask.Pixels.Count(pixel => pixel.Alpha > 200);
+            int changedPixels = mask.Pixels.Where((pixel, index) => pixel.Alpha > 200
+                && compositePixels[index] != terrainPixels[index]).Count();
+            Assert.True(changedPixels > 10,
+                $"The label must contribute visible pixels to the real raster/vector composite: {inkPixels} ink, {changedPixels} changed, {annotation.Extent!.Centroid}.");
         }
     }
 

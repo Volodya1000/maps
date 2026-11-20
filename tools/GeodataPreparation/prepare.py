@@ -102,7 +102,7 @@ def main():
     for relation in root.findall("relation"):
         t = tags(relation)
         kind = classify(t)
-        if t.get("type") != "multipolygon" or not kind:
+        if t.get("type") != "multipolygon" or not kind or kind.startswith("Railway"):
             continue
         members = [m for m in relation.findall("member") if m.attrib["type"] == "way"]
         if any(m.attrib["ref"] not in ways for m in members):

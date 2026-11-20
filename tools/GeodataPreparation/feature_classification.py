@@ -32,4 +32,10 @@ def classify(t):
         "pedestrian",
     ):
         return "Road"
+    if t.get("railway") in ("rail", "light_rail", "narrow_gauge", "tram"):
+        if t.get("tunnel") not in (None, "no"):
+            return "RailwayTunnel"
+        if t.get("bridge") not in (None, "no"):
+            return "RailwayBridge"
+        return "Railway"
     return None

@@ -306,9 +306,11 @@ public sealed class UiTests
         Mapsui.Layers.MemoryLayer rendered = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
             layer => layer.Name == "Офлайн OSM");
         // Source pipelines are calculation data; only their derived road spans are displayed.
-        Assert.Equal(kinds.Count(kind => kind != TerrainKind.OverheadGasPipeline), rendered.Features!.Count());
+        Assert.Equal(kinds.Count(kind => kind is not (TerrainKind.OverheadGasPipeline or TerrainKind.Settlement)), rendered.Features!.Count());
         Assert.All(rendered.Features, feature => Assert.NotEmpty(feature.Styles));
         Assert.DoesNotContain(rendered.Features, feature => feature.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any());
+        Assert.Contains(MapsuiMapAdapter.PrepareAnnotations(features, default), feature =>
+            feature.Styles.OfType<Mapsui.Styles.LabelStyle>().Any(label => label.GetLabelText(feature) == "fixture"));
     }
 
     [AvaloniaFact]
@@ -398,7 +400,9 @@ public sealed class UiTests
 
         Mapsui.Layers.MemoryLayer layer = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.MemoryLayer>(),
             candidate => candidate.Name == "Офлайн OSM");
-        Mapsui.IFeature displayed = Assert.Single(layer.Features);
+        Assert.Empty(layer.Features);
+        MapAnnotationLayer labels = Assert.Single(control.Map.Layers.OfType<MapAnnotationLayer>());
+        Mapsui.IFeature displayed = Assert.Single(labels.GetFeatures(new Mapsui.MRect(0, 0, 1, 1), 1));
         Assert.Single(displayed.Styles.OfType<Mapsui.Styles.LabelStyle>());
     }
 
