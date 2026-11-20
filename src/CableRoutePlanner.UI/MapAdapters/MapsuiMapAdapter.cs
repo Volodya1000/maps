@@ -349,7 +349,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             .Where(feature => feature.Kind == TerrainKind.Road)
             .ToDictionary(feature => feature.Id, feature => transform.Transform(reader.Read(feature.Wkb)));
         IFeature[] terrain = features
-            .Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline
+            .Where(feature => feature.Kind is not (TerrainKind.OverheadGasPipeline or TerrainKind.Settlement)
                 && (feature.Kind != TerrainKind.PedestrianUnderpassCandidate || metresPerPixel <= MapsuiStyleFactory.UnderpassLineMaxResolution))
             .OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind))
             .SelectMany(f =>
@@ -361,28 +361,14 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 geometry = DisplayUnderpassSpan(f, geometry, roads);
             }
             var feature = new GeometryFeature(geometry);
-            if (f.Kind == TerrainKind.Settlement)
+            if (!terrainStyles.TryGetValue(f.Kind, out IReadOnlyList<IStyle>? styles))
             {
-                feature.Styles.Add(
-                    new LabelStyle
-                    {
-                        Text = f.Name,
-                        ForeColor = new Color(57, 70, 61),
-                        BackColor = new Brush(new Color(255, 255, 255, 180)),
-                        CollisionDetection = true
-                    });
+                styles = MapsuiStyleFactory.ForTerrain(f.Kind, metresPerPixel);
+                terrainStyles.Add(f.Kind, styles);
             }
-            else
+            foreach (IStyle style in styles)
             {
-                if (!terrainStyles.TryGetValue(f.Kind, out IReadOnlyList<IStyle>? styles))
-                {
-                    styles = MapsuiStyleFactory.ForTerrain(f.Kind, metresPerPixel);
-                    terrainStyles.Add(f.Kind, styles);
-                }
-                foreach (IStyle style in styles)
-                {
-                    feature.Styles.Add(style);
-                }
+                feature.Styles.Add(style);
             }
 
             return new IFeature[] { feature };
@@ -410,6 +396,17 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             label[MapAnnotationLayer.LabelKeyField] = $"bridge/{bridge.Id.ToString(CultureInfo.InvariantCulture)}";
             label.Styles.Add(MapsuiStyleFactory.MapLabel("Мост", new Color(77, 91, 99),
                 new Brush(MapsuiStyleFactory.MapBackground), new Offset(0, 16), MapsuiStyleFactory.CrossingSymbolMaxResolution));
+            annotations.Add(label);
+        }
+        foreach (MapFeature settlement in unique.Where(feature => feature.Kind == TerrainKind.Settlement
+            && !string.IsNullOrWhiteSpace(feature.Name)))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            GeometryFeature label = new(transform.Transform(reader.Read(settlement.Wkb)).Centroid);
+            label[MapAnnotationLayer.LabelKeyField] = $"settlement/{settlement.Id.ToString(CultureInfo.InvariantCulture)}";
+            label.Styles.Add(MapsuiStyleFactory.MapLabel(settlement.Name,
+                new Color(57, 70, 61), new Brush(new Color(255, 255, 255, 180)),
+                new Offset(0, 0), double.MaxValue));
             annotations.Add(label);
         }
         for (int index = 0; index < annotations.Count; index++)

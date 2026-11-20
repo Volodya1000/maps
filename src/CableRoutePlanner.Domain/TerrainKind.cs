@@ -15,5 +15,8 @@ public enum TerrainKind
     Settlement,
     OverheadGasPipeline,
     GasPipelineCrossingCandidate,
-    PedestrianUnderpassCandidate
+    PedestrianUnderpassCandidate,
+    Railway,
+    RailwayBridge,
+    RailwayTunnel
 }

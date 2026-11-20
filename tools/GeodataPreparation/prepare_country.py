@@ -153,6 +153,9 @@ def main():
             # Areas are handled by osmium's multipolygon assembler, including closed ways and holes.
             if kind not in (
                 "Road",
+                "Railway",
+                "RailwayBridge",
+                "RailwayTunnel",
                 "BridgeCandidate",
                 "Clearing",
                 "River",
@@ -203,6 +206,9 @@ def main():
             kind = classify(tags)
             if kind is None or kind in (
                 "Road",
+                "Railway",
+                "RailwayBridge",
+                "RailwayTunnel",
                 "BridgeCandidate",
                 "Clearing",
                 "OverheadGasPipeline",

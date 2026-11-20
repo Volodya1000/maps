@@ -23,11 +23,6 @@ internal sealed class MapAnnotationFeatureProvider(IGeodataRepository geodata) :
 
     public async Task<IEnumerable<IFeature>> GetFeaturesAsync(FetchInfo fetchInfo)
     {
-        if (fetchInfo.Resolution > MapsuiStyleFactory.CrossingSymbolMaxResolution)
-        {
-            return [];
-        }
-
         MRect extent = fetchInfo.Extent;
         (double west, double south) = SphericalMercator.ToLonLat(extent.MinX, extent.MinY);
         (double east, double north) = SphericalMercator.ToLonLat(extent.MaxX, extent.MaxY);
@@ -36,7 +31,9 @@ internal sealed class MapAnnotationFeatureProvider(IGeodataRepository geodata) :
             fetchInfo.Resolution,
             CancellationToken.None).ConfigureAwait(false);
         return MapsuiMapAdapter.PrepareAnnotations(
-            features,
+            fetchInfo.Resolution > MapsuiStyleFactory.CrossingSymbolMaxResolution
+                ? features.Where(feature => feature.Kind == TerrainKind.Settlement).ToArray()
+                : features,
             CancellationToken.None);
     }
 }

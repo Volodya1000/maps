@@ -19,8 +19,11 @@ internal static class MapsuiStyleFactory
         TerrainKind.Building => 2,
         TerrainKind.Clearing => 3,
         TerrainKind.Road => 4,
-        TerrainKind.BridgeCandidate or TerrainKind.ApprovedCrossing => 5,
-        TerrainKind.Settlement => 6,
+        TerrainKind.RailwayTunnel => 4,
+        TerrainKind.Railway => 5,
+        TerrainKind.BridgeCandidate or TerrainKind.ApprovedCrossing => 6,
+        TerrainKind.RailwayBridge => 7,
+        TerrainKind.Settlement => 8,
         TerrainKind.GasPipelineCrossingCandidate => 7,
         TerrainKind.PedestrianUnderpassCandidate => 8,
         _ => 3
@@ -28,6 +31,47 @@ internal static class MapsuiStyleFactory
 
     public static IReadOnlyList<IStyle> ForTerrain(TerrainKind kind, double metresPerPixel = 0)
     {
+        if (kind is TerrainKind.Railway or TerrainKind.RailwayBridge or TerrainKind.RailwayTunnel)
+        {
+            double width = metresPerPixel > 40 ? 1.4 : metresPerPixel > 5 ? 2.8 : 4.2;
+            if (kind == TerrainKind.RailwayTunnel)
+            {
+                return [new VectorStyle
+                {
+                    Line = new Pen(Color.Black, width)
+                    {
+                        PenStyle = PenStyle.ShortDash,
+                        PenStrokeCap = PenStrokeCap.Square
+                    }
+                }];
+            }
+            List<IStyle> railwayStyles = [];
+            if (kind == TerrainKind.RailwayBridge && metresPerPixel <= 40)
+            {
+                railwayStyles.Add(new VectorStyle
+                {
+                    Line = new Pen(MapBackground, width + 2) { PenStrokeCap = PenStrokeCap.Square }
+                });
+            }
+            VectorStyle bed = new()
+            {
+                Line = new Pen(Color.Black, width) { PenStrokeCap = PenStrokeCap.Round }
+            };
+            railwayStyles.Add(bed);
+            if (metresPerPixel > 40)
+            {
+                return railwayStyles;
+            }
+            railwayStyles.Add(new VectorStyle
+            {
+                Line = new Pen(Color.White, width * 0.5)
+                {
+                    PenStyle = PenStyle.ShortDash,
+                    PenStrokeCap = PenStrokeCap.Square
+                }
+            });
+            return railwayStyles;
+        }
         if (kind == TerrainKind.GasPipelineCrossingCandidate)
         {
             return [
@@ -111,6 +155,7 @@ internal static class MapsuiStyleFactory
         Offset offset, double maxVisible) => new()
         {
             Text = text,
+            Font = new Font { FontFamily = "DejaVu Sans", Size = 12 },
             ForeColor = color,
             BackColor = background,
             Offset = offset,

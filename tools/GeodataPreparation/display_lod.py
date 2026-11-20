@@ -10,6 +10,8 @@ def include_in_display_lod(kind, tags, area, lod):
         # Keep them visible at regional and country overview levels so users can
         # discover where a route may follow a marked overhead crossing.
         return lod in (0, 1, 2)
+    if kind in ("Railway", "RailwayBridge", "RailwayTunnel"):
+        return lod == 2 or tags.get("railway") == "rail" and lod in (0, 1)
     road = tags.get("highway", "")
     if lod == 0:
         return (

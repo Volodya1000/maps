@@ -75,7 +75,12 @@ public sealed class MapPerformanceTests
         IFeature[] renderedRoads = features.Skip(1).Take(20).ToArray();
         Assert.All(renderedRoads, road => Assert.Same(Assert.Single(renderedRoads[0].Styles), Assert.Single(road.Styles)));
         Assert.Equal(20, renderedRoads.Select(road => road.Extent!.MinX).Distinct().Count());
-        Assert.Equal(SettlementNames, features.Skip(21).Select(feature => Assert.Single(feature.Styles.OfType<LabelStyle>()).GetLabelText(feature)));
+        Assert.Equal(21, features.Length);
+        MapAnnotationLayer annotationLayer = Assert.Single(control.Map.Layers.OfType<MapAnnotationLayer>());
+        IProvider annotationProvider = Assert.IsAssignableFrom<IProvider>(annotationLayer.DataSource);
+        IFeature[] labels = (await annotationProvider.GetFeaturesAsync(new FetchInfo(
+            new MSection(new MRect(x, y, x + 1000, y + 1000), 4)))).ToArray();
+        Assert.Equal(SettlementNames, labels.Select(feature => Assert.Single(feature.Styles.OfType<LabelStyle>()).GetLabelText(feature)));
     }
 
     [AvaloniaFact]
