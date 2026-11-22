@@ -15,6 +15,7 @@ public static class RouteMetricsFormatter
                 + $"{metrics.CableLengthMetres(options.ReserveFraction):N0} м",
             $"Лес: {metrics.ForestMetres:N0} м · поле: {metrics.FieldMetres:N0} м",
             $"Пересечения дорог: {route.RoadCrossingEvents?.Count ?? metrics.RoadCrossings}",
+            $"Пересечений железнодорожных путей: {metrics.RailwayCrossings}",
             $"Разрешённых водных переходов: {metrics.ApprovedWaterCrossings}",
             $"Переходов по мостам: {metrics.PotentialBridgeCrossings}",
             $"Кандидатов по газопроводам: {metrics.PotentialGasPipelineCrossings}",

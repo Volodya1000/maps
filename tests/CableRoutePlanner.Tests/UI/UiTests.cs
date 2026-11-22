@@ -90,7 +90,10 @@ public sealed class UiTests
             item => item.Name == "Офлайн OSM");
         Mapsui.Nts.GeometryFeature feature = Assert.IsType<Mapsui.Nts.GeometryFeature>(Assert.Single(layer.Features));
         Assert.IsType<NetTopologySuite.Geometries.LineString>(feature.Geometry);
-        Assert.Equal("ГАЗ", Assert.Single(feature.Styles.OfType<Mapsui.Styles.LabelStyle>()).GetLabelText(feature));
+        Assert.Empty(feature.Styles.OfType<Mapsui.Styles.LabelStyle>());
+        Mapsui.Layers.Layer annotations = Assert.Single(control.Map.Layers.OfType<Mapsui.Layers.Layer>());
+        Assert.Contains(annotations.GetFeatures(new Mapsui.MRect(-1e8, -1e8, 1e8, 1e8), 1),
+            annotation => annotation.Styles.OfType<Mapsui.Styles.SymbolStyle>().Any(symbol => symbol.RotateWithMap));
         Assert.Equal(3, feature.Geometry!.Coordinates.Length);
     }
 

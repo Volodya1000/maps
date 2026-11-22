@@ -9,6 +9,7 @@ internal static class MapsuiStyleFactory
     public const double CrossingSymbolMaxResolution = 5;
     public const double UnderpassLabelMaxResolution = 2;
     public const double UnderpassLineMaxResolution = 10;
+    internal const double DetailedRailwayMaxResolution = 2;
     private const double DetailedBridgeMaxResolution = 10;
     public static Color MapBackground { get; } = new(244, 242, 233);
 
@@ -33,41 +34,39 @@ internal static class MapsuiStyleFactory
     {
         if (kind is TerrainKind.Railway or TerrainKind.RailwayBridge or TerrainKind.RailwayTunnel)
         {
-            double width = metresPerPixel > 40 ? 1.4 : metresPerPixel > 5 ? 2.8 : 4.2;
-            if (kind == TerrainKind.RailwayTunnel)
+            bool detailed = metresPerPixel <= DetailedRailwayMaxResolution;
+            double width = detailed ? 1.8 : metresPerPixel > 20 ? 0.55 : 0.7;
+            Color bedColor = detailed ? new Color(85, 85, 85) : new Color(190, 190, 190);
+            VectorStyle bed = new()
             {
-                return [new VectorStyle
+                Fill = null,
+                Outline = null,
+                Line = new Pen(bedColor, width)
                 {
-                    Line = new Pen(Color.Black, width)
-                    {
-                        PenStyle = PenStyle.ShortDash,
-                        PenStrokeCap = PenStrokeCap.Square
-                    }
-                }];
+                    PenStrokeCap = PenStrokeCap.Butt,
+                    StrokeJoin = StrokeJoin.Round,
+                    PenStyle = detailed && kind == TerrainKind.RailwayTunnel ? PenStyle.ShortDash : PenStyle.Solid
+                }
+            };
+            if (!detailed || kind == TerrainKind.RailwayTunnel)
+            {
+                return [bed];
             }
             List<IStyle> railwayStyles = [];
-            if (kind == TerrainKind.RailwayBridge && metresPerPixel <= 40)
+            if (kind == TerrainKind.RailwayBridge)
             {
                 railwayStyles.Add(new VectorStyle
                 {
-                    Line = new Pen(MapBackground, width + 2) { PenStrokeCap = PenStrokeCap.Square }
+                    Line = new Pen(MapBackground, width + 1) { PenStrokeCap = PenStrokeCap.Butt }
                 });
             }
-            VectorStyle bed = new()
-            {
-                Line = new Pen(Color.Black, width) { PenStrokeCap = PenStrokeCap.Round }
-            };
             railwayStyles.Add(bed);
-            if (metresPerPixel > 40)
-            {
-                return railwayStyles;
-            }
             railwayStyles.Add(new VectorStyle
             {
-                Line = new Pen(Color.White, width * 0.5)
+                Line = new Pen(Color.White, 0.8)
                 {
                     PenStyle = PenStyle.ShortDash,
-                    PenStrokeCap = PenStrokeCap.Square
+                    PenStrokeCap = PenStrokeCap.Butt
                 }
             });
             return railwayStyles;
@@ -76,9 +75,7 @@ internal static class MapsuiStyleFactory
         {
             return [
                 new VectorStyle { Line = new Pen(Color.White, 7) },
-                new VectorStyle { Line = new Pen(new Color(0, 143, 157), 4) },
-                new LabelStyle { Text = "ГАЗ", ForeColor = Color.White,
-                    BackColor = new Brush(new Color(0, 112, 126)), CollisionDetection = true }
+                new VectorStyle { Line = new Pen(new Color(0, 143, 157), 4) }
             ];
         }
         if (kind == TerrainKind.PedestrianUnderpassCandidate)

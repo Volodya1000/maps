@@ -15,23 +15,34 @@ namespace CableRoutePlanner.Tests;
 public sealed class RailwayRenderingTests
 {
     [AvaloniaTheory]
-    [InlineData(1, 2)]
-    [InlineData(20, 2)]
-    [InlineData(100, 1)]
-    public void TrackHasBlackBedAndDetailedWhiteDashes(double resolution, int expectedStrokes)
+    [InlineData(2.01)]
+    [InlineData(5)]
+    [InlineData(20)]
+    [InlineData(40)]
+    [InlineData(100)]
+    [InlineData(1000)]
+    public void OverviewTracksAreGreyAndNoWiderThanRoads(double resolution)
     {
-        IStyle[] styles = MapsuiStyleFactory.ForTerrain(TerrainKind.Railway, resolution).ToArray();
-        VectorStyle[] strokes = styles.OfType<VectorStyle>().ToArray();
-        Assert.Equal(expectedStrokes, strokes.Length);
-        Assert.Equal(Color.Black, strokes[0].Line!.Color);
-        Assert.True(strokes[0].Line!.Width > MapsuiStyleFactory.ForTerrain(TerrainKind.Road, resolution)
-            .OfType<VectorStyle>().Single().Line!.Width);
-        if (expectedStrokes == 2)
+        foreach (TerrainKind kind in new[] { TerrainKind.Railway, TerrainKind.RailwayBridge, TerrainKind.RailwayTunnel })
         {
-            Assert.Equal(Color.White, strokes[1].Line!.Color);
-            Assert.Equal(PenStyle.ShortDash, strokes[1].Line!.PenStyle);
-            Assert.True(strokes[1].Line!.Width < strokes[0].Line!.Width);
+            VectorStyle stroke = Assert.Single(MapsuiStyleFactory.ForTerrain(kind, resolution).OfType<VectorStyle>());
+            Assert.NotEqual(Color.Black, stroke.Line!.Color);
+            Assert.True(stroke.Line.Width <= MapsuiStyleFactory.ForTerrain(TerrainKind.Road, resolution)
+                .OfType<VectorStyle>().Single().Line!.Width);
         }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(0.1)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void DetailHasBoundedDarkBedAndWhiteInserts(double resolution)
+    {
+        VectorStyle[] strokes = MapsuiStyleFactory.ForTerrain(TerrainKind.Railway, resolution).OfType<VectorStyle>().ToArray();
+        Assert.Equal(2, strokes.Length);
+        Assert.InRange(strokes[0].Line!.Width, 1, 2);
+        Assert.Equal(Color.White, strokes[1].Line!.Color);
+        Assert.Equal(PenStyle.ShortDash, strokes[1].Line!.PenStyle);
     }
 
     [AvaloniaFact]
@@ -44,7 +55,7 @@ public sealed class RailwayRenderingTests
 
         Assert.Equal(3, bridge.Length);
         Assert.Equal(MapsuiStyleFactory.MapBackground, bridge[0].Line!.Color);
-        Assert.Equal(Color.Black, bridge[1].Line!.Color);
+        Assert.NotEqual(MapsuiStyleFactory.MapBackground, bridge[1].Line!.Color);
         Assert.Equal(PenStyle.ShortDash, tunnel[0].Line!.PenStyle);
     }
 
@@ -69,9 +80,59 @@ public sealed class RailwayRenderingTests
             using FileStream image = File.Create(Path.Combine(directory, "railway-detail.png"));
             bitmap.Encode(image, SKEncodedImageFormat.Png, 100);
         }
-        Assert.Contains(bitmap.Pixels, pixel => pixel.Red < 30 && pixel.Green < 30 && pixel.Blue < 30 && pixel.Alpha > 200);
-        Assert.Contains(bitmap.Pixels, pixel => pixel.Red > 245 && pixel.Green > 245 && pixel.Blue > 245 && pixel.Alpha > 200);
+        Assert.Contains(bitmap.Pixels, pixel => pixel.Red < 130 && pixel.Green < 130 && pixel.Blue < 130 && pixel.Alpha > 200);
+        Assert.Contains(bitmap.Pixels, pixel => pixel.Red is > 150 and < 175 && Math.Abs(pixel.Red - pixel.Green) <= 2
+            && Math.Abs(pixel.Green - pixel.Blue) <= 2 && pixel.Alpha > 200);
         Assert.Contains(bitmap.Pixels, pixel => pixel.Red is > 175 and < 210 && pixel.Green is > 165 and < 200);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(5)]
+    [InlineData(20)]
+    [InlineData(100)]
+    public void DenseOverviewYardAndAcuteJoinsNeverProduceDarkPatches(double resolution)
+    {
+        List<MapFeature> yard = Enumerable.Range(0, 30).Select(index =>
+            TestData.Line(index + 1, TerrainKind.Railway, (100 + index * 4, -10000),
+                (100 + index * 4, 150), (100, 10000))).ToList();
+        yard.Add(yard[0] with { Id = 100 });
+        IFeature[] features = MapsuiMapAdapter.PrepareFeatures(yard, default, resolution, false);
+        using MemoryLayer layer = new() { Features = features, Style = null };
+        NetTopologySuite.Geometries.Coordinate center = MapsuiMapAdapter.Project(TestData.P(150, 150));
+        using MemoryStream png = new MapRenderer().RenderToBitmapStream(
+            new Viewport(center.X, center.Y, resolution, 0, 256, 256), [layer], MapsuiStyleFactory.MapBackground);
+        using SKBitmap bitmap = SKBitmap.Decode(png.ToArray());
+        Assert.Contains(bitmap.Pixels, pixel => pixel.Red < 230);
+        Assert.All(bitmap.Pixels, pixel =>
+        {
+            Assert.True(pixel.Red >= 185 && pixel.Green >= 185 && pixel.Blue >= 185);
+        });
+    }
+
+    [AvaloniaTheory]
+    [InlineData(1)]
+    [InlineData(2.01)]
+    [InlineData(20)]
+    [InlineData(100)]
+    public void DuplicateAndSplitWaysProduceSamePixelsWithoutJoinBlobs(double resolution)
+    {
+        MapFeature track = TestData.Line(1, TerrainKind.Railway, (150, -10000), (150, 10000));
+        MapFeature[] split = [track with { Id = 2 }, track with { Id = 3 },
+            TestData.Line(4, TerrainKind.Railway, (150, -10000), (150, 150)),
+            TestData.Line(5, TerrainKind.Railway, (150, 150), (150, 10000))];
+        NetTopologySuite.Geometries.Coordinate center = MapsuiMapAdapter.Project(TestData.P(150, 150));
+        Viewport viewport = new(center.X, center.Y, resolution, 0, 256, 256);
+        using MemoryLayer original = new() { Features = MapsuiMapAdapter.PrepareFeatures([track], default, resolution, false), Style = null };
+        using MemoryLayer duplicated = new() { Features = MapsuiMapAdapter.PrepareFeatures(split, default, resolution, false), Style = null };
+        using SKBitmap expected = MapAnnotationRenderingTests.Render(viewport, original);
+        using SKBitmap actual = MapAnnotationRenderingTests.Render(viewport, duplicated);
+        Assert.Equal(expected.Pixels, actual.Pixels);
+        Assert.Contains(actual.Pixels, pixel => pixel.Alpha > 0);
+        for (int y = 0; y < actual.Height; y++)
+        {
+            int width = Enumerable.Range(0, actual.Width).Count(x => actual.GetPixel(x, y).Alpha > 0);
+            Assert.InRange(width, 0, resolution <= 2 ? 4 : 2);
+        }
     }
 
     [AvaloniaTheory]
