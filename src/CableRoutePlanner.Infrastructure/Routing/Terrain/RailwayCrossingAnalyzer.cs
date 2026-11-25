@@ -56,7 +56,8 @@ internal sealed class RailwayCrossingAnalyzer
         }
         int count = 0;
         double previous = double.NegativeInfinity;
-        foreach (double station in stations.Order())
+        stations.Sort();
+        foreach (double station in stations)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (station - previous <= StationToleranceMetres)

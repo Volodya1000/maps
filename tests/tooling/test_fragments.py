@@ -1,5 +1,6 @@
 """Exercise the hook against real isolated Git repositories and staged snapshots."""
 
+import os
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,13 @@ SOURCE = Path(__file__).resolve().parents[2] / "tools/check_fragments.py"
 
 class FragmentChecks(unittest.TestCase):
     def setUp(self):
+        # Hooks inherit the caller's Git directory/index/worktree. Child repos
+        # must not use any of that state, including when running the checker.
+        self.environment = {
+            key: value
+            for key, value in os.environ.items()
+            if not key.startswith("GIT_")
+        }
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
@@ -27,13 +35,18 @@ class FragmentChecks(unittest.TestCase):
 
     def git(self, *args):
         return subprocess.check_output(
-            ["git", *args], cwd=self.root, text=True, stderr=subprocess.STDOUT
+            ["git", *args],
+            cwd=self.root,
+            env=self.environment,
+            text=True,
+            stderr=subprocess.STDOUT,
         )
 
     def check(self, *args):
         return subprocess.run(
             [sys.executable, "tools/check_fragments.py", "--base", "base", *args],
             cwd=self.root,
+            env=self.environment,
             text=True,
             capture_output=True,
         )

@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
 
 from shapely import from_wkb
@@ -61,7 +62,7 @@ class RailwayClassificationTests(unittest.TestCase):
                 check=True,
                 capture_output=True,
             )
-            with sqlite3.connect(output / "geodata.sqlite") as connection:
+            with closing(sqlite3.connect(output / "geodata.sqlite")) as connection:
                 tracks = connection.execute(
                     "SELECT kind,wkb FROM features ORDER BY source_id"
                 ).fetchall()

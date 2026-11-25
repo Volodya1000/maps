@@ -7,6 +7,7 @@ using Mapsui.Extensions;
 using Mapsui.Layers;
 using Mapsui.Rendering.Skia;
 using Mapsui.Styles;
+using Mapsui.Tiling.Layers;
 using SkiaSharp;
 using Xunit;
 
@@ -21,14 +22,13 @@ public sealed class RailwayRenderingTests
     [InlineData(40)]
     [InlineData(100)]
     [InlineData(1000)]
-    public void OverviewTracksAreGreyAndNoWiderThanRoads(double resolution)
+    public void OverviewTracksRemainGreyWithoutDetailInserts(double resolution)
     {
         foreach (TerrainKind kind in new[] { TerrainKind.Railway, TerrainKind.RailwayBridge, TerrainKind.RailwayTunnel })
         {
             VectorStyle stroke = Assert.Single(MapsuiStyleFactory.ForTerrain(kind, resolution).OfType<VectorStyle>());
             Assert.NotEqual(Color.Black, stroke.Line!.Color);
-            Assert.True(stroke.Line.Width <= MapsuiStyleFactory.ForTerrain(TerrainKind.Road, resolution)
-                .OfType<VectorStyle>().Single().Line!.Width);
+            Assert.Equal(PenStyle.Solid, stroke.Line.PenStyle);
         }
     }
 
@@ -40,9 +40,117 @@ public sealed class RailwayRenderingTests
     {
         VectorStyle[] strokes = MapsuiStyleFactory.ForTerrain(TerrainKind.Railway, resolution).OfType<VectorStyle>().ToArray();
         Assert.Equal(2, strokes.Length);
-        Assert.InRange(strokes[0].Line!.Width, 1, 2);
+        Assert.InRange(strokes[0].Line!.Width, 2.5, 3);
         Assert.Equal(Color.White, strokes[1].Line!.Color);
-        Assert.Equal(PenStyle.ShortDash, strokes[1].Line!.PenStyle);
+        Assert.Equal(PenStyle.UserDefined, strokes[1].Line!.PenStyle);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(2.01)]
+    [InlineData(5)]
+    [InlineData(20)]
+    [InlineData(40)]
+    [InlineData(1000)]
+    public void OverviewTrackRetainsVisibleContrast(double resolution)
+    {
+        using SKBitmap bitmap = RenderStraightTrack(resolution);
+        for (int x = 32; x < 224; x++)
+        {
+            byte darkest = Enumerable.Range(126, 4).Min(y => bitmap.GetPixel(x, y).Red);
+            Assert.True(darkest < 190, $"Track disappears into the background at resolution {resolution}: red={darkest}.");
+        }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(0.1)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void DetailInsertsHaveReadableLightAndDarkRuns(double resolution)
+    {
+        using SKBitmap bitmap = RenderStraightTrack(resolution);
+        int lightRun = 0;
+        int darkRun = 0;
+        int longestLightRun = 0;
+        int longestDarkRun = 0;
+        for (int x = 32; x < 224; x++)
+        {
+            byte red = bitmap.GetPixel(x, 128).Red;
+            lightRun = red > 200 ? lightRun + 1 : 0;
+            darkRun = red < 120 ? darkRun + 1 : 0;
+            longestLightRun = Math.Max(longestLightRun, lightRun);
+            longestDarkRun = Math.Max(longestDarkRun, darkRun);
+        }
+        Assert.InRange(longestLightRun, 6, 12);
+        Assert.InRange(longestDarkRun, 6, 12);
+    }
+
+    private static SKBitmap RenderStraightTrack(double resolution)
+    {
+        MapFeature track = TestData.Line(1, TerrainKind.Railway, (-1000000, 150), (1000000, 150));
+        using MemoryLayer layer = new()
+        {
+            Features = MapsuiMapAdapter.PrepareFeatures([track], default, resolution, false),
+            Style = null
+        };
+        NetTopologySuite.Geometries.Coordinate center = MapsuiMapAdapter.Project(TestData.P(150, 150));
+        using MemoryStream png = new MapRenderer().RenderToBitmapStream(
+            new Viewport(center.X, center.Y, resolution, 0, 256, 256), [layer], MapsuiStyleFactory.MapBackground);
+        return SKBitmap.Decode(png.ToArray());
+    }
+
+    [AvaloniaTheory]
+    [InlineData(17, 0)]
+    [InlineData(17, 37)]
+    [InlineData(17, 90)]
+    [InlineData(16, 37)]
+    public async Task OfflineTilesKeepParallelTracksVisibleAndSeparated(int zoom, double rotation)
+    {
+        MapFeature[] tracks = Enumerable.Range(0, 6).Select(index =>
+            TestData.Line(index + 1, TerrainKind.Railway,
+                (100 + index * 20, -1000), (100 + index * 20, 1000))).ToArray();
+        MemoryData repository = new(tracks);
+        using Mapsui.UI.Avalonia.MapControl control = new();
+        using MapsuiMapAdapter adapter = new(control, repository.Info.Bounds, repository);
+        TileLayer raster = Assert.Single(control.Map.Layers.OfType<TileLayer>());
+        double resolution = raster.TileSource.Schema.Resolutions[zoom].UnitsPerPixel;
+        NetTopologySuite.Geometries.Coordinate center = MapsuiMapAdapter.Project(TestData.P(150, 150));
+        Viewport viewport = new(center.X, center.Y, resolution, rotation, 512, 512);
+        List<IFeature> tiles = [];
+        foreach (BruTile.TileInfo tile in raster.TileSource.Schema.GetTileInfos(
+            new BruTile.Extent(center.X - 1000, center.Y - 1000, center.X + 1000, center.Y + 1000), zoom))
+        {
+            byte[] bytes = (await raster.TileSource.GetTileAsync(tile))!;
+            tiles.Add(new RasterFeature(new MRaster(bytes, new MRect(
+                tile.Extent.MinX, tile.Extent.MinY, tile.Extent.MaxX, tile.Extent.MaxY))));
+        }
+        using MemoryLayer ground = new() { Features = tiles, Style = new RasterStyle() };
+        using MemoryStream png = new MapRenderer().RenderToBitmapStream(viewport, [ground], MapsuiStyleFactory.MapBackground);
+        if (Environment.GetEnvironmentVariable("RAILWAY_EVIDENCE_DIR") is { Length: > 0 } directory)
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllBytes(Path.Combine(directory, $"railway-tiles-{zoom}-{rotation}.png"), png.ToArray());
+        }
+        using SKBitmap bitmap = SKBitmap.Decode(png.ToArray());
+        for (int index = 0; index < 6; index++)
+        {
+            for (int y = 100; y <= 200; y += 10)
+            {
+                NetTopologySuite.Geometries.Coordinate anchor = MapsuiMapAdapter.Project(TestData.P(100 + index * 20, y));
+                MPoint screen = viewport.WorldToScreen(anchor.X, anchor.Y);
+                int xPixel = (int)Math.Round(screen.X);
+                int yPixel = (int)Math.Round(screen.Y);
+                byte darkest = Enumerable.Range(xPixel - 2, 5).SelectMany(x =>
+                    Enumerable.Range(yPixel - 2, 5).Select(row => bitmap.GetPixel(x, row).Red)).Min();
+                Assert.True(darkest < 200, $"Track {index} lost contrast after tile rendering at {zoom}/{rotation}.");
+                if (index < 5)
+                {
+                    NetTopologySuite.Geometries.Coordinate gap = MapsuiMapAdapter.Project(TestData.P(110 + index * 20, y));
+                    MPoint gapScreen = viewport.WorldToScreen(gap.X, gap.Y);
+                    Assert.True(bitmap.GetPixel((int)Math.Round(gapScreen.X), (int)Math.Round(gapScreen.Y)).Red > 230,
+                        "Adjacent tracks must retain a clear background gap.");
+                }
+            }
+        }
     }
 
     [AvaloniaFact]
@@ -105,7 +213,7 @@ public sealed class RailwayRenderingTests
         Assert.Contains(bitmap.Pixels, pixel => pixel.Red < 230);
         Assert.All(bitmap.Pixels, pixel =>
         {
-            Assert.True(pixel.Red >= 185 && pixel.Green >= 185 && pixel.Blue >= 185);
+            Assert.True(pixel.Red >= 140 && pixel.Green >= 140 && pixel.Blue >= 140);
         });
     }
 
@@ -131,7 +239,7 @@ public sealed class RailwayRenderingTests
         for (int y = 0; y < actual.Height; y++)
         {
             int width = Enumerable.Range(0, actual.Width).Count(x => actual.GetPixel(x, y).Alpha > 0);
-            Assert.InRange(width, 0, resolution <= 2 ? 4 : 2);
+            Assert.InRange(width, 0, resolution <= 2 ? 4 : 3);
         }
     }
 

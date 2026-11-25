@@ -35,8 +35,8 @@ internal static class MapsuiStyleFactory
         if (kind is TerrainKind.Railway or TerrainKind.RailwayBridge or TerrainKind.RailwayTunnel)
         {
             bool detailed = metresPerPixel <= DetailedRailwayMaxResolution;
-            double width = detailed ? 1.8 : metresPerPixel > 20 ? 0.55 : 0.7;
-            Color bedColor = detailed ? new Color(85, 85, 85) : new Color(190, 190, 190);
+            double width = detailed ? 2.8 : metresPerPixel > 20 ? 1.4 : 1.6;
+            Color bedColor = detailed ? new Color(85, 85, 85) : new Color(145, 145, 145);
             VectorStyle bed = new()
             {
                 Fill = null,
@@ -63,9 +63,12 @@ internal static class MapsuiStyleFactory
             railwayStyles.Add(bed);
             railwayStyles.Add(new VectorStyle
             {
-                Line = new Pen(Color.White, 0.8)
+                Line = new Pen(Color.White, 1.4)
                 {
-                    PenStyle = PenStyle.ShortDash,
+                    // Mapsui scales dash lengths by the stroke width: these
+                    // inserts and gaps are 8.4 screen pixels, even when zoomed.
+                    PenStyle = PenStyle.UserDefined,
+                    DashArray = [6, 6],
                     PenStrokeCap = PenStrokeCap.Butt
                 }
             });
