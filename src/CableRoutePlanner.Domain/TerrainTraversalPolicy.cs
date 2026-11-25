@@ -30,7 +30,8 @@ public static class TerrainTraversalPolicy
         TerrainKind.Road => TerrainTraversalRule.ConditionalTransition,
         TerrainKind.BridgeCandidate or TerrainKind.GasPipelineCrossingCandidate => TerrainTraversalRule.ConditionalTransition,
         TerrainKind.ApprovedCrossing => TerrainTraversalRule.ApprovedTransition,
-        TerrainKind.Settlement or TerrainKind.OverheadGasPipeline or TerrainKind.PedestrianUnderpassCandidate => TerrainTraversalRule.Neutral,
+        TerrainKind.Settlement or TerrainKind.OverheadGasPipeline or TerrainKind.PedestrianUnderpassCandidate
+            or TerrainKind.Railway or TerrainKind.RailwayBridge or TerrainKind.RailwayTunnel => TerrainTraversalRule.Neutral,
         _ => throw new ArgumentOutOfRangeException(nameof(terrain), terrain, "Для типа местности не определено правило проходимости.")
     };
 }

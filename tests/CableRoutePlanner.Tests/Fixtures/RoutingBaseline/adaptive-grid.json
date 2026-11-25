@@ -20,7 +20,8 @@
       "PotentialBridgeCrossings": 0,
       "WeightedCost": 39214.86631626811,
       "AscentMetres": null,
-      "PotentialGasPipelineCrossings": 0
+      "PotentialGasPipelineCrossings": 0,
+      "RailwayCrossings": 0
     },
     "TransitionPoints": [],
     "RoadContacts": [],

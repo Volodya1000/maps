@@ -348,11 +348,12 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         Dictionary<long, NetTopologySuite.Geometries.Geometry> roads = features
             .Where(feature => feature.Kind == TerrainKind.Road)
             .ToDictionary(feature => feature.Id, feature => transform.Transform(reader.Read(feature.Wkb)));
-        IFeature[] terrain = features
-            .Where(feature => feature.Kind != TerrainKind.OverheadGasPipeline
+        List<(TerrainKind Kind, IFeature Feature)> terrain = features
+            .Where(feature => feature.Kind is not (TerrainKind.OverheadGasPipeline or TerrainKind.Settlement
+                or TerrainKind.Railway or TerrainKind.RailwayBridge or TerrainKind.RailwayTunnel)
                 && (feature.Kind != TerrainKind.PedestrianUnderpassCandidate || metresPerPixel <= MapsuiStyleFactory.UnderpassLineMaxResolution))
             .OrderBy(f => MapsuiStyleFactory.DrawingOrder(f.Kind))
-            .SelectMany(f =>
+            .Select(f =>
         {
             cancellationToken.ThrowIfCancellationRequested();
             NetTopologySuite.Geometries.Geometry geometry = transform.Transform(reader.Read(f.Wkb));
@@ -361,35 +362,41 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 geometry = DisplayUnderpassSpan(f, geometry, roads);
             }
             var feature = new GeometryFeature(geometry);
-            if (f.Kind == TerrainKind.Settlement)
+            if (!terrainStyles.TryGetValue(f.Kind, out IReadOnlyList<IStyle>? styles))
             {
-                feature.Styles.Add(
-                    new LabelStyle
-                    {
-                        Text = f.Name,
-                        ForeColor = new Color(57, 70, 61),
-                        BackColor = new Brush(new Color(255, 255, 255, 180)),
-                        CollisionDetection = true
-                    });
+                styles = MapsuiStyleFactory.ForTerrain(f.Kind, metresPerPixel);
+                terrainStyles.Add(f.Kind, styles);
             }
-            else
+            foreach (IStyle style in styles)
             {
-                if (!terrainStyles.TryGetValue(f.Kind, out IReadOnlyList<IStyle>? styles))
-                {
-                    styles = MapsuiStyleFactory.ForTerrain(f.Kind, metresPerPixel);
-                    terrainStyles.Add(f.Kind, styles);
-                }
-                foreach (IStyle style in styles)
-                {
-                    feature.Styles.Add(style);
-                }
+                feature.Styles.Add(style);
             }
 
-            return new IFeature[] { feature };
-        }).ToArray();
+            (TerrainKind Kind, IFeature Feature) prepared = (f.Kind, feature);
+            return prepared;
+        }).ToList();
+        // Dissolve duplicate/overlapping OSM linework before drawing. A single
+        // bed pass followed by inserts prevents later segments covering dashes.
+        foreach (IGrouping<TerrainKind, MapFeature> group in features.Where(feature => feature.Kind is
+            TerrainKind.Railway or TerrainKind.RailwayBridge or TerrainKind.RailwayTunnel).GroupBy(feature => feature.Kind))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Geometry network = NetTopologySuite.Operation.Union.UnaryUnionOp.Union(
+                group.Select(feature => transform.Transform(reader.Read(feature.Wkb))).ToArray());
+            NetTopologySuite.Operation.Linemerge.LineMerger merger = new();
+            merger.Add(network);
+            GeometryFeature railway = new(new GeometryFactory().BuildGeometry(merger.GetMergedLineStrings().Cast<Geometry>().ToArray()));
+            foreach (IStyle style in MapsuiStyleFactory.ForTerrain(group.Key, metresPerPixel))
+            {
+                railway.Styles.Add(style);
+            }
+            terrain.Add((group.Key, railway));
+        }
+        IFeature[] preparedTerrain = terrain.OrderBy(item => MapsuiStyleFactory.DrawingOrder(item.Kind))
+            .Select(item => item.Feature).ToArray();
         return includeAnnotations && metresPerPixel <= MapsuiStyleFactory.CrossingSymbolMaxResolution
-            ? terrain.Concat(PrepareAnnotations(features, cancellationToken)).ToArray()
-            : terrain;
+            ? preparedTerrain.Concat(PrepareAnnotations(features, cancellationToken)).ToArray()
+            : preparedTerrain;
     }
 
     internal static IFeature[] PrepareAnnotations(
@@ -410,6 +417,34 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             label[MapAnnotationLayer.LabelKeyField] = $"bridge/{bridge.Id.ToString(CultureInfo.InvariantCulture)}";
             label.Styles.Add(MapsuiStyleFactory.MapLabel("Мост", new Color(77, 91, 99),
                 new Brush(MapsuiStyleFactory.MapBackground), new Offset(0, 16), MapsuiStyleFactory.CrossingSymbolMaxResolution));
+            annotations.Add(label);
+        }
+        foreach (MapFeature gas in unique.Where(feature => feature.Kind == TerrainKind.GasPipelineCrossingCandidate))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Geometry geometry = transform.Transform(reader.Read(gas.Wkb));
+            Point anchor = geometry is LineString or MultiLineString
+                ? new Point(new LengthIndexedLine(geometry).ExtractPoint(geometry.Length / 2))
+                : geometry.InteriorPoint;
+            GeometryFeature marker = new(anchor);
+            marker.Styles.Add(new SymbolStyle
+            {
+                SymbolType = SymbolType.Image,
+                BitmapId = GasLabelSymbol.BitmapId,
+                RotateWithMap = true,
+                MaxVisible = MapsuiStyleFactory.CrossingSymbolMaxResolution
+            });
+            annotations.Add(marker);
+        }
+        foreach (MapFeature settlement in unique.Where(feature => feature.Kind == TerrainKind.Settlement
+            && !string.IsNullOrWhiteSpace(feature.Name)))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            GeometryFeature label = new(transform.Transform(reader.Read(settlement.Wkb)).Centroid);
+            label[MapAnnotationLayer.LabelKeyField] = $"settlement/{settlement.Id.ToString(CultureInfo.InvariantCulture)}";
+            label.Styles.Add(MapsuiStyleFactory.MapLabel(settlement.Name,
+                new Color(57, 70, 61), new Brush(new Color(255, 255, 255, 180)),
+                new Offset(0, 0), double.MaxValue));
             annotations.Add(label);
         }
         for (int index = 0; index < annotations.Count; index++)

@@ -110,7 +110,8 @@ internal sealed class RouteAlternativeBuilder(
                     bridgeCandidates.Count,
                     cost,
                     null,
-                    gasCandidates.Count),
+                    gasCandidates.Count,
+                    terrain.RailwayCrossings.Count(route, ct)),
                 Array.AsReadOnly(postProcessor.BridgeTransitionPoints(route)
                     .Select(projection.Inverse).ToArray()),
                 terrain.RoadContacts.Analyze(route, ct),
