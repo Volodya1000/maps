@@ -13,8 +13,11 @@ def split_package(
         raise ValueError("Chunk size must be positive")
     if destination.exists():
         raise ValueError("Destination must not exist; stale map chunks are unsafe")
+    elevation_files = ("elevation.sqlite", "elevation.sqlite.sha256")
+    if (source / elevation_files[0]).exists() != (source / elevation_files[1]).exists():
+        raise ValueError("Elevation database and checksum must be supplied together")
     destination.mkdir(parents=True)
-    for name in ("manifest.json", "NOTICE.txt", "licenses"):
+    for name in ("manifest.json", "NOTICE.txt", "licenses", *elevation_files):
         item = source / name
         if item.is_dir():
             shutil.copytree(item, destination / name)

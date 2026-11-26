@@ -4,7 +4,8 @@ namespace CableRoutePlanner.Application;
 
 public sealed class PlanningSession(
     IRoutePlanner planner,
-    IPointPlacementValidator pointPlacementValidator) : IPlanningSession
+    IPointPlacementValidator pointPlacementValidator,
+    IRouteElevationAnalyzer? elevationAnalyzer = null) : IPlanningSession
 {
     public const int MaximumWaypointCount = 100;
 
@@ -114,12 +115,28 @@ public sealed class PlanningSession(
         long revision = Revision;
         GeoCoordinate[] coordinates = _points.Select(p => p.Coordinate).ToArray();
         IReadOnlyList<RouteAlternative> result = await planner.PlanAsync(coordinates, options, cancellationToken).ConfigureAwait(false);
+        EnsureCurrentCalculation(revision, cancellationToken);
+        if (elevationAnalyzer is null)
+        {
+            return result;
+        }
+
+        RouteAlternative[] enriched = new RouteAlternative[result.Count];
+        for (int index = 0; index < enriched.Length; index++)
+        {
+            enriched[index] = await elevationAnalyzer.AnalyzeAsync(result[index], cancellationToken).ConfigureAwait(false);
+            EnsureCurrentCalculation(revision, cancellationToken);
+        }
+
+        return Array.AsReadOnly(enriched);
+    }
+
+    private void EnsureCurrentCalculation(long revision, CancellationToken cancellationToken)
+    {
         cancellationToken.ThrowIfCancellationRequested();
         if (Revision != revision)
         {
             throw new PlanningException("Точки изменились во время расчёта. Постройте маршруты заново.");
         }
-
-        return result;
     }
 }

@@ -1,0 +1,46 @@
+<rx:ReactiveUserControl
+    x:Class="CableRoutePlanner.UI.Views.RouteElevationView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CableRoutePlanner.UI.Controls"
+    xmlns:rx="using:Avalonia.ReactiveUI"
+    xmlns:vm="using:CableRoutePlanner.ViewModels"
+    x:DataType="vm:MapViewModel"
+    x:TypeArguments="vm:MapViewModel"
+    IsVisible="{Binding HasRoute}">
+    <Border Classes="route-elevation-card">
+        <StackPanel Spacing="5">
+            <TextBlock Classes="section-heading" Text="Профиль высот" />
+            <TextBlock Classes="elevation-route-name" Text="{Binding Elevation.RouteName}" TextWrapping="Wrap" />
+            <TextBlock
+                Classes="view-hint"
+                IsVisible="{Binding Elevation.HasAvailabilityNotice}"
+                Text="{Binding Elevation.AvailabilityText}"
+                TextWrapping="Wrap" />
+            <StackPanel IsVisible="{Binding Elevation.HasChart}" Spacing="4">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="elevation-axis-title height" Text="Высота, м" />
+                    <TextBlock Grid.Column="1" Classes="elevation-axis-title grade" Text="Уклон, %" />
+                </Grid>
+                <controls:RouteElevationChart
+                    x:Name="ProfileChart"
+                    AutomationProperties.Name="Профиль высот и продольного уклона"
+                    AutomationProperties.HelpText="Стрелки перемещают курсор. Home и End выбирают начало и конец."
+                    Focusable="True"
+                    Presentation="{Binding Elevation}" />
+                <TextBlock
+                    AutomationProperties.LiveSetting="Polite"
+                    Classes="elevation-cursor-text"
+                    Text="{Binding Elevation.CursorText}"
+                    TextWrapping="Wrap" />
+                <TextBlock Classes="elevation-summary" Text="{Binding Elevation.SummaryText}" TextWrapping="Wrap" />
+            </StackPanel>
+            <TextBlock
+                Classes="view-hint"
+                IsVisible="{Binding Elevation.HasSource}"
+                Text="{Binding Elevation.SourceText}"
+                TextWrapping="Wrap"
+                ToolTip.Tip="{Binding Elevation.Attribution}" />
+        </StackPanel>
+    </Border>
+</rx:ReactiveUserControl>

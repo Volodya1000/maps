@@ -25,6 +25,11 @@ internal static class MapLayerBindings
             .DisposeWith(lifetime);
         viewModel.WhenAnyValue(vm => vm.SelectedRouteVertex, vm => vm.ShowAllRouteVertices)
             .Subscribe(_ => adapter.SetRouteVertices(viewModel.RouteVertices.ToArray(), viewModel.ShowAllRouteVertices)).DisposeWith(lifetime);
+        viewModel.WhenAnyValue(vm => vm.Elevation)
+            .Select(state => state?.CursorSample?.Coordinate)
+            .DistinctUntilChanged()
+            .Subscribe(adapter.SetElevationCursor)
+            .DisposeWith(lifetime);
         viewModel.WhenAnyValue(vm => vm.AddMode).Subscribe(adapter.SetAddMode).DisposeWith(lifetime);
         if (viewModel.Tracking is { } tracking)
         {

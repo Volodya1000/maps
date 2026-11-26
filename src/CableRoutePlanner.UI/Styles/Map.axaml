@@ -1,6 +1,7 @@
 <Styles
     xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CableRoutePlanner.UI.Controls">
     <Style Selector="TabControl.map-tool-tabs TabItem">
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Padding" Value="8,10" />
@@ -114,7 +115,46 @@
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="TextBlock.route-choice-length">
-        <Setter Property="Margin" Value="12,0,0,0" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="Border.route-elevation-card">
+        <Setter Property="Padding" Value="10" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource AppCanvasBrush}" />
+        <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="TextBlock.elevation-route-name">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.elevation-axis-title">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.elevation-axis-title.height">
+        <Setter Property="Foreground" Value="{DynamicResource AppElevationStrokeBrush}" />
+    </Style>
+    <Style Selector="TextBlock.elevation-axis-title.grade">
+        <Setter Property="Foreground" Value="{DynamicResource AppElevationGradeBrush}" />
+    </Style>
+    <Style Selector="controls|RouteElevationChart">
+        <Setter Property="Height" Value="145" />
+        <Setter Property="ClipToBounds" Value="True" />
+        <Setter Property="ElevationBrush" Value="{DynamicResource AppElevationStrokeBrush}" />
+        <Setter Property="ElevationFill" Value="{DynamicResource AppElevationFillBrush}" />
+        <Setter Property="GradeBrush" Value="{DynamicResource AppElevationGradeBrush}" />
+        <Setter Property="AxisBrush" Value="{DynamicResource AppMutedTextBrush}" />
+        <Setter Property="GridBrush" Value="{DynamicResource AppBorderBrush}" />
+        <Setter Property="CursorBrush" Value="{DynamicResource AppElevationCursorBrush}" />
+    </Style>
+    <Style Selector="TextBlock.elevation-cursor-text">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.elevation-summary">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="LineHeight" Value="19" />
     </Style>
     <Style Selector="ListBox.route-vertex-list">
         <Setter Property="MaxHeight" Value="220" />

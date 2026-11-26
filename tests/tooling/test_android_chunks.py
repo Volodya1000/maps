@@ -31,3 +31,31 @@ class AndroidMapChunks(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 split_package(source, output, chunk_bytes=1024)
+
+    def test_optional_elevation_is_preserved_with_independent_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            source.mkdir()
+            (source / "manifest.json").write_text('{"region_id":"unchanged"}')
+            with gzip.open(source / "geodata.sqlite.gz", "wb") as stream:
+                stream.write(b"map")
+            (source / "elevation.sqlite").write_bytes(b"terrain")
+            (source / "elevation.sqlite.sha256").write_text("independent-sha256")
+            output = Path(directory) / "output"
+
+            split_package(source, output, chunk_bytes=1024)
+
+            self.assertEqual(b"terrain", (output / "elevation.sqlite").read_bytes())
+            self.assertEqual(
+                "independent-sha256",
+                (output / "elevation.sqlite.sha256").read_text(),
+            )
+
+    def test_elevation_without_checksum_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            source.mkdir()
+            (source / "elevation.sqlite").write_bytes(b"terrain")
+
+            with self.assertRaises(ValueError):
+                split_package(source, Path(directory) / "output", chunk_bytes=1024)

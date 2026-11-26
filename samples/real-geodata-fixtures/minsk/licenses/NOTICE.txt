@@ -4,5 +4,6 @@ Contents: DbCL 1.0. Full licences in licenses/.
 Source snapshot downloaded 2026-10-23 using the official OSM API.
 Complete retrieval URLs in source.osm.sources.json; hashes in manifest.json.
 The source is included as source.osm.gz to allow offline rebuilding.
-This is an OSM-only preliminary dataset. Copernicus DEM, ESA WorldCover,
-construction approvals and complete coverage of Belarus are not included.
+The geodata.sqlite file contains OSM-only preliminary data. The separate sibling
+elevation.sqlite contains a small Copernicus DEM; see the package root NOTICE.txt.
+ESA WorldCover, construction approvals and full Belarus DEM coverage are not included.

@@ -37,6 +37,30 @@ public sealed class GasLabelRenderingTests
     }
 
     [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RepeatedGasMarkersFromOverlappingFetchesKeepDistinctObjects(bool sameAnchor)
+    {
+        CableRoutePlanner.Application.MapFeature first = TestData.Line(1,
+            TerrainKind.GasPipelineCrossingCandidate, (100, 150), (200, 150));
+        double secondY = sameAnchor ? 150 : 220;
+        CableRoutePlanner.Application.MapFeature second = TestData.Line(2,
+            TerrainKind.GasPipelineCrossingCandidate, (100, secondY), (200, secondY));
+        IFeature[] initial = MapsuiMapAdapter.PrepareAnnotations([first], default);
+        IFeature[] overlapping = MapsuiMapAdapter.PrepareAnnotations([first, second], default);
+        using MapAnnotationLayer layer = new();
+        // Concurrent fetch completions can retain both prepared batches in Mapsui's cache.
+        layer.SetFeatures([.. initial, .. overlapping]);
+        IFeature[] annotations = layer.GetFeatures(new MRect(0, 0, 1, 1), 1).ToArray();
+        Assert.Equal(2, annotations.Length);
+        Assert.All(annotations, annotation =>
+            Assert.True(Assert.Single(annotation.Styles.OfType<SymbolStyle>()).RotateWithMap));
+        double firstAnchorY = MapsuiMapAdapter.Project(TestData.P(150, 150)).Y;
+        double secondAnchorY = MapsuiMapAdapter.Project(TestData.P(150, secondY)).Y;
+        Assert.Contains(annotations, annotation => Math.Abs(annotation.Extent!.Centroid.Y - firstAnchorY) < 0.00001);
+        Assert.Contains(annotations, annotation => Math.Abs(annotation.Extent!.Centroid.Y - secondAnchorY) < 0.00001);
+    }
+    [AvaloniaTheory]
     [InlineData(0)]
     [InlineData(45)]
     [InlineData(90)]

@@ -39,7 +39,7 @@ public sealed class RoutingBaselineTests
             {
                 route.Name,
                 route.Geometry,
-                route.Metrics,
+                Metrics = new RoutingMetricsSnapshot(route.Metrics),
                 route.TransitionPoints,
                 route.RoadContacts,
                 route.GasPipelineCandidateIds

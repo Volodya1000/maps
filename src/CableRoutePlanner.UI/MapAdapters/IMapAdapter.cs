@@ -42,6 +42,8 @@ public interface IMapAdapter : IDisposable
 
     void SetRoutes(IReadOnlyList<RouteAlternative> routes, Guid? selectedId);
 
+    void SetElevationCursor(GeoCoordinate? coordinate);
+
     void SetProgress(RouteProgressState? progress);
 
     void SetLocation(LocationMeasurement? location, HeadingMeasurement? heading, bool isInsideCoverage);

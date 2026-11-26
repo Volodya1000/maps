@@ -106,6 +106,7 @@
                                 </StackPanel>
                                 <TextBlock Text="{Binding SaveStatus}" TextWrapping="Wrap" />
                                 <local:RouteChoicesView DataContext="{Binding}" />
+                                <local:RouteElevationView DataContext="{Binding}" />
                                 <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
                                     <CheckBox
                                         x:Name="RoadContactsToggle"
