@@ -34,6 +34,7 @@ jobs:
     needs: verify-source
     outputs:
       android_version_code: ${{ steps.version.outputs.android_version_code }}
+      country_manifest_sha256: ${{ steps.country_identity.outputs.manifest_sha256 }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
@@ -44,7 +45,16 @@ jobs:
         id: version
         run: echo "android_version_code=$(python3 tools/release_version.py | sed -n 's/^ANDROID_VERSION_CODE=//p')" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/country-data
+      - name: Record verified country identity
+        id: country_identity
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import hashlib
+          from pathlib import Path
+          print('manifest_sha256=' + hashlib.sha256(Path('artifacts/belarus/manifest.json').read_bytes()).hexdigest())
+          PY
       - uses: actions/upload-artifact@v7
+        if: contains(github.event.pull_request.labels.*.name, 'ci:routing-benchmark')
         with:
           name: pull-request-belarus-data
           path: artifacts/belarus/
@@ -64,10 +74,23 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tested_sha }}
-      - uses: actions/download-artifact@v8
-        with:
-          name: pull-request-belarus-data
-          path: artifacts/belarus
+      - name: Obtain the current verified country package
+        uses: ./.github/actions/country-data
+      - name: Verify the shared country identity
+        id: verify_country_identity
+        env:
+          EXPECTED_COUNTRY_MANIFEST_SHA256: ${{ needs.geodata.outputs.country_manifest_sha256 }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          expected = os.environ['EXPECTED_COUNTRY_MANIFEST_SHA256']
+          actual = hashlib.sha256(Path('artifacts/belarus/manifest.json').read_bytes()).hexdigest()
+          if actual != expected:
+              raise ValueError(f'country_manifest_sha256: expected {expected}, actual {actual}; consumers must use the same package')
+          print('Verified country manifest: ' + actual)
+          PY
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json

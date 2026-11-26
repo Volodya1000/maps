@@ -44,6 +44,8 @@
 
 Публикуемый полный APK Беларуси дополнительно проходит существующий `android_smoke.py` на Android 15: холодный запуск и повторный старт Activity, ожидание `CRP_OFFLINE_MAP_READY`, проверку активного окна и отсутствия сбоев. CI сохраняет отдельные логи, отчёт и скриншоты полной карты. На ожидание полной карты отводится ограниченное окно 180 секунд; общий лимит Android job остаётся прежним. Физическое устройство этим тестом не заменяется.
 
+Сборщик полного APK получает карту через общий проверяемый `country-data` provider, как и routing CI: кеш ускоряет получение, контрольные суммы и рецепт остаются обязательными. Промежуточный артефакт карты публикуется только для отдельного routing benchmark, которому он нужен. Это устраняет повторную передачу большого workflow-артефакта и зависимость сборки APK от его суточного срока хранения.
+
 ```powershell
 uv run --project tools/GeodataPreparation --locked python tools/routing_regression.py --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-regression
 uv run --project tools/GeodataPreparation --locked python tools/routing_recovery.py --data artifacts/belarus --run-report artifacts/routing-regression/results.json --output artifacts/routing-regression/recovery
