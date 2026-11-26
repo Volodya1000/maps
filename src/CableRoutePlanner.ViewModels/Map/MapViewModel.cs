@@ -81,6 +81,18 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private bool _disposed;
 
     private RoutingOptions _resultOptions = new();
+    private readonly ISavedRouteStore? _savedRoutes;
+    private IReadOnlyList<Waypoint> _resultPoints = [];
+    private long _openedVersion;
+    private bool _pendingRouteOpen;
+
+    [Reactive] public string RouteName { get; set; } = "";
+    [Reactive] public bool IsSavePromptOpen { get; private set; }
+    [Reactive] public string SaveStatus { get; private set; } = "";
+    [Reactive] public int OpenedRouteVersion { get; private set; }
+    public ReactiveCommand<Unit, Unit> BeginSaveRoute { get; private set; }
+    public ReactiveCommand<Unit, Unit> SaveRoute { get; private set; }
+    public ReactiveCommand<Unit, Unit> CancelSaveRoute { get; private set; }
 
     private WaypointRow? _selectedPoint;
     private MapViewportState? _viewportState;
@@ -194,7 +206,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public string Status { get; private set; } = "Нажмите на карту, чтобы добавить точку. Перетаскивайте маркеры.";
 
     [Reactive]
-    public string MapStatus { get; private set; } = "Загрузка офлайн-данных…";
+    public string MapStatus { get; private set; } = "";
 
     [Reactive]
     public string LatitudeText { get; set; } = "";
@@ -221,6 +233,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public bool HasAlternatives => Alternatives.Count > 1;
 
     public bool HasMapNotice => !string.IsNullOrEmpty(MapStatus);
+
+    public bool HasMapFooter => HasMapNotice || HasLocationCoverageWarning;
 
     public ReactiveCommand<GeoCoordinate, Unit> AddPoint
     {
@@ -293,7 +307,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         IMapAreaLoader mapLoader,
         IRouteCalculationService calculations,
         IClipboardService clipboard,
-        ITrackingViewModel? tracking = null)
+        ITrackingViewModel? tracking = null,
+        ISavedRouteStore? savedRoutes = null)
     {
         HostScreen = screen;
         _session = session;
@@ -301,6 +316,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         _calculations = calculations;
         _clipboard = clipboard;
         _tracking = tracking;
+        _savedRoutes = savedRoutes;
         _routeVertices = new RouteVerticesTreeViewModel().DisposeWith(_lifetime);
         _canBuild = CreateCanBuildProperty();
         InitializeCommands();
@@ -327,9 +343,19 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         nameof(CopyCoordinates),
         nameof(CopyRouteVertex),
         nameof(BuildRoutes),
-        nameof(Cancel))]
+        nameof(Cancel), nameof(BeginSaveRoute), nameof(SaveRoute), nameof(CancelSaveRoute))]
     private void InitializeCommands()
     {
+        IObservable<bool> canSave = this.WhenAnyValue(x => x.HasRoute, x => x.IsBusy,
+            (hasRoute, busy) => hasRoute && !busy && _savedRoutes is not null);
+        BeginSaveRoute = ReactiveCommand.Create(() =>
+        {
+            RouteName = "";
+            SaveStatus = "";
+            IsSavePromptOpen = true;
+        }, canSave).DisposeWith(_lifetime);
+        SaveRoute = ReactiveCommand.Create(SaveCurrentRoute, canSave).DisposeWith(_lifetime);
+        CancelSaveRoute = ReactiveCommand.Create(() => { IsSavePromptOpen = false; }).DisposeWith(_lifetime);
         AddPoint = ReactiveCommand.CreateFromTask<GeoCoordinate>(AddAtAsync).DisposeWith(_lifetime);
         AddManual = ReactiveCommand.CreateFromTask(AddManuallyAsync).DisposeWith(_lifetime);
         RemovePoint = ReactiveCommand.Create<Guid>(id => Change(() => _session.Remove(id))).DisposeWith(_lifetime);
@@ -356,7 +382,11 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private void SetupSubscriptions()
     {
         this.WhenAnyValue(x => x.MapStatus)
-            .Subscribe(_ => this.RaisePropertyChanged(nameof(HasMapNotice)))
+            .Subscribe(_ =>
+            {
+                this.RaisePropertyChanged(nameof(HasMapNotice));
+                this.RaisePropertyChanged(nameof(HasMapFooter));
+            })
             .DisposeWith(_lifetime);
         this.WhenAnyValue(x => x.SelectedRoute)
             .Subscribe(route =>
@@ -395,16 +425,21 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         {
             this.RaisePropertyChanged(nameof(LocationCoverageStatus));
             this.RaisePropertyChanged(nameof(HasLocationCoverageWarning));
+            this.RaisePropertyChanged(nameof(HasMapFooter));
         }
     }
 
     private async Task AddAtAsync(GeoCoordinate coordinate)
     {
+        long openedVersion = _openedVersion;
         try
         {
             EnsureInBounds(coordinate, "Для этой точки нет данных в офлайн-пакете.");
             await _session.AddAsync(coordinate, CancellationToken.None);
-            RefreshAfterChange();
+            if (openedVersion == _openedVersion)
+            {
+                RefreshAfterChange();
+            }
         }
         catch (PlanningException ex)
         {
@@ -445,6 +480,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         if (source >= 0 && source != request.TargetIndex
             && request.TargetIndex >= 0 && request.TargetIndex < Points.Count)
         {
+            long openedVersion = _openedVersion;
             bool rebuild = SelectedRoute is not null || IsBusy;
             Task previousCalculation = _calculations.Completion;
             Change(() => _session.Reorder(source, request.TargetIndex));
@@ -454,7 +490,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 // starts; otherwise a second drop could leave the route empty.
                 await previousCalculation;
                 IsBusy = _calculations.IsBusy;
-                if (!_disposed && CanBuild)
+                if (!_disposed && CanBuild && openedVersion == _openedVersion)
                 {
                     await BuildAsync();
                 }
@@ -571,8 +607,13 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             return;
         }
 
+        long openedVersion = _openedVersion;
         Guid? selected = SelectedPoint?.Id;
         PointMoveResult? result = await _calculations.MovePointAsync(id, coordinate);
+        if (openedVersion != _openedVersion)
+        {
+            return;
+        }
         if (result is { Success: true })
         {
             RefreshAfterChange(selected ?? id);
@@ -626,6 +667,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private void RefreshAfterChange(Guid? selected = null)
     {
         _calculations.Invalidate();
+        IsSavePromptOpen = false;
+        SaveStatus = "";
         Alternatives.Clear();
         RouteChoices.Clear();
         SelectedRoute = null;
@@ -637,6 +680,9 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private async Task BuildAsync()
     {
         IsBusy = true;
+        IsSavePromptOpen = false;
+        SaveStatus = "";
+        Waypoint[] points = _session.Points.ToArray();
         Alternatives.Clear();
         RouteChoices.Clear();
         SelectedRoute = null;
@@ -652,6 +698,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             if (result is { Outcome: RouteCalculationOutcome.Completed, Options: { } options })
             {
                 _resultOptions = options;
+                _resultPoints = points;
                 foreach (RouteAlternative route in result.Routes)
                 {
                     Alternatives.Add(route);
@@ -673,6 +720,65 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         {
             IsBusy = _calculations.IsBusy;
         }
+    }
+
+    private void SaveCurrentRoute()
+    {
+        if (SelectedRoute is not { } selected || _savedRoutes is null)
+        {
+            return;
+        }
+        try
+        {
+            SavedRoute snapshot = new(Guid.NewGuid(), RouteName, DateTimeOffset.UtcNow,
+                _resultPoints, Alternatives.ToArray(), selected.Id, _resultOptions);
+            _savedRoutes.Add(snapshot);
+            IsSavePromptOpen = false;
+            SaveStatus = "Маршрут сохранён в «Сохранённых».";
+        }
+        catch (Exception ex) when (ex is PlanningException or IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            SaveStatus = "Не удалось сохранить маршрут: " + ex.Message;
+        }
+    }
+
+    public bool ConsumeRouteOpen()
+    {
+        bool pending = _pendingRouteOpen;
+        _pendingRouteOpen = false;
+        return pending;
+    }
+
+    public bool OpenSavedRoute(Guid id)
+    {
+        if (_disposed || _savedRoutes is null)
+        {
+            return false;
+        }
+        // Read and validate everything before invalidating or replacing the working state.
+        SavedRoute snapshot = _savedRoutes.Read(id);
+        snapshot.Validate();
+        _calculations.Invalidate();
+        _session.Restore(snapshot.Points);
+        _openedVersion++;
+        _resultOptions = snapshot.Options;
+        _resultPoints = snapshot.Points;
+        SelectedPoint = _pointRows.Refresh(_session.Points, null);
+        PointCount = Points.Count;
+        Alternatives.Clear();
+        foreach (RouteAlternative route in snapshot.Alternatives)
+        {
+            Alternatives.Add(route);
+        }
+        SelectedRoute = Alternatives.First(route => route.Id == snapshot.SelectedAlternativeId);
+        IsSavePromptOpen = false;
+        SaveStatus = "";
+        ViewportState = null;
+        _tracking?.DisableFollowing();
+        _pendingRouteOpen = true;
+        OpenedRouteVersion++;
+        Status = "Открыт сохранённый расчёт. Для прохождения выберите вариант и начните прокладку.";
+        return true;
     }
 
     public void Dispose()

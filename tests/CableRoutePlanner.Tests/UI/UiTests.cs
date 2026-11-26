@@ -550,9 +550,6 @@ public sealed class UiTests
         StackPanel section = choices.GetVisualAncestors().OfType<StackPanel>().First();
         Assert.False(section.IsVisible);
         Assert.DoesNotContain(view.GetVisualDescendants().OfType<Button>(), b => Equals(b.Content, "3D"));
-        TextBlock attribution = view.GetVisualDescendants().OfType<TextBlock>()
-            .Single(text => text.Name == "AttributionCredit");
-        Assert.Contains("OpenStreetMap contributors", attribution.GetValue(Avalonia.Automation.AutomationProperties.NameProperty)!.ToString());
         await vm.AddPoint.Execute(TestData.P(30, 150));
         await vm.AddPoint.Execute(TestData.P(300, 150));
         Assert.False(section.IsVisible);

@@ -77,6 +77,28 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         adapter.SetPoints(viewModel.Points.ToArray());
         adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
         adapter.SetRouteVertices(viewModel.RouteVertices.ToArray(), viewModel.ShowAllRouteVertices);
+        bool active = true;
+        Disposable.Create(() => active = false).DisposeWith(bindings);
+        viewModel.WhenAnyValue(vm => vm.OpenedRouteVersion).Subscribe(_ =>
+        {
+            if (!viewModel.ConsumeRouteOpen())
+            {
+                return;
+            }
+            _sheet.Expand();
+            ToolTabs.SelectedIndex = 1;
+            AdaptLayout();
+            // The mobile sheet changes the usable map size. Fit after layout and
+            // after queued viewport restoration, so an old camera cannot win.
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                if (active)
+                {
+                    adapter.SetRoutes([], null);
+                    adapter.SetRoutes(viewModel.Alternatives.ToArray(), viewModel.SelectedRoute?.Id);
+                }
+            }, Avalonia.Threading.DispatcherPriority.Loaded);
+        }).DisposeWith(bindings);
         AdaptLayout();
 
     }
@@ -101,6 +123,9 @@ public partial class MapView : ReactiveUserControl<MapViewModel>
         PointEditingHint.Text = narrow
             ? "Добавьте точки на карте или введите координаты. Маркеры можно перетаскивать."
             : "Нажмите на карту, чтобы добавить точки. Маркеры можно перетаскивать; вращайте карту правой кнопкой мыши.";
+        // Keep camera fitting and overlay controls in the visible map rectangle,
+        // above the phone sheet rather than behind it.
+        MapArea.Margin = narrow ? new Thickness(0, 0, 0, layout.Height!.Value) : default;
         Layout.ColumnDefinitions = new(narrow ? "*" : "*,350");
         Layout.RowDefinitions = new("*");
         Grid.SetColumn(MapArea, 0);

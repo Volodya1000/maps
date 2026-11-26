@@ -12,6 +12,7 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
     private readonly CompositeDisposable _lifetime = new();
     private readonly SettingsViewModel _settings;
     private readonly MapViewModel _map;
+    private readonly SavedRoutesViewModel? _saved;
     private Func<IObservable<IRoutableViewModel>>? _pendingNavigation;
     private bool _allowCloseWithUnsavedChanges;
 
@@ -28,6 +29,9 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
     {
         get; private set;
     }
+
+    [Reactive] public bool IsSaved { get; private set; }
+    public ReactiveCommand<Unit, IRoutableViewModel> ShowSaved { get; private set; }
 
     public RoutingState Router { get; }
 
@@ -58,17 +62,18 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
         get; private set;
     }
 
-    public ShellViewModel(IScreen screen, MapViewModel map, SettingsViewModel settings)
+    public ShellViewModel(IScreen screen, MapViewModel map, SettingsViewModel settings, SavedRoutesViewModel? saved = null)
     {
         Router = screen.Router;
         _settings = settings;
         _map = map;
+        _saved = saved;
         InitializeCommands();
         SetupSubscriptions();
         Router.NavigateAndReset.Execute(_map).Subscribe().DisposeWith(_lifetime);
     }
 
-    [MemberNotNull(nameof(StayOnSettings), nameof(DiscardAndLeave), nameof(Back), nameof(ShowMap), nameof(ShowSettings))]
+    [MemberNotNull(nameof(StayOnSettings), nameof(DiscardAndLeave), nameof(Back), nameof(ShowMap), nameof(ShowSettings), nameof(ShowSaved))]
     private void InitializeCommands()
     {
         StayOnSettings = ReactiveCommand.Create(Stay).DisposeWith(_lifetime);
@@ -76,12 +81,16 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
         Back = ReactiveCommand.CreateFromObservable(() => Guard(NavigateBack), Router.NavigateBack.CanExecute).DisposeWith(_lifetime);
         ShowMap = Command(_map);
         ShowSettings = Command(_settings);
+        ShowSaved = Command(_saved is { } saved ? saved : _map);
+        _saved?.Open.Where(opened => opened)
+            .SelectMany(_ => NavigateTo(_map)).Subscribe().DisposeWith(_lifetime);
     }
 
     private void SetupSubscriptions() => Router.CurrentViewModel.Subscribe(CurrentScreenChanged).DisposeWith(_lifetime);
 
     private void CurrentScreenChanged(IRoutableViewModel? vm)
     {
+        IsSaved = vm is SavedRoutesViewModel;
         IsMap = vm is MapViewModel;
         IsSettings = vm is SettingsViewModel;
     }
@@ -127,10 +136,22 @@ public sealed class ShellViewModel : ReactiveObject, IDisposable
             if (vm is SettingsViewModel)
             {
                 _settings.Reload();
+                Router.NavigationStack.Clear();
+                Router.NavigationStack.Add(_map);
                 return Router.Navigate.Execute(_settings);
             }
 
-            return Router.NavigateAndReset.Execute(_map);
+            if (vm is SavedRoutesViewModel saved)
+            {
+                saved.Reload();
+            }
+            if (vm is MapViewModel)
+            {
+                return Router.NavigateAndReset.Execute(_map);
+            }
+            Router.NavigationStack.Clear();
+            Router.NavigationStack.Add(_map);
+            return Router.Navigate.Execute(vm);
         });
     }
 

@@ -116,5 +116,7 @@ public interface IPlanningSession
 
     void Clear();
 
+    void Restore(IReadOnlyList<Waypoint> points);
+
     Task<IReadOnlyList<RouteAlternative>> BuildAsync(RoutingOptions options, CancellationToken cancellationToken);
 }

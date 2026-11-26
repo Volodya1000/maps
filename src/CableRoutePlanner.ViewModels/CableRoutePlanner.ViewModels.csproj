@@ -3,7 +3,10 @@
   <ItemGroup>
     <ProjectReference Include="../CableRoutePlanner.Application/CableRoutePlanner.Application.csproj" />
     <PackageReference Include="ReactiveUI" />
-    <PackageReference Include="ReactiveUI.Fody" PrivateAssets="all" />
+    <!-- Avalonia validates editable properties by inspecting their attributes.
+         ReactiveUI.Fody.Helpers must therefore reach application runtime outputs;
+         weaving and compile assets remain private to ViewModels. -->
+    <PackageReference Include="ReactiveUI.Fody" PrivateAssets="compile;build;buildTransitive;contentfiles;analyzers" />
     <PackageReference Include="Fody" PrivateAssets="all" />
   </ItemGroup>
 </Project>

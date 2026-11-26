@@ -1,0 +1,43 @@
+<rx:ReactiveUserControl
+    x:Class="CableRoutePlanner.UI.Views.SavedRoutesView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:rx="using:Avalonia.ReactiveUI"
+    xmlns:local="using:CableRoutePlanner.UI.Views"
+    xmlns:vm="using:CableRoutePlanner.ViewModels"
+    x:DataType="vm:SavedRoutesViewModel"
+    x:TypeArguments="vm:SavedRoutesViewModel">
+    <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+        <StackPanel Spacing="8">
+            <TextBlock Classes="section-heading" Text="Сохранённые маршруты" />
+            <Button Content="Обновить" Command="{Binding Refresh}" />
+            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
+            <TextBlock IsVisible="{Binding IsEmpty}" Text="Постройте маршрут на карте и нажмите «Сохранить маршрут» на вкладке «Маршрут»." TextWrapping="Wrap" />
+        </StackPanel>
+        <Border Grid.Row="1" Classes="unsaved-warning" IsVisible="{Binding HasPendingDelete}">
+            <StackPanel Spacing="8">
+                <TextBlock Text="{Binding DeletePrompt}" TextWrapping="Wrap" />
+                <WrapPanel>
+                    <Button Content="Удалить маршрут" Command="{Binding ConfirmDelete}" />
+                    <Button Content="Отмена" Command="{Binding CancelDelete}" />
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Routes}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SavedRouteRow">
+                        <StackPanel Margin="0,0,0,16" Spacing="6">
+                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Details}" TextWrapping="Wrap" />
+                            <WrapPanel>
+                                <Button Content="Открыть" Command="{Binding $parent[local:SavedRoutesView].ViewModel.Open}" CommandParameter="{Binding Id}" />
+                                <Button Content="Удалить" Command="{Binding $parent[local:SavedRoutesView].ViewModel.RequestDelete}" CommandParameter="{Binding Id}" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</rx:ReactiveUserControl>
