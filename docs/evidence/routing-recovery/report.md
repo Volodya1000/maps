@@ -42,6 +42,8 @@
 
 В полном workflow сохраняются неизменённые 88 входов и шесть отдельных контролей. Семь доказанных случаев теперь имеют положительное ожидание у новой версии; старые отказы baseline сохраняются для честного сравнения. `routing_recovery.py` заново проверяет свидетелей и сырые результаты на полной карте, происхождение данных и реальные границы попыток. Последовательные попытки имеют один `CalculationId` и отдельные номера.
 
+Публикуемый полный APK Беларуси дополнительно проходит существующий `android_smoke.py` на Android 15: холодный запуск и повторный старт Activity, ожидание `CRP_OFFLINE_MAP_READY`, проверку активного окна и отсутствия сбоев. CI сохраняет отдельные логи, отчёт и скриншоты полной карты. На ожидание полной карты отводится ограниченное окно 180 секунд; общий лимит Android job остаётся прежним. Физическое устройство этим тестом не заменяется.
+
 ```powershell
 uv run --project tools/GeodataPreparation --locked python tools/routing_regression.py --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-regression
 uv run --project tools/GeodataPreparation --locked python tools/routing_recovery.py --data artifacts/belarus --run-report artifacts/routing-regression/results.json --output artifacts/routing-regression/recovery

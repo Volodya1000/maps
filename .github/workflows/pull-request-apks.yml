@@ -125,12 +125,12 @@ jobs:
 
       # A signed/parsable APK is not necessarily installable: the full country
       # package is much larger than the Minsk smoke-tested build.
-      - name: Enable KVM for full APK installation test
+      - name: Enable KVM for full APK startup test
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Install full Belarus APK on Android 15 emulator
+      - name: Install and start full Belarus APK on Android 15 emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -138,9 +138,16 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          # The runner invokes each inline command in a fresh /bin/sh process.
-          # Use a separate Bash script to preserve its local variables and error handling.
-          script: bash tools/android_full_apk_install_smoke.sh "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" "$PREVIEW_PACKAGE_ID"
+          # Each command is self-contained: the runner uses a fresh /bin/sh for each line.
+          script: |
+            bash tools/android_full_apk_install_smoke.sh "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" "$PREVIEW_PACKAGE_ID"
+            python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --package "$PREVIEW_PACKAGE_ID" --output artifacts/android-full-map-smoke --launches 2 --settle-seconds 180 --wait-map-ready
+      - name: Preserve full-map startup evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-full-map-startup-evidence
+          path: artifacts/android-full-map-smoke/
       - name: Explain preview installation behavior
         run: |
           {
@@ -151,6 +158,7 @@ jobs:
             echo "Each run/attempt uses a separate test app ID and temporary signing key."
             echo "Previews can be installed alongside the main application; they do not update older preview runs."
             echo "The exact downloadable Minsk APK passed the parent Android build and emulator startup gate."
+            echo "The exact downloadable Belarus APK passed two Activity launches with offline map readiness and crash checks."
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:
