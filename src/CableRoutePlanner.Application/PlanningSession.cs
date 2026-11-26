@@ -12,6 +12,7 @@ public sealed class PlanningSession(
         pointPlacementValidator ?? throw new ArgumentNullException(nameof(pointPlacementValidator));
 
     private readonly List<Waypoint> _points = [];
+    private long _replacementRevision;
 
     public IReadOnlyList<Waypoint> Points => _points.AsReadOnly();
 
@@ -22,7 +23,12 @@ public sealed class PlanningSession(
 
     public async Task<Waypoint> AddAsync(GeoCoordinate coordinate, CancellationToken cancellationToken)
     {
+        long replacementRevision = _replacementRevision;
         await _pointPlacementValidator.ValidateAsync(coordinate, cancellationToken).ConfigureAwait(false);
+        if (replacementRevision != _replacementRevision)
+        {
+            throw new PlanningException("Рабочий маршрут заменён. Изменение точки отменено.");
+        }
         cancellationToken.ThrowIfCancellationRequested();
         if (_points.Count >= MaximumWaypointCount)
         {
@@ -43,7 +49,12 @@ public sealed class PlanningSession(
             throw new PlanningException("Точка не найдена.");
         }
 
+        long replacementRevision = _replacementRevision;
         await _pointPlacementValidator.ValidateAsync(coordinate, cancellationToken).ConfigureAwait(false);
+        if (replacementRevision != _replacementRevision)
+        {
+            throw new PlanningException("Рабочий маршрут заменён. Изменение точки отменено.");
+        }
         cancellationToken.ThrowIfCancellationRequested();
         _points[index] = _points[index] with
         {
@@ -76,6 +87,16 @@ public sealed class PlanningSession(
     public void Clear()
     {
         _points.Clear();
+        Revision++;
+    }
+
+    public void Restore(IReadOnlyList<Waypoint> points)
+    {
+        SavedRoute.ValidatePoints(points);
+        Waypoint[] snapshot = points.ToArray();
+        _points.Clear();
+        _points.AddRange(snapshot);
+        _replacementRevision++;
         Revision++;
     }
 

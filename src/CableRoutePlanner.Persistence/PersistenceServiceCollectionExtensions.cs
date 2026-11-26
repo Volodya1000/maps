@@ -16,6 +16,8 @@ public static class PersistenceServiceCollectionExtensions
             Path.Combine(dataDirectory, "location-settings.json")));
         services.AddSingleton<ITrackingSessionStore>(_ => new JsonTrackingSessionStore(
             Path.Combine(dataDirectory, "tracking-session.json")));
+        services.AddSingleton<ISavedRouteStore>(_ => new JsonSavedRouteStore(
+            Path.Combine(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!, "saved-routes.json")));
         return services;
     }
 }

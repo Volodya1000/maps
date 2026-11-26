@@ -15,19 +15,22 @@
                     Classes="section-heading"
                     Margin="0,0,20,8"
                     Text="Кабельные маршруты" />
-                <StackPanel
+                <WrapPanel
                     VerticalAlignment="Center"
-                    Orientation="Horizontal"
-                    Spacing="6">
+                    Orientation="Horizontal">
                     <ToggleButton
                         Command="{Binding ShowMap}"
                         Content="Карта"
                         IsChecked="{Binding IsMap, Mode=OneWay}" />
                     <ToggleButton
+                        Command="{Binding ShowSaved}"
+                        Content="Сохранённые"
+                        IsChecked="{Binding IsSaved, Mode=OneWay}" />
+                    <ToggleButton
                         Command="{Binding ShowSettings}"
                         Content="Настройки"
                         IsChecked="{Binding IsSettings, Mode=OneWay}" />
-                </StackPanel>
+                </WrapPanel>
             </WrapPanel>
         </Border>
         <Border Grid.Row="1" Classes="unsaved-warning"

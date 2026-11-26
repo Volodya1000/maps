@@ -96,6 +96,15 @@
                     <TabItem Header="Маршрут">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="12">
+                                <Button x:Name="SaveRouteButton" Content="Сохранить маршрут" Command="{Binding BeginSaveRoute}" IsVisible="{Binding HasRoute}" />
+                                <StackPanel IsVisible="{Binding IsSavePromptOpen}" Spacing="6">
+                                    <TextBox Text="{Binding RouteName}" Watermark="Название (необязательно)" />
+                                    <WrapPanel>
+                                        <Button Content="Сохранить" Command="{Binding SaveRoute}" />
+                                        <Button Content="Отмена" Command="{Binding CancelSaveRoute}" />
+                                    </WrapPanel>
+                                </StackPanel>
+                                <TextBlock Text="{Binding SaveStatus}" TextWrapping="Wrap" />
                                 <local:RouteChoicesView DataContext="{Binding}" />
                                 <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
                                     <CheckBox

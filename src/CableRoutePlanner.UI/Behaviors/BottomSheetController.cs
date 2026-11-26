@@ -16,6 +16,8 @@ internal sealed class BottomSheetController
 
     public bool IsExpanded { get; private set; }
 
+    public void Expand() => IsExpanded = true;
+
     public IDisposable Bind(Control handle, Control coordinateRoot, Action changed)
     {
         var lifetime = new CompositeDisposable();
