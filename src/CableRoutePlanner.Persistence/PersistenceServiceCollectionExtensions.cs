@@ -12,7 +12,9 @@ public static class PersistenceServiceCollectionExtensions
         string? elevationTemporaryDirectory = null)
     {
         services.AddSingleton<IGeodataRepository>(_ => new SqliteGeodataRepository(dataDirectory));
-        services.AddSingleton<IElevationProvider>(_ => new SqliteElevationProvider(dataDirectory, elevationTemporaryDirectory));
+        services.AddSingleton<IElevationProvider>(_ => File.Exists(Path.Combine(dataDirectory, "elevation", "index.json"))
+            ? new TiledElevationProvider(dataDirectory, elevationTemporaryDirectory)
+            : new SqliteElevationProvider(dataDirectory, elevationTemporaryDirectory));
         services.AddSingleton<ISettingsStore>(_ => new JsonSettingsStore(settingsPath));
         services.AddSingleton<ILocationPreferencesStore>(_ => new JsonLocationPreferencesStore(
             Path.Combine(dataDirectory, "location-settings.json")));

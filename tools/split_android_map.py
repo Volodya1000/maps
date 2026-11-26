@@ -2,6 +2,8 @@
 
 import argparse
 import gzip
+import json
+import re
 import shutil
 from pathlib import Path
 
@@ -23,6 +25,22 @@ def split_package(
             shutil.copytree(item, destination / name)
         elif item.exists():
             shutil.copyfile(item, destination / name)
+    elevation = source / "elevation"
+    if elevation.exists():
+        catalog = json.loads((elevation / "index.json").read_text(encoding="utf-8"))
+        target = destination / "elevation"
+        target.mkdir()
+        shutil.copyfile(elevation / "index.json", target / "index.json")
+        if (elevation / "NOTICE.txt").exists():
+            shutil.copyfile(elevation / "NOTICE.txt", target / "NOTICE.txt")
+        for tile in catalog["tiles"]:
+            directory = tile["directory"]
+            if (
+                not re.fullmatch(r"[A-Za-z0-9_-]+", directory)
+                or (elevation / directory).resolve().parent != elevation.resolve()
+            ):
+                raise ValueError("Country DEM directories must stay inside the package")
+            shutil.copytree(elevation / directory, target / directory)
     with gzip.open(source / "geodata.sqlite.gz", "rb") as stream:
         index = 0
         while block := stream.read(chunk_bytes):

@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Globalization;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
 using CableRoutePlanner.Application;
@@ -10,7 +11,9 @@ namespace CableRoutePlanner.Persistence;
 
 public sealed class SqliteElevationProvider : IElevationProvider
 {
-    private const int SchemaVersion = 1;
+    private const int LegacySchemaVersion = 1;
+    private const int CompressedSchemaVersion = 2;
+    private const string CompressedBlockEncoding = "zlib-float32-le";
     private const int BlockSize = 128;
     private const int BlockBytes = BlockSize * BlockSize * sizeof(float);
     private const int CachedBlockLimit = 32;
@@ -26,6 +29,7 @@ public sealed class SqliteElevationProvider : IElevationProvider
     private readonly Lazy<Package?> _package;
     private readonly Func<string, Stream> _openDatabaseStream;
     private readonly string _temporaryDirectory;
+    private readonly bool _requireChecksum;
 
     public SqliteElevationProvider(string dataDirectory, string? temporaryDirectory = null)
         : this(dataDirectory, File.OpenRead, temporaryDirectory)
@@ -33,11 +37,13 @@ public sealed class SqliteElevationProvider : IElevationProvider
     }
 
     internal SqliteElevationProvider(
-        string dataDirectory, Func<string, Stream> openDatabaseStream, string? temporaryDirectory = null)
+        string dataDirectory, Func<string, Stream> openDatabaseStream, string? temporaryDirectory = null,
+        bool requireChecksum = false)
     {
         string path = Path.Combine(dataDirectory, "elevation.sqlite");
         _package = new(() => LoadPackage(path));
         _openDatabaseStream = openDatabaseStream;
+        _requireChecksum = requireChecksum;
         _temporaryDirectory = temporaryDirectory ?? Path.GetTempPath();
     }
 
@@ -79,7 +85,7 @@ public sealed class SqliteElevationProvider : IElevationProvider
             }
 
             command.CommandText = ReadBlockSql;
-            BlockReader blocks = new(command, cancellationToken);
+            BlockReader blocks = new(command, package.Compressed, cancellationToken);
             for (int index = 0; index < result.Length; index++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -234,10 +240,10 @@ public sealed class SqliteElevationProvider : IElevationProvider
             using SqliteCommand command = connection.CreateCommand();
             string json = ReadMetadataJson(command);
             using JsonDocument document = JsonDocument.Parse(json);
-            (ElevationSource source, Grid[] grids) = ReadMetadata(document.RootElement);
+            (ElevationSource source, Grid[] grids, bool compressed) = ReadMetadata(document.RootElement);
             command.CommandText = "SELECT grid_id, block_row, block_column, samples FROM elevation_blocks LIMIT 0";
             using SqliteDataReader reader = command.ExecuteReader();
-            return new(path, json, source, grids);
+            return new(path, json, source, grids, compressed);
         }
         catch (SqliteException error)
         {
@@ -260,6 +266,10 @@ public sealed class SqliteElevationProvider : IElevationProvider
     {
         const string field = "elevation.sqlite.sha256";
         string? expected = await ReadExpectedChecksumAsync(path + ".sha256", cancellationToken).ConfigureAwait(false);
+        if (_requireChecksum && expected is null)
+        {
+            throw Invalid(field, "<missing>", "a SHA-256 identity for every catalog shard");
+        }
         if (expected is not null && !IsSha256(expected))
         {
             throw Invalid(field, expected, "SHA-256 из 64 шестнадцатеричных цифр");
@@ -310,11 +320,18 @@ public sealed class SqliteElevationProvider : IElevationProvider
             ?? throw Invalid("metadata.json", "<отсутствует или имеет другой тип>", "строка JSON с идентификатором 1");
     }
 
-    private static (ElevationSource Source, Grid[] Grids) ReadMetadata(JsonElement root)
+    private static (ElevationSource Source, Grid[] Grids, bool Compressed) ReadMetadata(JsonElement root)
     {
         Require(root.ValueKind == JsonValueKind.Object, "metadata.json", root, "объект JSON");
-        Require(ReadInteger(root, "schema_version") == SchemaVersion, "schema_version", root.GetProperty("schema_version"),
-            string.Create(CultureInfo.InvariantCulture, $"версия {SchemaVersion}"));
+        int schema = ReadInteger(root, "schema_version");
+        Require(schema is LegacySchemaVersion or CompressedSchemaVersion, "schema_version", root.GetProperty("schema_version"),
+            string.Create(CultureInfo.InvariantCulture, $"версия {LegacySchemaVersion} или {CompressedSchemaVersion}"));
+        bool compressed = schema == CompressedSchemaVersion;
+        if (compressed)
+        {
+            Require(ReadString(root, "block_encoding") == CompressedBlockEncoding,
+                "block_encoding", root.GetProperty("block_encoding"), CompressedBlockEncoding);
+        }
         Require(ReadInteger(root, "block_size") == BlockSize, "block_size", root.GetProperty("block_size"),
             string.Create(CultureInfo.InvariantCulture, $"{BlockSize} пикселей"));
         const string coordinateSystem = "EPSG:4326";
@@ -353,7 +370,7 @@ public sealed class SqliteElevationProvider : IElevationProvider
             grids[index] = grid;
         }
 
-        return (source, grids);
+        return (source, grids, compressed);
     }
 
     private static Grid ReadGrid(JsonElement grid, string path)
@@ -445,7 +462,7 @@ public sealed class SqliteElevationProvider : IElevationProvider
     }
 
     private sealed record Package(
-        string DatabasePath, string MetadataJson, ElevationSource Source, Grid[] Grids);
+        string DatabasePath, string MetadataJson, ElevationSource Source, Grid[] Grids, bool Compressed);
 
     private sealed class BlockReader
     {
@@ -454,16 +471,18 @@ public sealed class SqliteElevationProvider : IElevationProvider
         private readonly SqliteParameter _row;
         private readonly SqliteParameter _column;
         private readonly CancellationToken _cancellationToken;
+        private readonly bool _compressed;
         private readonly Dictionary<(int Grid, int Row, int Column), byte[]> _blocks = [];
         private readonly Queue<(int Grid, int Row, int Column)> _blockOrder = new();
 
-        public BlockReader(SqliteCommand command, CancellationToken cancellationToken)
+        public BlockReader(SqliteCommand command, bool compressed, CancellationToken cancellationToken)
         {
             _command = command;
             _grid = command.Parameters.Add("$grid", SqliteType.Integer);
             _row = command.Parameters.Add("$row", SqliteType.Integer);
             _column = command.Parameters.Add("$column", SqliteType.Integer);
             _cancellationToken = cancellationToken;
+            _compressed = compressed;
             command.Prepare();
         }
 
@@ -486,11 +505,20 @@ public sealed class SqliteElevationProvider : IElevationProvider
             _grid.Value = address.Grid;
             _row.Value = address.Row;
             _column.Value = address.Column;
-            if (_command.ExecuteScalar() is not byte[] samples || samples.Length != BlockBytes)
+            if (_command.ExecuteScalar() is not byte[] samples)
             {
                 throw Invalid("elevation_blocks.samples", string.Create(CultureInfo.InvariantCulture,
                     $"grid {address.Grid}, row {address.Row}, column {address.Column}"),
                     string.Create(CultureInfo.InvariantCulture, $"блок из {BlockBytes} байт"));
+            }
+
+            if (_compressed)
+            {
+                samples = Decompress(samples, address);
+            }
+            else if (samples.Length != BlockBytes)
+            {
+                throw InvalidBlock(address);
             }
 
             if (_blocks.Count == CachedBlockLimit)
@@ -502,5 +530,59 @@ public sealed class SqliteElevationProvider : IElevationProvider
             _blockOrder.Enqueue(address);
             return samples;
         }
+
+        private byte[] Decompress(byte[] encoded, (int Grid, int Row, int Column) address)
+        {
+            byte[] samples = new byte[BlockBytes];
+            int length = 0;
+            int extra;
+            try
+            {
+                using MemoryStream input = new(encoded, writable: false);
+                using ZLibStream zlib = new(input, CompressionMode.Decompress);
+                int count;
+                while (length < samples.Length && (count = zlib.Read(samples.AsSpan(length))) > 0)
+                {
+                    _cancellationToken.ThrowIfCancellationRequested();
+                    length += count;
+                }
+                extra = zlib.ReadByte();
+            }
+            catch (InvalidDataException error)
+            {
+                throw InvalidBlock(address, error);
+            }
+
+            // ZLibStream can reach input EOF without reporting a truncated trailer.
+            // Check the zlib Adler-32 footer as well as the exact decoded byte count.
+            if (length != BlockBytes || extra != -1 || !ValidAdler32(encoded, samples))
+            {
+                throw InvalidBlock(address);
+            }
+            return samples;
+        }
+
+        private static bool ValidAdler32(byte[] encoded, byte[] samples)
+        {
+            if (encoded.Length < sizeof(uint))
+            {
+                return false;
+            }
+            const uint modulus = 65521;
+            uint first = 1;
+            uint second = 0;
+            foreach (byte sample in samples)
+            {
+                first = (first + sample) % modulus;
+                second = (second + first) % modulus;
+            }
+            uint expected = BinaryPrimitives.ReadUInt32BigEndian(encoded.AsSpan(encoded.Length - sizeof(uint)));
+            return expected == ((second << 16) | first);
+        }
+
+        private static InvalidDataException InvalidBlock((int Grid, int Row, int Column) address, Exception? inner = null) =>
+            Invalid("elevation_blocks.samples", string.Create(CultureInfo.InvariantCulture,
+                $"grid {address.Grid}, row {address.Row}, column {address.Column}"),
+                string.Create(CultureInfo.InvariantCulture, $"блок из {BlockBytes} байт с заявленным кодированием"), inner);
     }
 }

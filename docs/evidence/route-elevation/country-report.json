@@ -1,0 +1,159 @@
+{
+  "source_count": 60,
+  "source_bytes": 1812358917,
+  "finite_source_samples_in_bounding_rectangle": 409506924,
+  "nodata_source_samples_in_bounding_rectangle": 0,
+  "maximum_observed_quantization_error_metres": 0.0500030517578125,
+  "points": [
+    {
+      "latitude": 51.234408,
+      "longitude": 23.174801,
+      "native_bilinear_metres": 199.8177756802644,
+      "native_samples": [
+        [
+          201.09716796875,
+          198.02621459960938
+        ],
+        [
+          202.27947998046875,
+          201.68528747558594
+        ]
+      ]
+    },
+    {
+      "latitude": 53.917148,
+      "longitude": 27.430907,
+      "native_bilinear_metres": 257.62289364710335,
+      "native_samples": [
+        [
+          258.42034912109375,
+          258.4389953613281
+        ],
+        [
+          255.39256286621094,
+          255.58631896972656
+        ]
+      ]
+    },
+    {
+      "latitude": 53.917765,
+      "longitude": 27.434188,
+      "native_bilinear_metres": 256.6658396171061,
+      "native_samples": [
+        [
+          256.7389221191406,
+          255.9013671875
+        ],
+        [
+          256.10357666015625,
+          254.85255432128906
+        ]
+      ]
+    },
+    {
+      "latitude": 53.999,
+      "longitude": 28.001,
+      "native_bilinear_metres": 217.17527099606872,
+      "native_samples": [
+        [
+          216.14315795898438,
+          216.675048828125
+        ],
+        [
+          217.34780883789062,
+          218.2820587158203
+        ]
+      ]
+    },
+    {
+      "latitude": 54.999,
+      "longitude": 28.001,
+      "native_bilinear_metres": 183.0480133056646,
+      "native_samples": [
+        [
+          183.9167938232422,
+          182.3461151123047
+        ],
+        [
+          183.1403350830078,
+          182.50868225097656
+        ]
+      ]
+    },
+    {
+      "latitude": 56.173846,
+      "longitude": 32.76947,
+      "native_bilinear_metres": 185.13080271005967,
+      "native_samples": [
+        [
+          184.85630798339844,
+          185.16925048828125
+        ],
+        [
+          184.53927612304688,
+          185.7029266357422
+        ]
+      ]
+    }
+  ],
+  "database_count": 840,
+  "database_bytes": 612429824,
+  "zip_deflate_database_bytes": 547842286,
+  "nodata_output_samples_within_ownership": 0,
+  "finite_output_samples_within_ownership": 410620932,
+  "bounds": [
+    23.174801,
+    51.234408,
+    32.76947,
+    56.173846
+  ],
+  "country_output_points": [
+    {
+      "latitude": 53.917148,
+      "longitude": 27.430907,
+      "country_bilinear_metres": 257.6078426651327,
+      "quantization_error_metres": 0.015050981970659905
+    },
+    {
+      "latitude": 53.917765,
+      "longitude": 27.434188,
+      "country_bilinear_metres": 256.6305089231549,
+      "quantization_error_metres": 0.03533069395120947
+    },
+    {
+      "latitude": 51.234408,
+      "longitude": 23.174801,
+      "country_bilinear_metres": 199.80934971464492
+    },
+    {
+      "latitude": 51.234408,
+      "longitude": 32.76947,
+      "country_bilinear_metres": 144.7166860623037
+    },
+    {
+      "latitude": 56.173846,
+      "longitude": 23.174801,
+      "country_bilinear_metres": 92.05830530811514
+    },
+    {
+      "latitude": 56.173846,
+      "longitude": 32.76947,
+      "country_bilinear_metres": 185.15779925449226
+    },
+    {
+      "latitude": 54.0,
+      "longitude": 28.0,
+      "country_bilinear_metres": 216.4999999999981
+    },
+    {
+      "latitude": 55.0,
+      "longitude": 28.0,
+      "country_bilinear_metres": 181.19999694824244
+    },
+    {
+      "latitude": 56.0,
+      "longitude": 28.0,
+      "country_bilinear_metres": 160.600006103517
+    }
+  ]
+}

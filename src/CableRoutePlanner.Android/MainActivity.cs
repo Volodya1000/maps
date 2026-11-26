@@ -75,6 +75,18 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
     private async Task PrepareElevationAsync(string directory, IProgress<string> progress, CancellationToken ct)
     {
         string[] names = Assets!.List("Data")!;
+        if (names.Contains("elevation", StringComparer.Ordinal)
+            && Assets.List("Data/elevation")!.Contains("index.json", StringComparer.Ordinal))
+        {
+            using StreamReader catalogReader = new(Assets.Open("Data/elevation/index.json"));
+            string catalog = await catalogReader.ReadToEndAsync(ct);
+            progress.Report("Подготовка офлайн-высот Беларуси…");
+            await TiledElevationPackageInstaller.InstallAsync(directory, catalog,
+                path => Assets.Open("Data/elevation/" + path), ct);
+            return;
+        }
+
+        TiledElevationPackageInstaller.RemoveInstalledPackage(directory, ct);
         bool hasDatabase = names.Contains("elevation.sqlite", StringComparer.Ordinal);
         bool hasIdentity = names.Contains("elevation.sqlite.sha256", StringComparer.Ordinal);
         if (hasDatabase != hasIdentity)

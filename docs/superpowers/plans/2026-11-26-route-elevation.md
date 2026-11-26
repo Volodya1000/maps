@@ -54,3 +54,10 @@ Own Android optional package installation, final integration, docs/evidence/chan
 - [x] Preserve full/partial elevation profiles, original source, chosen alternative, reserve and options through save/reopen without another analysis.
 - [x] Read legacy version1; version new profile-bearing records explicitly and reject inconsistent or truncated profiles before state mutation.
 - [x] Prove roundtrip and Save/Open behavior with typed failures, then rerun the current-main gates.
+
+### Task 6: Countrywide coverage after Android field feedback
+- [x] Reproduce the cause: the reported Minsk coordinates are outside the demo crop; country APK preparation omitted DEM entirely.
+- [x] Prepare pinned Copernicus GLO-30 inputs for the entire Belarus package bounds, with small compressed, independently verified shards.
+- [x] Read only route-local shards and install a complete immutable generation before publishing its catalog; preserve legacy single-file packages.
+- [x] Include country DEM in PR/full installers and reject missing/corrupt/incomplete DEM in distributable APK checks.
+- [x] Verify the reported coordinates, border regions and tile seams on actual country data; build a full Belarus APK and run repository gates before updating PR #65.
