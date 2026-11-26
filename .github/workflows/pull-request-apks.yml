@@ -10,6 +10,10 @@ on:
         description: Exact commit SHA checked by the caller workflow
         required: true
         type: string
+      preview_package_id:
+        description: Application ID of the already tested Minsk preview
+        required: true
+        type: string
 permissions:
   contents: read
 env:
@@ -67,9 +71,8 @@ jobs:
     timeout-minutes: 30
     env:
       ANDROID_VERSION_CODE: ${{ needs.geodata.outputs.android_version_code }}
-      # The signing key is temporary. A per-attempt package ID prevents Android
-      # from treating different PR previews as incompatible updates.
-      PREVIEW_PACKAGE_ID: by.cablerouteplanner.preview.pr${{ inputs.pr_number }}.r${{ github.run_id }}a${{ github.run_attempt }}
+      # A consumer-only retry must retain the tested APK's ID and signing key.
+      PREVIEW_PACKAGE_ID: ${{ inputs.preview_package_id }}
     steps:
       - uses: actions/checkout@v7
         with:

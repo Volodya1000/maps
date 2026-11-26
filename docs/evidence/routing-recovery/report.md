@@ -46,6 +46,8 @@
 
 Сборщик полного APK получает карту через общий проверяемый `country-data` provider, как и routing CI: кеш ускоряет получение, контрольные суммы и рецепт остаются обязательными. Промежуточный артефакт карты публикуется только для отдельного routing benchmark, которому он нужен. Это устраняет повторную передачу большого workflow-артефакта и зависимость сборки APK от его суточного срока хранения.
 
+ID полного APK передаётся из успешно проверенной сборки Минска вместе с её ключом подписи: повтор только consumer job не создаёт несовместимый ID нового `run_attempt`. Ожидание карты читает logcat текущего PID, поэтому чужой маркер готовности не засчитывается; ненулевой код adb остаётся ошибкой, сохраняются его код, команда и отдельные stdout/stderr.
+
 ```powershell
 uv run --project tools/GeodataPreparation --locked python tools/routing_regression.py --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-regression
 uv run --project tools/GeodataPreparation --locked python tools/routing_recovery.py --data artifacts/belarus --run-report artifacts/routing-regression/results.json --output artifacts/routing-regression/recovery

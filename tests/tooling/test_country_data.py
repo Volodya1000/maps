@@ -436,6 +436,57 @@ class CountryWorkflowTests(unittest.TestCase):
             workflow["jobs"]["pull-request-apks"]["if"],
         )
 
+    def test_apk_retry_uses_the_tested_producer_application_id(self):
+        caller = yaml.safe_load((country.ROOT / ".github/workflows/ci.yml").read_text())
+        consumer = yaml.safe_load(
+            (country.ROOT / ".github/workflows/pull-request-apks.yml").read_text()
+        )
+        # A consumer-only retry increments run_attempt without rebuilding Minsk.
+        self.assertEqual(
+            "${{ inputs.preview_package_id }}",
+            consumer["jobs"]["android"]["env"]["PREVIEW_PACKAGE_ID"],
+        )
+        self.assertTrue(
+            consumer["on" if "on" in consumer else True]["workflow_call"]["inputs"][
+                "preview_package_id"
+            ]["required"]
+        )
+        self.assertEqual(
+            "${{ needs.android.outputs.preview_package_id }}",
+            caller["jobs"]["pull-request-apks"]["with"]["preview_package_id"],
+        )
+        self.assertEqual(
+            "${{ steps.preview_identity.outputs.package_id }}",
+            caller["jobs"]["android"]["outputs"]["preview_package_id"],
+        )
+        identity = next(
+            step
+            for step in caller["jobs"]["android"]["steps"]
+            if step.get("id") == "preview_identity"
+        )
+        script = identity["run"].split("\n", 1)[1].rsplit("\nPY", 1)[0]
+        with tempfile.TemporaryDirectory() as directory:
+            for attempt in (1, 2):
+                with self.subTest(attempt=attempt):
+                    output = Path(directory) / f"attempt-{attempt}.txt"
+                    result = subprocess.run(
+                        [sys.executable, "-c", script],
+                        env=os.environ
+                        | {
+                            "GITHUB_OUTPUT": output.as_posix(),
+                            "ANDROID_APPLICATION_ID": "by.cablerouteplanner.preview.pr66.r123a1",
+                            "GITHUB_RUN_ATTEMPT": str(attempt),
+                        },
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    self.assertEqual(
+                        "package_id=by.cablerouteplanner.preview.pr66.r123a1\n",
+                        result.stdout,
+                    )
+
     def test_publication_is_an_explicit_manual_mode(self):
         workflow = yaml.safe_load(
             (country.ROOT / ".github/workflows/offline-packages.yml").read_text()
