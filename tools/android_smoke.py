@@ -150,7 +150,7 @@ def main():
                 raise RuntimeError(
                     "Application Activity is not resumed: " + "\n".join(resumed)
                 )
-            logs = adb("logcat", "-d", "-v", "threadtime")
+            logs = adb("logcat", "-d", f"--pid={pid}", "-v", "threadtime")
             (args.output / f"launch-{index + 1}.logcat.txt").write_text(logs)
             # The crash buffer avoids false positives from unrelated system services.
             crashes = adb("logcat", "-b", "crash", "-d")

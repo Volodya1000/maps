@@ -26,6 +26,8 @@ class AndroidSmokeTests(unittest.TestCase):
         self.resumed = True
         self.crash = False
         self.logcat_returncode = 0
+        self.system_logcat_returncode = 0
+        self.app_capture_returncode = 0
 
     def adb(self, command, **kwargs):
         args = command[1:]
@@ -55,6 +57,10 @@ class AndroidSmokeTests(unittest.TestCase):
             stdout = own if "--pid=123" in args else other + own
             if "brief" in args:
                 returncode = self.logcat_returncode
+            elif "--pid=123" in args:
+                returncode = self.app_capture_returncode
+            else:
+                returncode = self.system_logcat_returncode
         elif args[:2] == ["exec-out", "screencap"]:
             stdout = b"synthetic screenshot"
         return subprocess.CompletedProcess(
@@ -120,6 +126,26 @@ class AndroidSmokeTests(unittest.TestCase):
             "CRP_OFFLINE_MAP_READY",
             (self.root / "output/adb-failure.stdout").read_text(),
         )
+
+    def test_system_log_transport_failure_cannot_replace_required_app_evidence(self):
+        self.system_logcat_returncode = 255
+        self.run_smoke()
+        report = self.report()
+        self.assertTrue(report["success"])
+        self.assertEqual(2, len(report["launches"]))
+        for attempt in (1, 2):
+            log = (self.root / f"output/launch-{attempt}.logcat.txt").read_text()
+            self.assertIn("region=belarus", log)
+            self.assertNotIn("I/other(987)", log)
+
+    def test_application_log_transport_failure_fails_closed(self):
+        self.app_capture_returncode = 255
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.run_smoke()
+        report = self.report()
+        self.assertFalse(report["success"])
+        self.assertEqual([], report["launches"])
+        self.assertEqual(255, report["adb_failure"]["returncode"])
 
     def test_liveness_resumed_activity_and_crash_fail_closed(self):
         for field in ("alive", "resumed", "crash"):

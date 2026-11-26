@@ -48,6 +48,8 @@
 
 ID полного APK передаётся из успешно проверенной сборки Минска вместе с её ключом подписи: повтор только consumer job не создаёт несовместимый ID нового `run_attempt`. Ожидание карты читает logcat текущего PID, поэтому чужой маркер готовности не засчитывается; ненулевой код adb остаётся ошибкой, сохраняются его код, команда и отдельные stdout/stderr.
 
+Обязательный журнал каждого запуска также ограничен текущим PID: выгрузка всего системного буфера на Android 15 обрывала adb-транспорт с кодом 255 уже после готовности карты. Ошибка чтения журнала приложения по-прежнему блокирует gate, как и смерть процесса, неактивное окно или crash buffer. Общий последний системный журнал сохраняется как дополнительная диагностика.
+
 ```powershell
 uv run --project tools/GeodataPreparation --locked python tools/routing_regression.py --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-regression
 uv run --project tools/GeodataPreparation --locked python tools/routing_recovery.py --data artifacts/belarus --run-report artifacts/routing-regression/results.json --output artifacts/routing-regression/recovery
