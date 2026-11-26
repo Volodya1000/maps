@@ -117,6 +117,18 @@ public sealed class LocationUiTests
         Assert.True(locationRequirement.IsEffectivelyVisible);
         Assert.Equal("Для отслеживания прокладки кабеля необходимо включить геолокацию", locationRequirement.Text);
         Assert.True(openSettings.IsEffectivelyVisible);
+        Assert.False(start.IsEffectivelyVisible);
+        Button cancel = view.GetVisualDescendants().OfType<Button>()
+            .Single(button => button.Name == "CancelLocationStartButton");
+        Point cancelPoint = await touch.TargetAsync(cancel);
+        touch.Send(RawPointerEventType.TouchBegin, cancelPoint);
+        touch.Send(RawPointerEventType.TouchEnd, cancelPoint);
+        Assert.True(start.IsEffectivelyVisible);
+        Assert.False(openSettings.IsEffectivelyVisible);
+        disabledButtonPoint = await touch.TargetAsync(start);
+        touch.Send(RawPointerEventType.TouchBegin, disabledButtonPoint);
+        touch.Send(RawPointerEventType.TouchEnd, disabledButtonPoint);
+        Assert.False(start.IsEffectivelyVisible);
 
         await tracking.SetLocationEnabledAsync(true);
         Point buttonPoint = await touch.TargetAsync(start);
@@ -146,6 +158,39 @@ public sealed class LocationUiTests
         touch.Send(Avalonia.Input.Raw.RawPointerEventType.TouchUpdate, endPoint);
         touch.Send(Avalonia.Input.Raw.RawPointerEventType.TouchEnd, endPoint);
         Assert.Contains("Прокладка:", view.FindControl<TextBlock>("SheetHandleText")!.Text);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task GpsRequirementReplacesResumeUntilCancelledOrLocationEnabled()
+    {
+        using LocationController controller = CreateController();
+        using TrackingViewModel tracking = new(controller, new UiTrackingSessions());
+        tracking.SetRoute(new(Guid.NewGuid(), "Маршрут", [TestData.P(0, 0), TestData.P(100, 0)],
+            new(100, 0, 100, 0, 0, 0, 100, null)));
+        await tracking.SetLocationEnabledAsync(true);
+        await tracking.Start.Execute().ToTask();
+        await tracking.Pause.Execute().ToTask();
+        await tracking.SetLocationEnabledAsync(false);
+        TrackingPanelView view = new() { ViewModel = tracking };
+        Window window = new() { Content = view, Width = 360, Height = 640 };
+        window.Show();
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Button resume = view.FindControl<Button>("ResumeTraversalButton")!;
+        Assert.True(resume.IsEffectivelyVisible);
+        await tracking.Resume.Execute().ToTask();
+        Assert.True(view.FindControl<TextBlock>("LocationStartRequirement")!.IsEffectivelyVisible);
+        Assert.False(resume.IsEffectivelyVisible);
+        await tracking.DismissLocationRequirementCommand.Execute().ToTask();
+        Assert.True(resume.IsEffectivelyVisible);
+        await tracking.Resume.Execute().ToTask();
+        Assert.False(resume.IsEffectivelyVisible);
+        await tracking.SetLocationEnabledAsync(true);
+        Assert.False(view.FindControl<TextBlock>("LocationStartRequirement")!.IsEffectivelyVisible);
+        Assert.True(resume.IsEffectivelyVisible);
+        Assert.Equal(ProgressTrackingStatus.Paused, tracking.Progress!.Status);
+        await tracking.Resume.Execute().ToTask();
+        Assert.Equal(ProgressTrackingStatus.Active, tracking.Progress.Status);
         window.Close();
     }
 

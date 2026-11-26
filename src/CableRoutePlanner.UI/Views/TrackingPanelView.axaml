@@ -58,7 +58,7 @@
                 Text="{Binding PersistenceStatus}"
                 IsVisible="{Binding HasPersistenceError}"
                 TextWrapping="Wrap" />
-            <WrapPanel>
+            <WrapPanel IsVisible="{Binding !HasLocationStartMessage}">
                 <Button
                     x:Name="StartTraversalButton"
                     Command="{Binding Start}"

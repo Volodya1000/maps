@@ -37,6 +37,7 @@ public static class PresentationServiceCollectionExtensions
             () => provider.GetRequiredService<IGeodataRepository>().Info.Bounds));
         services.AddSingleton<MapViewModel>();
         services.AddSingleton<SettingsViewModel>();
+        services.AddSingleton<SavedRoutesViewModel>();
         services.AddSingleton<ShellViewModel>();
         services.AddSingleton<Func<Mapsui.UI.Avalonia.MapControl, GeoBounds, IMapAdapter>>(
             provider => (control, bounds) => new MapsuiMapAdapter(
@@ -45,10 +46,12 @@ public static class PresentationServiceCollectionExtensions
                 provider.GetRequiredService<IGeodataRepository>()));
         services.AddTransient<MapView>();
         services.AddTransient<SettingsView>();
+        services.AddTransient<SavedRoutesView>();
         services.AddTransient<ShellView>();
         services.AddSingleton<Func<MapView>>(provider => () => provider.GetRequiredService<MapView>());
         services.AddSingleton<Func<SettingsView>>(provider => () => provider.GetRequiredService<SettingsView>());
         services.AddSingleton<Func<ShellView>>(provider => () => provider.GetRequiredService<ShellView>());
+        services.AddSingleton<Func<SavedRoutesView>>(provider => () => provider.GetRequiredService<SavedRoutesView>());
         services.AddSingleton<TypedViewLocator>();
         services.AddSingleton(provider => new StartupLoader(
             prepareData,

@@ -68,8 +68,10 @@
             </Border>
         </Button>
         <Border
+            x:Name="MapNotices"
             Grid.Row="1"
-            Classes="map-footer">
+            Classes="map-footer"
+            IsVisible="{Binding HasMapFooter}">
             <StackPanel>
                 <TextBlock Classes="map-notice" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
                 <TextBlock
@@ -77,12 +79,6 @@
                     Text="{Binding LocationCoverageStatus}"
                     IsVisible="{Binding HasLocationCoverageWarning}"
                     TextWrapping="Wrap" />
-                <TextBlock
-                    x:Name="AttributionCredit"
-                    Classes="map-attribution"
-                    Text="ⓘ"
-                    AutomationProperties.Name="© OpenStreetMap contributors · ODbL 1.0"
-                    ToolTip.Tip="© OpenStreetMap contributors · ODbL 1.0" />
             </StackPanel>
         </Border>
     </Grid>

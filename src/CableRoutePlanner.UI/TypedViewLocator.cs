@@ -4,12 +4,13 @@ using ReactiveUI;
 
 namespace CableRoutePlanner.UI;
 
-public sealed class TypedViewLocator(Func<MapView> map, Func<SettingsView> settings) : IViewLocator
+public sealed class TypedViewLocator(Func<MapView> map, Func<SettingsView> settings, Func<SavedRoutesView> saved) : IViewLocator
 {
     public IViewFor? ResolveView<T>(T? viewModel, string? contract = null) => viewModel switch
     {
         MapViewModel vm => Bind(map(), vm),
         SettingsViewModel vm => Bind(settings(), vm),
+        SavedRoutesViewModel vm => Bind(saved(), vm),
         _ => throw new ArgumentException("Тип ViewModel не зарегистрирован.", nameof(viewModel))
     };
 
