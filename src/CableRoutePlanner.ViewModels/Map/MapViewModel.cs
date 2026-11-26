@@ -206,7 +206,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public string Status { get; private set; } = "Нажмите на карту, чтобы добавить точку. Перетаскивайте маркеры.";
 
     [Reactive]
-    public string MapStatus { get; private set; } = "Загрузка офлайн-данных…";
+    public string MapStatus { get; private set; } = "";
 
     [Reactive]
     public string LatitudeText { get; set; } = "";
@@ -233,6 +233,8 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     public bool HasAlternatives => Alternatives.Count > 1;
 
     public bool HasMapNotice => !string.IsNullOrEmpty(MapStatus);
+
+    public bool HasMapFooter => HasMapNotice || HasLocationCoverageWarning;
 
     public ReactiveCommand<GeoCoordinate, Unit> AddPoint
     {
@@ -380,7 +382,11 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     private void SetupSubscriptions()
     {
         this.WhenAnyValue(x => x.MapStatus)
-            .Subscribe(_ => this.RaisePropertyChanged(nameof(HasMapNotice)))
+            .Subscribe(_ =>
+            {
+                this.RaisePropertyChanged(nameof(HasMapNotice));
+                this.RaisePropertyChanged(nameof(HasMapFooter));
+            })
             .DisposeWith(_lifetime);
         this.WhenAnyValue(x => x.SelectedRoute)
             .Subscribe(route =>
@@ -419,6 +425,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         {
             this.RaisePropertyChanged(nameof(LocationCoverageStatus));
             this.RaisePropertyChanged(nameof(HasLocationCoverageWarning));
+            this.RaisePropertyChanged(nameof(HasMapFooter));
         }
     }
 
@@ -727,7 +734,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 _resultPoints, Alternatives.ToArray(), selected.Id, _resultOptions);
             _savedRoutes.Add(snapshot);
             IsSavePromptOpen = false;
-            SaveStatus = "Маршрут сохранён. Откройте раздел «Сохранённые».";
+            SaveStatus = "Маршрут сохранён в «Сохранённых».";
         }
         catch (Exception ex) when (ex is PlanningException or IOException or UnauthorizedAccessException or ArgumentException)
         {

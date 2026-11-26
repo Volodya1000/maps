@@ -375,7 +375,8 @@
         "type": "Project",
         "dependencies": {
           "CableRoutePlanner.Application": "[1.0.0, )",
-          "ReactiveUI": "[20.1.1, )"
+          "ReactiveUI": "[20.1.1, )",
+          "ReactiveUI.Fody": "[19.5.41, )"
         }
       },
       "NetTopologySuite": {
@@ -397,6 +398,16 @@
           "Splat": "15.1.1",
           "System.ComponentModel.Annotations": "5.0.0",
           "System.Text.Json": "8.0.3"
+        }
+      },
+      "ReactiveUI.Fody": {
+        "type": "CentralTransitive",
+        "requested": "[19.5.41, )",
+        "resolved": "19.5.41",
+        "contentHash": "bh6OH1WsSHf/ryUVaPnI6LWl1+lrCvq4L/AoHpzPXCKxtR4p0ogPVONnkq0jYgSQ55x7YNCVkthBKeb6uUSbpg==",
+        "dependencies": {
+          "Fody": "6.8.0",
+          "ReactiveUI": "19.5.41"
         }
       },
       "System.Memory": {

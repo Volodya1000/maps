@@ -1,7 +1,9 @@
 using System.Reactive.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input.Raw;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CableRoutePlanner.Application;
@@ -81,6 +83,100 @@ public sealed class SavedRoutesUiTests
                 Assert.True(endpoint.Y < panelTop, $"Route endpoint at {endpoint.Y} is covered by panel at {panelTop}.");
             }
         }
+        window.Close();
+    }
+
+    [AvaloniaTheory]
+    [InlineData("маршрут номер 1")]
+    [InlineData("маршрут номер 2")]
+    public async Task TypedRouteNameIsPersistedAndDisplayedAfterTouchSaveAndReload(string name)
+    {
+        using SavedRouteDirectory directory = new();
+        SavedRoute snapshot = SavedRouteDirectory.Snapshot();
+        directory.Store.Add(snapshot);
+        NavigationHost screen = new();
+        using MapViewModel map = SavedRoutesTests.CreateMap(directory, new SavedRoutesTests.RejectPlanner(), screen);
+        Assert.True(map.OpenSavedRoute(snapshot.Id));
+        MapView view = new((control, bounds) => new CableRoutePlanner.UI.MapAdapters.MapsuiMapAdapter(control, bounds))
+        {
+            ViewModel = map
+        };
+        using Mapsui.UI.Avalonia.MapControl mapControl = view.FindControl<Mapsui.UI.Avalonia.MapControl>("MapControl")!;
+        Window window = new() { Content = view, Width = 360, Height = 640 };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        using HeadlessTouch touch = new(window);
+        Button begin = view.FindControl<Button>("SaveRouteButton")!;
+        Point beginPoint = await touch.TargetAsync(begin);
+        touch.Send(RawPointerEventType.TouchBegin, beginPoint);
+        touch.Send(RawPointerEventType.TouchEnd, beginPoint);
+        TextBox input = Assert.Single(view.GetVisualDescendants().OfType<TextBox>(),
+            box => Equals(box.Watermark, "Название (необязательно)"));
+        Point inputPoint = await touch.TargetAsync(input);
+        touch.Send(RawPointerEventType.TouchBegin, inputPoint);
+        touch.Send(RawPointerEventType.TouchEnd, inputPoint);
+        window.KeyTextInput(name);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(name, input.Text);
+        Assert.Same(map, input.DataContext);
+        Assert.Equal(name, map.RouteName);
+        Button save = Assert.Single(view.GetVisualDescendants().OfType<Button>(), button => Equals(button.Content, "Сохранить"));
+        Point savePoint = await touch.TargetAsync(save);
+        touch.Send(RawPointerEventType.TouchBegin, savePoint);
+        touch.Send(RawPointerEventType.TouchEnd, savePoint);
+        SavedRoute saved = Assert.Single(directory.Store.List(), record => record.Id != snapshot.Id);
+        Assert.Equal(name, saved.Name);
+        Assert.Equal("Маршрут сохранён в «Сохранённых».", map.SaveStatus);
+        using SavedRoutesViewModel list = new(screen, map, directory.Store);
+        list.Reload();
+        SavedRoutesView savedView = new() { ViewModel = list };
+        window.Content = savedView;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains(savedView.GetVisualDescendants().OfType<TextBlock>(), block => block.Text == name);
+        window.Close();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("маршрут номер 1")]
+    public void SavedRowDisplaysTheAddedDateExactlyOnce(string? name)
+    {
+        SavedRouteRow row = new(SavedRouteDirectory.Snapshot() with { Name = name });
+        string display = row.Title + " " + row.Details;
+        Assert.Equal(1, display.Split(row.AddedText, StringSplitOptions.None).Length - 1);
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            Assert.Equal(name, row.Title);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task ReadyLocalMapHasNoLoadingNoticeOrInformationGlyphAndSettingsShowMapCredit()
+    {
+        using MapViewModel map = TestData.CreateMapViewModel(new NavigationHost(),
+            new PlanningSession(new SavedRoutesTests.RejectPlanner(), TestData.AllowAllValidator),
+            new MapAreaLoader(new MemoryData()), new MemorySettings(), new MemoryClipboard());
+        MapOverlayControlsView overlay = new() { ViewModel = map };
+        Window window = new() { Content = overlay, Width = 360, Height = 640 };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Empty(map.MapStatus);
+        Assert.False(overlay.FindControl<Border>("MapNotices")!.IsEffectivelyVisible);
+        Assert.DoesNotContain(overlay.GetVisualDescendants().OfType<TextBlock>(),
+            block => block.IsEffectivelyVisible && (block.Text == "ⓘ" || block.Text == "Загрузка офлайн-данных…"));
+        // Real notices still appear; only the invented initial loading state is removed.
+        await map.LoadMapAreaAsync(map.DataInfo.Bounds, CancellationToken.None);
+        Assert.True(overlay.FindControl<Border>("MapNotices")!.IsEffectivelyVisible);
+        Assert.Contains(overlay.GetVisualDescendants().OfType<TextBlock>(),
+            block => block.IsEffectivelyVisible && block.Text == "Для этой области нет данных в офлайн-пакете.");
+        using SettingsViewModel settings = new(new NavigationHost(), new MemorySettings());
+        SettingsView settingsView = new() { ViewModel = settings };
+        window.Content = settingsView;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains(settingsView.GetVisualDescendants().OfType<TextBlock>(),
+            block => block.Text == "© OpenStreetMap contributors · ODbL 1.0");
         window.Close();
     }
 
