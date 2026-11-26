@@ -79,6 +79,7 @@ jobs:
           uv run --project tools/GeodataPreparation --locked python tools/routing_portal_witnesses.py
           --data artifacts/belarus
           --output artifacts/routing-regression/portal-witnesses.json
+          --run-report artifacts/routing-regression/results.json
       - name: Publish concise routing evidence
         if: always()
         shell: bash

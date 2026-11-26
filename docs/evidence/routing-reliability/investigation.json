@@ -199,7 +199,7 @@
   "commands": {
     "focused": "dotnet test tests/CableRoutePlanner.Tests/CableRoutePlanner.Tests.csproj --no-restore -c Release --filter \"FullyQualifiedName~PortalEndpointRegressionTests\" --logger \"console;verbosity=normal\"",
     "related": "dotnet test tests/CableRoutePlanner.Tests/CableRoutePlanner.Tests.csproj --no-restore -c Release --filter \"FullyQualifiedName~PortalEndpointRegressionTests|FullyQualifiedName~GridSearchGraphTests|FullyQualifiedName~RoutingTests|FullyQualifiedName~RouteGeometryPostProcessorTests\" --logger \"console;verbosity=normal\"",
-    "independentInvestigation": "uv run --project tools/GeodataPreparation --locked python tools/routing_portal_witnesses.py --data <package-directory> --output artifacts/portal-witnesses.json",
+    "independentInvestigation": "uv run --project tools/GeodataPreparation --locked python tools/routing_portal_witnesses.py --data <package-directory> --run-report <run-output>/results.json --output artifacts/portal-witnesses.json",
     "witnessToolTests": "uv run --project tools/GeodataPreparation --locked python -m unittest discover -s tools/GeodataPreparation/tests -p test_routing_portal_witnesses.py -v"
   },
   "localArtifacts": {
@@ -210,5 +210,17 @@
     "scope": "Artifact basenames from the recorded local run; regenerate portable witness JSON with the command above.",
     "orderingCounterfactualLog": "portal-ordering-counterfactual.log",
     "orderingRestoredGreenLog": "portal-ordering-restored-green.log"
+  },
+  "portalWitnessComparison": {
+    "underpassFlag": "Honor each frozen scenario's explicit AllowExperimentalPedestrianUnderpasses flag; absent means false. Record the effective flag in every investigated row.",
+    "matchingEvidence": "Require matching actual SQLite and corpus SHA-256, one head frozen result per inspected ID, and the same effective flag.",
+    "inBoundsWitness": "A full independently valid witness challenges head NoRoute only when every recorded vertex lies within the head calculation's geographic mesh bounds from diagnostic event 5.",
+    "outcomes": {
+      "missed_valid_path": "Fail the step and record missedWitnessIds before returning a nonzero exit code.",
+      "valid_route_found": "Head success with a valid independent route audit satisfies the witnessed path.",
+      "witness_outside_search_bounds": "Remain unresolved; a wider-area witness does not establish a miss in the actual search rectangle."
+    },
+    "focusedPythonTestsPassed": 9,
+    "relatedPythonRoutingTestsPassed": 85
   }
 }
