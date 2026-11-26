@@ -1,5 +1,6 @@
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
+using Microsoft.Extensions.Logging;
 using NetTopologySuite.Geometries;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
@@ -27,14 +28,17 @@ internal sealed class GridSearchGraph : IRoutingGraph
     private readonly Dictionary<int, List<(int Id, double Cost)>> _portalConnections = [];
     private readonly Dictionary<int, List<(int Id, double Cost)>> _gridToPortals = [];
     private readonly double? _direct;
+    private int _rejectedConnections;
 
     public CostProfile Profile { get; }
     public int StartNodeId { get; }
     public int DestinationNodeId { get; }
     public int NodeCount => DestinationNodeId + 1;
+    public int ExpandedNodes { get; private set; }
 
     public GridSearchGraph(Coordinate start, Coordinate destination, GridMesh mesh, CostProfile profile,
-        TerrainEvaluator evaluator, GridEdgeEvaluationCache edges, CancellationToken cancellationToken)
+        TerrainEvaluator evaluator, GridEdgeEvaluationCache edges, CancellationToken cancellationToken,
+        ILogger? logger = null, Guid calculationId = default, int legIndex = 0)
     {
         _start = start;
         _destination = destination;
@@ -47,7 +51,7 @@ internal sealed class GridSearchGraph : IRoutingGraph
         _portalStartId = mesh.Nodes.Length;
         StartNodeId = _portalStartId + _portalNodes.Length;
         DestinationNodeId = StartNodeId + 1;
-        (_fromStart, _toEnd, _direct) = PrepareConnections(portals, cancellationToken);
+        (_fromStart, _toEnd, _direct) = PrepareConnections(portals, logger, calculationId, legIndex, cancellationToken);
     }
 
     /// <summary>Prepares only endpoint/portal links; regular-grid facts remain lazy.</summary>
@@ -58,13 +62,22 @@ internal sealed class GridSearchGraph : IRoutingGraph
     /// need the same geometry/ID state without another consumer of these links.
     /// </remarks>
     private (Dictionary<int, double> FromStart, Dictionary<int, double> ToEnd, double? Direct)
-        PrepareConnections(IReadOnlyList<GridPortal> portals, CancellationToken cancellationToken)
+        PrepareConnections(IReadOnlyList<GridPortal> portals, ILogger? logger, Guid calculationId, int legIndex,
+            CancellationToken cancellationToken)
     {
         Dictionary<int, double> fromStart = Connect(_start, cancellationToken);
         Dictionary<int, double> toEnd = Connect(_destination, cancellationToken);
-        ConnectPortals(portals, cancellationToken);
+        ConnectPortals(portals, fromStart, toEnd, cancellationToken);
         double? direct = _start.Distance(_destination) <= _mesh.CellSizeMetres * MaximumDirectConnectionCells
             ? Cost(_start, _destination) : null;
+        if (logger is not null)
+        {
+            int portalGridConnections = _gridToPortals.Values.Sum(connections => connections.Count);
+            int portalEdges = _portalConnections.Values.Sum(connections => connections.Count) - portalGridConnections;
+            RoutingLog.GraphConnectionsLog(logger, calculationId, Profile.Name, legIndex,
+                fromStart.Count, toEnd.Count, _portalNodes.Length, portalGridConnections, portalEdges,
+                _rejectedConnections, direct is not null);
+        }
         if ((fromStart.Count == 0 || toEnd.Count == 0) && direct is null)
         {
             throw new PlanningException(
@@ -86,6 +99,7 @@ internal sealed class GridSearchGraph : IRoutingGraph
 
     public IEnumerable<(int Id, double Cost)> Neighbours(int nodeId)
     {
+        ExpandedNodes++;
         if (nodeId == StartNodeId)
         {
             foreach (KeyValuePair<int, double> connection in _fromStart)
@@ -153,6 +167,8 @@ internal sealed class GridSearchGraph : IRoutingGraph
                 int id = y * _mesh.Columns + x;
                 if (Cost(point, _mesh.Nodes[id]) is { } cost)
                 { connections[id] = cost; }
+                else
+                { _rejectedConnections++; }
             }
         }
         return connections;
@@ -161,9 +177,12 @@ internal sealed class GridSearchGraph : IRoutingGraph
     private double? Cost(Coordinate from, Coordinate to, bool traversingUnderpassPortal = false) =>
         _evaluator.EvaluateForSearch(from, to, traversingUnderpassPortal)?.Cost(Profile);
 
-    private void ConnectPortals(IReadOnlyList<GridPortal> portals, CancellationToken cancellationToken)
+    private void ConnectPortals(IReadOnlyList<GridPortal> portals,
+        Dictionary<int, double> fromStart, Dictionary<int, double> toEnd, CancellationToken cancellationToken)
     {
         int offset = 0;
+        bool needsStartPortal = fromStart.Count == 0;
+        bool needsEndPortal = toEnd.Count == 0;
         Dictionary<(long Network, long Node), int> networkNodes = [];
         foreach (GridPortal portal in portals)
         {
@@ -183,7 +202,8 @@ internal sealed class GridSearchGraph : IRoutingGraph
                     networkNodes[key] = current;
                     if (topology.EntranceNodeIds.Contains(topology.NodeIds[index]))
                     {
-                        ConnectPortalEnd(current, cancellationToken);
+                        ConnectPortalEnd(current, needsStartPortal ? fromStart : null,
+                            needsEndPortal ? toEnd : null, cancellationToken);
                     }
                 }
             }
@@ -199,16 +219,28 @@ internal sealed class GridSearchGraph : IRoutingGraph
             }
             if (portal.UnderpassTopology is null)
             {
-                ConnectPortalEnd(firstId, cancellationToken);
-                ConnectPortalEnd(firstId + portal.Coordinates.Length - 1, cancellationToken);
+                ConnectPortalEnd(firstId, needsStartPortal ? fromStart : null,
+                    needsEndPortal ? toEnd : null, cancellationToken);
+                ConnectPortalEnd(firstId + portal.Coordinates.Length - 1, needsStartPortal ? fromStart : null,
+                    needsEndPortal ? toEnd : null, cancellationToken);
             }
             offset += portal.Coordinates.Length;
         }
     }
 
-    private void ConnectPortalEnd(int portalId, CancellationToken cancellationToken)
+    private void ConnectPortalEnd(int portalId, Dictionary<int, double>? fromStart,
+        Dictionary<int, double>? toEnd, CancellationToken cancellationToken)
     {
-        foreach (KeyValuePair<int, double> connection in Connect(GetCoordinate(portalId), cancellationToken))
+        Coordinate portal = GetCoordinate(portalId);
+        if (fromStart is not null)
+        {
+            ConnectEndpointToPortal(_start, portal, portalId, fromStart, cancellationToken);
+        }
+        if (toEnd is not null)
+        {
+            ConnectEndpointToPortal(portal, _destination, portalId, toEnd, cancellationToken);
+        }
+        foreach (KeyValuePair<int, double> connection in Connect(portal, cancellationToken))
         {
             AddPortalConnection(portalId, connection.Key, connection.Value);
             if (!_gridToPortals.TryGetValue(connection.Key, out List<(int Id, double Cost)>? reverse))
@@ -217,6 +249,30 @@ internal sealed class GridSearchGraph : IRoutingGraph
                 _gridToPortals[connection.Key] = reverse;
             }
             reverse.Add((portalId, connection.Value));
+        }
+    }
+
+    /// <summary>Preserves narrow mapped access when an eligible portal and endpoint have no intervening grid node.</summary>
+    private void ConnectEndpointToPortal(Coordinate from, Coordinate to, int portalId,
+        Dictionary<int, double> connections, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        double fromColumn = Math.Round((from.X - _mesh.Minimum.X) / _mesh.CellSizeMetres);
+        double fromRow = Math.Round((from.Y - _mesh.Minimum.Y) / _mesh.CellSizeMetres);
+        double toColumn = Math.Round((to.X - _mesh.Minimum.X) / _mesh.CellSizeMetres);
+        double toRow = Math.Round((to.Y - _mesh.Minimum.Y) / _mesh.CellSizeMetres);
+        if (Math.Abs(fromColumn - toColumn) > ConnectionRadiusCells
+            || Math.Abs(fromRow - toRow) > ConnectionRadiusCells)
+        {
+            return;
+        }
+        if (Cost(from, to) is { } cost)
+        {
+            connections[portalId] = cost;
+        }
+        else
+        {
+            _rejectedConnections++;
         }
     }
 

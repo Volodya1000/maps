@@ -8,7 +8,7 @@
     27.53,
     53.96
   ],
-  "database_sha256": "a9063695af548db6fd11a5e5115124be6ac78e3d82698abf5f339774adaa8d1b",
+  "database_sha256": "58be415316486af542d5790940e2a211155ec47156e3592a850eb62eb4516671",
   "attribution": "© OpenStreetMap contributors · ODbL 1.0",
   "status": "OSM-only preliminary package. DEM and ESA WorldCover absent. Survey required.",
   "sources": [
@@ -34,7 +34,7 @@
     "Lake": 14,
     "Marsh": 1,
     "River": 33,
-    "Road": 903
+    "Road": 901
   },
   "terrain": false,
   "worldcover": false,

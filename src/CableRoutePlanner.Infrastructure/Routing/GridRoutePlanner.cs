@@ -120,7 +120,12 @@ public sealed class GridRoutePlanner(
                 point.X >= mesh.Minimum.X && point.Y >= mesh.Minimum.Y
                 && point.X <= maximum.X && point.Y <= maximum.Y)).ToArray()
         };
-        RouteGeometryBuilder geometryBuilder = new(pathfinder, mesh, evaluator, projection, postProcessor);
+        Guid calculationId = Guid.NewGuid();
+        RoutingLog.SearchMeshLog(logger, calculationId, options.CellSizeMetres, mesh.CellSizeMetres,
+            mesh.Nodes.Length, mesh.Columns, mesh.Rows, bounds.West, bounds.South, bounds.East, bounds.North,
+            mesh.Portals.Count);
+        RouteGeometryBuilder geometryBuilder = new(pathfinder, mesh, evaluator, projection, postProcessor,
+            logger, calculationId);
 
         RouteAlternativeBuilder alternatives = new(evaluator, postProcessor, area.Terrain, options);
         foreach (CostProfile profile in CostProfile.Defaults)
