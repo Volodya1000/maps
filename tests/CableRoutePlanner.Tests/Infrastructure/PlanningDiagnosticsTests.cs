@@ -150,7 +150,12 @@ public sealed class PlanningDiagnosticsTests
     {
         public IReadOnlyList<int>? FindPath(IRoutingGraph graph, CancellationToken cancellationToken)
         {
-            GridSearchGraph grid = Assert.IsType<GridSearchGraph>(graph);
+            // This double injects profile-specific grid failures. Other search
+            // graphs remain exhausted so recovery cannot bypass the injected failure.
+            if (graph is not GridSearchGraph grid)
+            {
+                return null;
+            }
             if (failure(grid.Profile) is { } error)
             { throw error; }
             return new AStarGridPathfinder().FindPath(graph, cancellationToken);

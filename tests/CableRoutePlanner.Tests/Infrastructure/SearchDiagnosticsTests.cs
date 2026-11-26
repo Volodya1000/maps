@@ -78,24 +78,36 @@ public sealed class SearchDiagnosticsTests
             [TestData.P(50, 150), TestData.P(300, 150)], TestData.Options, default));
 
         Assert.Equal(expectedReason, error.Reason);
-        Assert.Single(logger.Events, entry => entry.Event.Id == 5);
+        RoutingLogEntry[] meshes = logger.Events.Where(entry => entry.Event.Id == 5).ToArray();
+        Assert.Equal(2, meshes.Length);
+        Assert.Equal([0, 1], meshes.Select(entry => Assert.IsType<int>(entry.Fields["Attempt"])));
+        Guid calculationId = Assert.IsType<Guid>(meshes[0].Fields["CalculationId"]);
+        Assert.All(logger.Events.Where(entry => entry.Event.Id >= 5), entry =>
+            Assert.Equal(calculationId, entry.Fields["CalculationId"]));
+        Assert.All(meshes, entry =>
+            Assert.InRange(Assert.IsType<int>(entry.Fields["NodeCount"]), 1, TestData.Options.MaxNodes));
         RoutingLogEntry[] connections = logger.Events.Where(entry => entry.Event.Id == 6).ToArray();
-        Assert.Equal(3, connections.Length);
+        Assert.Equal(CostProfile.Defaults.Count * meshes.Length, connections.Length);
         Assert.All(connections, entry =>
         {
             Assert.Equal(0, entry.Fields["PortalNodeCount"]);
             Assert.Equal(0, entry.Fields["PortalGridConnections"]);
-            Assert.True(Assert.IsType<int>(entry.Fields["RejectedConnections"]) > 0);
+            Assert.InRange(Assert.IsType<int>(entry.Fields["RejectedConnections"]), 0, int.MaxValue);
             Assert.Equal(blockedEndpoint, Assert.IsType<int>(entry.Fields["StartConnections"]) == 0);
         });
+        Assert.All(connections.Take(CostProfile.Defaults.Count), entry =>
+            Assert.True(Assert.IsType<int>(entry.Fields["RejectedConnections"]) > 0));
+        Assert.All(connections.Skip(CostProfile.Defaults.Count), entry =>
+            Assert.Equal(blockedEndpoint, Assert.IsType<int>(entry.Fields["RejectedConnections"]) > 0));
         RoutingLogEntry[] outcomes = logger.Events.Where(entry => entry.Event.Id == 7).ToArray();
-        Assert.Equal(3, outcomes.Length);
+        Assert.Equal(CostProfile.Defaults.Count * meshes.Length, outcomes.Length);
         Assert.All(outcomes, entry =>
         {
             Assert.Equal(expectedReason, entry.Fields["Reason"]);
             Assert.Equal(blockedEndpoint, Assert.IsType<int>(entry.Fields["ExpandedNodes"]) == 0);
         });
-        Assert.InRange(logger.Events.Count, 1, 12);
+        Assert.InRange(logger.Events.Count, 1, 1 + meshes.Length * (2 + CostProfile.Defaults.Count * 4));
+        Assert.DoesNotContain(logger.Events, entry => entry.Event.Id is 2 or 3);
     }
 
     [Fact]

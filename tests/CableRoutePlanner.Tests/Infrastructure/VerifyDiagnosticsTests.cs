@@ -58,8 +58,12 @@ public sealed class VerifyDiagnosticsTests
         Assert.Contains(events, entry => entry.GetProperty("eventId").GetInt32() == 5);
         Assert.Contains(events, entry => entry.GetProperty("eventId").GetInt32() == 6);
         Assert.Contains(events, entry => entry.GetProperty("eventId").GetInt32() == 7);
+        Assert.Contains(events, entry => entry.GetProperty("eventId").GetInt32() == 8
+            && entry.GetProperty("fields").GetProperty("Attempt").GetInt32() == 0);
         if (blocked)
         {
+            Assert.Contains(events, entry => entry.GetProperty("eventId").GetInt32() == 9
+                && !entry.GetProperty("fields").GetProperty("Found").GetBoolean());
             Assert.Contains(events, entry => entry.GetProperty("eventId").GetInt32() == 7
                 && entry.GetProperty("fields").GetProperty("Reason").GetString() == "NoRouteInSearchArea");
         }

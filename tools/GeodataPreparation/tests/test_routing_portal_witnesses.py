@@ -454,6 +454,50 @@ class PortalRunComparisonTests(unittest.TestCase):
                     [failure["reason"] for failure in comparison["failures"]],
                 )
 
+    def test_ordered_recovery_attempts_use_final_search_bounds(self):
+        result = copy.deepcopy(self.head["results"][0])
+        first = result["diagnostics"]["events"][0]["fields"]
+        first.update(CalculationId="same", Attempt=0)
+        final = first | {"Attempt": 1, "West": 25, "East": 29}
+        result["diagnostics"]["events"].append({"eventId": 5, "fields": final})
+
+        self.assertEqual(witnesses.search_bounds(result), [25, 53, 29, 55])
+
+    def test_malformed_recovery_mesh_sequence_never_supplies_bounds(self):
+        for mutation in (
+            "gap",
+            "reverse",
+            "mixed_id",
+            "missing_attempt",
+            "bool_attempt",
+            "duplicate",
+        ):
+            with self.subTest(mutation=mutation):
+                result = copy.deepcopy(self.head["results"][0])
+                first = result["diagnostics"]["events"][0]["fields"]
+                first.update(CalculationId="same", Attempt=0)
+                final = first | {"Attempt": 1}
+                if mutation == "gap":
+                    final["Attempt"] = 2
+                elif mutation == "reverse":
+                    first["Attempt"], final["Attempt"] = 1, 0
+                elif mutation == "mixed_id":
+                    final["CalculationId"] = "different"
+                elif mutation == "missing_attempt":
+                    del final["Attempt"]
+                elif mutation == "bool_attempt":
+                    final["Attempt"] = True
+                else:
+                    final["Attempt"] = 0
+                result["diagnostics"]["events"].append({"eventId": 5, "fields": final})
+
+                self.assertIsNone(witnesses.search_bounds(result))
+
+    def test_single_legacy_mesh_stays_compatible(self):
+        self.assertEqual(
+            witnesses.search_bounds(self.head["results"][0]), [26, 53, 28, 55]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

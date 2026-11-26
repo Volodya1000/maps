@@ -227,7 +227,7 @@ class RoutingRegressionTests(unittest.TestCase):
                 for case in cases
                 if case["group"] == "frozen"
             ),
-            15,
+            22,
         )
 
     def test_success_retains_raw_output_diagnostics_and_original_options(self):
@@ -665,6 +665,97 @@ class RoutingRegressionTests(unittest.TestCase):
         report["provenanceRevalidated"] = {"unchanged": True}
         self.runner.write_reports(report, self.folder / "final-gate")
         self.assertTrue(report["gatePassed"])
+
+    def test_known_recovered_cases_are_positive_without_changing_frozen_inputs(self):
+        corpus = ROOT / "samples/routing-crossing-mass-v1.json"
+        before = corpus.read_bytes()
+
+        cases = self.runner.load_cases(ROOT, corpus)
+
+        recovered = {
+            "mass-naliboki-bridge-02",
+            "mass-gomel-bridge-01",
+            "mass-gomel-bridge-03",
+            "mass-gomel-bridge-05",
+            "mass-naliboki-multi-06",
+            "mass-smolevichi-no_candidate-11",
+            "mass-pukhovichi-multi-07",
+        }
+        selected = [case for case in cases if case["id"] in recovered]
+        self.assertEqual(len(selected), 7)
+        self.assertTrue(all(case["expected"] == "success" for case in selected))
+        self.assertTrue(
+            all(case.get("knownWitnessCatalogueSha256") for case in selected)
+        )
+        self.assertEqual(corpus.read_bytes(), before)
+
+    def test_mixed_recovery_calculation_ids_fail_raw_result_integrity(self):
+        payload = copy.deepcopy(self.success)
+        payload["diagnostics"]["events"][0]["fields"]["Attempt"] = 0
+        final = copy.deepcopy(payload["diagnostics"]["events"][0])
+        final["fields"].update(Attempt=1, CalculationId="different")
+        payload["diagnostics"]["events"].append(final)
+
+        record = self.invoke(payload)
+
+        self.assertFalse(record["gatePassed"])
+        self.assertEqual(record["failureReason"], "incomplete_diagnostics")
+
+    def test_successful_final_attempt_and_typed_surface_diagnostics_are_complete(self):
+        payload = copy.deepcopy(self.success)
+        events = payload["diagnostics"]["events"]
+        events[0]["fields"]["Attempt"] = 0
+        events[-1]["fields"].update(Reason="NoRouteInSearchArea", DirectRoute=False)
+        final = copy.deepcopy(self.success["diagnostics"]["events"])
+        final[0]["fields"].update(
+            Attempt=1, RequestedCellSizeMetres=5, CellSizeMetres=5
+        )
+        events.extend(final)
+        events.append(
+            {
+                "eventId": 8,
+                "fields": {
+                    "CalculationId": "test",
+                    "Attempt": 1,
+                    "ConnectionRadiusCells": 32,
+                    "SurfaceRecovery": True,
+                },
+            }
+        )
+        events.append(
+            {
+                "eventId": 9,
+                "fields": {
+                    "CalculationId": "test",
+                    "Profile": "test",
+                    "LegIndex": 0,
+                    "NodeCount": 10,
+                    "ExpandedNodes": 3,
+                    "InputVertexCount": 12,
+                    "ResourceLimited": False,
+                    "Found": True,
+                },
+            }
+        )
+
+        self.assertTrue(self.invoke(payload)["gatePassed"])
+        for key, value in (("NodeCount", -1), ("Found", "true")):
+            malformed = copy.deepcopy(payload)
+            malformed["diagnostics"]["events"][-1]["fields"][key] = value
+            self.assertEqual(
+                self.invoke(malformed)["failureReason"], "incomplete_diagnostics"
+            )
+
+    def test_last_mesh_without_a_completed_search_cannot_borrow_previous_outcome(self):
+        payload = copy.deepcopy(self.success)
+        payload["diagnostics"]["events"][0]["fields"]["Attempt"] = 0
+        final = copy.deepcopy(payload["diagnostics"]["events"][0])
+        final["fields"]["Attempt"] = 1
+        payload["diagnostics"]["events"].append(final)
+
+        self.assertEqual(
+            self.invoke(payload)["failureReason"], "incomplete_diagnostics"
+        )
 
 
 if __name__ == "__main__":

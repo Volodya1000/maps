@@ -8,7 +8,7 @@ from contextlib import closing
 from pathlib import Path
 
 from routing_crossing_pilot import audit, project
-from routing_regression import audit_alternative, digest, save_json
+from routing_regression import audit_alternative, digest, save_json, search_meshes
 from shapely import from_wkb
 from shapely.geometry import LineString, Polygon
 
@@ -145,26 +145,12 @@ def investigate(database, corpus, coverage_path):
 
 def search_bounds(result):
     """Read the geographic bounds actually emitted for this head calculation."""
-    diagnostics = result.get("diagnostics")
-    if not isinstance(diagnostics, dict) or diagnostics.get("droppedEvents") != 0:
-        return None
-    events = diagnostics.get("events")
-    if not isinstance(events, list):
-        return None
-    meshes = [
-        event.get("fields")
-        for event in events
-        if isinstance(event, dict) and event.get("eventId") == 5
-    ]
-    if len(meshes) != 1 or not isinstance(meshes[0], dict):
-        return None
-    bounds = [meshes[0].get(key) for key in ("West", "South", "East", "North")]
-    if any(
-        type(value) not in (int, float) or not math.isfinite(value) for value in bounds
-    ):
-        return None
-    west, south, east, north = bounds
-    return bounds if -180 <= west < east <= 180 and -90 <= south < north <= 90 else None
+    meshes = search_meshes(result.get("diagnostics"))
+    return (
+        None
+        if meshes is None
+        else [meshes[-1][key] for key in ("West", "South", "East", "North")]
+    )
 
 
 def compare_run_report(witness_report, head_report):

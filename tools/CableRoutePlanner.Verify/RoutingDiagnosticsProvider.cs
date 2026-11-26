@@ -43,7 +43,7 @@ internal sealed class RoutingDiagnosticsProvider : ILoggerProvider
 
     private void Record<TState>(EventId eventId, TState state)
     {
-        if (eventId.Id is < 1 or > 7 || state is not IEnumerable<KeyValuePair<string, object?>> fields)
+        if (eventId.Id is < 1 or > 9 || state is not IEnumerable<KeyValuePair<string, object?>> fields)
         {
             return;
         }

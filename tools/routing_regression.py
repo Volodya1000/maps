@@ -113,17 +113,29 @@ def data_provenance(data, *, expected_package_key=None):
 
 
 def load_cases(root, corpus):
+    from routing_recovery import load_catalogue
+
     if digest(corpus) != CORPUS_SHA256:
         raise ValueError("Frozen corpus bytes differ from the reviewed 88 scenarios")
     scenarios = json.loads(corpus.read_text(encoding="utf-8"))
     if len(scenarios) != 88 or len({scenario["id"] for scenario in scenarios}) != 88:
         raise ValueError("Expected the 88 distinct frozen scenarios")
+    catalogue = load_catalogue(root, corpus)
+    recovered = {record["id"] for record in catalogue["records"]}
+    catalogue_hash = digest(root / "docs/evidence/routing-recovery/witnesses.json")
     cases = [
         {
             "id": scenario["id"],
             "group": "frozen",
             "scenario": scenario,
-            "expected": "success" if scenario["quality"] == "verified" else "unknown",
+            "expected": "success"
+            if scenario["quality"] == "verified" or scenario["id"] in recovered
+            else "unknown",
+            **(
+                {"knownWitnessCatalogueSha256": catalogue_hash}
+                if scenario["id"] in recovered
+                else {}
+            ),
             "sourceFile": str(corpus.relative_to(root)),
             "sourceFileSha256": digest(corpus),
         }
@@ -461,12 +473,53 @@ def audit_alternative(
     return checks
 
 
+def search_meshes(snapshot):
+    """Validate ordered mesh attempts; retain one legacy mesh without Attempt."""
+    if not isinstance(snapshot, dict) or snapshot.get("droppedEvents") != 0:
+        return None
+    events = snapshot.get("events")
+    if not isinstance(events, list):
+        return None
+    meshes = [
+        event.get("fields")
+        for event in events
+        if isinstance(event, dict) and event.get("eventId") == 5
+    ]
+    if not meshes or any(not isinstance(mesh, dict) for mesh in meshes):
+        return None
+    legacy = len(meshes) == 1 and "Attempt" not in meshes[0]
+    calculation_id = meshes[0].get("CalculationId")
+    for attempt, mesh in enumerate(meshes):
+        if not legacy and (
+            type(mesh.get("Attempt")) is not int
+            or mesh["Attempt"] != attempt
+            or not isinstance(calculation_id, str)
+            or not calculation_id
+            or mesh.get("CalculationId") != calculation_id
+        ):
+            return None
+        bounds = [mesh.get(key) for key in ("West", "South", "East", "North")]
+        if any(
+            type(value) not in (int, float) or not math.isfinite(value)
+            for value in bounds
+        ):
+            return None
+        west, south, east, north = bounds
+        if not (-180 <= west < east <= 180 and -90 <= south < north <= 90):
+            return None
+    return meshes
+
+
 def complete_diagnostics(snapshot, status, no_route_reason=None):
     if not isinstance(snapshot, dict) or snapshot.get("droppedEvents") != 0:
         return False
     events = snapshot.get("events")
     if not isinstance(events, list) or not events:
         return False
+    meshes = search_meshes(snapshot)
+    if meshes is None:
+        return False
+    calculation_id = meshes[0].get("CalculationId")
     required = {
         5: ("NodeCount", "Columns", "Rows", "PortalCount"),
         6: (
@@ -486,6 +539,39 @@ def complete_diagnostics(snapshot, status, no_route_reason=None):
         if not isinstance(event, dict) or not isinstance(event.get("fields"), dict):
             return False
         event_id, fields = event.get("eventId"), event["fields"]
+        if (
+            event_id in (5, 6, 7, 8, 9)
+            and fields.get("CalculationId") != calculation_id
+        ):
+            return False
+        if event_id == 8:
+            if (
+                type(fields.get("Attempt")) is not int
+                or not 0 <= fields["Attempt"] < len(meshes)
+                or type(fields.get("ConnectionRadiusCells")) is not int
+                or fields["ConnectionRadiusCells"] <= 0
+                or type(fields.get("SurfaceRecovery")) is not bool
+            ):
+                return False
+        if event_id == 9:
+            if (
+                any(
+                    type(fields.get(key)) is not int or fields[key] < 0
+                    for key in (
+                        "LegIndex",
+                        "NodeCount",
+                        "ExpandedNodes",
+                        "InputVertexCount",
+                    )
+                )
+                or any(
+                    type(fields.get(key)) is not bool
+                    for key in ("ResourceLimited", "Found")
+                )
+                or not isinstance(fields.get("Profile"), str)
+                or not fields["Profile"]
+            ):
+                return False
         if event_id not in required:
             continue
         if not fields.get("CalculationId") or any(
@@ -494,6 +580,7 @@ def complete_diagnostics(snapshot, status, no_route_reason=None):
         ):
             return False
         if event_id == 5:
+            outcome_matches = False
             numeric = (
                 "CellSizeMetres",
                 "RequestedCellSizeMetres",
@@ -967,6 +1054,12 @@ def code_provenance(root, verify, corpus):
         and (root / name).is_file()
     }
     sources["tools/routing_regression.py"] = digest(Path(__file__))
+    for name in (
+        "tools/routing_recovery.py",
+        "tools/routing_portal_witnesses.py",
+        "docs/evidence/routing-recovery/witnesses.json",
+    ):
+        sources[name] = digest(root / name)
     return {
         "appCommit": git("rev-parse", "HEAD"),
         "sourceDirty": bool(git("status", "--porcelain")),
@@ -976,6 +1069,9 @@ def code_provenance(root, verify, corpus):
         "sourceFiles": sources,
         **binary_provenance(verify),
         "corpusSha256": digest(corpus),
+        "knownWitnessCatalogueSha256": digest(
+            root / "docs/evidence/routing-recovery/witnesses.json"
+        ),
         "effectiveDefaultUnderpasses": underpass_default(
             root / "src/CableRoutePlanner.Application/RoutingOptions.cs"
         ),
@@ -1091,7 +1187,17 @@ def run_regression(args):
             "countryLock": lock,
             "coverage": ROOT / "data/belarus-coverage.json",
             "historicalBaseline": baseline_path,
+            "knownWitnessCatalogue": ROOT
+            / "docs/evidence/routing-recovery/witnesses.json",
         }
+        from routing_recovery import load_catalogue
+
+        input_paths.update(
+            {
+                f"knownWitnessFixture/{record['id']}": ROOT / record["fixture"]
+                for record in load_catalogue(ROOT, args.corpus)["records"]
+            }
+        )
         if (args.data / "package.json").exists():
             input_paths["packageReceipt"] = args.data / "package.json"
         input_paths.update(

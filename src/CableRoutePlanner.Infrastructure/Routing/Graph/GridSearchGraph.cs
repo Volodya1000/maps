@@ -14,7 +14,7 @@ namespace CableRoutePlanner.Infrastructure.Routing;
 /// </remarks>
 internal sealed class GridSearchGraph : IRoutingGraph
 {
-    private const int ConnectionRadiusCells = 8;
+    internal const int ConnectionRadiusCells = 8;
     private const int MaximumDirectConnectionCells = 2;
     private readonly GridMesh _mesh;
     private readonly TerrainEvaluator _evaluator;
@@ -165,7 +165,7 @@ internal sealed class GridSearchGraph : IRoutingGraph
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 int id = y * _mesh.Columns + x;
-                if (Cost(point, _mesh.Nodes[id]) is { } cost)
+                if (_edges.GetConnector(point, id)?.Cost(Profile) is { } cost)
                 { connections[id] = cost; }
                 else
                 { _rejectedConnections++; }
