@@ -123,6 +123,23 @@ public sealed class BundledGeodataInstallerTests
         await AssertPackageAsync(installed.DirectoryPath, expected, oldManifest);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("abc")]
+    [InlineData("gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")]
+    public async Task InvalidManifestChecksumPreservesReadablePackage(string? checksum)
+    {
+        using SqliteGeodataFixture installed = new();
+        using SqliteGeodataFixture source = NewPackage();
+        byte[] expected = ReadDatabase(installed);
+        string oldManifest = ReadManifest(installed);
+        string manifest = JsonSerializer.Serialize(new { database_sha256 = checksum });
+        await Assert.ThrowsAsync<InvalidDataException>(() => InstallBytesAsync(
+            installed.DirectoryPath, ReadDatabase(source), manifest));
+        await AssertPackageAsync(installed.DirectoryPath, expected, oldManifest);
+        AssertNoTemporaryFiles(installed.DirectoryPath);
+    }
+
     [Fact]
     public async Task CancellationDuringExtractionPreservesReadablePackage()
     {

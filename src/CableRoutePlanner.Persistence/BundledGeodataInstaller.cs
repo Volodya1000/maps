@@ -15,7 +15,7 @@ public static class BundledGeodataInstaller
         string? expectedHash = document.RootElement.GetProperty("database_sha256").GetString();
         if (expectedHash is null || expectedHash.Length != 64 || !expectedHash.All(Uri.IsHexDigit))
         {
-            throw new InvalidDataException("manifest.database_sha256 must contain 64 hexadecimal digits.");
+            throw new InvalidDataException($"manifest.database_sha256 is '{expectedHash ?? "null"}'; expected 64 hexadecimal digits.");
         }
         string localManifest = Path.Combine(directory, "manifest.json");
         string database = Path.Combine(directory, "geodata.sqlite");
