@@ -57,8 +57,20 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
+        if: runner.os != 'Windows'
         with:
           global-json-file: global.json
+      # Keep the pinned Windows SDK separate from preinstalled multi-SDK roots.
+      # SDK 8 format CLI discovery can fail there before running any diagnostics.
+      - uses: actions/setup-dotnet@v6
+        if: runner.os == 'Windows'
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
+        with:
+          global-json-file: global.json
+      - name: Record selected Windows SDK host
+        if: runner.os == 'Windows'
+        run: dotnet --info
       - uses: astral-sh/setup-uv@v10.3.2
         with:
           version: '0.13.9'

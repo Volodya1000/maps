@@ -113,3 +113,20 @@ class AndroidDistributionTests(unittest.TestCase):
             "inputs.startup_benchmark",
             country["jobs"]["android"]["env"]["ANDROID_FULL_STARTUP_BENCHMARK"],
         )
+
+    def test_windows_desktop_uses_isolated_pinned_sdk_for_cli_discovery(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+        setups = [
+            step
+            for step in workflow["jobs"]["tests"]["steps"]
+            if step.get("uses", "").startswith("actions/setup-dotnet@")
+        ]
+        windows = [
+            step for step in setups if step.get("if") == "runner.os == 'Windows'"
+        ]
+        self.assertEqual(1, len(windows))
+        self.assertIn("runner.temp", windows[0]["env"]["DOTNET_INSTALL_DIR"])
+        self.assertEqual("global.json", windows[0]["with"]["global-json-file"])
+        self.assertTrue(
+            any(step.get("if") == "runner.os != 'Windows'" for step in setups)
+        )
