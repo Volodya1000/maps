@@ -95,6 +95,7 @@ public sealed class LocationUiTests
 
         Button locationButton = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "LocationButton");
         Assert.True(locationButton.IsEffectivelyVisible);
+        Assert.True(view.FindControl<TabItem>("TraversalTab")!.IsVisible);
         Assert.True(view.FindControl<Control>("TrackingPanel")!.IsEffectivelyVisible);
         Button start = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "StartTraversalButton");
         Button pause = view.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "PauseTraversalButton");
@@ -217,6 +218,10 @@ public sealed class LocationUiTests
             new RouteMetrics(100, 100, 0, 0, 0, 0, 100, null));
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
+        Assert.DoesNotContain(view.GetVisualDescendants().OfType<TabItem>(),
+            tab => Equals(tab.Header, "Прокладка") && tab.IsVisible);
+        Assert.DoesNotContain(view.GetVisualDescendants().OfType<Button>(),
+            button => Equals(button.Content, "К прокладке →") && button.IsEffectivelyVisible);
         Assert.False(view.FindControl<Control>("TrackingPanel")!.IsEffectivelyVisible);
         window.Close();
     }

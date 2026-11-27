@@ -123,7 +123,7 @@
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
-                    <TabItem Header="Прокладка">
+                    <TabItem x:Name="TraversalTab" Header="Прокладка" IsVisible="{Binding IsLocationSupported}">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="12">
                                 <Panel IsVisible="{Binding ShowTrackingPanel}">

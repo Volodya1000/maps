@@ -7,7 +7,7 @@ public sealed record RouteElevationPresentation
     private RouteElevationPresentation(RouteAlternative route)
     {
         RouteId = route.Id;
-        RouteName = route.Name;
+        RouteName = $"Вариант «{route.Name}»";
         Profile = route.ElevationProfile;
         if (Profile is null)
         {
@@ -31,14 +31,14 @@ public sealed record RouteElevationPresentation
             AvailabilityText = Profile.HasCompleteCoverage
                 ? "" : "Частичное покрытие. Разрывы означают отсутствие высот.";
             string climb = Profile is { AscentMetres: { } ascent, DescentMetres: { } descent }
-                ? $"Подъём {ascent:N0} м · спуск {descent:N0} м"
+                ? $"Суммарный подъём {ascent:N0} м · Спуск {descent:N0} м"
                 : "Подъём и спуск недоступны";
             SummaryText = $"{climb}\nМин. {minimum:N0} м · макс. {maximum:N0} м";
         }
 
         if (Profile.Source is { } source)
         {
-            SourceText = $"{source.Name} {source.Version} · {source.VerticalDatum} · {source.ResolutionMetres:N0} м";
+            SourceText = $"Шаг измерения ≈ {source.ResolutionMetres:N0} м";
             Attribution = source.Attribution;
         }
     }
@@ -78,7 +78,7 @@ public sealed record RouteElevationPresentation
 
             string elevation = sample.ElevationMetres is { } height ? $"{height:N1} м" : "—";
             string grade = sample.GradePercent is { } percent ? $"{percent:+0.0;-0.0;0.0} %" : "—";
-            return $"{sample.DistanceMetres:N0} м · Высота {elevation} · Уклон {grade}";
+            return $"{sample.DistanceMetres:N0} м от старта · Высота {elevation} · Уклон {grade}";
         }
     }
 

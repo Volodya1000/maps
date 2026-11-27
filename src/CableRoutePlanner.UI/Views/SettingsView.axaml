@@ -78,11 +78,6 @@
             <TextBlock
                 Text="{Binding Status}"
                 TextWrapping="Wrap" />
-            <TextBlock
-                x:Name="AttributionCredit"
-                Classes="view-hint"
-                Text="© OpenStreetMap contributors · ODbL 1.0"
-                TextWrapping="Wrap" />
         </StackPanel>
     </ScrollViewer>
 </rx:ReactiveUserControl>

@@ -11,7 +11,16 @@
     <Border Classes="route-elevation-card">
         <StackPanel Spacing="5">
             <TextBlock Classes="section-heading" Text="Профиль высот" />
-            <TextBlock Classes="elevation-route-name" Text="{Binding Elevation.RouteName}" TextWrapping="Wrap" />
+            <WrapPanel>
+                <TextBlock Classes="elevation-route-name" Text="{Binding Elevation.RouteName}" TextWrapping="Wrap" />
+                <ToggleSwitch
+                    x:Name="ShowGradeToggle"
+                    Classes="elevation-grade-toggle"
+                    AutomationProperties.Name="Показать уклон"
+                    Content="Показать уклон"
+                    IsChecked="{Binding #ProfileChart.ShowGrade, Mode=TwoWay}"
+                    IsVisible="{Binding Elevation.HasChart}" />
+            </WrapPanel>
             <TextBlock
                 Classes="view-hint"
                 IsVisible="{Binding Elevation.HasAvailabilityNotice}"
@@ -20,7 +29,11 @@
             <StackPanel IsVisible="{Binding Elevation.HasChart}" Spacing="4">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Classes="elevation-axis-title height" Text="Высота, м" />
-                    <TextBlock Grid.Column="1" Classes="elevation-axis-title grade" Text="Уклон, %" />
+                    <TextBlock
+                        Grid.Column="1"
+                        Classes="elevation-axis-title grade"
+                        IsVisible="{Binding #ProfileChart.ShowGrade}"
+                        Text="Уклон, %" />
                 </Grid>
                 <controls:RouteElevationChart
                     x:Name="ProfileChart"

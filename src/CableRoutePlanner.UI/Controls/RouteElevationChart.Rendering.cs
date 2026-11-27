@@ -33,7 +33,10 @@ public sealed partial class RouteElevationChart
                 context.DrawGeometry(ElevationFill, null, area);
             }
             DrawSeries(context, plot.Elevation, ElevationBrush);
-            DrawSeries(context, plot.Grade, GradeBrush);
+            if (ShowGrade)
+            {
+                DrawSeries(context, plot.Grade, GradeBrush);
+            }
             if (Presentation?.CursorSample is { } sample)
             {
                 DrawCursor(context, plot, sample);
@@ -49,9 +52,12 @@ public sealed partial class RouteElevationChart
             double y = plot.Area.Top + (plot.Area.Height * i / (plot.ElevationTicks.Count - 1));
             context.DrawLine(grid, new Point(plot.Area.Left, y), new Point(plot.Area.Right, y));
             FormattedText elevation = plot.ElevationTicks[i];
-            FormattedText grade = plot.GradeTicks[i];
             context.DrawText(elevation, new Point(plot.Area.Left - AxisPadding - elevation.Width, y - elevation.Height / 2));
-            context.DrawText(grade, new Point(plot.Area.Right + AxisPadding, y - grade.Height / 2));
+            if (ShowGrade)
+            {
+                FormattedText grade = plot.GradeTicks[i];
+                context.DrawText(grade, new Point(plot.Area.Right + AxisPadding, y - grade.Height / 2));
+            }
         }
 
         double yLabel = plot.Area.Bottom + AxisPadding;
@@ -123,7 +129,7 @@ public sealed partial class RouteElevationChart
             ? $"{profile.HorizontalLengthMetres / 1000:N2} км" : $"{profile.HorizontalLengthMetres:N0} м", AxisBrush);
         double top = elevationTicks[0].Height / 2 + 1;
         double left = elevationTicks.Max(tick => tick.Width) + (AxisPadding * 2);
-        double right = gradeTicks.Max(tick => tick.Width) + (AxisPadding * 2);
+        double right = ShowGrade ? gradeTicks.Max(tick => tick.Width) + (AxisPadding * 2) : AxisPadding;
         double width = size.Width - left - right;
         double height = size.Height - top - (start.Height + AxisPadding);
         if (width <= 0 || height <= 0)

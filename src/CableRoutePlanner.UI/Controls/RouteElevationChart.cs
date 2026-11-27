@@ -14,6 +14,9 @@ public sealed partial class RouteElevationChart : Control
     public static readonly StyledProperty<RouteElevationPresentation?> PresentationProperty =
         AvaloniaProperty.Register<RouteElevationChart, RouteElevationPresentation?>(nameof(Presentation));
 
+    public static readonly StyledProperty<bool> ShowGradeProperty =
+        AvaloniaProperty.Register<RouteElevationChart, bool>(nameof(ShowGrade));
+
     public static readonly StyledProperty<IBrush> ElevationBrushProperty =
         AvaloniaProperty.Register<RouteElevationChart, IBrush>(nameof(ElevationBrush), Brushes.SteelBlue);
 
@@ -38,7 +41,7 @@ public sealed partial class RouteElevationChart : Control
 
     static RouteElevationChart()
     {
-        AffectsRender<RouteElevationChart>(PresentationProperty, ElevationBrushProperty, ElevationFillProperty,
+        AffectsRender<RouteElevationChart>(PresentationProperty, ShowGradeProperty, ElevationBrushProperty, ElevationFillProperty,
             GradeBrushProperty, AxisBrushProperty, GridBrushProperty, CursorBrushProperty);
     }
 
@@ -46,6 +49,12 @@ public sealed partial class RouteElevationChart : Control
     {
         get => GetValue(PresentationProperty);
         set => SetValue(PresentationProperty, value);
+    }
+
+    public bool ShowGrade
+    {
+        get => GetValue(ShowGradeProperty);
+        set => SetValue(ShowGradeProperty, value);
     }
 
     public IBrush ElevationBrush
@@ -99,7 +108,7 @@ public sealed partial class RouteElevationChart : Control
             }
         }
         else if (change.Property == ElevationBrushProperty || change.Property == GradeBrushProperty
-            || change.Property == AxisBrushProperty)
+            || change.Property == AxisBrushProperty || change.Property == ShowGradeProperty)
         {
             _plot = null;
         }
