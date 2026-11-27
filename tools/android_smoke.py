@@ -172,6 +172,12 @@ def main():
         report["error"] = str(error)
         if isinstance(error, subprocess.CalledProcessError):
             report["adb_failure"] = dict(command=error.cmd, returncode=error.returncode)
+        try:
+            (args.output / "failure.png").write_bytes(
+                adb("exec-out", "screencap", "-p", binary=True)
+            )
+        except (OSError, subprocess.SubprocessError) as capture_error:
+            report["capture_error"] = str(capture_error)
         raise
     finally:
         try:

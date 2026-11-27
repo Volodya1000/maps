@@ -106,11 +106,25 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
     }
     private async Task PrepareDataAsync(string directory, IProgress<string> progress, CancellationToken ct)
     {
-        await PrepareElevationAsync(directory, progress, ct);
-        Stream sourceManifest = Assets!.Open("Data/manifest.json");
-        using StreamReader reader = new(sourceManifest);
-        string manifest = await reader.ReadToEndAsync(ct);
-        await BundledGeodataInstaller.InstallAsync(directory, manifest,
-            Assets.List("Data")!, name => Assets.Open("Data/" + name), progress, ct);
+        Progress<string> observedProgress = new(message =>
+        {
+            Console.WriteLine($"CRP_OFFLINE_MAP_PREPARATION {message}");
+            progress.Report(message);
+        });
+        try
+        {
+            await PrepareElevationAsync(directory, observedProgress, ct);
+            Stream sourceManifest = Assets!.Open("Data/manifest.json");
+            using StreamReader reader = new(sourceManifest);
+            string manifest = await reader.ReadToEndAsync(ct);
+            await BundledGeodataInstaller.InstallAsync(directory, manifest,
+                Assets.List("Data")!, name => Assets.Open("Data/" + name), observedProgress, ct);
+            Console.WriteLine($"CRP_OFFLINE_MAP_PREPARED directory={directory}");
+        }
+        catch (Exception error)
+        {
+            Console.WriteLine($"CRP_OFFLINE_MAP_PREPARATION_FAILED {error}");
+            throw;
+        }
     }
 }

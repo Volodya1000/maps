@@ -24,7 +24,7 @@ public static class BundledGeodataInstaller
         {
             if (File.Exists(database) && File.Exists(localManifest)
                 && await File.ReadAllTextAsync(localManifest, cancellationToken).ConfigureAwait(false) == manifest
-                && await IsValidDatabaseAsync(database, expectedHash, cancellationToken).ConfigureAwait(false))
+                && await IsValidDatabaseAsync(database, expectedHash, progress, cancellationToken).ConfigureAwait(false))
             {
                 return;
             }
@@ -39,7 +39,7 @@ public static class BundledGeodataInstaller
             try
             {
                 await ExtractAsync(candidate, assetNames, openAsset, progress, cancellationToken).ConfigureAwait(false);
-                await ValidateDatabaseAsync(candidate, expectedHash, cancellationToken).ConfigureAwait(false);
+                await ValidateDatabaseAsync(candidate, expectedHash, progress, cancellationToken).ConfigureAwait(false);
                 await File.WriteAllTextAsync(candidateManifest, manifest, cancellationToken).ConfigureAwait(false);
                 progress.Report("Публикация карты…");
                 cancellationToken.ThrowIfCancellationRequested();
@@ -141,12 +141,12 @@ public static class BundledGeodataInstaller
         }
     }
 
-    private static async Task<bool> IsValidDatabaseAsync(string database, string expectedHash,
+    private static async Task<bool> IsValidDatabaseAsync(string database, string expectedHash, IProgress<string> progress,
         CancellationToken cancellationToken)
     {
         try
         {
-            await ValidateDatabaseAsync(database, expectedHash, cancellationToken).ConfigureAwait(false);
+            await ValidateDatabaseAsync(database, expectedHash, progress, cancellationToken).ConfigureAwait(false);
             return true;
         }
         catch (InvalidDataException)
@@ -155,9 +155,10 @@ public static class BundledGeodataInstaller
         }
     }
 
-    private static async Task ValidateDatabaseAsync(string database, string expectedHash,
+    private static async Task ValidateDatabaseAsync(string database, string expectedHash, IProgress<string> progress,
         CancellationToken cancellationToken)
     {
+        progress.Report("Проверка SHA-256 карты…");
         await using (FileStream stream = File.OpenRead(database))
         {
             using SHA256 hash = SHA256.Create();
@@ -169,6 +170,7 @@ public static class BundledGeodataInstaller
         }
         try
         {
+            progress.Report("Проверка целостности SQLite карты…");
             using SqliteConnection connection = new(new SqliteConnectionStringBuilder
             {
                 DataSource = database,

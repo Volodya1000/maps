@@ -156,3 +156,30 @@ class AndroidSmokeTests(unittest.TestCase):
                     self.run_smoke()
                 self.assertFalse(self.report()["success"])
                 self.assertEqual([], self.report()["launches"])
+
+    def test_failed_readiness_preserves_screen_and_original_failure(self):
+        self.ready = False
+        with self.assertRaises(RuntimeError):
+            self.run_smoke()
+        self.assertEqual(
+            (self.root / "output/failure.png").read_bytes(), b"synthetic screenshot"
+        )
+        self.assertFalse(self.report()["success"])
+        self.assertEqual([], self.report()["launches"])
+
+    def test_failure_capture_error_does_not_replace_readiness_failure(self):
+        self.ready = False
+        original_adb = self.adb
+
+        def fail_capture(command, **kwargs):
+            if "screencap" in command:
+                raise subprocess.TimeoutExpired(command, 90)
+            return original_adb(command, **kwargs)
+
+        self.adb = fail_capture
+        with self.assertRaises(RuntimeError):
+            self.run_smoke()
+        report = self.report()
+        self.assertFalse(report["success"])
+        self.assertEqual([], report["launches"])
+        self.assertIn("capture_error", report)
