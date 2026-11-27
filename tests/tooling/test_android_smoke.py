@@ -183,3 +183,29 @@ class AndroidSmokeTests(unittest.TestCase):
         self.assertFalse(report["success"])
         self.assertEqual([], report["launches"])
         self.assertIn("capture_error", report)
+
+    def test_failed_capture_does_not_overwrite_original_adb_failure_evidence(self):
+        self.logcat_returncode = 137
+        original_adb = self.adb
+
+        def fail_capture(command, **kwargs):
+            if "screencap" in command:
+                return subprocess.CompletedProcess(
+                    command, 255, stdout=b"", stderr=b"device offline"
+                )
+            return original_adb(command, **kwargs)
+
+        self.adb = fail_capture
+        with self.assertRaises(subprocess.CalledProcessError) as raised:
+            self.run_smoke()
+        self.assertEqual(raised.exception.returncode, 137)
+        self.assertIn(
+            "CRP_OFFLINE_MAP_READY",
+            (self.root / "output/adb-failure.stdout").read_text(),
+        )
+        self.assertEqual(
+            (self.root / "output/capture-failure.stderr").read_bytes(),
+            b"device offline",
+        )
+        self.assertEqual(self.report()["adb_failure"]["returncode"], 137)
+        self.assertFalse(self.report()["success"])

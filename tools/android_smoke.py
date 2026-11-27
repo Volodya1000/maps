@@ -45,7 +45,9 @@ def main():
     if not apk.is_file():
         parser.error("APK does not exist")
 
-    def adb(*command, check=True, binary=False, timeout=90):
+    def adb(
+        *command, check=True, binary=False, timeout=90, failure_prefix="adb-failure"
+    ):
         result = subprocess.run(
             [args.adb, *command],
             capture_output=True,
@@ -53,10 +55,10 @@ def main():
             timeout=timeout,
         )
         if check and result.returncode:
-            (args.output / "adb-failure.stdout").write_bytes(
+            (args.output / f"{failure_prefix}.stdout").write_bytes(
                 result.stdout if binary else result.stdout.encode("utf-8")
             )
-            (args.output / "adb-failure.stderr").write_bytes(
+            (args.output / f"{failure_prefix}.stderr").write_bytes(
                 result.stderr if binary else result.stderr.encode("utf-8")
             )
             raise subprocess.CalledProcessError(
@@ -174,7 +176,13 @@ def main():
             report["adb_failure"] = dict(command=error.cmd, returncode=error.returncode)
         try:
             (args.output / "failure.png").write_bytes(
-                adb("exec-out", "screencap", "-p", binary=True)
+                adb(
+                    "exec-out",
+                    "screencap",
+                    "-p",
+                    binary=True,
+                    failure_prefix="capture-failure",
+                )
             )
         except (OSError, subprocess.SubprocessError) as capture_error:
             report["capture_error"] = str(capture_error)
