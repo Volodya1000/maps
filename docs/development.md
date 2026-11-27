@@ -15,7 +15,7 @@ Pre-commit проверяет changelog-фрагмент, синтаксис Pyt
 
 CI вызывает тот же `tools/check.py`, а не копию его команд. Отсутствие инструмента завершает проверку ошибкой. Для первичной подготовки Playwright в Linux можно установить системные зависимости командой `npx --package playwright@1.55.1 playwright install-deps chromium`.
 
-В desktop CI SDK из `global.json` устанавливается в `${{ runner.temp }}/.dotnet` через `DOTNET_INSTALL_DIR`. Изоляция от общесистемной установки runner применяется из-за повторявшегося сбоя обнаружения CLI в `dotnet format` ([dotnet/sdk#44957](https://github.com/dotnet/sdk/issues/44957)); команды форматирования, сборки, тестов и quality gates остаются теми же.
+В Windows desktop CI SDK из `global.json` устанавливается в `${{ runner.temp }}/dotnet` через `DOTNET_INSTALL_DIR`. Изоляция от общесистемной установки runner применяется из-за повторявшегося сбоя обнаружения CLI в `dotnet format` ([dotnet/sdk#44957](https://github.com/dotnet/sdk/issues/44957)); команды форматирования, сборки, тестов и quality gates остаются теми же.
 
 ```sh
 uv run --locked python tools/check.py lint
@@ -30,7 +30,7 @@ uv run --locked pre-commit run --all-files --hook-stage pre-push
 
 `lint` дополнительно проверяет локальные AXAML includes, запускает штатный `dotnet sln list`, actionlint, расширенный Ruff и `ruff format --check`. Полная XML/project validation выполняется SDK restore/build в `desktop`; CSS проверяется Stylelint в существующем `terrain`-проходе. Надёжный кроссплатформенный форматтер AXAML с подтверждённой совместимостью Avalonia 11 не подключён: форматирование отдельно не проверяется, а компиляция Avalonia и локальные include-инварианты остаются проверками разметки. Для actionlint используется зафиксированный pre-commit hook `rhysd/actionlint` в manual-stage, который запускается ровно один раз из `tools/check.py lint`; требуется Go 1.23.4+ (официальный архив с go.dev/dl на рабочих станциях, `actions/setup-go` в CI).
 
-`desktop` выполняет restore, `dotnet format` для whitespace/style/analyzers, Release build и единственный запуск xUnit-тестов с Coverlet. Покрытие собирается в Cobertura, проверяется `tools/check_coverage.py`, а HTML создаётся ReportGenerator в `artifacts/coverage-report`. Минимумы — 85% строк и 80% ветвей; проценты считаются по суммарному числу покрытых и всех строк/ветвей, а не как среднее проектов. В статистику входят Domain, Application, ViewModels, Infrastructure, Persistence и UI. Desktop/Android entry points и тестовая сборка не входят; Android анализируется отдельной Android-проверкой.
+`desktop` выполняет restore, единый `dotnet format` для whitespace/style/analyzers, Release build и единственный запуск xUnit-тестов с Coverlet. Покрытие собирается в Cobertura, проверяется `tools/check_coverage.py`, а HTML создаётся ReportGenerator в `artifacts/coverage-report`. Минимумы — 85% строк и 80% ветвей; проценты считаются по суммарному числу покрытых и всех строк/ветвей, а не как среднее проектов. В статистику входят Domain, Application, ViewModels, Infrastructure, Persistence и UI. Desktop/Android entry points и тестовая сборка не входят; Android анализируется отдельной Android-проверкой.
 
 [Ресурсы и стили Avalonia](ui-styling.md) описывают палитру, подключение StyleInclude и раздельные обязанности разметки и оформления.
 
@@ -47,5 +47,26 @@ Windows publish записывает RID-зависимости в отдель�
 Не используйте `--no-verify` для обычной отправки. Не заявляйте успешную проверку Android/Windows только на основании сборки на другой ОС. Локальная проверка убирает воспроизводимые ошибки перед Actions, но не отменяет независимую проверку целевых платформ.
 
 Полная карта в CI получается из версионированного Release; кеш служит ускорением. [Источники, SHA-256, обновление и восстановление геоданных](ci-geodata.md).
+
+
+## Контракты Python/C#
+
+`lint` обязательно запускает locked mypy в строгом режиме для типизированной
+границы: JSON `routingOptions`, классификация OSM и сгенерированные имена terrain.
+Список модулей находится в `[tool.mypy]` корневого `pyproject.toml` и расширяется
+поэтапно. Domain `TerrainKind` остаётся источником истины; Python Literal
+генерируется из него (`uv run --locked python tools/generate_terrain_contract.py`),
+а `--check` внутри lint выявляет переименования и устаревшую генерацию.
+
+`data` требует SDK из `global.json`: контрактные тесты создают маленький пакет
+реальным Python pipeline, читают его действующим C# reader и распаковывают
+Python-created Android chunks тем же компонентом, который использует Android.
+Проверяются SQLite v3, связи переходов и совместимость v1/v2. Это не заменяет
+установку APK в эмуляторе и проверку физического устройства.
+
+Coverage gate выбирает Cobertura по вложению единственного TRX текущего
+UUID-прогона; подтверждённая идентичная Windows-копия того же вложения допускается.
+Независимые, отличающиеся или неоднозначные отчёты отклоняются; выбор по `mtime`
+запрещён. Gate и ReportGenerator используют один подтверждённый отчёт.
 
 [Измерения производительности CI и opt-in эксперименты](ci-performance.md) описывают критический путь, методику gzip/профилирования и метки для быстрой итерации.

@@ -156,3 +156,56 @@ class AndroidSmokeTests(unittest.TestCase):
                     self.run_smoke()
                 self.assertFalse(self.report()["success"])
                 self.assertEqual([], self.report()["launches"])
+
+    def test_failed_readiness_preserves_screen_and_original_failure(self):
+        self.ready = False
+        with self.assertRaises(RuntimeError):
+            self.run_smoke()
+        self.assertEqual(
+            (self.root / "output/failure.png").read_bytes(), b"synthetic screenshot"
+        )
+        self.assertFalse(self.report()["success"])
+        self.assertEqual([], self.report()["launches"])
+
+    def test_failure_capture_error_does_not_replace_readiness_failure(self):
+        self.ready = False
+        original_adb = self.adb
+
+        def fail_capture(command, **kwargs):
+            if "screencap" in command:
+                raise subprocess.TimeoutExpired(command, 90)
+            return original_adb(command, **kwargs)
+
+        self.adb = fail_capture
+        with self.assertRaises(RuntimeError):
+            self.run_smoke()
+        report = self.report()
+        self.assertFalse(report["success"])
+        self.assertEqual([], report["launches"])
+        self.assertIn("capture_error", report)
+
+    def test_failed_capture_does_not_overwrite_original_adb_failure_evidence(self):
+        self.logcat_returncode = 137
+        original_adb = self.adb
+
+        def fail_capture(command, **kwargs):
+            if "screencap" in command:
+                return subprocess.CompletedProcess(
+                    command, 255, stdout=b"", stderr=b"device offline"
+                )
+            return original_adb(command, **kwargs)
+
+        self.adb = fail_capture
+        with self.assertRaises(subprocess.CalledProcessError) as raised:
+            self.run_smoke()
+        self.assertEqual(raised.exception.returncode, 137)
+        self.assertIn(
+            "CRP_OFFLINE_MAP_READY",
+            (self.root / "output/adb-failure.stdout").read_text(),
+        )
+        self.assertEqual(
+            (self.root / "output/capture-failure.stderr").read_bytes(),
+            b"device offline",
+        )
+        self.assertEqual(self.report()["adb_failure"]["returncode"], 137)
+        self.assertFalse(self.report()["success"])

@@ -3,6 +3,7 @@ name = "cableroute-development"
 version = "0.1.0"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "mypy==1.18.2",
   "pre-commit==4.3.0",
   "ruff==0.13.3",
   "towncrier==24.8.0",
@@ -21,3 +22,15 @@ select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
 
 [tool.ruff.format]
 line-ending = "lf"
+
+# Expand this required strict surface as more cross-language models are typed.
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = [
+  "tools/routing_contracts.py",
+  "tools/GeodataPreparation/feature_classification.py",
+  "tools/GeodataPreparation/terrain_kinds.py",
+]
+mypy_path = ["."]
+explicit_package_bases = true

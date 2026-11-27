@@ -97,7 +97,9 @@ class CountrySnapshotTests(unittest.TestCase):
                 capture_output=True,
                 timeout=60,
             )
-            manifest = json.loads((output / "manifest.json").read_text())
+            manifest = json.loads(
+                (output / "manifest.json").read_text(encoding="utf-8")
+            )
             self.assertEqual(digest, manifest["sources"][0]["sha256"])
             self.assertEqual({"Settlement": 1}, manifest["feature_counts"])
             database = (output / "geodata.sqlite").read_bytes()

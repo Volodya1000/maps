@@ -9,7 +9,12 @@ import shutil
 import zipfile
 from pathlib import Path, PurePosixPath
 
-from tools.install_belarus import LICENSE_FILES
+LICENSE_FILES = (
+    "NOTICE.txt",
+    "licenses/NOTICE.txt",
+    "licenses/ODbL-1.0.html",
+    "licenses/DbCL-1.0.html",
+)
 
 
 def digest(path):

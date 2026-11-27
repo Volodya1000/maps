@@ -9,7 +9,7 @@ from collections import Counter
 from pathlib import Path
 
 from routing_crossing_pilot import (
-    OPTIONS,
+    FROZEN_OPTIONS,
     audit,
     distance,
     feature,
@@ -199,7 +199,7 @@ def pick_cases(connection, area, bounds, existing, rng, coverage, database_hash)
                     },
                     "candidateIds": [candidate["id"]] if candidate else [],
                     "directRoadIds": sorted(set(road_hits)),
-                    "routingOptions": OPTIONS,
+                    "routingOptions": FROZEN_OPTIONS,
                     "seed": 20261113,
                     "databaseSha256": database_hash,
                 }
@@ -219,8 +219,10 @@ def pick_cases(connection, area, bounds, existing, rng, coverage, database_hash)
 
 def freeze(data, output):
     pilot = generate(data, output)
-    manifest = json.loads((data / "manifest.json").read_text())
-    coverage = Polygon(json.loads((ROOT / "data/belarus-coverage.json").read_text()))
+    manifest = json.loads((data / "manifest.json").read_text(encoding="utf-8"))
+    coverage = Polygon(
+        json.loads((ROOT / "data/belarus-coverage.json").read_text(encoding="utf-8"))
+    )
     connection = sqlite3.connect(f"file:{data / 'geodata.sqlite'}?mode=ro", uri=True)
     rng = random.Random(20261113)
     rejected = {}
@@ -250,6 +252,16 @@ def freeze(data, output):
                                 "featureId": item["id"],
                                 "sourceId": item["source_id"],
                                 "approvalId": item["approval_id"],
+                                **(
+                                    {"underpassRoadIds": item["underpass_road_ids"]}
+                                    if "underpass_road_ids" in item
+                                    else {}
+                                ),
+                                **(
+                                    {"underpassTopology": item["underpass_topology"]}
+                                    if "underpass_topology" in item
+                                    else {}
+                                ),
                                 "target": item["id"] == case["targetRoad"]["featureId"],
                             },
                         )
@@ -288,6 +300,12 @@ def main():
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--verify-dll", type=Path)
+    parser.add_argument(
+        "--routing-mode",
+        choices=("historical", "current"),
+        default="current",
+        help="Execution options only; never rewrites the frozen mass corpus.",
+    )
     args = parser.parse_args()
     if args.mode == "freeze":
         freeze(args.data, args.output)
@@ -296,7 +314,7 @@ def main():
             args.output / "scenarios.json"
         ).read_bytes():
             raise ValueError("baseline requires frozen mass corpus")
-        run(args.data, args.verify_dll, args.output)
+        run(args.data, args.verify_dll, args.output, routing_mode=args.routing_mode)
 
 
 if __name__ == "__main__":

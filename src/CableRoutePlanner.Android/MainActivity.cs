@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using Android.App;
 using Android.Content.PM;
 using Avalonia;
@@ -107,54 +106,25 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
     }
     private async Task PrepareDataAsync(string directory, IProgress<string> progress, CancellationToken ct)
     {
-        await PrepareElevationAsync(directory, progress, ct);
-        Stream sourceManifest = Assets!.Open("Data/manifest.json");
-        using StreamReader reader = new(sourceManifest);
-        string manifest = await reader.ReadToEndAsync(ct);
-        string localManifest = Path.Combine(directory, "manifest.json");
-        string database = Path.Combine(directory, "geodata.sqlite");
-        if (File.Exists(database)
-            && File.Exists(localManifest)
-            && await File.ReadAllTextAsync(localManifest, ct) == manifest)
+        Progress<string> observedProgress = new(message =>
         {
-            return;
+            Console.WriteLine($"CRP_OFFLINE_MAP_PREPARATION {message}");
+            progress.Report(message);
+        });
+        try
+        {
+            await PrepareElevationAsync(directory, observedProgress, ct);
+            Stream sourceManifest = Assets!.Open("Data/manifest.json");
+            using StreamReader reader = new(sourceManifest);
+            string manifest = await reader.ReadToEndAsync(ct);
+            await BundledGeodataInstaller.InstallAsync(directory, manifest,
+                Assets.List("Data")!, name => Assets.Open("Data/" + name), observedProgress, ct);
+            Console.WriteLine($"CRP_OFFLINE_MAP_PREPARED directory={directory}");
         }
-
-        await Task.Run(async () =>
+        catch (Exception error)
         {
-            progress.Report("Распаковка карты. Первый запуск может занять некоторое время…");
-            string[] names = Assets.List("Data")!;
-            string[] chunks = names.Where(name => name.StartsWith("geodata.", StringComparison.Ordinal)
-                    && name.EndsWith(".gz", StringComparison.Ordinal)
-                    && name != "geodata.sqlite.gz")
-                .Order(StringComparer.Ordinal).ToArray();
-            string[] files = chunks.Length > 0 ? chunks
-                : new[] { names.Contains("geodata.sqlite.gz", StringComparer.Ordinal)
-                    ? "geodata.sqlite.gz"
-                    : "geodata.sqlite" };
-            await using FileStream output = File.Create(database + ".tmp");
-            byte[] buffer = new byte[1024 * 1024];
-            long copied = 0;
-            foreach (string file in files)
-            {
-                using Stream asset = Assets.Open("Data/" + file);
-                using Stream input = file.EndsWith(".gz", StringComparison.Ordinal)
-                    ? new GZipStream(asset, CompressionMode.Decompress) : asset;
-                int count;
-                while ((count = await input.ReadAsync(buffer, ct)) > 0)
-                {
-                    await output.WriteAsync(buffer.AsMemory(0, count), ct);
-                    copied += count;
-                    if (copied % (16 * 1024 * 1024) < buffer.Length)
-                    {
-                        progress.Report($"Подготовка карты: {copied / (1024 * 1024)} МБ…");
-                    }
-                }
-            }
-
-            await output.DisposeAsync();
-            File.Move(database + ".tmp", database, true);
-            await File.WriteAllTextAsync(localManifest, manifest, ct);
-        }, ct);
+            Console.WriteLine($"CRP_OFFLINE_MAP_PREPARATION_FAILED {error}");
+            throw;
+        }
     }
 }

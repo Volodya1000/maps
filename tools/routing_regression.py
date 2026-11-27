@@ -19,7 +19,14 @@ from pathlib import Path
 import shapely
 from benchmark_routes import run_bounded_command
 from GeodataPreparation.country_data import cache_key
-from routing_crossing_pilot import audit, distance, local_road_contact, project, query
+from routing_crossing_pilot import (
+    audit,
+    distance,
+    has_underpass_topology,
+    local_road_contact,
+    project,
+    query,
+)
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import unary_union
 
@@ -174,25 +181,18 @@ def load_cases(root, corpus):
 def topology_features(connection, bounds):
     """Only source-node membership can combine adjacent underground source ways."""
     features = query(connection, bounds)
-    topology = {
-        row[0]: row[1:]
-        for row in connection.execute(
-            "SELECT candidate_id,network_id,node_ids,entrance_node_ids FROM underpass_topology"
-        )
-    }
     networks = {}
     ordinary = []
     for feature in features:
-        if (
-            feature["kind"] == "PedestrianUnderpassCandidate"
-            and feature["id"] in topology
+        if feature["kind"] == "PedestrianUnderpassCandidate" and has_underpass_topology(
+            feature, feature["geometry"]
         ):
-            network_id, nodes, entrances = topology[feature["id"]]
+            topology = feature["underpass_topology"]
             member = feature | {
-                "nodeIds": json.loads(nodes),
-                "entranceNodeIds": json.loads(entrances),
+                "nodeIds": topology["nodeIds"],
+                "entranceNodeIds": topology["entranceNodeIds"],
             }
-            networks.setdefault(network_id, []).append(member)
+            networks.setdefault(topology["networkId"], []).append(member)
         else:
             ordinary.append(feature)
     for network_id, members in networks.items():
@@ -360,14 +360,19 @@ def audit_alternative(
         ),
     )
     projected = project(route, origin)
+    # The shared geometry audit needs original source ways and topology. Grouped
+    # network geometries remain available for the research source-walk gates.
+    source_features = [
+        member for feature in features for member in feature.get("members", [feature])
+    ]
     checks = audit(
         projected,
-        features,
+        source_features,
         project(coverage, origin),
         origin,
         allow_underpasses=enabled,
     )
-    sources = {feature["id"]: feature.get("source_id") for feature in features}
+    sources = {feature["id"]: feature.get("source_id") for feature in source_features}
     for finding in checks["findings"]:
         feature_id = finding.get("featureId", finding.get("roadId"))
         if feature_id in sources:
@@ -384,7 +389,7 @@ def audit_alternative(
             for network in (
                 feature
                 for feature in features
-                if feature["id"] in finding["underpassIds"]
+                if set(feature.get("memberIds", [])) & set(finding["underpassIds"])
             ):
                 members = network.get("members", [])
                 linked_contact = any(
@@ -468,8 +473,14 @@ def audit_alternative(
             if feature["kind"] == "PedestrianUnderpassCandidate"
         )
         if not checks["mappedSourceNodeWalk"]:
-            checks["status"] = "violation"
-            checks["findings"].append({"reason": "underpass_topology_jump"})
+            if checks["status"] == "unknown" and any(
+                finding.get("missingUnderpassTopologyIds")
+                for finding in checks["findings"]
+            ):
+                checks["findings"].append({"reason": "underpass_topology_incomplete"})
+            else:
+                checks["status"] = "violation"
+                checks["findings"].append({"reason": "underpass_topology_jump"})
     return checks
 
 

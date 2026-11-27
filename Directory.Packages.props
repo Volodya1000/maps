@@ -20,7 +20,6 @@
     <PackageVersion Include="System.Text.Json" Version="8.0.5" Condition="'$(Win7Port)' == 'true'" />
     <PackageVersion Include="System.Memory" Version="4.6.0" Condition="'$(Win7Port)' == 'true'" />
     <PackageVersion Include="Microsoft.Bcl.TimeProvider" Version="8.0.1" Condition="'$(Win7Port)' == 'true'" />
-    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
     <PackageVersion Include="NetTopologySuite" Version="2.6.0" />
     <PackageVersion Include="Mapsui.Avalonia" Version="4.1.9" />
     <PackageVersion Include="Mapsui.Nts" Version="4.1.9" />

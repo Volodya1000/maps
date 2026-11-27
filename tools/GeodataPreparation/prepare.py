@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 from collections import Counter
 from pathlib import Path
 
-from feature_classification import classify
+from feature_classification import APPROVED_CROSSING_KIND, GAS_CROSSING_KIND, classify
 from pipeline_crossings import pipeline_road_candidates
 from shapely import make_valid, wkb
 from shapely.geometry import LineString, Polygon, box, shape
@@ -177,7 +177,7 @@ def main():
                 raise ValueError("Crossings require valid polygons and an approval_id")
             features.append(
                 (
-                    "ApprovedCrossing",
+                    APPROVED_CROSSING_KIND,
                     g,
                     f["properties"].get("name", ""),
                     approval,
@@ -215,14 +215,14 @@ def main():
         raw = wkb.dumps(geometry)
         row = con.execute(
             "INSERT INTO features(kind,wkb,name,source_id) VALUES(?,?,?,?)",
-            ("GasPipelineCrossingCandidate", raw, "Газопровод над дорогой", source),
+            (GAS_CROSSING_KIND, raw, "Газопровод над дорогой", source),
         ).lastrowid
         west, south, east, north = geometry.bounds
         con.execute(
             "INSERT INTO feature_index VALUES(?,?,?,?,?)",
             (row, west, east, south, north),
         )
-        counts["GasPipelineCrossingCandidate"] += 1
+        counts[GAS_CROSSING_KIND] += 1
     con.commit()
     con.execute("VACUUM")
     con.close()
@@ -262,7 +262,7 @@ def main():
         ],
     )
     (args.output / "manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     print(json.dumps(dict(counts), ensure_ascii=False))
 

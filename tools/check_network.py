@@ -21,7 +21,11 @@ for line in a.trace.read_text().splitlines():
         continue
     raw = match.group(1) or match.group(2)
     addresses.append(raw)
-    address = ipaddress.ip_address(raw)
+    try:
+        address = ipaddress.ip_address(raw)
+    except ValueError:
+        external.append(line)
+        continue
     if not address.is_loopback and not (
         getattr(address, "ipv4_mapped", None) and address.ipv4_mapped.is_loopback
     ):

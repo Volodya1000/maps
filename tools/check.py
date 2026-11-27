@@ -15,10 +15,12 @@ import uuid
 from pathlib import Path
 
 import yaml
+from check_coverage import find_report
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "artifacts"
 SOLUTION = "CableRoutePlanner.Desktop.slnf"
+DOTNET_FORMAT_ATTEMPTS = 3
 
 
 def run(
@@ -40,12 +42,33 @@ def executable(name: str) -> str:
     return result
 
 
+def run_dotnet_format(dotnet: str, *arguments: str, env: dict[str, str]) -> None:
+    # SDK 8's ProcessRunner can complete its CLI version probe before starting
+    # stdout readers. Exit 4 identifies that probe; formatting violations use 2.
+    # https://github.com/dotnet/format/blob/6eca172fd9205e0275d2d88bebe1e4f4fbb173d4/src/Utilities/ProcessRunner.cs
+    # https://github.com/dotnet/format/blob/6eca172fd9205e0275d2d88bebe1e4f4fbb173d4/src/Commands/FormatCommandCommon.cs
+    for attempt in range(1, DOTNET_FORMAT_ATTEMPTS + 1):
+        try:
+            run(dotnet, "format", *arguments, env=env)
+            return
+        except subprocess.CalledProcessError as error:
+            if error.returncode != 4 or attempt == DOTNET_FORMAT_ATTEMPTS:
+                raise
+            print(
+                "dotnet format CLI probe failed (exit 4; upstream stdout race); "
+                f"retrying {attempt + 1}/{DOTNET_FORMAT_ATTEMPTS}.",
+                flush=True,
+            )
+
+
 def lint() -> None:
     run(sys.executable, "tools/check_architecture.py")
     run(sys.executable, "tools/check_quality.py")
     uv = executable("uv")
     run(uv, "run", "--locked", "ruff", "check", ".")
     run(uv, "run", "--locked", "ruff", "format", "--check", ".")
+    run(sys.executable, "tools/generate_terrain_contract.py", "--check")
+    run(uv, "run", "--locked", "mypy")
     dotnet = executable("dotnet")
     run(dotnet, "sln", "CableRoutePlanner.sln", "list")
     run(
@@ -105,9 +128,12 @@ def desktop() -> None:
     dotnet_env["DOTNET_HOST_PATH"] = dotnet
     run(dotnet, "restore", SOLUTION, "--locked-mode", env=dotnet_env)
     run(dotnet, "tool", "restore", env=dotnet_env)
-    run(
+    # dotnet format probes a bare `dotnet --version` and hides the exception
+    # behind exit code 4. Keep the runtime and inherited CLI lookup observable.
+    run(dotnet, "--info", env=dotnet_env)
+    run("dotnet", "--version", env=dotnet_env)
+    run_dotnet_format(
         dotnet,
-        "format",
         SOLUTION,
         "--no-restore",
         "--verify-no-changes",
@@ -148,12 +174,13 @@ def desktop() -> None:
         env=dotnet_env,
     )
     run(sys.executable, "tools/check_coverage.py", results_directory)
+    coverage_report = find_report(ROOT / results_directory)
     run(
         dotnet,
         "tool",
         "run",
         "reportgenerator",
-        f"-reports:{results_directory}/**/coverage.cobertura.xml",
+        f"-reports:{coverage_report}",
         "-targetdir:artifacts/coverage-report",
         "-reporttypes:Html",
         env=dotnet_env,
@@ -307,9 +334,8 @@ def android() -> None:
         "--locked-mode",
         env=dotnet_env,
     )
-    run(
+    run_dotnet_format(
         dotnet,
-        "format",
         "style",
         "src/CableRoutePlanner.Android",
         "--no-restore",

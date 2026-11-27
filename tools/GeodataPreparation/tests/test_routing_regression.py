@@ -388,6 +388,53 @@ class RoutingRegressionTests(unittest.TestCase):
         self.assertFalse(record["gatePassed"])
         self.assertEqual(record["auditStatus"], "violation")
 
+    def test_research_audit_preserves_unknown_for_incomplete_source_continuation(self):
+        self.add_split_underpass()
+        self.connection.execute("DELETE FROM underpass_topology WHERE candidate_id=3")
+        self.connection.commit()
+        for require_network in (False, True):
+            with self.subTest(require_network=require_network):
+                checks = self.runner.audit_alternative(
+                    self.connection,
+                    self.coverage,
+                    self.scenario,
+                    self.success["alternatives"][0],
+                    enabled=True,
+                    require_network=require_network,
+                )
+                self.assertEqual(checks["status"], "unknown")
+                self.assertEqual(
+                    checks["findings"][0]["missingUnderpassTopologyIds"], [3]
+                )
+
+    def test_research_audit_preserves_unknown_for_malformed_source_topology(self):
+        self.add_split_underpass()
+        self.connection.execute(
+            "UPDATE underpass_topology SET node_ids='invalid-json' WHERE candidate_id=3"
+        )
+        self.connection.commit()
+        checks = self.runner.audit_alternative(
+            self.connection,
+            self.coverage,
+            self.scenario,
+            self.success["alternatives"][0],
+            enabled=True,
+        )
+        self.assertEqual(checks["status"], "unknown")
+        self.assertEqual(checks["findings"][0]["missingUnderpassTopologyIds"], [3])
+
+    def test_research_audit_honours_explicit_disabled_underpasses_with_valid_topology(
+        self,
+    ):
+        self.add_split_underpass()
+        self.scenario["routingOptions"]["AllowExperimentalPedestrianUnderpasses"] = (
+            False
+        )
+        record = self.invoke()
+        self.assertIs(record["effectiveUnderpasses"], False)
+        self.assertEqual(record["auditStatus"], "violation")
+        self.assertFalse(record["gatePassed"])
+
     def test_underpass_positive_requires_independent_underpass_use(self):
         self.case.update(expected="success", requireUnderpass=True)
         record = self.invoke()
@@ -609,6 +656,47 @@ class RoutingRegressionTests(unittest.TestCase):
             for x, y in [(-20, 0), (0, 0), (20, 0), (20, 20), (0, 20), (0, 0), (0, -20)]
         ]
         self.assertTrue(self.invoke(payload)["gatePassed"])
+
+    def test_shared_road_uncertainty_does_not_hide_proven_source_topology_jump(self):
+        unit = 1 / 111195.0802335
+        self.scenario["points"] = [
+            {"Longitude": -20 * unit, "Latitude": 0},
+            {"Longitude": 0, "Latitude": -20 * unit},
+        ]
+        self.scenario["routingOptions"]["AllowExperimentalPedestrianUnderpasses"] = True
+        self.case.update(expected="success", requireUnderpass=True, requireNetwork=True)
+        coordinates = [(-20 * unit, 0), (0, 0), (0, -20 * unit)]
+        self.add_feature(1, "Road", LineString(coordinates))
+        for feature_id, coords, nodes, entrances in (
+            (2, [(-20, 0), (0, 0), (20, 0)], [1, 2, 3], [1]),
+            (3, [(0, -20), (0, 0), (0, 20)], [4, 5, 6], [4]),
+            (4, [(20, 0), (20, 20), (0, 20)], [3, 7, 6], []),
+        ):
+            self.add_feature(
+                feature_id,
+                "PedestrianUnderpassCandidate",
+                LineString([(x * unit, y * unit) for x, y in coords]),
+                10,
+                nodes=nodes,
+                entrances=entrances,
+            )
+        alternative = {
+            "geometry": [{"Longitude": x, "Latitude": y} for x, y in coordinates]
+        }
+        checks = self.runner.audit_alternative(
+            self.connection,
+            self.coverage,
+            self.scenario,
+            alternative,
+            enabled=True,
+            require_network=True,
+        )
+        self.assertEqual(checks["status"], "violation")
+        self.assertFalse(checks["mappedSourceNodeWalk"])
+        reasons = {finding["reason"] for finding in checks["findings"]}
+        self.assertIn("shared_road_section", reasons)
+        self.assertIn("underpass_topology_jump", reasons)
+        self.assertNotIn("underpass_topology_incomplete", reasons)
 
     def test_fixed_baseline_direct_witness_does_not_fail_comparison(self):
         current = self.invoke()

@@ -45,7 +45,7 @@ dotnet run --project src/CableRoutePlanner.Desktop
 
 Единое решение — `CableRoutePlanner.sln`, фильтр `CableRoutePlanner.Desktop.slnf` позволяет работать без Android workload. На Linux для графического запуска нужны X11/Wayland и системные библиотеки Avalonia; headless-тесты не требуют дисплея.
 
-Для текущих исходников можно подключить **полную карту Беларуси**: `uv run --locked python tools/install_belarus.py --verify` получает проверенный пакет и проверяет данные шести областных центров; `uv run --locked python tools/install_belarus.py --run` запускает Desktop с ним. [Подробности, контрольные суммы и офлайн-режим](docs/full-belarus-development.md).
+Для текущих исходников можно подключить **полную карту Беларуси**: `uv run --locked python tools/GeodataPreparation/country_data.py ensure --output artifacts/belarus-current` получает пакет с проверкой зафиксированных контрольных сумм; после распаковки в отдельный runtime-каталог текущий Desktop читает его через `CABLEROUTE_DATA`. [Подробности, контрольные суммы и офлайн-режим](docs/full-belarus-development.md).
 
 Порядок точек меняется за ручку ≡, красный × удаляет свою строку. Панорамирование — перетаскивание свободного места; масштабирование — колесо или `+ / −`; точки ставятся коротким нажатием при включённом «Добавлять точки», маркеры перетаскиваются. На узком экране нижнюю панель можно свернуть и открыть вертикальным свайпом за ручку. Перестановка и жест панели проверяются raw touch-событиями Avalonia.Headless; на телефоне дополнительно проверьте pinch-zoom и взаимодействие с системными жестами.
 

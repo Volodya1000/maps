@@ -1,8 +1,15 @@
 """Conservative OSM evidence for pedestrian underpasses, not cable approval."""
 
+from __future__ import annotations
+
 import json
 import re
 from itertools import combinations
+
+if __package__:
+    from .feature_classification import UNDERPASS_KIND
+else:
+    from feature_classification import UNDERPASS_KIND
 
 
 def _layer(value):
@@ -253,7 +260,7 @@ def import_candidates(connection, add):
         if group not in active:
             continue
         tunnel = from_wkb(raw)
-        candidate_id = add("PedestrianUnderpassCandidate", tunnel, {}, source)
+        candidate_id = add(UNDERPASS_KIND, tunnel, {}, source)
         if source in nodes:
             network_id = network_ids.setdefault(group, candidate_id)
             refs = nodes[source]
