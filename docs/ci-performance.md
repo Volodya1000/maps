@@ -63,9 +63,9 @@ Level 6 / один worker сократил медиану сжатия с 399,38
 
 Gzip `mtime=0`, размеры распакованных chunks 64 МиБ и последовательные имена сохраняются. Число workers ограничено 1–4; очередь удерживает не больше workers chunks. zlib-компрессия выполняется в threads без копирования блоков между процессами. Тесты сравнивают gzip-байты при 1/2/4 workers, восстанавливают SQLite на всех уровнях и проверяют ошибки ввода/записи.
 
-### Linux hosted runner, текущий рецепт
+### Linux hosted runner, рецепт исследовательского run 46013430359
 
-В [исследовательском run](https://github.com/Volodya1000/maps/actions/runs/46013430359) gzip-матрица прошла полностью: 3 повтора на комбинацию, 18 случаев. [Levels JSON](benchmarks/ci-61-gzip-levels-linux.json), [workers JSON](benchmarks/ci-61-gzip-workers-linux.json). Ubuntu 22.04 / 4 logical CPUs, Python 3.12.16, zlib 1.2.11. Текущая SQLite SHA-256 `1d055f4987932865150fbea2b4b1a3b9f7742127da7bdc7bcefeb7f064219439`; это отдельный вход от старого Windows-набора. Во всех 18 случаях она восстановлена точно. Время/CPU — медианы, RSS — максимум.
+В [исследовательском run](https://github.com/Volodya1000/maps/actions/runs/46013430359) gzip-матрица прошла полностью: 3 повтора на комбинацию, 18 случаев. [Levels JSON](benchmarks/ci-61-gzip-levels-linux.json), [workers JSON](benchmarks/ci-61-gzip-workers-linux.json). Ubuntu 22.04 / 4 logical CPUs, Python 3.12.16, zlib 1.2.11. SQLite исследовательского run SHA-256 `1d055f4987932865150fbea2b4b1a3b9f7742127da7bdc7bcefeb7f064219439`; это отдельный вход от старого Windows-набора. Во всех 18 случаях она восстановлена точно. Время/CPU — медианы, RSS — максимум.
 
 | Level / workers | Wall, с | CPU, с | Peak RSS, МиБ | Gzip, байт |
 | --- | ---: | ---: | ---: | ---: |
@@ -120,9 +120,9 @@ foreach ($level in 1, 3, 6, 9) {
 
 ## Конвертация, кэши и цена эксперимента
 
-Рецепт OSM → SQLite, LOD, R-tree и логика классификации не изменены. Ключ карты остаётся прежним. Пакетные вставки, перестройка индексов и упрощение геометрии не внедрены без профиля.
+Изменения этого PR не затрагивают рецепт OSM → SQLite, LOD, R-tree или классификацию; benchmark/profile не входят в recipe key. Позднее интегрирован main с собственной правкой классификации из PR #64, поэтому его новый ключ нельзя смешивать с исходным экспериментом. Пакетные вставки, перестройка индексов и упрощение геометрии не внедрены без профиля.
 
-Opt-in `ci:performance-benchmark` запускает gzip-матрицу на одной и той же полной карте текущего PR, публикуя JSON с Python/zlib/платформой и точной идентичностью входа. Это исследовательский расход runner-minutes, не часть стандартной оптимизации. Та же метка (или отдельная `ci:apk-startup-benchmark` без повторения gzip-матрицы) включает на API 35 дополнительное открытие полной карты после единственной установки точного APK на свежий эмулятор (8G data partition). В JSON сохраняются APK SHA-256/размер, install_seconds, activity_start_seconds и map_ready_seconds; затем выполняется restart в том же эмуляторе. Обязательные install и pm-path проверки сохраняются. Map-ready — момент наблюдения существующего feature-ready marker при polling, включая adb overhead; это не timestamp отрисованного кадра. Второй запуск — restart с уже распакованной картой, не второй холодный эмулятор. 600 итераций ожидания — observation budget, не точный wall-clock deadline; job и отдельные adb-вызовы ограничены timeout.
+Opt-in `ci:performance-benchmark` запускает gzip-матрицу на одной и той же полной карте текущего PR, публикуя JSON с Python/zlib/платформой и точной идентичностью входа. Это исследовательский расход runner-minutes, не часть стандартной оптимизации. После интеграции актуального main установка и два открытия полной карты на API 35 обязательны для каждого full-map run: свежий эмулятор с 8G data partition, единственная установка точного APK, затем restart. Отдельная метка `ci:apk-startup-benchmark` больше не требуется. В report.json сохраняются APK SHA-256/размер, install_seconds, activity_start_seconds и map_ready_seconds; обязательные проверки живого процесса, resumed Activity, process-scoped readiness/logcat и crash buffer сохранены. Map-ready — момент наблюдения существующего feature-ready marker при polling, включая adb overhead; это не timestamp отрисованного кадра. Второй запуск — restart с уже распакованной картой, не второй холодный эмулятор. Унаследованные из main 180 итераций ожидания — observation budget, не точный wall-clock deadline; job и отдельные adb-вызовы ограничены timeout.
 
 Opt-in `ci:profile-country` выполняет независимую полную конвертацию с `cProfile` и `/usr/bin/time -v`. Сохраняет hotspots, CPU, peak RSS и профиль; после seal сравнивает gzip SQLite и manifest с обычной конвертацией. Инструментирование находится вне recipe: не меняет ключ карты, входы конвертера или публикуемый prepared package. Профилированное время нельзя сравнивать с обычным временем как ускорение.
 
@@ -143,7 +143,7 @@ Country-profile job прошёл: независимый `cProfile`-запуск
 Inclusive строки вложены друг в друга, складывать их нельзя. В этом профиле отсутствуют полноценные entry frames main/apply_file/way/area; обработка pyosmium callbacks видна через вызываемые helpers. Поэтому он не доказывает отдельное wall-время чтения/сборки OSM вне callbacks. Основная измеренная работа распределена между tags/geometry/LOD/WKB/SQL, а не только сетью. SQL не единственный hotspot; обещать крупный выигрыш от executemany или перестройки индексов без нового A/B нельзя. Эти изменения, повторное использование геометрий и изменение LOD сознательно не внедрены: нет подтверждённого выигрыша с сохранением SQLite/геосемантики. Дополнительные таймеры последовательных фаз остаются дальнейшей исследовательской работой; данные профиля и побайтовая идентичность не подменяются предположениями.
 
 
-Prepared cache использует только точный content-addressed key. Нет restore-keys, latest PBF, старой SQLite или bin/obj/SDK cache. Release prepared package остаётся долговременным источником, PR cache ограничен ref. Android workload cache, NuGet cache, Playwright/npm cache и кэш chunks оставлены без изменений: нет контролируемого положительного ROI; npm около 2 с не определяет критический путь. Перенос country data через artifact сохраняет изоляцию и возможность повторного запуска; объединение runners не внедрено.
+Prepared cache использует только точный content-addressed key. Нет restore-keys, latest PBF, старой SQLite или bin/obj/SDK cache. Release prepared package остаётся долговременным источником, PR cache ограничен ref. Android workload cache, NuGet cache, Playwright/npm cache и кэш chunks оставлены без изменений: нет контролируемого положительного ROI; npm около 2 с не определяет критический путь. После интеграции main APK consumer получает country-data через существующий verified cache/Release action и сравнивает SHA-256 manifest с producer через обязательный вход reusable workflow. Подготовка не зависит от Android. Большой artifact теперь передаётся только для routing benchmark, gzip benchmark или профиля; full-map startup и выдача APK от этих меток не зависят. Это сохранённое изменение upstream, а не результат нашего контролируемого cache ROI эксперимента. Объединение runners не внедрено.
 
 ## Быстрая итерация и окончательная проверка
 
@@ -167,8 +167,28 @@ Prepared cache использует только точный content-addressed 
 
 Для Windows matrix SDK из неизменённого global.json устанавливается отдельно в runner.temp/dotnet через официальный [DOTNET_INSTALL_DIR](https://github.com/actions/setup-dotnet#environment-variables). Linux provisioning сохранён. Это проверяемый workaround: он не меняет SDK, analyzers, диагностики или команды tools/check.py и не добавляет ретраи к проверкам. В [baseline run 46028041238](https://github.com/Volodya1000/maps/actions/runs/46028041238) Windows job прошёл с SDK 8.0.427 из D:/a/_temp/dotnet: formatter, Release, 933 tests и coverage gate. Установка SDK заняла 16 с против 27 с у первого обычного Windows setup; это разные runs, а не доказательство ускорения provisioning. Повторная проверка выполняется на tuned candidate.
 
-## Текущий рецепт: холодный и тёплый путь
+## Рецепт baseline: холодный и тёплый путь
 
 В первом исследовательском run 46013430359 country geodata job занял 1262 с: obtain/prepare/verify OSM 1050,05 с, DEM 177,11 с; это cold exact-key miss с полной конвертацией. В baseline run 46028041238 тот же рецепт восстановлен по точным ключам OSM `belarus-v1-1e611665e188ff4d90b2d9f4e02e48ccf0bf51feaf0c79a180bfffa936678341` и DEM `country-elevation-v1-bdd01f928eee39ff9d03828c8ce458f3ffc9f25f99914d0f7484800869a86c00`: весь geodata job — 39 с, повторно проверены 840 shards. В обоих случаях передан artifact 1 829 356 415 байт. Это два последовательных наблюдения одного рецепта; cold run содержит исследовательские jobs и известный, позднее исправленный Python failure, поэтому полный wall этих двух runs нельзя выдавать за контролируемый A/B оптимизации.
 
 Передача country artifact заняла 90 с в первом run и 37 с в warm baseline; этот шум сопоставим с установкой Android workload (29 с в обоих). Без повторного положительного A/B не добавлены кеши NuGet, workload или split assets и не объединены runners. Linux/Windows NuGet cache ROI остаётся неизмеренным; отсутствие нового cache не выдаётся за подтверждение отрицательного ROI.
+
+## Полный baseline APK и интеграция актуального main
+
+[Run 46028041238](https://github.com/Volodya1000/maps/actions/runs/46028041238) на head `8fa4d8fb08ca27c32ab0a3537a46721c90be5e31`, tested merge `44cc2b1af9ccbf394795668c0d254775c92dac3b`, завершился полностью успешно: quality, data, terrain, Ubuntu/Windows, Minsk emulator и full Belarus APK/API 35. [Сырые timestamps и APK report](benchmarks/ci-61-apk-baseline-linux.json). Оба Android запуска показали `CRP_OFFLINE_MAP_READY region=belarus features=66 mode=raster-tiles`. Полный APK включает DEM; signature, version, permissions, exact manifest и SHA-256 восстановленной SQLite проверены до выдачи.
+
+| Наблюдение baseline 9 / 1 | Значение |
+| --- | ---: |
+| Полный workflow wall (первый job → последний) | 1636 с |
+| Сумма successful jobs | 33,07 runner-minutes |
+| Full APK job | 975 с |
+| Split country | 317 с |
+| Publish | 203 с |
+| Проверка подписей/карты/DEM | 50 с |
+| Emulator (boot/install/два запуска) | 283 с |
+| APK | 1 838 346 299 байт |
+| Установка | 71,34 с |
+| Первое map-ready | 83,44 с |
+| Restart map-ready | 27,86 с |
+
+Во время эксперимента в main вошли PR #64/#66 с новым routing-кодом, классификацией, обязательным full-map startup, идентичностью preview и reuse verified country package. Ветка объединена с main `89540b3`; эти изменения сохранены. В частности, новый рецепт может дать другую SQLite, а способ передачи country package изменился. Поэтому последующий итоговый CI проверяет совместимость и время реального PR, но его полный wall/install/startup нельзя назвать контролируемым A/B только gzip. Для выбора 6 / 4 используются повторные компонентные эксперименты на одинаковых входах выше. Итоговый SHA/run и результаты обновляются в PR #69 без подмены исходных измерений.

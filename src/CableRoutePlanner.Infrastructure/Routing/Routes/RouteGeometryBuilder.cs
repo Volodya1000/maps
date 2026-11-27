@@ -1,6 +1,8 @@
 using CableRoutePlanner.Application;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.Infrastructure.Geography;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetTopologySuite.Geometries;
 
 namespace CableRoutePlanner.Infrastructure.Routing;
@@ -13,17 +15,25 @@ internal sealed class RouteGeometryBuilder
     private readonly TerrainEvaluator _evaluator;
     private readonly LocalProjection _projection;
     private readonly RouteGeometryPostProcessor _postProcessor;
+    private readonly ILogger _logger;
+    private readonly Guid _calculationId;
+    private readonly SurfaceDetourSearch? _surfaceDetours;
 
     public GridEdgeEvaluationCache Edges { get; }
 
     public RouteGeometryBuilder(IGridPathfinder pathfinder, GridMesh mesh, TerrainEvaluator evaluator,
-        LocalProjection projection, RouteGeometryPostProcessor postProcessor)
+        LocalProjection projection, RouteGeometryPostProcessor postProcessor, ILogger? logger = null,
+        Guid calculationId = default,
+        SurfaceDetourSearch? surfaceDetours = null)
     {
         _pathfinder = pathfinder;
         _mesh = mesh;
         _evaluator = evaluator;
         _projection = projection;
         _postProcessor = postProcessor;
+        _logger = logger ?? NullLogger.Instance;
+        _calculationId = calculationId;
+        _surfaceDetours = surfaceDetours;
         Edges = new(mesh, evaluator);
     }
 
@@ -62,16 +72,52 @@ internal sealed class RouteGeometryBuilder
                 && profile.RoadCrossingMetres == 0;
             List<Coordinate> part;
             if (lengthOnlyProfile && direct is not null)
-            { part = [start, end]; }
+            {
+                part = [start, end];
+                RoutingLog.LegSearchLog(_logger, _calculationId, profile.Name, leg, null, false, 0,
+                    Edges.EvaluationCount, true);
+            }
             else
             {
-                GridSearchGraph graph = new(start, end, _mesh, profile, _evaluator, Edges, ct);
-                IReadOnlyList<int> path = _pathfinder.FindPath(graph, ct) ?? throw new PlanningException(
-                    "В доступной области нет допустимого маршрута. "
-                    + $"Сетка {_mesh.CellSizeMetres:F0} м может не представить узкий проход; алгоритм не гарантирует полноту. "
-                    + "Можно увеличить область данных или изменить точки.",
-                    PlanningErrorReason.NoRouteInSearchArea);
-                part = path.Select(graph.GetCoordinate).ToList();
+                GridSearchGraph? graph = null;
+                bool surfaceAttempted = false;
+                try
+                {
+                    surfaceAttempted = _surfaceDetours is not null;
+                    List<Coordinate>? detour = FindSurfaceDetour(start, end, profile, leg, ct);
+                    if (detour is not null)
+                    {
+                        part = detour;
+                    }
+                    else
+                    {
+                        graph = new(start, end, _mesh, profile, _evaluator, Edges, ct, _logger,
+                            _calculationId, leg);
+                        IReadOnlyList<int> path = _pathfinder.FindPath(graph, ct) ?? throw new PlanningException(
+                                "В доступной области нет допустимого маршрута. "
+                                + $"Сетка {_mesh.CellSizeMetres:F0} м может не представить узкий проход; алгоритм не гарантирует полноту. "
+                                + "Можно увеличить область данных или изменить точки.",
+                                PlanningErrorReason.NoRouteInSearchArea);
+                        part = path.Select(graph.GetCoordinate).ToList();
+                    }
+                    RoutingLog.LegSearchLog(_logger, _calculationId, profile.Name, leg, null, false,
+                        (graph?.ExpandedNodes ?? 0) + (surfaceAttempted ? _surfaceDetours!.ExpandedNodes : 0),
+                        Edges.EvaluationCount, false);
+                }
+                catch (PlanningException error)
+                {
+                    RoutingLog.LegSearchLog(_logger, _calculationId, profile.Name, leg, error.Reason, false,
+                        (graph?.ExpandedNodes ?? 0) + (surfaceAttempted ? _surfaceDetours!.ExpandedNodes : 0),
+                        Edges.EvaluationCount, false);
+                    throw;
+                }
+                catch (OperationCanceledException)
+                {
+                    RoutingLog.LegSearchLog(_logger, _calculationId, profile.Name, leg, null, true,
+                        (graph?.ExpandedNodes ?? 0) + (surfaceAttempted ? _surfaceDetours!.ExpandedNodes : 0),
+                        Edges.EvaluationCount, false);
+                    throw;
+                }
             }
             // Smooth the grid path first, then impose the mapped bridge alignment.
             // The latter remains part of the engineering geometry and is not collapsed.
@@ -84,6 +130,20 @@ internal sealed class RouteGeometryBuilder
             route.AddRange(part);
         }
 
+        return route;
+    }
+
+    private List<Coordinate>? FindSurfaceDetour(Coordinate start, Coordinate end, CostProfile profile,
+        int leg, CancellationToken ct)
+    {
+        if (_surfaceDetours is null)
+        {
+            return null;
+        }
+        List<Coordinate>? route = _surfaceDetours.FindPath(start, end, profile, _pathfinder, ct);
+        RoutingLog.SurfaceDetourLog(_logger, _calculationId, profile.Name, leg, _surfaceDetours.NodeCount,
+            _surfaceDetours.ExpandedNodes, _surfaceDetours.InputVertexCount, _surfaceDetours.ResourceLimited,
+            route is not null);
         return route;
     }
 }

@@ -23,16 +23,7 @@ stat -c '%n: %s bytes' "$apk"
 echo "Emulator free storage before installation:"
 adb shell df -h /data || true
 
-# Research uses the existing smoke tool for one fresh install and two map
-# opens. Running it after adb install would measure a replacement installation.
-smoke_command=(adb install -r "$apk")
-if [[ "${ANDROID_FULL_STARTUP_BENCHMARK:-false}" == true ]]; then
-  smoke_command=(python3 tools/android_smoke.py --apk "$apk" --package "$application_id"
-    --output artifacts/android-country-startup --launches 2
-    --settle-seconds 600 --wait-map-ready)
-fi
-
-if ! "${smoke_command[@]}" > "$log_file" 2>&1; then
+if ! adb install -r "$apk" > "$log_file" 2>&1; then
   cat "$log_file"
   echo "Package manager diagnostics:"
   adb logcat -d -s PackageManager PackageInstaller installd | tail -n 150 || true

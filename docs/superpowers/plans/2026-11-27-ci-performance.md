@@ -17,11 +17,13 @@ Failed or cancelled mandatory jobs must block full APK consumers even if geodata
 
 ## Tasks
 
-- [ ] Collect timestamped baseline jobs/steps for cache-miss and cache-hit runs; record limitations.
+- [x] Collect timestamped baseline jobs/steps for cache-miss and cache-hit runs; record limitations.
 - [x] Extend `tests/tooling/test_android_chunks.py`: compression levels, bounded workers, exact reconstruction, deterministic bytes, invalid controls and corrupt gzip.
 - [x] Run these tests red, implement configurable gzip in `tools/split_android_map.py`, run green.
-- [ ] Add reproducible benchmark entry point and measure 1/3/6/9 and 1/2/4 workers, CPU, peak RSS and reconstruction; measure actual APK sizes/install/map-ready in opt-in Android CI on the same country database.
+- [x] Add reproducible benchmark entry point and measure 1/3/6/9 and 1/2/4 workers, CPU, peak RSS and reconstruction; measure actual APK sizes/install/map-ready in opt-in Android CI on the same country database.
 - [x] Extend workflow contract tests, run red, split geodata readiness from full APK consumer readiness. Run green and actionlint.
 - [x] Compare combined dotnet format with three calls, including deliberately introduced whitespace/style/analyzer violations. Change only if equivalence is established.
-- [ ] Produce `docs/ci-performance.md` with evidence, chosen defaults, trade-offs and unverified acceptance criteria; document fast iteration and cache policy.
-- [ ] Add `changes/61.feature.md`; run repository checks and hooks, review diff, commit, push and create PR. Follow CI to a concrete result.
+- [x] Produce `docs/ci-performance.md` with evidence, chosen defaults, trade-offs and unverified acceptance criteria; document fast iteration and cache policy.
+- [x] Add `changes/61.feature.md`; run repository checks and hooks, review diff, commit, push and create PR. Follow CI to a concrete result.
+
+Final CI evidence and remaining measurement limits are recorded in PR #69. The baseline APK passed; final integration includes upstream mandatory startup and package identity checks.

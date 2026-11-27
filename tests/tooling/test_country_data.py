@@ -6,8 +6,10 @@ import hashlib
 import http.client
 import io
 import json
+import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 import urllib.error
@@ -320,19 +322,53 @@ class CountryWorkflowTests(unittest.TestCase):
             self.assertTrue(
                 any(s.get("uses") == "./.github/actions/country-data" for s in steps)
             )
-            self.assertTrue(
-                any(
-                    s.get("uses", "").startswith("actions/upload-artifact@")
-                    and "if" not in s
-                    for s in steps
-                )
+            upload = next(
+                s
+                for s in steps
+                if s.get("uses", "").startswith("actions/upload-artifact@")
             )
+            if filename.startswith("pull-"):
+                for label in (
+                    "ci:routing-benchmark",
+                    "ci:performance-benchmark",
+                    "ci:profile-country",
+                ):
+                    self.assertIn(label, upload["if"])
+                self.assertIn(" || ", upload["if"])
+                self.assertEqual(
+                    "${{ steps.country_identity.outputs.manifest_sha256 }}",
+                    preparation["jobs"]["geodata"]["outputs"][
+                        "country_manifest_sha256"
+                    ],
+                )
+            else:
+                self.assertNotIn("if", upload)
             for name in (
                 ["android", "routing-benchmark"]
                 if filename.startswith("pull-")
                 else ["android", "windows"]
             ):
                 consumer = workflow["jobs"][name]["steps"]
+                if filename.startswith("pull-") and name == "android":
+                    self.assertTrue(
+                        any(
+                            s.get("uses") == "./.github/actions/country-data"
+                            for s in consumer
+                        )
+                    )
+                    identity = next(
+                        s for s in consumer if s.get("id") == "verify_country_identity"
+                    )
+                    self.assertEqual(
+                        "${{ inputs.country_manifest_sha256 }}",
+                        identity["env"]["EXPECTED_COUNTRY_MANIFEST_SHA256"],
+                    )
+                    self.assertFalse(
+                        any(
+                            s.get("with", {}).get("name") == "pull-request-belarus-data"
+                            for s in consumer
+                        )
+                    )
                 self.assertTrue(
                     any(
                         s.get("uses", "").startswith("actions/download-artifact@")
@@ -342,6 +378,70 @@ class CountryWorkflowTests(unittest.TestCase):
                 self.assertFalse(
                     any(s.get("uses", "").startswith("actions/cache") for s in consumer)
                 )
+
+    def test_apk_identity_guard_accepts_only_the_producer_manifest(self):
+        workflow = yaml.safe_load(
+            (country.ROOT / ".github/workflows/pull-request-apks.yml").read_text()
+        )
+        parent = yaml.safe_load((country.ROOT / ".github/workflows/ci.yml").read_text())
+        self.assertEqual(
+            "${{ needs.geodata.outputs.country_manifest_sha256 }}",
+            parent["jobs"]["pull-request-apks"]["with"]["country_manifest_sha256"],
+        )
+        inputs = workflow.get("on", workflow.get(True))["workflow_call"]["inputs"]
+        self.assertTrue(inputs["country_manifest_sha256"]["required"])
+        producer = next(
+            s
+            for s in parent["jobs"]["geodata"]["steps"]
+            if s.get("id") == "country_identity"
+        )
+        consumer = next(
+            s
+            for s in workflow["jobs"]["android"]["steps"]
+            if s.get("id") == "verify_country_identity"
+        )
+        # Execute the actual stdlib scripts wired into CI, on isolated small bytes.
+        producer_script = producer["run"].split("\n", 1)[1].rsplit("\nPY", 1)[0]
+        consumer_script = consumer["run"].split("\n", 1)[1].rsplit("\nPY", 1)[0]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = root / "artifacts/belarus/manifest.json"
+            manifest.parent.mkdir(parents=True)
+            original = json.dumps(
+                {"schema_version": 3, "database_sha256": "a" * 64}
+            ).encode()
+            manifest.write_bytes(original)
+            produced = subprocess.run(
+                [sys.executable, "-c", producer_script],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            key, _, expected = produced.stdout.strip().partition("=")
+            self.assertEqual("manifest_sha256", key)
+            self.assertEqual(hashlib.sha256(original).hexdigest(), expected)
+            for changed in (False, True):
+                with self.subTest(changed=changed):
+                    manifest.write_bytes(
+                        json.dumps(
+                            {"schema_version": 3, "database_sha256": "b" * 64}
+                        ).encode()
+                        if changed
+                        else original
+                    )
+                    result = subprocess.run(
+                        [sys.executable, "-c", consumer_script],
+                        cwd=root,
+                        env=os.environ | {"EXPECTED_COUNTRY_MANIFEST_SHA256": expected},
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    if changed:
+                        self.assertNotEqual(0, result.returncode)
+                    else:
+                        self.assertEqual(0, result.returncode, result.stderr)
 
     def test_regular_checks_keep_using_small_committed_fixtures(self):
         workflow = yaml.safe_load(
@@ -353,6 +453,57 @@ class CountryWorkflowTests(unittest.TestCase):
             "needs.quality.outputs.full_maps == 'true'",
             workflow["jobs"]["pull-request-apks"]["if"],
         )
+
+    def test_apk_retry_uses_the_tested_producer_application_id(self):
+        caller = yaml.safe_load((country.ROOT / ".github/workflows/ci.yml").read_text())
+        consumer = yaml.safe_load(
+            (country.ROOT / ".github/workflows/pull-request-apks.yml").read_text()
+        )
+        # A consumer-only retry increments run_attempt without rebuilding Minsk.
+        self.assertEqual(
+            "${{ inputs.preview_package_id }}",
+            consumer["jobs"]["android"]["env"]["PREVIEW_PACKAGE_ID"],
+        )
+        self.assertTrue(
+            consumer["on" if "on" in consumer else True]["workflow_call"]["inputs"][
+                "preview_package_id"
+            ]["required"]
+        )
+        self.assertEqual(
+            "${{ needs.android.outputs.preview_package_id }}",
+            caller["jobs"]["pull-request-apks"]["with"]["preview_package_id"],
+        )
+        self.assertEqual(
+            "${{ steps.preview_identity.outputs.package_id }}",
+            caller["jobs"]["android"]["outputs"]["preview_package_id"],
+        )
+        identity = next(
+            step
+            for step in caller["jobs"]["android"]["steps"]
+            if step.get("id") == "preview_identity"
+        )
+        script = identity["run"].split("\n", 1)[1].rsplit("\nPY", 1)[0]
+        with tempfile.TemporaryDirectory() as directory:
+            for attempt in (1, 2):
+                with self.subTest(attempt=attempt):
+                    output = Path(directory) / f"attempt-{attempt}.txt"
+                    result = subprocess.run(
+                        [sys.executable, "-c", script],
+                        env=os.environ
+                        | {
+                            "GITHUB_OUTPUT": output.as_posix(),
+                            "ANDROID_APPLICATION_ID": "by.cablerouteplanner.preview.pr66.r123a1",
+                            "GITHUB_RUN_ATTEMPT": str(attempt),
+                        },
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    self.assertEqual(
+                        "package_id=by.cablerouteplanner.preview.pr66.r123a1\n",
+                        result.stdout,
+                    )
 
     def test_publication_is_an_explicit_manual_mode(self):
         workflow = yaml.safe_load(

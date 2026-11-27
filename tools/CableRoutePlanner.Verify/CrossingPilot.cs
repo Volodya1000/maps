@@ -13,7 +13,8 @@ internal static class CrossingPilot
 {
     public static async Task<int> RunAsync(string data, string input, string output)
     {
-        JsonElement scenario = JsonDocument.Parse(File.ReadAllText(input)).RootElement;
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(input));
+        JsonElement scenario = document.RootElement;
         JsonElement coordinates = scenario.GetProperty("points");
         if (coordinates.GetArrayLength() != 2)
         {
@@ -24,8 +25,19 @@ internal static class CrossingPilot
         RoutingOptions options = scenario.GetProperty("routingOptions").Deserialize<RoutingOptions>()
             ?? throw new ArgumentException("routingOptions: null", nameof(input));
         options.Validate();
+        bool includeDiagnostics = scenario.TryGetProperty("includeDiagnostics", out JsonElement diagnosticFlag)
+            && diagnosticFlag.GetBoolean();
+        using RoutingDiagnosticsProvider diagnostics = new();
         ServiceCollection services = new();
-        services.AddLogging(logging => logging.AddConsole());
+        services.AddLogging(logging =>
+        {
+            logging.AddConsole();
+            if (includeDiagnostics)
+            {
+                logging.AddProvider(diagnostics);
+                logging.AddFilter<RoutingDiagnosticsProvider>(null, LogLevel.Debug);
+            }
+        });
         services.AddInfrastructure();
         services.AddPersistence(data, Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
         services.AddSingleton<IPlanningSession, PlanningSession>();
@@ -55,7 +67,8 @@ internal static class CrossingPilot
                     roadCrossingEvents = route.RoadCrossingEvents,
                     underpassPassages = route.UnderpassPassages
                 }),
-                error = (object?)null
+                error = (object?)null,
+                diagnostics = includeDiagnostics ? diagnostics.Capture() : null
             };
         }
         catch (PlanningException error)
@@ -73,6 +86,7 @@ internal static class CrossingPilot
                 status,
                 elapsedMilliseconds = timer.ElapsedMilliseconds,
                 alternatives = Array.Empty<object>(),
+                diagnostics = includeDiagnostics ? diagnostics.Capture() : null,
                 error = new
                 {
                     reason = error.Reason.ToString(),

@@ -99,12 +99,21 @@ jobs:
       - run: uv run --locked python tools/check.py data
   android:
     needs: [quality, tests]
+    outputs:
+      preview_package_id: ${{ steps.preview_identity.outputs.package_id }}
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
       ANDROID_APPLICATION_ID: ${{ github.event_name == 'pull_request' && format('by.cablerouteplanner.preview.pr{0}.r{1}a{2}', github.event.pull_request.number, github.run_id, github.run_attempt) || 'by.cablerouteplanner.app' }}
     steps:
       - uses: actions/checkout@v7
+      - name: Record the tested preview identity
+        id: preview_identity
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          print('package_id=' + os.environ['ANDROID_APPLICATION_ID'])
+          PY
       - name: Read application version
         run: python3 tools/release_version.py >> "$GITHUB_ENV"
       - uses: actions/setup-dotnet@v6
@@ -213,6 +222,8 @@ jobs:
       && github.event.pull_request.number != ''
       && needs.quality.outputs.full_maps == 'true'
     needs: [quality, tests, data, terrain-spike]
+    outputs:
+      country_manifest_sha256: ${{ steps.country_identity.outputs.manifest_sha256 }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
@@ -220,8 +231,17 @@ jobs:
         with:
           ref: ${{ github.sha }}
       - uses: ./.github/actions/country-data
+      - name: Record verified country identity
+        id: country_identity
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import hashlib
+          from pathlib import Path
+          print('manifest_sha256=' + hashlib.sha256(Path('artifacts/belarus/manifest.json').read_bytes()).hexdigest())
+          PY
       - uses: ./.github/actions/country-elevation
       - uses: actions/upload-artifact@v7
+        if: contains(github.event.pull_request.labels.*.name, 'ci:routing-benchmark') || contains(github.event.pull_request.labels.*.name, 'ci:performance-benchmark') || contains(github.event.pull_request.labels.*.name, 'ci:profile-country')
         with:
           name: pull-request-belarus-data
           path: artifacts/belarus/
@@ -310,6 +330,7 @@ jobs:
     with:
       pr_number: ${{ github.event.pull_request.number }}
       tested_sha: ${{ github.sha }}
-      startup_benchmark: ${{ contains(github.event.pull_request.labels.*.name, 'ci:performance-benchmark') || contains(github.event.pull_request.labels.*.name, 'ci:apk-startup-benchmark') }}
+      preview_package_id: ${{ needs.android.outputs.preview_package_id }}
+      country_manifest_sha256: ${{ needs.geodata.outputs.country_manifest_sha256 }}
     permissions:
       contents: read

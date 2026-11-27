@@ -29,7 +29,7 @@ class AndroidSmokeMetricsTests(unittest.TestCase):
                 output = component
             elif arguments == ["shell", "pidof", package]:
                 output = "1234" if alive else ""
-            elif arguments == ["logcat", "-d", "-v", "brief"]:
+            elif arguments == ["logcat", "-d", "--pid=1234", "-v", "brief"]:
                 output = "CRP_OFFLINE_MAP_READY"
             elif arguments == ["shell", "dumpsys", "activity", "activities"]:
                 output = "mResumedActivity: " + component
@@ -42,6 +42,7 @@ class AndroidSmokeMetricsTests(unittest.TestCase):
                 ["logcat", "-c"],
                 ["shell", "am", "start", "-W", "-n", component],
                 ["logcat", "-d", "-v", "threadtime"],
+                ["logcat", "-d", "--pid=1234", "-v", "threadtime"],
                 ["logcat", "-b", "crash", "-d"],
             ):
                 output = ""

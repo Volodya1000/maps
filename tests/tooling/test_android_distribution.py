@@ -94,24 +94,33 @@ class AndroidDistributionTests(unittest.TestCase):
         )
         self.assertLess(version_steps[0], publish)
 
-    def test_startup_probe_can_run_without_repeating_compression_matrix(self):
+    def test_full_map_startup_remains_mandatory_without_research_labels(self):
         parent = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
         country = yaml.safe_load(
             (ROOT / ".github/workflows/pull-request-apks.yml").read_text()
         )
-        events = country.get("on", country.get(True))
-        option = events["workflow_call"]["inputs"]["startup_benchmark"]
-        self.assertEqual("boolean", option["type"])
-        self.assertIs(False, option["default"])
-        selection = parent["jobs"]["pull-request-apks"]["with"]["startup_benchmark"]
-        self.assertIn("ci:apk-startup-benchmark", selection)
-        self.assertIn("ci:performance-benchmark", selection)
-        self.assertNotIn(
-            "ci:apk-startup-benchmark", parent["jobs"]["ci-performance"]["if"]
+        job = country["jobs"]["android"]
+        emulator = next(
+            step
+            for step in job["steps"]
+            if step.get("uses", "").startswith(
+                "reactivecircus/android-emulator-runner@"
+            )
         )
+        self.assertNotIn("if", emulator)
+        self.assertIn("--launches 2", emulator["with"]["script"])
+        self.assertIn("--wait-map-ready", emulator["with"]["script"])
+        self.assertIn("tools/android_smoke.py", emulator["with"]["script"])
+        self.assertEqual("8G", emulator["with"]["disk-size"])
+        evidence = next(
+            step
+            for step in job["steps"]
+            if step.get("with", {}).get("name") == "android-full-map-startup-evidence"
+        )
+        self.assertEqual("always()", evidence["if"])
+        self.assertNotIn("ci:performance-benchmark", job.get("if", ""))
         self.assertIn(
-            "inputs.startup_benchmark",
-            country["jobs"]["android"]["env"]["ANDROID_FULL_STARTUP_BENCHMARK"],
+            "ci:performance-benchmark", parent["jobs"]["ci-performance"]["if"]
         )
 
     def test_windows_desktop_uses_isolated_pinned_sdk_for_cli_discovery(self):
