@@ -1,0 +1,665 @@
+{
+  "schema": "maps.underpass-audit-contract.v1",
+  "coordinateSystem": "local-metres",
+  "roadId": 1,
+  "cases": [
+    {
+      "id": "connected_split_on_road_axis",
+      "road": [
+        [
+          -500,
+          150
+        ],
+        [
+          1000,
+          150
+        ]
+      ],
+      "route": [
+        [
+          160,
+          120
+        ],
+        [
+          160,
+          130
+        ],
+        [
+          160,
+          150
+        ],
+        [
+          160,
+          170
+        ],
+        [
+          160,
+          190
+        ]
+      ],
+      "candidates": [
+        {
+          "id": 2,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              130
+            ],
+            [
+              160,
+              150
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              10,
+              11
+            ],
+            "entranceNodeIds": [
+              10
+            ]
+          }
+        },
+        {
+          "id": 3,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              150
+            ],
+            [
+              160,
+              170
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              11,
+              12
+            ],
+            "entranceNodeIds": [
+              12
+            ]
+          }
+        }
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "valid",
+      "runtimeTraversable": true,
+      "crossingTypesUsed": [
+        "pedestrian_underpass"
+      ]
+    },
+    {
+      "id": "no_confirmed_surface_entrances",
+      "road": [
+        [
+          -500,
+          150
+        ],
+        [
+          1000,
+          150
+        ]
+      ],
+      "route": [
+        [
+          160,
+          140
+        ],
+        [
+          160,
+          160
+        ]
+      ],
+      "candidates": [
+        {
+          "id": 2,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              130
+            ],
+            [
+              160,
+              170
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              10,
+              12
+            ],
+            "entranceNodeIds": []
+          }
+        }
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "violation",
+      "runtimeTraversable": false,
+      "crossingTypesUsed": []
+    },
+    {
+      "id": "different_source_nodes_at_same_coordinate",
+      "road": [
+        [
+          -500,
+          150
+        ],
+        [
+          1000,
+          150
+        ]
+      ],
+      "route": [
+        [
+          160,
+          120
+        ],
+        [
+          160,
+          130
+        ],
+        [
+          160,
+          150
+        ],
+        [
+          160,
+          170
+        ],
+        [
+          160,
+          190
+        ]
+      ],
+      "candidates": [
+        {
+          "id": 2,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              130
+            ],
+            [
+              160,
+              150
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              10,
+              11
+            ],
+            "entranceNodeIds": [
+              10
+            ]
+          }
+        },
+        {
+          "id": 3,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              150
+            ],
+            [
+              160,
+              170
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              99,
+              12
+            ],
+            "entranceNodeIds": [
+              12
+            ]
+          }
+        }
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "violation",
+      "runtimeTraversable": false,
+      "crossingTypesUsed": []
+    },
+    {
+      "id": "different_network_at_same_coordinate",
+      "road": [
+        [
+          -500,
+          150
+        ],
+        [
+          1000,
+          150
+        ]
+      ],
+      "route": [
+        [
+          160,
+          120
+        ],
+        [
+          160,
+          130
+        ],
+        [
+          160,
+          150
+        ],
+        [
+          160,
+          170
+        ],
+        [
+          160,
+          190
+        ]
+      ],
+      "candidates": [
+        {
+          "id": 2,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              130
+            ],
+            [
+              160,
+              150
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              10,
+              11
+            ],
+            "entranceNodeIds": [
+              10
+            ]
+          }
+        },
+        {
+          "id": 3,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              150
+            ],
+            [
+              160,
+              170
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 3,
+            "nodeIds": [
+              11,
+              12
+            ],
+            "entranceNodeIds": [
+              12
+            ]
+          }
+        }
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "violation",
+      "runtimeTraversable": false,
+      "crossingTypesUsed": []
+    },
+    {
+      "id": "unrelated_road_links",
+      "road": [
+        [
+          -500,
+          150
+        ],
+        [
+          1000,
+          150
+        ]
+      ],
+      "route": [
+        [
+          160,
+          120
+        ],
+        [
+          160,
+          130
+        ],
+        [
+          160,
+          150
+        ],
+        [
+          160,
+          170
+        ],
+        [
+          160,
+          190
+        ]
+      ],
+      "candidates": [
+        {
+          "id": 2,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              130
+            ],
+            [
+              160,
+              150
+            ]
+          ],
+          "underpassRoadIds": [
+            99
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              10,
+              11
+            ],
+            "entranceNodeIds": [
+              10
+            ]
+          }
+        },
+        {
+          "id": 3,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              150
+            ],
+            [
+              160,
+              170
+            ]
+          ],
+          "underpassRoadIds": [
+            99
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              11,
+              12
+            ],
+            "entranceNodeIds": [
+              12
+            ]
+          }
+        }
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "violation",
+      "runtimeTraversable": false,
+      "crossingTypesUsed": []
+    },
+    {
+      "id": "gas_overlaps_connected_tunnel",
+      "road": [
+        [
+          -500,
+          150
+        ],
+        [
+          1000,
+          150
+        ]
+      ],
+      "route": [
+        [
+          160,
+          120
+        ],
+        [
+          160,
+          130
+        ],
+        [
+          160,
+          150
+        ],
+        [
+          160,
+          170
+        ],
+        [
+          160,
+          190
+        ]
+      ],
+      "candidates": [
+        {
+          "id": 2,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              130
+            ],
+            [
+              160,
+              150
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              10,
+              11
+            ],
+            "entranceNodeIds": [
+              10
+            ]
+          }
+        },
+        {
+          "id": 3,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              150
+            ],
+            [
+              160,
+              170
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              11,
+              12
+            ],
+            "entranceNodeIds": [
+              12
+            ]
+          }
+        },
+        {
+          "id": 4,
+          "kind": "GasPipelineCrossingCandidate",
+          "coordinates": [
+            [
+              160,
+              130
+            ],
+            [
+              160,
+              170
+            ]
+          ]
+        }
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "valid",
+      "runtimeTraversable": true,
+      "crossingTypesUsed": [
+        "overhead_gas"
+      ]
+    },
+    {
+      "id": "bridge_overlaps_connected_tunnel",
+      "road": [
+        [
+          -500,
+          150
+        ],
+        [
+          1000,
+          150
+        ]
+      ],
+      "route": [
+        [
+          160,
+          120
+        ],
+        [
+          160,
+          130
+        ],
+        [
+          160,
+          150
+        ],
+        [
+          160,
+          170
+        ],
+        [
+          160,
+          190
+        ]
+      ],
+      "candidates": [
+        {
+          "id": 2,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              130
+            ],
+            [
+              160,
+              150
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              10,
+              11
+            ],
+            "entranceNodeIds": [
+              10
+            ]
+          }
+        },
+        {
+          "id": 3,
+          "kind": "PedestrianUnderpassCandidate",
+          "coordinates": [
+            [
+              160,
+              150
+            ],
+            [
+              160,
+              170
+            ]
+          ],
+          "underpassRoadIds": [
+            1
+          ],
+          "underpassTopology": {
+            "networkId": 2,
+            "nodeIds": [
+              11,
+              12
+            ],
+            "entranceNodeIds": [
+              12
+            ]
+          }
+        },
+        {
+          "id": 4,
+          "kind": "BridgeCandidate",
+          "coordinates": [
+            [
+              160,
+              130
+            ],
+            [
+              160,
+              170
+            ]
+          ]
+        }
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "valid",
+      "runtimeTraversable": true,
+      "crossingTypesUsed": [
+        "bridge"
+      ]
+    }
+  ]
+}

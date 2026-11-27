@@ -20,6 +20,9 @@ class UnderpassAuditTests(unittest.TestCase):
             kind="PedestrianUnderpassCandidate",
             geometry=LineString([(-5, 0), (5, 0)]),
             underpass_road_ids=[1],
+            underpass_topology=dict(
+                networkId=2, nodeIds=[10, 11], entranceNodeIds=[10, 11]
+            ),
         )
 
     def check(self, expected, *, enabled=True, route=None, extra=()):
@@ -51,6 +54,9 @@ class UnderpassAuditTests(unittest.TestCase):
     def test_span_touching_road_is_rejected(self):
         self.span["geometry"] = LineString([(-5, 0), (0, 0)])
         self.check("violation")
+
+    def test_confirmed_visit_does_not_hide_another_visit_without_surface_entry(self):
+        self.check("violation", route=LineString([(-2, 0), (10, 0), (-10, 0)]))
 
     def test_other_road_without_link_still_blocks(self):
         self.check("violation", extra=[dict(self.road, id=3)])
@@ -89,7 +95,14 @@ class UnderpassAuditTests(unittest.TestCase):
 
     def test_separate_contacts_are_audited_locally(self):
         self.road["geometry"] = LineString([(0, -20), (0, 20), (10, 20), (10, -20)])
-        second = dict(self.span, id=3, geometry=LineString([(5, 0), (15, 0)]))
+        second = dict(
+            self.span,
+            id=3,
+            geometry=LineString([(5, 0), (15, 0)]),
+            underpass_topology=dict(
+                networkId=3, nodeIds=[20, 21], entranceNodeIds=[20, 21]
+            ),
+        )
         self.check("valid", route=LineString([(-10, 0), (20, 0)]), extra=[second])
 
     def test_shared_road_section_cannot_be_certified(self):

@@ -21,6 +21,22 @@ from shapely.geometry import LineString, Polygon, box, shape
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def crossing_types_used(audits):
+    """Match runtime road events: gas, then bridge, then underpass permission."""
+    kinds = set()
+    for alternative in audits:
+        for finding in alternative["findings"]:
+            if finding["reason"] != "road_contact" or not finding.get("allowed"):
+                continue
+            if finding["gasIds"]:
+                kinds.add("overhead_gas")
+            elif finding["bridgeIds"]:
+                kinds.add("bridge")
+            elif finding.get("underpassIds"):
+                kinds.add("pedestrian_underpass")
+    return sorted(kinds)
+
+
 def percentile(values, fraction):
     if not values:
         return None
@@ -129,18 +145,12 @@ def summarize(run_dir, inventory_path, output):
             result.get("routingMode", "historical"),
         )
         routing_modes.add(executed["routingMode"])
-        crossing_types = set()
+        crossing_types = crossing_types_used(result["audit"]["alternatives"])
         road_ids = set()
         for alternative in result["audit"]["alternatives"]:
             for finding in alternative["findings"]:
                 if finding["reason"] == "road_contact" and finding.get("allowed"):
                     road_ids.add(finding["roadId"])
-                    if finding["bridgeIds"]:
-                        crossing_types.add("bridge")
-                    if finding["gasIds"]:
-                        crossing_types.add("overhead_gas")
-                    if finding.get("underpassIds"):
-                        crossing_types.add("pedestrian_underpass")
         witness = witness_status(folder, executed, coverage)
         record = {
             "id": scenario["id"],

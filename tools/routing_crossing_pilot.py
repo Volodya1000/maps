@@ -45,6 +45,8 @@ KINDS = (
     "ApprovedCrossing",
     "PedestrianUnderpassCandidate",
 )
+UNDERPASS_ALIGNMENT_TOLERANCE_METRES = 1
+AUDIT_GEOMETRY_TOLERANCE_METRES = 1e-7
 
 
 def scenario_for_mode(scenario, mode: RoutingMode):
@@ -70,6 +72,8 @@ def audit_features(raw):
         }
         if "underpassRoadIds" in properties:
             feature["underpass_road_ids"] = properties["underpassRoadIds"]
+        if "underpassTopology" in properties:
+            feature["underpass_topology"] = properties["underpassTopology"]
         features.append(feature)
     return features
 
@@ -148,6 +152,25 @@ def query(connection, bounds, kinds=KINDS):
                         (feature["id"],),
                     )
                 ]
+    if connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='underpass_topology'"
+    ).fetchone():
+        for feature in features:
+            if feature["kind"] != "PedestrianUnderpassCandidate":
+                continue
+            row = connection.execute(
+                "SELECT network_id,node_ids,entrance_node_ids FROM underpass_topology WHERE candidate_id=?",
+                (feature["id"],),
+            ).fetchone()
+            if row:
+                try:
+                    feature["underpass_topology"] = {
+                        "networkId": row[0],
+                        "nodeIds": json.loads(row[1]),
+                        "entranceNodeIds": json.loads(row[2]),
+                    }
+                except (TypeError, json.JSONDecodeError):
+                    feature["underpass_topology"] = None
     return features
 
 
@@ -214,12 +237,213 @@ def local_road_contact(route, road, point):
     return unary_union(sections)
 
 
+def has_road_links(feature):
+    links = feature.get("underpass_road_ids")
+    return isinstance(links, list) and all(type(value) is int for value in links)
+
+
+def has_underpass_topology(feature, geometry):
+    topology = feature.get("underpass_topology")
+    if not isinstance(topology, dict) or geometry.geom_type != "LineString":
+        return False
+    nodes = topology.get("nodeIds")
+    entrances = topology.get("entranceNodeIds")
+    return (
+        type(topology.get("networkId")) is int
+        and isinstance(nodes, list)
+        and len(nodes) == len(geometry.coords)
+        and all(type(node) is int for node in nodes)
+        and isinstance(entrances, list)
+        and all(type(node) is int and node in nodes for node in entrances)
+    )
+
+
+def route_intervals(route, corridor):
+    """Keep repeated visits separate, including retraced coordinates."""
+    intervals = []
+    offset = 0
+    for a, b in zip(list(route.coords)[:-1], list(route.coords)[1:], strict=True):
+        edge = LineString([a, b])
+        if edge.length:
+            clipped = edge.intersection(corridor)
+            parts = list(clipped.geoms) if hasattr(clipped, "geoms") else [clipped]
+            for part in parts:
+                positions = contact_positions(edge, part)
+                if positions:
+                    intervals.append((offset + min(positions), offset + max(positions)))
+        offset += edge.length
+    merged = []
+    for start, end in sorted(intervals):
+        if merged and start <= merged[-1][1] + AUDIT_GEOMETRY_TOLERANCE_METRES:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+def underpass_networks(projected):
+    """Join source edges only by network, OSM node identity, and equal coordinates."""
+    edges = []
+    entrances = set()
+    for feature, geometry in projected:
+        kind = feature["kind"]
+        if kind != "PedestrianUnderpassCandidate" or not has_underpass_topology(
+            feature, geometry
+        ):
+            continue
+        topology = feature["underpass_topology"]
+        vertices = [
+            (topology["networkId"], node, *coordinate)
+            for node, coordinate in zip(
+                topology["nodeIds"], geometry.coords, strict=True
+            )
+        ]
+        entrances.update(
+            vertex for vertex in vertices if vertex[1] in topology["entranceNodeIds"]
+        )
+        edges.extend(
+            (a, b, feature, LineString([a[2:], b[2:]]))
+            for a, b in zip(vertices[:-1], vertices[1:], strict=True)
+        )
+    return edges, entrances
+
+
+def confirmed_underpass_ids(route, road, point, road_id, networks):
+    """Prove a source-connected passage between confirmed surface entrances.
+
+    Restrict source edges to the observed passage before finding connectivity:
+    coincident underground ways cannot create an unrecorded junction, even when
+    their network is connected elsewhere.
+    """
+    edges, entrances = networks
+    used = set()
+    for network in {a[0] for a, _, _, _ in edges}:
+        members = [edge for edge in edges if edge[0][0] == network]
+        corridor = unary_union(
+            [edge[3].buffer(UNDERPASS_ALIGNMENT_TOLERANCE_METRES) for edge in members]
+        )
+        if not corridor.covers(point):
+            continue
+        network_used = set()
+        unconfirmed_visit = False
+        for start, end in route_intervals(route, corridor):
+            passage = substring(route, start, end)
+            if passage.geom_type != "LineString" or not passage.covers(point):
+                continue
+            passage_corridor = passage.buffer(
+                UNDERPASS_ALIGNMENT_TOLERANCE_METRES + AUDIT_GEOMETRY_TOLERANCE_METRES
+            )
+            aligned = [edge for edge in members if passage_corridor.covers(edge[3])]
+            graph = {}
+            for a, b, _, _ in aligned:
+                graph.setdefault(a, set()).add(b)
+                graph.setdefault(b, set()).add(a)
+            entry = Point(passage.coords[0])
+            exit_point = Point(passage.coords[-1])
+            tolerance = (
+                UNDERPASS_ALIGNMENT_TOLERANCE_METRES + AUDIT_GEOMETRY_TOLERANCE_METRES
+            )
+            starts = [
+                node
+                for node in entrances
+                if node in graph and Point(node[2:]).distance(entry) <= tolerance
+            ]
+            ends = {
+                node
+                for node in entrances
+                if node in graph and Point(node[2:]).distance(exit_point) <= tolerance
+            }
+            passage_used = set()
+            for first in starts:
+                reached = {first}
+                pending = [first]
+                while pending:
+                    for adjacent in graph[pending.pop()] - reached:
+                        reached.add(adjacent)
+                        pending.append(adjacent)
+                if not (ends - {first}) & reached:
+                    continue
+                connected = [
+                    edge
+                    for edge in aligned
+                    if edge[0] in reached and edge[1] in reached
+                ]
+                connected_corridor = unary_union(
+                    [
+                        edge[3].buffer(UNDERPASS_ALIGNMENT_TOLERANCE_METRES)
+                        for edge in connected
+                    ]
+                )
+                section = local_road_contact(route, road, point)
+                if section.is_empty or not connected_corridor.covers(section):
+                    continue
+                passage_used.update(
+                    f["id"]
+                    for _, _, f, geometry in connected
+                    if has_road_links(f)
+                    and road_id in f["underpass_road_ids"]
+                    and geometry.buffer(UNDERPASS_ALIGNMENT_TOLERANCE_METRES).covers(
+                        point
+                    )
+                )
+            if not passage_used:
+                unconfirmed_visit = True
+            network_used.update(passage_used)
+        if not unconfirmed_visit:
+            used.update(network_used)
+    return sorted(used)
+
+
+def incomplete_underpass_continuations(route, point, road_id, projected, networks):
+    """Locate missing source evidence attached to the observed underground path.
+
+    Geometry can establish uncertainty at a source vertex, never permission to
+    join ways. Known topology still connects only by its exact source identity.
+    """
+    route_corridor = route.buffer(UNDERPASS_ALIGNMENT_TOLERANCE_METRES)
+    edges = [edge for edge in networks[0] if route_corridor.covers(edge[3])]
+    graph = {}
+    pending = []
+    for a, b, feature, geometry in edges:
+        graph.setdefault(a, set()).add(b)
+        graph.setdefault(b, set()).add(a)
+        if (
+            has_road_links(feature)
+            and road_id in feature["underpass_road_ids"]
+            and geometry.buffer(UNDERPASS_ALIGNMENT_TOLERANCE_METRES).covers(point)
+        ):
+            pending.extend((a, b))
+    reached = set(pending)
+    while pending:
+        for adjacent in graph[pending.pop()] - reached:
+            reached.add(adjacent)
+            pending.append(adjacent)
+    coordinates = {node[2:] for node in reached}
+    incomplete = [
+        (feature, geometry)
+        for feature, geometry in projected
+        if feature["kind"] == "PedestrianUnderpassCandidate"
+        and geometry.geom_type == "LineString"
+        and not has_underpass_topology(feature, geometry)
+        and route_corridor.covers(geometry)
+    ]
+    found = set()
+    while True:
+        connected = [
+            (feature, geometry)
+            for feature, geometry in incomplete
+            if feature["id"] not in found and coordinates.intersection(geometry.coords)
+        ]
+        if not connected:
+            break
+        for feature, geometry in connected:
+            found.add(feature["id"])
+            coordinates.update(geometry.coords)
+    return found
+
+
 def audit(route, features, coverage=None, origin=None, *, allow_underpasses=False):
     """Independent overlay on stored WKB. Unknown is used where model evidence is incomplete."""
-
-    def has_road_links(feature):
-        links = feature.get("underpass_road_ids")
-        return isinstance(links, list) and all(type(value) is int for value in links)
 
     findings = []
     if coverage is not None and not coverage.covers(route):
@@ -231,6 +455,7 @@ def audit(route, features, coverage=None, origin=None, *, allow_underpasses=Fals
         )
         for feature in features
     ]
+    networks = underpass_networks(projected) if allow_underpasses else ([], set())
     for feature, geometry in projected:
         if feature["kind"] in ("Building", "Marsh") and route.intersects(geometry):
             findings.append({"reason": "blocked_terrain", "featureId": feature["id"]})
@@ -278,29 +503,35 @@ def audit(route, features, coverage=None, origin=None, *, allow_underpasses=Fals
                     gas.append(f["id"])
             underpasses = []
             missing_links = []
+            missing_topology = []
             if allow_underpasses:
-                section = local_road_contact(route, geometry, point)
-                underpasses = [
-                    f["id"]
+                underpasses = confirmed_underpass_ids(
+                    route, geometry, point, feature["id"], networks
+                )
+                relevant_underpasses = [
+                    (f, g)
                     for f, g in projected
                     if f["kind"] == "PedestrianUnderpassCandidate"
-                    and has_road_links(f)
-                    and feature["id"] in f["underpass_road_ids"]
-                    and g.crosses(geometry)
-                    and not section.is_empty
-                    and g.buffer(1).covers(point)
-                    and g.buffer(1).covers(section)
+                    and (
+                        not has_road_links(f)
+                        or feature["id"] in f["underpass_road_ids"]
+                    )
+                    and g.buffer(UNDERPASS_ALIGNMENT_TOLERANCE_METRES).covers(point)
                 ]
                 missing_links = [
-                    f["id"]
-                    for f, g in projected
-                    if f["kind"] == "PedestrianUnderpassCandidate"
-                    and not has_road_links(f)
-                    and g.crosses(geometry)
-                    and not section.is_empty
-                    and g.buffer(1).covers(point)
-                    and g.buffer(1).covers(section)
+                    f["id"] for f, _ in relevant_underpasses if not has_road_links(f)
                 ]
+                missing_topology = [
+                    f["id"]
+                    for f, g in relevant_underpasses
+                    if not has_underpass_topology(f, g)
+                ]
+                missing_topology = sorted(
+                    set(missing_topology)
+                    | incomplete_underpass_continuations(
+                        route, point, feature["id"], projected, networks
+                    )
+                )
             findings.append(
                 {
                     "reason": "road_contact",
@@ -310,10 +541,11 @@ def audit(route, features, coverage=None, origin=None, *, allow_underpasses=Fals
                     "gasIds": gas,
                     "underpassIds": underpasses,
                     "missingUnderpassLinkIds": missing_links,
+                    "missingUnderpassTopologyIds": missing_topology,
                     "allowed": True
                     if bridges or gas or underpasses
                     else None
-                    if missing_links
+                    if missing_links or missing_topology
                     else False,
                 }
             )
@@ -955,6 +1187,11 @@ def generate(data, output, count=10, corpus_version="v2"):
                             **(
                                 {"underpassRoadIds": f["underpass_road_ids"]}
                                 if "underpass_road_ids" in f
+                                else {}
+                            ),
+                            **(
+                                {"underpassTopology": f["underpass_topology"]}
+                                if "underpass_topology" in f
                                 else {}
                             ),
                             "target": f["id"] == road["id"],

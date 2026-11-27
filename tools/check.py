@@ -20,6 +20,7 @@ from check_coverage import find_report
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "artifacts"
 SOLUTION = "CableRoutePlanner.Desktop.slnf"
+DOTNET_FORMAT_ATTEMPTS = 3
 
 
 def run(
@@ -39,6 +40,25 @@ def executable(name: str) -> str:
             f"Install {name} before running this check; see docs/development.md."
         )
     return result
+
+
+def run_dotnet_format(dotnet: str, *arguments: str, env: dict[str, str]) -> None:
+    # SDK 8's ProcessRunner can complete its CLI version probe before starting
+    # stdout readers. Exit 4 identifies that probe; formatting violations use 2.
+    # https://github.com/dotnet/format/blob/6eca172fd9205e0275d2d88bebe1e4f4fbb173d4/src/Utilities/ProcessRunner.cs
+    # https://github.com/dotnet/format/blob/6eca172fd9205e0275d2d88bebe1e4f4fbb173d4/src/Commands/FormatCommandCommon.cs
+    for attempt in range(1, DOTNET_FORMAT_ATTEMPTS + 1):
+        try:
+            run(dotnet, "format", *arguments, env=env)
+            return
+        except subprocess.CalledProcessError as error:
+            if error.returncode != 4 or attempt == DOTNET_FORMAT_ATTEMPTS:
+                raise
+            print(
+                "dotnet format CLI probe failed (exit 4; upstream stdout race); "
+                f"retrying {attempt + 1}/{DOTNET_FORMAT_ATTEMPTS}.",
+                flush=True,
+            )
 
 
 def lint() -> None:
@@ -108,18 +128,22 @@ def desktop() -> None:
     dotnet_env["DOTNET_HOST_PATH"] = dotnet
     run(dotnet, "restore", SOLUTION, "--locked-mode", env=dotnet_env)
     run(dotnet, "tool", "restore", env=dotnet_env)
-    run(
+    # dotnet format probes a bare `dotnet --version` and hides the exception
+    # behind exit code 4. Keep the runtime and inherited CLI lookup observable.
+    run(dotnet, "--info", env=dotnet_env)
+    run("dotnet", "--version", env=dotnet_env)
+    run_dotnet_format(
         dotnet,
-        "format",
         "whitespace",
         SOLUTION,
         "--no-restore",
         "--verify-no-changes",
+        "--verbosity",
+        "diagnostic",
         env=dotnet_env,
     )
-    run(
+    run_dotnet_format(
         dotnet,
-        "format",
         "style",
         SOLUTION,
         "--no-restore",
@@ -128,9 +152,8 @@ def desktop() -> None:
         "warn",
         env=dotnet_env,
     )
-    run(
+    run_dotnet_format(
         dotnet,
-        "format",
         "analyzers",
         SOLUTION,
         "--no-restore",
@@ -332,9 +355,8 @@ def android() -> None:
         "--locked-mode",
         env=dotnet_env,
     )
-    run(
+    run_dotnet_format(
         dotnet,
-        "format",
         "style",
         "src/CableRoutePlanner.Android",
         "--no-restore",

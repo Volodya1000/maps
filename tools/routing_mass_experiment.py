@@ -257,6 +257,11 @@ def freeze(data, output):
                                     if "underpass_road_ids" in item
                                     else {}
                                 ),
+                                **(
+                                    {"underpassTopology": item["underpass_topology"]}
+                                    if "underpass_topology" in item
+                                    else {}
+                                ),
                                 "target": item["id"] == case["targetRoad"]["featureId"],
                             },
                         )

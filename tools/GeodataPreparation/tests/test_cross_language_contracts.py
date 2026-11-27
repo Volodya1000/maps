@@ -280,14 +280,37 @@ class CrossLanguageContracts(unittest.TestCase):
         assets = self.folder / "assets"
         split_package(self.package, assets, chunk_bytes=1024)
         chunks = sorted(assets.glob("geodata.*.gz"))
-        chunks[len(chunks) // 2].unlink()
+        missing = chunks[len(chunks) // 2]
+        missing_bytes = missing.read_bytes()
+        missing.unlink()
         installed = self.folder / "installed"
-        run("dotnet", str(VERIFY), "--install-assets", str(assets), str(installed))
-        output = self.folder / "invalid-inspection.json"
+        shutil.copytree(self.package, installed)
+        original = self.inspect(installed)
+        previous_database = (installed / "geodata.sqlite").read_bytes()
+        previous_manifest = (installed / "manifest.json").read_bytes()
+        manifest_path = assets / "manifest.json"
+        updated_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        updated_manifest["attribution"] = "Updated contract package"
+        manifest_path.write_text(json.dumps(updated_manifest), encoding="utf-8")
         result = subprocess.run(
-            ["dotnet", str(VERIFY), "--inspect-features", str(installed), str(output)],
+            ["dotnet", str(VERIFY), "--install-assets", str(assets), str(installed)],
             capture_output=True,
             timeout=30,
         )
         self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(output.exists())
+        self.assertEqual((installed / "geodata.sqlite").read_bytes(), previous_database)
+        self.assertEqual((installed / "manifest.json").read_bytes(), previous_manifest)
+        self.assertEqual(self.inspect(installed), original)
+        self.assertEqual(list(installed.glob("*.tmp")), [])
+        self.assertEqual(list(installed.glob(".geodata-install-*")), [])
+
+        missing.write_bytes(missing_bytes)
+        run("dotnet", str(VERIFY), "--install-assets", str(assets), str(installed))
+        self.assertEqual(
+            self.inspect(installed),
+            original | {"attribution": "Updated contract package"},
+        )
+        self.assertEqual(
+            json.loads((installed / "manifest.json").read_text(encoding="utf-8")),
+            updated_manifest,
+        )

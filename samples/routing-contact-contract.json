@@ -320,7 +320,18 @@
         ],
         "underpassRoadIds": [
           1
-        ]
+        ],
+        "underpassTopology": {
+          "networkId": 2,
+          "nodeIds": [
+            10,
+            11
+          ],
+          "entranceNodeIds": [
+            10,
+            11
+          ]
+        }
       },
       "runtimeTraversable": true
     },

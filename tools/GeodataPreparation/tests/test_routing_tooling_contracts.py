@@ -202,6 +202,8 @@ class SharedContactContractTests(unittest.TestCase):
                     }
                     if "underpassRoadIds" in candidate:
                         feature["underpass_road_ids"] = candidate["underpassRoadIds"]
+                    if "underpassTopology" in candidate:
+                        feature["underpass_topology"] = candidate["underpassTopology"]
                     features.append(feature)
                 checks = pilot.audit(
                     LineString(case["route"]),
@@ -264,6 +266,11 @@ class PilotRunnerIntegrationTests(unittest.TestCase):
                         "featureId": 2,
                         "kind": "PedestrianUnderpassCandidate",
                         "underpassRoadIds": [1],
+                        "underpassTopology": {
+                            "networkId": 2,
+                            "nodeIds": [10, 11],
+                            "entranceNodeIds": [10, 11],
+                        },
                     },
                     "geometry": mapping(LineString([(27.4999, 53.9), (27.5001, 53.9)])),
                 },
@@ -432,6 +439,11 @@ class HistoricalReportContractTests(unittest.TestCase):
                         "featureId": 2,
                         "kind": "PedestrianUnderpassCandidate",
                         "underpassRoadIds": [1],
+                        "underpassTopology": {
+                            "networkId": 2,
+                            "nodeIds": [10, 11],
+                            "entranceNodeIds": [10, 11],
+                        },
                     },
                     "geometry": mapping(LineString([(27.4999, 53.9), (27.5001, 53.9)])),
                 },
