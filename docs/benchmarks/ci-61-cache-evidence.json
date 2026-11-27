@@ -1,0 +1,70 @@
+[
+  {
+    "job_id": 131086530161,
+    "lines": [
+      "2026-11-12T09:16:25.9993393Z Cache not found for input keys: belarus-v1-f94aa250266aee19da6712975170557c920c3e0625bb20d8282fdd4227197557",
+      "2026-11-12T09:16:36.9082833Z Downloaded and verified https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/geodata.sqlite.gz",
+      "2026-11-12T09:16:40.1729210Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=14160]",
+      "2026-11-12T09:16:53.6207193Z Artifact pull-request-belarus-data has been successfully uploaded! Final size is 1211684271 bytes. Artifact ID is 13929599427"
+    ]
+  },
+  {
+    "job_id": 131107907334,
+    "lines": [
+      "2026-11-12T09:59:08.1633965Z Cache not found for input keys: belarus-v1-f94aa250266aee19da6712975170557c920c3e0625bb20d8282fdd4227197557",
+      "2026-11-12T09:59:19.4077665Z Downloaded and verified https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/geodata.sqlite.gz",
+      "2026-11-12T09:59:22.2371934Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=14062]",
+      "2026-11-12T09:59:29.1568221Z Artifact pull-request-belarus-data has been successfully uploaded! Final size is 1211684271 bytes. Artifact ID is 13933471095"
+    ]
+  },
+  {
+    "job_id": 131721352177,
+    "lines": [
+      "2026-11-13T06:00:01.2787356Z Cache not found for input keys: belarus-v1-f94aa250266aee19da6712975170557c920c3e0625bb20d8282fdd4227197557",
+      "2026-11-13T06:00:14.6016868Z Downloaded and verified https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/geodata.sqlite.gz",
+      "2026-11-13T06:00:18.2177814Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=16927]",
+      "2026-11-13T06:00:29.0260916Z Artifact pull-request-belarus-data has been successfully uploaded! Final size is 1211684271 bytes. Artifact ID is 14014216953"
+    ]
+  },
+  {
+    "job_id": 135089630783,
+    "lines": [
+      "2026-11-18T19:56:40.9205416Z Cache not found for input keys: belarus-v1-000f0891bbad7cfda352b68d9aadd3b192d8273d5bcbdb78e16943cca2538200",
+      "2026-11-18T19:56:50.5856134Z Downloaded and verified https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/belarus-261030.osm.pbf",
+      "2026-11-18T20:07:57.4451604Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=674200]",
+      "2026-11-18T20:08:11.0419915Z Artifact pull-request-belarus-data has been successfully uploaded! Final size is 1211757721 bytes. Artifact ID is 14465243460"
+    ]
+  },
+  {
+    "job_id": 139832386746,
+    "lines": [
+      "2026-11-26T10:03:18.0750820Z Cache hit for: belarus-v1-cf38347cbc303544c9a6b6b3bfa815420880b1195b4aff2ce7bf6e6fb416177f",
+      "2026-11-26T10:03:32.8093899Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=945]",
+      "2026-11-26T10:03:45.2771646Z Artifact pull-request-belarus-data has been successfully uploaded! Final size is 1216395436 bytes. Artifact ID is 15105452022"
+    ]
+  },
+  {
+    "job_id": 140084565801,
+    "lines": [
+      "2026-11-26T17:46:42.4333627Z Cache hit for: belarus-v1-64dcc56840d78d963e034e858e138997dd3d9a7eb33d8b0d019605c7fb4b6336",
+      "2026-11-26T17:46:52.5292410Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=863]"
+    ]
+  },
+  {
+    "job_id": 139535618817,
+    "lines": [
+      "2026-11-25T21:52:15.7151321Z Cache not found for input keys: belarus-v1-7946b2289b616e5e97092f2a350c7fae7449c8d081bdc0ba788262429fbd08c7",
+      "2026-11-25T21:52:22.4749664Z Downloaded and verified https://github.com/Volodya1000/maps/releases/download/belarus-261030-f94aa250266aee19/belarus-261030.osm.pbf",
+      "2026-11-25T22:17:40.3407621Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=1523497]",
+      "2026-11-25T22:17:56.3355847Z Artifact pull-request-belarus-data has been successfully uploaded! Final size is 1211825828 bytes. Artifact ID is 15067438067"
+    ]
+  },
+  {
+    "job_id": 137143101176,
+    "lines": [
+      "2026-11-22T08:06:50.4158009Z Cache hit for: belarus-v1-cf38347cbc303544c9a6b6b3bfa815420880b1195b4aff2ce7bf6e6fb416177f",
+      "2026-11-22T08:07:04.0475176Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=813]",
+      "2026-11-22T08:07:16.7366781Z Artifact pull-request-belarus-data has been successfully uploaded! Final size is 1216395436 bytes. Artifact ID is 14746085827"
+    ]
+  }
+]

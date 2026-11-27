@@ -10,6 +10,10 @@ on:
         description: Exact commit SHA checked by the caller workflow
         required: true
         type: string
+      country_manifest_sha256:
+        description: Manifest identity from the verified parent country preparation
+        required: true
+        type: string
       preview_package_id:
         description: Application ID of the already tested Minsk preview
         required: true
@@ -34,43 +38,11 @@ jobs:
           test -n "$PR_NUMBER_PAYLOAD" && test "$PR_NUMBER" = "$PR_NUMBER_PAYLOAD"
           [[ "$TESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
 
-  geodata:
-    needs: verify-source
-    outputs:
-      android_version_code: ${{ steps.version.outputs.android_version_code }}
-      country_manifest_sha256: ${{ steps.country_identity.outputs.manifest_sha256 }}
-    runs-on: ubuntu-22.04
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.tested_sha }}
-      - name: Read application version
-        id: version
-        run: echo "android_version_code=$(python3 tools/release_version.py | sed -n 's/^ANDROID_VERSION_CODE=//p')" >> "$GITHUB_OUTPUT"
-      - uses: ./.github/actions/country-data
-      - name: Record verified country identity
-        id: country_identity
-        run: |
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import hashlib
-          from pathlib import Path
-          print('manifest_sha256=' + hashlib.sha256(Path('artifacts/belarus/manifest.json').read_bytes()).hexdigest())
-          PY
-      - uses: actions/upload-artifact@v7
-        if: contains(github.event.pull_request.labels.*.name, 'ci:routing-benchmark')
-        with:
-          name: pull-request-belarus-data
-          path: artifacts/belarus/
-          retention-days: 1
-          compression-level: 0
-
   android:
-    needs: [verify-source, geodata]
+    needs: [verify-source]
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
-      ANDROID_VERSION_CODE: ${{ needs.geodata.outputs.android_version_code }}
       # A consumer-only retry must retain the tested APK's ID and signing key.
       PREVIEW_PACKAGE_ID: ${{ inputs.preview_package_id }}
     steps:
@@ -80,12 +52,14 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Read application version
+        run: python3 tools/release_version.py >> "$GITHUB_ENV"
       - name: Obtain the current verified country package
         uses: ./.github/actions/country-data
       - name: Verify the shared country identity
         id: verify_country_identity
         env:
-          EXPECTED_COUNTRY_MANIFEST_SHA256: ${{ needs.geodata.outputs.country_manifest_sha256 }}
+          EXPECTED_COUNTRY_MANIFEST_SHA256: ${{ inputs.country_manifest_sha256 }}
         run: |
           python3 - <<'PY'
           import hashlib
@@ -153,6 +127,7 @@ jobs:
             signer="$actual_signer"
           done
           python3 tools/check_apk_elevation.py "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --country
+          python3 tools/check_apk_map.py "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --manifest artifacts/belarus/manifest.json --output artifacts/apk/map-integrity.json
 
       # A signed/parsable APK is not necessarily installable: the full country
       # package is much larger than the Minsk smoke-tested build.
@@ -201,12 +176,14 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: CableRoutePlanner-PR-${{ inputs.pr_number }}-checksums
-          path: artifacts/apk/SHA256SUMS.txt
+          path: |
+            artifacts/apk/SHA256SUMS.txt
+            artifacts/apk/map-integrity.json
           if-no-files-found: error
 
   routing-benchmark:
     if: contains(github.event.pull_request.labels.*.name, 'ci:routing-benchmark')
-    needs: [verify-source, geodata]
+    needs: [verify-source]
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:

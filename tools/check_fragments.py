@@ -11,7 +11,9 @@ NAME = re.compile(r"\d+\.(feature|bugfix|refactor|doc)\.md$")
 
 
 def git(*args: str) -> str:
-    return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
+    return subprocess.check_output(
+        ["git", *args], cwd=ROOT, text=True, encoding="utf-8"
+    ).strip()
 
 
 def check(base: str, staged: bool) -> None:

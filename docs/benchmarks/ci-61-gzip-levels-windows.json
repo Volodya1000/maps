@@ -1,0 +1,113 @@
+{
+  "python": "3.12.14 (main, Sep 29 2026, 15:00:58) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-2022Server-10.0.20348-SP0",
+  "logical_cpus": 28,
+  "zlib": "1.3.2",
+  "source_gzip_sha256": "11a8800808a6d7d9f0263a06d7e1dee39ff43ac6936111a018a2a9677df955cf",
+  "cases": [
+    {
+      "compresslevel": 1,
+      "workers": 1,
+      "wall_seconds": 102.71846069999992,
+      "cpu_seconds": 94.03125,
+      "peak_rss_bytes": 159219712,
+      "chunks": 39,
+      "compressed_bytes": 1234963519,
+      "database_bytes": 2577719296,
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "decompression_seconds": 25.683196199999657,
+      "repeat": 1
+    },
+    {
+      "compresslevel": 3,
+      "workers": 1,
+      "wall_seconds": 112.31440140000086,
+      "cpu_seconds": 105.5625,
+      "peak_rss_bytes": 159322112,
+      "chunks": 39,
+      "compressed_bytes": 1232408278,
+      "database_bytes": 2577719296,
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "decompression_seconds": 24.498032200001035,
+      "repeat": 1
+    },
+    {
+      "compresslevel": 6,
+      "workers": 1,
+      "wall_seconds": 179.70596789999945,
+      "cpu_seconds": 169.359375,
+      "peak_rss_bytes": 158502912,
+      "chunks": 39,
+      "compressed_bytes": 1211703118,
+      "database_bytes": 2577719296,
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "decompression_seconds": 23.737678399998913,
+      "repeat": 1
+    },
+    {
+      "compresslevel": 9,
+      "workers": 1,
+      "wall_seconds": 404.53673920000074,
+      "cpu_seconds": 395.90625,
+      "peak_rss_bytes": 158609408,
+      "chunks": 39,
+      "compressed_bytes": 1210638768,
+      "database_bytes": 2577719296,
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "decompression_seconds": 25.181500899998355,
+      "repeat": 1
+    },
+    {
+      "compresslevel": 9,
+      "workers": 1,
+      "wall_seconds": 394.2306138999993,
+      "cpu_seconds": 385.234375,
+      "peak_rss_bytes": 158629888,
+      "chunks": 39,
+      "compressed_bytes": 1210638768,
+      "database_bytes": 2577719296,
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "decompression_seconds": 23.10932370000046,
+      "repeat": 2
+    },
+    {
+      "compresslevel": 6,
+      "workers": 1,
+      "wall_seconds": 168.83125539999855,
+      "cpu_seconds": 161.609375,
+      "peak_rss_bytes": 158580736,
+      "chunks": 39,
+      "compressed_bytes": 1211703118,
+      "database_bytes": 2577719296,
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "decompression_seconds": 23.34815510000044,
+      "repeat": 2
+    },
+    {
+      "compresslevel": 3,
+      "workers": 1,
+      "wall_seconds": 108.21788370000104,
+      "cpu_seconds": 100.046875,
+      "peak_rss_bytes": 159014912,
+      "chunks": 39,
+      "compressed_bytes": 1232408278,
+      "database_bytes": 2577719296,
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "decompression_seconds": 22.89512560000003,
+      "repeat": 2
+    },
+    {
+      "compresslevel": 1,
+      "workers": 1,
+      "wall_seconds": 97.89854879999984,
+      "cpu_seconds": 91.28125,
+      "peak_rss_bytes": 159260672,
+      "chunks": 39,
+      "compressed_bytes": 1234963519,
+      "database_bytes": 2577719296,
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "decompression_seconds": 23.59727010000097,
+      "repeat": 2
+    }
+  ]
+}

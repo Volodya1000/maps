@@ -1,0 +1,67 @@
+{
+  "source_commit": "62a72d811de57626e4d677bdb437e1cb4a6b83c5",
+  "source_database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+  "input": "Previous full Belarus SQLite, no country elevation assets; controlled same input for all four cases.",
+  "application_id": "by.cablerouteplanner.benchmark",
+  "android_version_code": 2002,
+  "checks": "Actual signed APK ZIP reconstruction SHA-256 and exact source manifest; aapt confirms no INTERNET permission.",
+  "limitations": "One APK per level; Windows build cache/background load differs. No local emulator install/startup measured. Publish durations are not a controlled speed comparison.",
+  "cases": [
+    {
+      "compresslevel": 1,
+      "workers": 4,
+      "split_seconds": 28.042622400000255,
+      "publish_seconds": 193.2124543000009,
+      "apk_sha256": "41b38fe8cc0428d4a1c9dcb2807377fcc04f5cdb9e2f8d9cb52d107f356e546d",
+      "apk_bytes": 1303532006,
+      "manifest_sha256": "fe80b1cb83513ee22c3bc232e753a0b2628e3f6be05b24bcc8c3f4e2927173e1",
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "database_bytes": 2577719296,
+      "chunks": 39,
+      "gzip_bytes": 1234963519,
+      "apk_map_bytes": 1233569813
+    },
+    {
+      "compresslevel": 3,
+      "workers": 4,
+      "split_seconds": 31.111890799998946,
+      "publish_seconds": 95.98560039999938,
+      "apk_sha256": "bad0ab8268273326fbc462876d0cfeade1a55394b8ba54db5396a70bfda2a623",
+      "apk_bytes": 1300644326,
+      "manifest_sha256": "fe80b1cb83513ee22c3bc232e753a0b2628e3f6be05b24bcc8c3f4e2927173e1",
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "database_bytes": 2577719296,
+      "chunks": 39,
+      "gzip_bytes": 1232408278,
+      "apk_map_bytes": 1230683558
+    },
+    {
+      "compresslevel": 6,
+      "workers": 4,
+      "split_seconds": 51.33846739999899,
+      "publish_seconds": 93.93947320000007,
+      "apk_sha256": "0c5e9fcdf584bc58478ca9db58c9071a5dfce0f27562953b1c3c964f457c806f",
+      "apk_bytes": 1279971814,
+      "manifest_sha256": "fe80b1cb83513ee22c3bc232e753a0b2628e3f6be05b24bcc8c3f4e2927173e1",
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "database_bytes": 2577719296,
+      "chunks": 39,
+      "gzip_bytes": 1211703118,
+      "apk_map_bytes": 1210012612
+    },
+    {
+      "compresslevel": 9,
+      "workers": 4,
+      "split_seconds": 111.80839150000065,
+      "publish_seconds": 280.783391500001,
+      "apk_sha256": "f01061f89301120eef080f9cfd7140377dd061081a9855574106326e02b1b203",
+      "apk_bytes": 1278906854,
+      "manifest_sha256": "fe80b1cb83513ee22c3bc232e753a0b2628e3f6be05b24bcc8c3f4e2927173e1",
+      "database_sha256": "f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493",
+      "database_bytes": 2577719296,
+      "chunks": 39,
+      "gzip_bytes": 1210638768,
+      "apk_map_bytes": 1208946965
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+	Command being timed: "uv run --project tools/GeodataPreparation --locked python -m cProfile -o artifacts/profile-country/conversion.pstats tools/GeodataPreparation/prepare_country.py --pbf artifacts/profile-country/4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01.osm.pbf --expected-sha256 4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01 --output artifacts/profile-country/package --compress"
+	User time (seconds): 1867.95
+	System time (seconds): 16.42
+	Percent of CPU this job got: 101%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 31:01.47
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1236628
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 571901
+	Voluntary context switches: 210433
+	Involuntary context switches: 8748
+	Swaps: 0
+	File system inputs: 104
+	File system outputs: 14441856
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

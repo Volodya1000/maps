@@ -91,6 +91,39 @@ class DotnetFormatTests(unittest.TestCase):
             self.invoke([failure, None])
         self.assertIs(caught.exception, failure)
 
+    def test_desktop_combined_formatter_recovers_cli_probe_before_build(self):
+        expected = (
+            self.command[0],
+            "format",
+            check.SOLUTION,
+            "--no-restore",
+            "--verify-no-changes",
+            "--severity",
+            "warn",
+        )
+        probe_failed = False
+        reached_build = OSError()
+
+        def process(command, **options):
+            nonlocal probe_failed
+            if command[1] == "format":
+                self.assertEqual(tuple(command), expected)
+                if not probe_failed:
+                    probe_failed = True
+                    raise subprocess.CalledProcessError(4, command)
+            if command[1] == "build":
+                raise reached_build
+            return subprocess.CompletedProcess(command, 0)
+
+        with (
+            patch.object(check, "executable", return_value=self.command[0]),
+            patch.object(check.subprocess, "run", side_effect=process),
+            redirect_stdout(io.StringIO()),
+            self.assertRaises(OSError) as raised,
+        ):
+            check.desktop()
+        self.assertIs(raised.exception, reached_build)
+
 
 if __name__ == "__main__":
     unittest.main()

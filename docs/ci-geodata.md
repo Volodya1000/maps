@@ -259,3 +259,7 @@ cache, не задержку сервиса Actions Cache. Старый успе
 PR были PBF download, cache upload, artifact upload и загрузка карты потребителем;
 теперь это Release download, artifact upload и загрузка потребителем. Денежный
 биллинг и суммарный сетевой overhead GitHub не измерялись.
+
+## Производительность PR CI
+
+Geodata готовится после quality/desktop/data/terrain параллельно Minsk Android. Полный APK и routing benchmark по-прежнему ждут все обязательные проверки и geodata. Точный ключ, Release fallback и fail-closed validation сохранены. [Измерения и экспериментальные метки](ci-performance.md) отделяют измеренный cache hit/miss от прогноза изменения графа.

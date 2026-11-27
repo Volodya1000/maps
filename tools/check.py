@@ -134,27 +134,6 @@ def desktop() -> None:
     run("dotnet", "--version", env=dotnet_env)
     run_dotnet_format(
         dotnet,
-        "whitespace",
-        SOLUTION,
-        "--no-restore",
-        "--verify-no-changes",
-        "--verbosity",
-        "diagnostic",
-        env=dotnet_env,
-    )
-    run_dotnet_format(
-        dotnet,
-        "style",
-        SOLUTION,
-        "--no-restore",
-        "--verify-no-changes",
-        "--severity",
-        "warn",
-        env=dotnet_env,
-    )
-    run_dotnet_format(
-        dotnet,
-        "analyzers",
         SOLUTION,
         "--no-restore",
         "--verify-no-changes",

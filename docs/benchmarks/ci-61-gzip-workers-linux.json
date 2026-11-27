@@ -1,0 +1,87 @@
+{
+  "python": "3.12.16 (main, Oct 26 2026, 02:48:01) [GCC 11.4.0]",
+  "platform": "Linux-6.8.0-1073-azure-x86_64-with-glibc2.35",
+  "logical_cpus": 4,
+  "zlib": "1.2.11",
+  "source_gzip_sha256": "9d95e8617742c166c4ec07f580e2fccc6308106f869e5b17134bf23aee2c4e88",
+  "cases": [
+    {
+      "compresslevel": 6,
+      "workers": 2,
+      "wall_seconds": 58.11604992000002,
+      "cpu_seconds": 112.776927657,
+      "peak_rss_bytes": 316579840,
+      "chunks": 39,
+      "compressed_bytes": 1216334617,
+      "database_bytes": 2589704192,
+      "database_sha256": "1d055f4987932865150fbea2b4b1a3b9f7742127da7bdc7bcefeb7f064219439",
+      "decompression_seconds": 11.547320682999953,
+      "repeat": 1
+    },
+    {
+      "compresslevel": 6,
+      "workers": 4,
+      "wall_seconds": 37.7472074960001,
+      "cpu_seconds": 138.554616469,
+      "peak_rss_bytes": 584101888,
+      "chunks": 39,
+      "compressed_bytes": 1216334617,
+      "database_bytes": 2589704192,
+      "database_sha256": "1d055f4987932865150fbea2b4b1a3b9f7742127da7bdc7bcefeb7f064219439",
+      "decompression_seconds": 11.573394644000018,
+      "repeat": 1
+    },
+    {
+      "compresslevel": 6,
+      "workers": 4,
+      "wall_seconds": 37.64625908500011,
+      "cpu_seconds": 138.87923134099998,
+      "peak_rss_bytes": 586088448,
+      "chunks": 39,
+      "compressed_bytes": 1216334617,
+      "database_bytes": 2589704192,
+      "database_sha256": "1d055f4987932865150fbea2b4b1a3b9f7742127da7bdc7bcefeb7f064219439",
+      "decompression_seconds": 11.582789741999932,
+      "repeat": 2
+    },
+    {
+      "compresslevel": 6,
+      "workers": 2,
+      "wall_seconds": 58.23656360300038,
+      "cpu_seconds": 112.988318397,
+      "peak_rss_bytes": 316575744,
+      "chunks": 39,
+      "compressed_bytes": 1216334617,
+      "database_bytes": 2589704192,
+      "database_sha256": "1d055f4987932865150fbea2b4b1a3b9f7742127da7bdc7bcefeb7f064219439",
+      "decompression_seconds": 11.581846616999883,
+      "repeat": 2
+    },
+    {
+      "compresslevel": 6,
+      "workers": 2,
+      "wall_seconds": 58.28663867200021,
+      "cpu_seconds": 112.813802745,
+      "peak_rss_bytes": 325337088,
+      "chunks": 39,
+      "compressed_bytes": 1216334617,
+      "database_bytes": 2589704192,
+      "database_sha256": "1d055f4987932865150fbea2b4b1a3b9f7742127da7bdc7bcefeb7f064219439",
+      "decompression_seconds": 11.606922592000046,
+      "repeat": 3
+    },
+    {
+      "compresslevel": 6,
+      "workers": 4,
+      "wall_seconds": 37.7451639840001,
+      "cpu_seconds": 138.56682026099998,
+      "peak_rss_bytes": 584306688,
+      "chunks": 39,
+      "compressed_bytes": 1216334617,
+      "database_bytes": 2589704192,
+      "database_sha256": "1d055f4987932865150fbea2b4b1a3b9f7742127da7bdc7bcefeb7f064219439",
+      "decompression_seconds": 11.54953867300037,
+      "repeat": 3
+    }
+  ]
+}
