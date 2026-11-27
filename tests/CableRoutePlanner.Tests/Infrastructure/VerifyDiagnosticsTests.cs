@@ -32,7 +32,7 @@ public sealed class VerifyDiagnosticsTests
     [Theory]
     [InlineData(false, "success")]
     [InlineData(true, "no_route")]
-    public async Task CrossingPilotPersistsSearchDiagnosticsForBothOutcomes(bool blocked, string expectedStatus)
+    public async Task CrossingPilotPersistsPeakWorkingSetAndSearchDiagnosticsForBothOutcomes(bool blocked, string expectedStatus)
     {
         MapFeature[] features = blocked
             ? [TestData.Polygon(1, TerrainKind.Building, 140, -5000, 180, 5000)] : [];
@@ -52,6 +52,7 @@ public sealed class VerifyDiagnosticsTests
         Assert.Equal(0, exitCode);
         using JsonDocument result = JsonDocument.Parse(File.ReadAllText(resultPath));
         Assert.Equal(expectedStatus, result.RootElement.GetProperty("status").GetString());
+        Assert.True(result.RootElement.GetProperty("peakWorkingSetBytes").GetInt64() > 0);
         JsonElement diagnostics = result.RootElement.GetProperty("diagnostics");
         Assert.Equal(0, diagnostics.GetProperty("droppedEvents").GetInt32());
         JsonElement[] events = diagnostics.GetProperty("events").EnumerateArray().ToArray();
@@ -67,5 +68,33 @@ public sealed class VerifyDiagnosticsTests
             Assert.Contains(events, entry => entry.GetProperty("eventId").GetInt32() == 7
                 && entry.GetProperty("fields").GetProperty("Reason").GetString() == "NoRouteInSearchArea");
         }
+    }
+
+    [Theory]
+    [InlineData(false, "invalid_input", "BlockedTerrain")]
+    [InlineData(true, "resource_limit", "ResourceLimit")]
+    public async Task CrossingPilotPersistsPeakWorkingSetForInputAndResourceFailures(
+        bool resourceLimited, string expectedStatus, string expectedReason)
+    {
+        MapFeature[] features = resourceLimited
+            ? [] : [TestData.Polygon(1, TerrainKind.Building, 0, 0, 40, 40)];
+        using SqliteGeodataFixture fixture = new(features);
+        using TemporaryDirectory output = new();
+        string scenarioPath = Path.Combine(output.DirectoryPath, "scenario.json");
+        string resultPath = Path.Combine(output.DirectoryPath, "result.json");
+        File.WriteAllText(scenarioPath, JsonSerializer.Serialize(new
+        {
+            points = new[] { TestData.P(10, 10), TestData.P(300, 600) },
+            routingOptions = resourceLimited ? new RoutingOptions(5, 100) : TestData.Options
+        }));
+
+        int exitCode = await CrossingPilot.RunAsync(fixture.DirectoryPath, scenarioPath, resultPath);
+
+        Assert.Equal(0, exitCode);
+        using JsonDocument result = JsonDocument.Parse(File.ReadAllText(resultPath));
+        Assert.Equal(expectedStatus, result.RootElement.GetProperty("status").GetString());
+        Assert.Equal(expectedReason, result.RootElement.GetProperty("error").GetProperty("reason").GetString());
+        Assert.True(result.RootElement.GetProperty("peakWorkingSetBytes").GetInt64() > 0);
+        Assert.Equal(JsonValueKind.Null, result.RootElement.GetProperty("diagnostics").ValueKind);
     }
 }

@@ -1,0 +1,138 @@
+name: Belarus routing quality research
+on:
+  workflow_dispatch:
+    inputs:
+      evaluate_holdout:
+        description: Explicitly evaluate sealed holdout for the complete 300-case experiment
+        type: boolean
+        default: false
+      workers:
+        description: Maximum concurrent routing processes (must match the baseline)
+        type: choice
+        options: ['1', '2']
+        default: '2'
+      baseline_run:
+        description: Optional compatible research workflow run ID (same corpus, data and budgets)
+        type: string
+        default: ''
+  pull_request:
+    types: [labeled, synchronize, reopened]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: routing-research-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
+jobs:
+  research:
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || contains(github.event.pull_request.labels.*.name, 'ci:routing-research')
+      || contains(github.event.pull_request.labels.*.name, 'ci:routing-research-evaluation')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    env:
+      ROUTING_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      ROUTING_WORKERS: ${{ inputs.workers || '2' }}
+      ROUTING_EVALUATE_HOLDOUT: ${{ ((github.event_name == 'workflow_dispatch' && inputs.evaluate_holdout) || contains(github.event.pull_request.labels.*.name, 'ci:routing-research-evaluation')) && 'true' || 'false' }}
+      ROUTING_BASELINE_RUN: ${{ inputs.baseline_run }}
+    steps:
+      - name: Check out actual current head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          persist-credentials: false
+      - name: Record checked-out head and validate execution inputs
+        shell: bash
+        run: |
+          mkdir -p artifacts/routing-research
+          git rev-parse HEAD > artifacts/routing-research/checkout-head.txt
+          test "$(git rev-parse HEAD)" = "$ROUTING_PR_HEAD_SHA"
+          [[ "$ROUTING_WORKERS" =~ ^[12]$ ]]
+          if [[ -n "$ROUTING_BASELINE_RUN" ]]; then
+            [[ "$ROUTING_BASELINE_RUN" =~ ^[1-9][0-9]*$ ]]
+          fi
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          version: '0.13.9'
+          python-version: '3.12'
+      - run: uv sync --project tools/GeodataPreparation --locked
+      - name: Obtain current verified country package
+        uses: ./.github/actions/country-data
+      - name: Extract manifest-verified database
+        run: uv run --project tools/GeodataPreparation --locked python tools/ci/routing_pilot_ci.py extract-db --data artifacts/belarus
+      - name: Build current Verify
+        run: dotnet build tools/CableRoutePlanner.Verify -c Release -warnaserror -p:RestoreLockedMode=true
+      - name: Restore compatible baseline evidence
+        if: env.ROUTING_BASELINE_RUN != ''
+        uses: actions/download-artifact@v8
+        with:
+          name: routing-research-${{ env.ROUTING_BASELINE_RUN }}
+          run-id: ${{ env.ROUTING_BASELINE_RUN }}
+          github-token: ${{ github.token }}
+          path: artifacts/routing-research-baseline
+      - name: Restore sealed baseline evaluation
+        if: env.ROUTING_BASELINE_RUN != '' && env.ROUTING_EVALUATE_HOLDOUT == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: routing-research-sealed-holdout-${{ env.ROUTING_BASELINE_RUN }}
+          run-id: ${{ env.ROUTING_BASELINE_RUN }}
+          github-token: ${{ github.token }}
+          path: artifacts/routing-research-baseline
+      - name: Run frozen routing research with bounded resources
+        shell: bash
+        run: |
+          options=()
+          if [[ "$ROUTING_EVALUATE_HOLDOUT" == 'true' ]]; then
+            options+=(--evaluate-holdout)
+          fi
+          if [[ -n "$ROUTING_BASELINE_RUN" ]]; then
+            options+=(--baseline-report artifacts/routing-research-baseline/results.json)
+          fi
+          uv run --project tools/GeodataPreparation --locked python tools/routing_research.py \
+            --data artifacts/belarus \
+            --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll \
+            --output artifacts/routing-research \
+            --workers "$ROUTING_WORKERS" \
+            --timeout-seconds 120 \
+            --probe-timeout-seconds 30 \
+            "${options[@]}"
+      - name: Publish concise research evidence
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f artifacts/routing-research/summary.md ]]; then
+            cat artifacts/routing-research/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Routing research did not run: a prerequisite failed. See job logs and available evidence.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preserve development results and reproducible metadata
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: routing-research-${{ github.run_id }}
+          path: |
+            artifacts/routing-research/
+            !artifacts/routing-research/holdout/**
+            !artifacts/routing-research/sealed-holdout/**
+          retention-days: 30
+          if-no-files-found: error
+          overwrite: true
+      - name: Preserve sealed holdout evaluation separately
+        if: always() && env.ROUTING_EVALUATE_HOLDOUT == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: routing-research-sealed-holdout-${{ github.run_id }}
+          path: |
+            artifacts/routing-research/holdout/
+            artifacts/routing-research/sealed-holdout/
+          retention-days: 30
+          if-no-files-found: warn
+          overwrite: true

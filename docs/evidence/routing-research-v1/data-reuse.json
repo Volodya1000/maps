@@ -1,0 +1,60 @@
+{
+  "sourceCommit": "171103262709792e360f84c7de665d40a1c17ec3",
+  "matchedConversionInputs": {
+    "tools/GeodataPreparation/country_data.py": "62888f71190f8d1698d48f3a181d73c919438f40051da1248f0d52913c744121",
+    "tools/GeodataPreparation/prepare_country.py": "2b6ab9988085f2934543a107a66c84a10759da4a00f203787de81af0f27659fc",
+    "tools/GeodataPreparation/prepare.py": "e8c21471a4a74a5fa48514909c9d766d40f6338049c3cb613da4bed5cbc5ab0f",
+    "tools/GeodataPreparation/display_lod.py": "fea6213a205adb44a9709122fc95d6f971afa659eb043c57d8b434992669e0eb",
+    "tools/GeodataPreparation/feature_classification.py": "dc8fe2ccff5137f7cd810502d65f6068ca65180495d929382c9bd2f2ab2c6aaf",
+    "tools/GeodataPreparation/pipeline_crossings.py": "779c212a05991cee16c54142b8fdcb09ca79d1ac32568e2744dd10cb6dee8e31",
+    "tools/GeodataPreparation/underpass.py": "a40b5f32fb9b2f0407b83a68dc1f9c8c54a309450f7ae0dcd807a23801ee65eb",
+    "tools/GeodataPreparation/pyproject.toml": "8ae5057ebef0bd7e83fb9c4f29aba88b6b19bb0eef122fe7451183f57037f2ee",
+    "tools/GeodataPreparation/uv.lock": "56c4dcf3f2d3ef78b14d9ded4fa65ba1d934642c91fb2b19319bd114bb15675a",
+    "tools/GeodataPreparation/COUNTRY-NOTICE.txt": "3e8046e465679d56f5b469d8efcec10d41f85710104b5a82320b9f9760b58436"
+  },
+  "databaseSha256": "ab33e9c66693042fb7ac13fb583295bbd7b77c50310007e26be7037e20f0d11b",
+  "note": "All conversion program/dependency inputs identical; only license notice content changed in recipe. Re-seal with current license files.",
+  "currentPackage": {
+    "databaseSha256": "ab33e9c66693042fb7ac13fb583295bbd7b77c50310007e26be7037e20f0d11b",
+    "manifestSha256": "2c695e71a58fc166935b34bcc12c9dbe5ec23dddd0ac78bd43fe86eebd562363",
+    "sourceSha256": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01",
+    "schemaVersion": 3,
+    "packageKey": "belarus-v1-bbfac3a92e9b68ea7db0b3ebfb2407437a317351162018704237dc31552b75fe",
+    "packageReceiptSha256": "d0db427c5fcf2c52bcffc8c015dd7fe59b57525ed572ddcd733e1598b593e16b"
+  },
+  "artifacts": [
+    {
+      "id": 15115894733,
+      "name": "routing-regression-171103262709792e360f84c7de665d40a1c17ec3-1",
+      "digest": "sha256:70ba86c0f817bda1192356024beffe82465d0dfc3c668f5e34737805282c23eb",
+      "created_at": "2026-11-26T12:21:43Z",
+      "workflow_run": {
+        "id": 45814015305,
+        "repository_id": 1431080389,
+        "head_repository_id": 1431080389,
+        "head_branch": "codex/routing-reliability",
+        "head_sha": "171103262709792e360f84c7de665d40a1c17ec3"
+      }
+    },
+    {
+      "id": 15116264697,
+      "name": "CableRoutePlanner-PR-64-Belarus.apk",
+      "digest": "sha256:087b5dfda287dff612841ca3761395269dd29ab98726c95c2729c0fe40a4a576",
+      "created_at": "2026-11-26T12:25:00Z",
+      "workflow_run": {
+        "id": 45814015407,
+        "repository_id": 1431080389,
+        "head_repository_id": 1431080389,
+        "head_branch": "codex/routing-reliability",
+        "head_sha": "171103262709792e360f84c7de665d40a1c17ec3"
+      }
+    }
+  ],
+  "onlyRecipeInputChange": {
+    "path": "samples/real-geodata-fixtures/minsk/licenses/NOTICE.txt",
+    "previousSha256": "f6beac06b623e6c8b48daf5668b9d01a7aa14abae52c4db3ca5622569b73cf42",
+    "currentSha256": "31454e517bc781a368f7c4ef43ed69a3628b6e47e952b77f1eb022bb803a2e3d"
+  },
+  "restoration": "APK map chunks decompressed in numeric order; SHA-256 matches original CI manifest. Current standard gzip level6/mtime0 and country_data.seal reapply current license files and validate compressed bytes against the same SQLite hash.",
+  "reproduction": "No dependency on these temporary artifacts: standard country_data prepare from the pinned PBF and current conversion inputs reproduces map semantics; native SQLite page layouts can differ across platforms."
+}

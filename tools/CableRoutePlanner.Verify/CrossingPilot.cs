@@ -43,6 +43,7 @@ internal static class CrossingPilot
         services.AddSingleton<IPlanningSession, PlanningSession>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IPlanningSession session = provider.GetRequiredService<IPlanningSession>();
+        using Process process = Process.GetCurrentProcess();
         Stopwatch timer = Stopwatch.StartNew();
         object result;
         try
@@ -56,6 +57,7 @@ internal static class CrossingPilot
             {
                 status = "success",
                 elapsedMilliseconds = timer.ElapsedMilliseconds,
+                peakWorkingSetBytes = process.PeakWorkingSet64,
                 alternatives = routes.Select(route => new
                 {
                     name = route.Name,
@@ -85,6 +87,7 @@ internal static class CrossingPilot
             {
                 status,
                 elapsedMilliseconds = timer.ElapsedMilliseconds,
+                peakWorkingSetBytes = process.PeakWorkingSet64,
                 alternatives = Array.Empty<object>(),
                 diagnostics = includeDiagnostics ? diagnostics.Capture() : null,
                 error = new
