@@ -169,9 +169,9 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          # Each command is self-contained: the runner uses a fresh /bin/sh for each line.
-          script: |
-            bash tools/android_full_apk_install_smoke.sh "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" "$PREVIEW_PACKAGE_ID"
+          # android_smoke installs this exact APK before checking both launches.
+          # Installing it twice exhausts emulator storage for the full country map.
+          script: >-
             python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --package "$PREVIEW_PACKAGE_ID" --output artifacts/android-full-map-smoke --launches 2 --settle-seconds 180 --wait-map-ready
       - name: Preserve full-map startup evidence
         if: always()
