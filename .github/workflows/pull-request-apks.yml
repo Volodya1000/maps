@@ -30,34 +30,12 @@ jobs:
           test -n "$PR_NUMBER_PAYLOAD" && test "$PR_NUMBER" = "$PR_NUMBER_PAYLOAD"
           [[ "$TESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
 
-  geodata:
-    needs: verify-source
-    outputs:
-      android_version_code: ${{ steps.version.outputs.android_version_code }}
-    runs-on: ubuntu-22.04
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.tested_sha }}
-      - name: Read application version
-        id: version
-        run: echo "android_version_code=$(python3 tools/release_version.py | sed -n 's/^ANDROID_VERSION_CODE=//p')" >> "$GITHUB_OUTPUT"
-      - uses: ./.github/actions/country-data
-      - uses: ./.github/actions/country-elevation
-      - uses: actions/upload-artifact@v7
-        with:
-          name: pull-request-belarus-data
-          path: artifacts/belarus/
-          retention-days: 1
-          compression-level: 0
-
   android:
-    needs: [verify-source, geodata]
+    needs: [verify-source]
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
-      ANDROID_VERSION_CODE: ${{ needs.geodata.outputs.android_version_code }}
+      ANDROID_FULL_STARTUP_BENCHMARK: ${{ contains(github.event.pull_request.labels.*.name, 'ci:performance-benchmark') }}
       # The signing key is temporary. A per-attempt package ID prevents Android
       # from treating different PR previews as incompatible updates.
       PREVIEW_PACKAGE_ID: by.cablerouteplanner.preview.pr${{ inputs.pr_number }}.r${{ github.run_id }}a${{ github.run_attempt }}
@@ -65,6 +43,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tested_sha }}
+      - name: Read application version
+        run: python3 tools/release_version.py >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v8
         with:
           name: pull-request-belarus-data
@@ -136,6 +116,8 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
+          # The research run opens the full SQLite as well as installing the APK.
+          disk-size: ${{ contains(github.event.pull_request.labels.*.name, 'ci:performance-benchmark') && '8G' || '' }}
           target: google_apis
           arch: x86_64
           disable-animations: true
@@ -143,6 +125,12 @@ jobs:
           # The runner invokes each inline command in a fresh /bin/sh process.
           # Use a separate Bash script to preserve its local variables and error handling.
           script: bash tools/android_full_apk_install_smoke.sh "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" "$PREVIEW_PACKAGE_ID"
+      - uses: actions/upload-artifact@v7
+        if: always() && contains(github.event.pull_request.labels.*.name, 'ci:performance-benchmark')
+        with:
+          name: android-country-startup-${{ inputs.tested_sha }}
+          path: artifacts/android-country-startup/
+          if-no-files-found: error
       - name: Explain preview installation behavior
         run: |
           {
@@ -167,7 +155,7 @@ jobs:
 
   routing-benchmark:
     if: contains(github.event.pull_request.labels.*.name, 'ci:routing-benchmark')
-    needs: [verify-source, geodata]
+    needs: [verify-source]
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:

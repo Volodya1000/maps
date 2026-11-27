@@ -108,27 +108,6 @@ def desktop() -> None:
     run(
         dotnet,
         "format",
-        "whitespace",
-        SOLUTION,
-        "--no-restore",
-        "--verify-no-changes",
-        env=dotnet_env,
-    )
-    run(
-        dotnet,
-        "format",
-        "style",
-        SOLUTION,
-        "--no-restore",
-        "--verify-no-changes",
-        "--severity",
-        "warn",
-        env=dotnet_env,
-    )
-    run(
-        dotnet,
-        "format",
-        "analyzers",
         SOLUTION,
         "--no-restore",
         "--verify-no-changes",

@@ -311,7 +311,12 @@ class CountryWorkflowTests(unittest.TestCase):
             workflow = yaml.safe_load(
                 (country.ROOT / ".github/workflows" / filename).read_text()
             )
-            steps = workflow["jobs"]["geodata"]["steps"]
+            preparation = (
+                yaml.safe_load((country.ROOT / ".github/workflows/ci.yml").read_text())
+                if filename.startswith("pull-")
+                else workflow
+            )
+            steps = preparation["jobs"]["geodata"]["steps"]
             self.assertTrue(
                 any(s.get("uses") == "./.github/actions/country-data" for s in steps)
             )

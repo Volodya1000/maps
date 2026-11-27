@@ -5,14 +5,36 @@ import gzip
 import json
 import re
 import shutil
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
+COMPRESSION_LEVELS = range(1, 10)
+WORKER_COUNTS = range(1, 5)
+DEFAULT_COMPRESSION_LEVEL = 9
+DEFAULT_WORKERS = 1
 
 
 def split_package(
-    source: Path, destination: Path, chunk_bytes: int = 64 * 1024 * 1024
+    source: Path,
+    destination: Path,
+    chunk_bytes: int = 64 * 1024 * 1024,
+    *,
+    compresslevel: int = DEFAULT_COMPRESSION_LEVEL,
+    workers: int = DEFAULT_WORKERS,
 ) -> None:
     if chunk_bytes <= 0:
-        raise ValueError("Chunk size must be positive")
+        raise ValueError(f"Chunk size {chunk_bytes} must be positive")
+    if compresslevel not in COMPRESSION_LEVELS:
+        raise ValueError(
+            f"Compression level {compresslevel} must be between "
+            f"{COMPRESSION_LEVELS.start} and {COMPRESSION_LEVELS.stop - 1}"
+        )
+    if workers not in WORKER_COUNTS:
+        raise ValueError(
+            f"Compression workers {workers} must be between "
+            f"{WORKER_COUNTS.start} and {WORKER_COUNTS.stop - 1}"
+        )
     if destination.exists():
         raise ValueError("Destination must not exist; stale map chunks are unsafe")
     elevation_files = ("elevation.sqlite", "elevation.sqlite.sha256")
@@ -41,18 +63,50 @@ def split_package(
             ):
                 raise ValueError("Country DEM directories must stay inside the package")
             shutil.copytree(elevation / directory, target / directory)
+
+    def compress(block: bytes, index: int) -> None:
+        with (destination / f"geodata.{index:04d}.gz").open("wb") as target:
+            with gzip.GzipFile(
+                fileobj=target, mode="wb", compresslevel=compresslevel, mtime=0
+            ) as compressed:
+                compressed.write(block)
+
     with gzip.open(source / "geodata.sqlite.gz", "rb") as stream:
-        index = 0
-        while block := stream.read(chunk_bytes):
-            with (destination / f"geodata.{index:04d}.gz").open("wb") as target:
-                with gzip.GzipFile(fileobj=target, mode="wb", mtime=0) as compressed:
-                    compressed.write(block)
-            index += 1
+        if workers == 1:
+            for index, block in enumerate(iter(lambda: stream.read(chunk_bytes), b"")):
+                compress(block, index)
+        else:
+            # zlib releases the GIL. Threads avoid copying 64 MiB blocks between
+            # processes; at most `workers` blocks can be in flight at once.
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                pending = deque()
+                index = 0
+                while block := stream.read(chunk_bytes):
+                    pending.append(executor.submit(compress, block, index))
+                    index += 1
+                    if len(pending) == workers:
+                        pending.popleft().result()
+                for future in pending:
+                    future.result()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("destination", type=Path)
+    parser.add_argument(
+        "--compresslevel",
+        type=int,
+        choices=COMPRESSION_LEVELS,
+        default=DEFAULT_COMPRESSION_LEVEL,
+    )
+    parser.add_argument(
+        "--workers", type=int, choices=WORKER_COUNTS, default=DEFAULT_WORKERS
+    )
     args = parser.parse_args()
-    split_package(args.source, args.destination)
+    split_package(
+        args.source,
+        args.destination,
+        compresslevel=args.compresslevel,
+        workers=args.workers,
+    )

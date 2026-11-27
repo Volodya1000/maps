@@ -61,6 +61,8 @@ def main():
     report = dict(
         package=args.package,
         sha256=file_digest(apk),
+        apk_bytes=apk.stat().st_size,
+        install_seconds=None,
         launches=[],
         success=False,
     )
@@ -70,7 +72,9 @@ def main():
             "shell", "getprop", "ro.build.version.release"
         ).strip()
         report["abi"] = adb("shell", "getprop", "ro.product.cpu.abi").strip()
+        install_started = time.perf_counter()
         adb("install", "-r", str(apk), timeout=600)
+        report["install_seconds"] = time.perf_counter() - install_started
         resolved = adb(
             "shell",
             "cmd",
@@ -97,11 +101,14 @@ def main():
         for index in range(args.launches):
             adb("shell", "am", "force-stop", args.package)
             adb("logcat", "-c")
+            launch_started = time.perf_counter()
             start = adb("shell", "am", "start", "-W", "-n", component, timeout=180)
+            activity_start_seconds = time.perf_counter() - launch_started
             if "Error:" in start or "Exception" in start:
                 raise RuntimeError("Activity start failed: " + start)
             # Keep observing after am start: AppCompat failures can occur just after it returns.
             map_ready = None
+            map_ready_seconds = None
             observation_seconds = (
                 args.settle_seconds if args.wait_map_ready or index == 0 else 15
             )
@@ -121,6 +128,7 @@ def main():
                         None,
                     )
                     if map_ready:
+                        map_ready_seconds = time.perf_counter() - launch_started
                         time.sleep(
                             2
                         )  # Allow the next map frame to be presented before capture.
@@ -156,6 +164,8 @@ def main():
                     pid=pid,
                     resumed=resumed,
                     map_ready=map_ready,
+                    activity_start_seconds=activity_start_seconds,
+                    map_ready_seconds=map_ready_seconds,
                 )
             )
         report["success"] = True

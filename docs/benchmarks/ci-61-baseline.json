@@ -1,0 +1,4490 @@
+[
+  {
+    "run_id": 44776950195,
+    "url": "https://github.com/Volodya1000/maps/actions/runs/44776950195",
+    "head_sha": "c07dc8148a1d93bb604c0fe37266f82bf91908f5",
+    "cache": "changed recipe; cold exact-key cache (cf38347c)",
+    "wall_seconds": 2700.0,
+    "unweighted_runner_minutes": 49.867,
+    "modeled_A_saving_seconds": 301.0,
+    "modeled_B_saving_seconds": 534.0,
+    "jobs": [
+      {
+        "id": 136429178510,
+        "name": "quality",
+        "started_at": "2026-11-20T16:47:56Z",
+        "completed_at": "2026-11-20T16:48:46Z",
+        "seconds": 50.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run actions/setup-go@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Select optional preview artifacts",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py lint",
+            "seconds": 24.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check_fragments.py --base \"$CHANGELOG_BASE\"",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked towncrier build --version next --draft",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-go@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 1.0
+          }
+        ]
+      },
+      {
+        "id": 136429676101,
+        "name": "data",
+        "started_at": "2026-11-20T16:48:49Z",
+        "completed_at": "2026-11-20T16:49:06Z",
+        "seconds": 17.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-python@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 4.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py data",
+            "seconds": 6.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 136429676121,
+        "name": "terrain-spike",
+        "started_at": "2026-11-20T16:48:48Z",
+        "completed_at": "2026-11-20T16:49:51Z",
+        "seconds": 63.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py terrain",
+            "seconds": 52.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 136429676151,
+        "name": "tests (ubuntu-22.04)",
+        "started_at": "2026-11-20T16:48:48Z",
+        "completed_at": "2026-11-20T16:52:30Z",
+        "seconds": 222.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 10.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y strace",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 190.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 136429676287,
+        "name": "tests (windows-2022)",
+        "started_at": "2026-11-20T16:48:48Z",
+        "completed_at": "2026-11-20T16:52:39Z",
+        "seconds": 231.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 6.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 23.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 184.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 136431917122,
+        "name": "android",
+        "started_at": "2026-11-20T16:52:41Z",
+        "completed_at": "2026-11-20T16:57:33Z",
+        "seconds": 292.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 4.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 10.0
+          },
+          {
+            "name": "Install Android platform and build tools",
+            "seconds": 2.0
+          },
+          {
+            "name": "Install .NET Android workload",
+            "seconds": 37.0
+          },
+          {
+            "name": "Prepare preview signing key",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Build and verify signed Android APK",
+            "seconds": 81.0
+          },
+          {
+            "name": "Preserve the tested PR preview and signing key",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Record APK build diagnostics",
+            "seconds": 0.0
+          },
+          {
+            "name": "Enable KVM for emulator",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install APK and verify startup in Android emulator",
+            "seconds": 130.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 136434734681,
+        "name": "pull-request-apks / verify-source",
+        "started_at": "2026-11-20T16:57:35Z",
+        "completed_at": "2026-11-20T16:57:38Z",
+        "seconds": 3.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Confirm tested commit",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 136434782984,
+        "name": "pull-request-apks / geodata",
+        "started_at": "2026-11-20T16:57:40Z",
+        "completed_at": "2026-11-20T17:20:57Z",
+        "seconds": 1397.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run ./.github/actions/country-data",
+            "seconds": 1377.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 8.0
+          },
+          {
+            "name": "Post Run ./.github/actions/country-data",
+            "seconds": 7.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 136448321850,
+        "name": "pull-request-apks / android",
+        "started_at": "2026-11-20T17:20:59Z",
+        "completed_at": "2026-11-20T17:32:56Z",
+        "seconds": 717.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 4.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 56.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 13.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 6.0
+          },
+          {
+            "name": "Run sdkmanager 'platforms;android-34' 'build-tools;34.0.0'",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run dotnet workload install android --skip-manifest-update",
+            "seconds": 31.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 4.0
+          },
+          {
+            "name": "Reuse the tested Minsk preview",
+            "seconds": 0.0
+          },
+          {
+            "name": "Split country map into bounded Android assets",
+            "seconds": 245.0
+          },
+          {
+            "name": "Build full Belarus APK",
+            "seconds": 170.0
+          },
+          {
+            "name": "Run publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish",
+            "seconds": 5.0
+          },
+          {
+            "name": "Verify distributable APK packages and signing certificates",
+            "seconds": 14.0
+          },
+          {
+            "name": "Enable KVM for full APK installation test",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install full Belarus APK on Android 15 emulator",
+            "seconds": 149.0
+          },
+          {
+            "name": "Explain preview installation behavior",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 11.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run_id": 45000446180,
+    "url": "https://github.com/Volodya1000/maps/actions/runs/45000446180",
+    "head_sha": "2fcc3cb5a5a99ecff6a1ec333c610d7482d38d78",
+    "cache": "same cf38347c recipe; warm exact-key cache",
+    "wall_seconds": 1345.0,
+    "unweighted_runner_minutes": 26.9,
+    "modeled_A_saving_seconds": 40.0,
+    "modeled_B_saving_seconds": 40.0,
+    "jobs": [
+      {
+        "id": 137140590816,
+        "name": "quality",
+        "started_at": "2026-11-22T07:55:59Z",
+        "completed_at": "2026-11-22T07:56:57Z",
+        "seconds": 58.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 4.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 7.0
+          },
+          {
+            "name": "Run actions/setup-go@v6",
+            "seconds": 9.0
+          },
+          {
+            "name": "Select optional preview artifacts",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py lint",
+            "seconds": 25.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check_fragments.py --base \"$CHANGELOG_BASE\"",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked towncrier build --version next --draft",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-go@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 137140812979,
+        "name": "data",
+        "started_at": "2026-11-22T07:56:59Z",
+        "completed_at": "2026-11-22T07:57:11Z",
+        "seconds": 12.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py data",
+            "seconds": 4.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 137140812992,
+        "name": "terrain-spike",
+        "started_at": "2026-11-22T07:56:59Z",
+        "completed_at": "2026-11-22T07:57:40Z",
+        "seconds": 41.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-node@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py terrain",
+            "seconds": 30.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 137140813032,
+        "name": "tests (windows-2022)",
+        "started_at": "2026-11-22T07:56:59Z",
+        "completed_at": "2026-11-22T08:01:22Z",
+        "seconds": 263.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 6.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 24.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 4.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 213.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 6.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 137140813040,
+        "name": "tests (ubuntu-22.04)",
+        "started_at": "2026-11-22T07:56:59Z",
+        "completed_at": "2026-11-22T08:00:46Z",
+        "seconds": 227.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y strace",
+            "seconds": 13.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 197.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 137141809501,
+        "name": "android",
+        "started_at": "2026-11-22T08:01:25Z",
+        "completed_at": "2026-11-22T08:06:39Z",
+        "seconds": 314.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 8.0
+          },
+          {
+            "name": "Install Android platform and build tools",
+            "seconds": 1.0
+          },
+          {
+            "name": "Install .NET Android workload",
+            "seconds": 28.0
+          },
+          {
+            "name": "Prepare preview signing key",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Build and verify signed Android APK",
+            "seconds": 101.0
+          },
+          {
+            "name": "Preserve the tested PR preview and signing key",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Record APK build diagnostics",
+            "seconds": 0.0
+          },
+          {
+            "name": "Enable KVM for emulator",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install APK and verify startup in Android emulator",
+            "seconds": 143.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 137143083471,
+        "name": "pull-request-apks / verify-source",
+        "started_at": "2026-11-22T08:06:41Z",
+        "completed_at": "2026-11-22T08:06:43Z",
+        "seconds": 2.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Confirm tested commit",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 137143101176,
+        "name": "pull-request-apks / geodata",
+        "started_at": "2026-11-22T08:06:45Z",
+        "completed_at": "2026-11-22T08:07:19Z",
+        "seconds": 34.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run ./.github/actions/country-data",
+            "seconds": 15.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 12.0
+          },
+          {
+            "name": "Post Run ./.github/actions/country-data",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 1.0
+          }
+        ]
+      },
+      {
+        "id": 137143243054,
+        "name": "pull-request-apks / android",
+        "started_at": "2026-11-22T08:07:21Z",
+        "completed_at": "2026-11-22T08:18:24Z",
+        "seconds": 663.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 23.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 13.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 12.0
+          },
+          {
+            "name": "Run sdkmanager 'platforms;android-34' 'build-tools;34.0.0'",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run dotnet workload install android --skip-manifest-update",
+            "seconds": 31.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 2.0
+          },
+          {
+            "name": "Reuse the tested Minsk preview",
+            "seconds": 0.0
+          },
+          {
+            "name": "Split country map into bounded Android assets",
+            "seconds": 234.0
+          },
+          {
+            "name": "Build full Belarus APK",
+            "seconds": 169.0
+          },
+          {
+            "name": "Run publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish",
+            "seconds": 5.0
+          },
+          {
+            "name": "Verify distributable APK packages and signing certificates",
+            "seconds": 17.0
+          },
+          {
+            "name": "Enable KVM for full APK installation test",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install full Belarus APK on Android 15 emulator",
+            "seconds": 138.0
+          },
+          {
+            "name": "Explain preview installation behavior",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 10.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run_id": 45706672607,
+    "url": "https://github.com/Volodya1000/maps/actions/runs/45706672607",
+    "head_sha": "f95dec9a55cd3fd19a06b4b21b4c72a32ec9d55f",
+    "cache": "changed recipe; cold exact-key cache (7946b228)",
+    "wall_seconds": 2976.0,
+    "unweighted_runner_minutes": 52.5,
+    "modeled_A_saving_seconds": 316.0,
+    "modeled_B_saving_seconds": 576.0,
+    "jobs": [
+      {
+        "id": 139530311215,
+        "name": "quality",
+        "started_at": "2026-11-25T21:41:43Z",
+        "completed_at": "2026-11-25T21:42:35Z",
+        "seconds": 52.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run actions/setup-go@v6",
+            "seconds": 7.0
+          },
+          {
+            "name": "Select optional preview artifacts",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py lint",
+            "seconds": 20.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check_fragments.py --base \"$CHANGELOG_BASE\"",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked towncrier build --version next --draft",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-go@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139530773886,
+        "name": "terrain-spike",
+        "started_at": "2026-11-25T21:42:37Z",
+        "completed_at": "2026-11-25T21:43:22Z",
+        "seconds": 45.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-node@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py terrain",
+            "seconds": 33.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139530773902,
+        "name": "data",
+        "started_at": "2026-11-25T21:42:37Z",
+        "completed_at": "2026-11-25T21:42:48Z",
+        "seconds": 11.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py data",
+            "seconds": 4.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139530773922,
+        "name": "tests (ubuntu-22.04)",
+        "started_at": "2026-11-25T21:42:37Z",
+        "completed_at": "2026-11-25T21:44:44Z",
+        "seconds": 127.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y strace",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 96.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139530773938,
+        "name": "tests (windows-2022)",
+        "started_at": "2026-11-25T21:42:37Z",
+        "completed_at": "2026-11-25T21:46:55Z",
+        "seconds": 258.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 6.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 27.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 209.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139532961033,
+        "name": "android",
+        "started_at": "2026-11-25T21:46:57Z",
+        "completed_at": "2026-11-25T21:52:04Z",
+        "seconds": 307.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 4.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 7.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 11.0
+          },
+          {
+            "name": "Install Android platform and build tools",
+            "seconds": 2.0
+          },
+          {
+            "name": "Install .NET Android workload",
+            "seconds": 28.0
+          },
+          {
+            "name": "Prepare preview signing key",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 2.0
+          },
+          {
+            "name": "Build and verify signed Android APK",
+            "seconds": 101.0
+          },
+          {
+            "name": "Preserve the tested PR preview and signing key",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Record APK build diagnostics",
+            "seconds": 0.0
+          },
+          {
+            "name": "Enable KVM for emulator",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install APK and verify startup in Android emulator",
+            "seconds": 134.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139535572541,
+        "name": "pull-request-apks / verify-source",
+        "started_at": "2026-11-25T21:52:06Z",
+        "completed_at": "2026-11-25T21:52:10Z",
+        "seconds": 4.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Confirm tested commit",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139535618817,
+        "name": "pull-request-apks / geodata",
+        "started_at": "2026-11-25T21:52:11Z",
+        "completed_at": "2026-11-25T22:17:59Z",
+        "seconds": 1548.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run ./.github/actions/country-data",
+            "seconds": 1531.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 11.0
+          },
+          {
+            "name": "Post Run ./.github/actions/country-data",
+            "seconds": 2.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139548575918,
+        "name": "pull-request-apks / android",
+        "started_at": "2026-11-25T22:18:01Z",
+        "completed_at": "2026-11-25T22:31:19Z",
+        "seconds": 798.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 48.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 12.0
+          },
+          {
+            "name": "Run sdkmanager 'platforms;android-34' 'build-tools;34.0.0'",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run dotnet workload install android --skip-manifest-update",
+            "seconds": 51.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 4.0
+          },
+          {
+            "name": "Reuse the tested Minsk preview",
+            "seconds": 0.0
+          },
+          {
+            "name": "Split country map into bounded Android assets",
+            "seconds": 314.0
+          },
+          {
+            "name": "Build full Belarus APK",
+            "seconds": 165.0
+          },
+          {
+            "name": "Run publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish",
+            "seconds": 6.0
+          },
+          {
+            "name": "Verify distributable APK packages and signing certificates",
+            "seconds": 19.0
+          },
+          {
+            "name": "Enable KVM for full APK installation test",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install full Belarus APK on Android 15 emulator",
+            "seconds": 153.0
+          },
+          {
+            "name": "Explain preview installation behavior",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run_id": 45796103324,
+    "url": "https://github.com/Volodya1000/maps/actions/runs/45796103324",
+    "head_sha": "21ce8a00f8bc5cd9d142ead2f2c34d44656eefb3",
+    "cache": "cf38347c recipe; warm exact-key cache",
+    "wall_seconds": 1396.0,
+    "unweighted_runner_minutes": 27.033,
+    "modeled_A_saving_seconds": 42.0,
+    "modeled_B_saving_seconds": 42.0,
+    "jobs": [
+      {
+        "id": 139827023110,
+        "name": "quality",
+        "started_at": "2026-11-26T09:53:04Z",
+        "completed_at": "2026-11-26T09:53:54Z",
+        "seconds": 50.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run actions/setup-go@v6",
+            "seconds": 7.0
+          },
+          {
+            "name": "Select optional preview artifacts",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py lint",
+            "seconds": 24.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check_fragments.py --base \"$CHANGELOG_BASE\"",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked towncrier build --version next --draft",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-go@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139827475538,
+        "name": "data",
+        "started_at": "2026-11-26T09:53:56Z",
+        "completed_at": "2026-11-26T09:54:09Z",
+        "seconds": 13.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py data",
+            "seconds": 5.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 1.0
+          }
+        ]
+      },
+      {
+        "id": 139827475546,
+        "name": "tests (ubuntu-22.04)",
+        "started_at": "2026-11-26T09:53:56Z",
+        "completed_at": "2026-11-26T09:56:55Z",
+        "seconds": 179.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y strace",
+            "seconds": 12.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 148.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139827475609,
+        "name": "tests (windows-2022)",
+        "started_at": "2026-11-26T09:53:56Z",
+        "completed_at": "2026-11-26T09:57:42Z",
+        "seconds": 226.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 6.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 22.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 180.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139827475705,
+        "name": "terrain-spike",
+        "started_at": "2026-11-26T09:53:56Z",
+        "completed_at": "2026-11-26T09:54:40Z",
+        "seconds": 44.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-node@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py terrain",
+            "seconds": 34.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139829467575,
+        "name": "android",
+        "started_at": "2026-11-26T09:57:44Z",
+        "completed_at": "2026-11-26T10:03:06Z",
+        "seconds": 322.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 12.0
+          },
+          {
+            "name": "Install Android platform and build tools",
+            "seconds": 2.0
+          },
+          {
+            "name": "Install .NET Android workload",
+            "seconds": 26.0
+          },
+          {
+            "name": "Prepare preview signing key",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Build and verify signed Android APK",
+            "seconds": 106.0
+          },
+          {
+            "name": "Preserve the tested PR preview and signing key",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Record APK build diagnostics",
+            "seconds": 0.0
+          },
+          {
+            "name": "Enable KVM for emulator",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install APK and verify startup in Android emulator",
+            "seconds": 140.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139832347919,
+        "name": "pull-request-apks / verify-source",
+        "started_at": "2026-11-26T10:03:08Z",
+        "completed_at": "2026-11-26T10:03:10Z",
+        "seconds": 2.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Confirm tested commit",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139832386746,
+        "name": "pull-request-apks / geodata",
+        "started_at": "2026-11-26T10:03:12Z",
+        "completed_at": "2026-11-26T10:03:48Z",
+        "seconds": 36.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run ./.github/actions/country-data",
+            "seconds": 16.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 13.0
+          },
+          {
+            "name": "Post Run ./.github/actions/country-data",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 139832726785,
+        "name": "pull-request-apks / android",
+        "started_at": "2026-11-26T10:03:50Z",
+        "completed_at": "2026-11-26T10:16:20Z",
+        "seconds": 750.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 52.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 14.0
+          },
+          {
+            "name": "Run sdkmanager 'platforms;android-34' 'build-tools;34.0.0'",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run dotnet workload install android --skip-manifest-update",
+            "seconds": 28.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 3.0
+          },
+          {
+            "name": "Reuse the tested Minsk preview",
+            "seconds": 1.0
+          },
+          {
+            "name": "Split country map into bounded Android assets",
+            "seconds": 280.0
+          },
+          {
+            "name": "Build full Belarus APK",
+            "seconds": 161.0
+          },
+          {
+            "name": "Run publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish",
+            "seconds": 6.0
+          },
+          {
+            "name": "Verify distributable APK packages and signing certificates",
+            "seconds": 19.0
+          },
+          {
+            "name": "Enable KVM for full APK installation test",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install full Belarus APK on Android 15 emulator",
+            "seconds": 151.0
+          },
+          {
+            "name": "Explain preview installation behavior",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 14.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run_id": 44384044843,
+    "url": "https://github.com/Volodya1000/maps/actions/runs/44384044843",
+    "head_sha": "7fbad6bf084455d7e056b83e627bdbdaed99c10e",
+    "cache": "changed recipe; cold exact-key cache (000f0891)",
+    "wall_seconds": 1922.0,
+    "unweighted_runner_minutes": 35.083,
+    "modeled_A_saving_seconds": 256.0,
+    "modeled_B_saving_seconds": 478.0,
+    "jobs": [
+      {
+        "id": 135083652007,
+        "name": "quality",
+        "started_at": "2026-11-18T19:47:53Z",
+        "completed_at": "2026-11-18T19:48:39Z",
+        "seconds": 46.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 7.0
+          },
+          {
+            "name": "Run actions/setup-go@v6",
+            "seconds": 6.0
+          },
+          {
+            "name": "Select optional preview artifacts",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py lint",
+            "seconds": 16.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check_fragments.py --base \"$CHANGELOG_BASE\"",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked towncrier build --version next --draft",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-go@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 135084194114,
+        "name": "data",
+        "started_at": "2026-11-18T19:48:41Z",
+        "completed_at": "2026-11-18T19:49:02Z",
+        "seconds": 21.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 10.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py data",
+            "seconds": 6.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 135084194165,
+        "name": "tests (windows-2022)",
+        "started_at": "2026-11-18T19:48:41Z",
+        "completed_at": "2026-11-18T19:52:21Z",
+        "seconds": 220.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 24.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 174.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 135084194188,
+        "name": "tests (ubuntu-22.04)",
+        "started_at": "2026-11-18T19:48:40Z",
+        "completed_at": "2026-11-18T19:50:51Z",
+        "seconds": 131.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y strace",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 105.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 135084194289,
+        "name": "terrain-spike",
+        "started_at": "2026-11-18T19:48:40Z",
+        "completed_at": "2026-11-18T19:49:21Z",
+        "seconds": 41.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-node@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py terrain",
+            "seconds": 30.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 135086866133,
+        "name": "android",
+        "started_at": "2026-11-18T19:52:23Z",
+        "completed_at": "2026-11-18T19:56:29Z",
+        "seconds": 246.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 4.0
+          },
+          {
+            "name": "Install Android platform and build tools",
+            "seconds": 1.0
+          },
+          {
+            "name": "Install .NET Android workload",
+            "seconds": 41.0
+          },
+          {
+            "name": "Prepare preview signing key",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 2.0
+          },
+          {
+            "name": "Build and verify signed Android APK",
+            "seconds": 64.0
+          },
+          {
+            "name": "Preserve the tested PR preview and signing key",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Record APK build diagnostics",
+            "seconds": 0.0
+          },
+          {
+            "name": "Enable KVM for emulator",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install APK and verify startup in Android emulator",
+            "seconds": 110.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 6.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 135089567386,
+        "name": "pull-request-apks / verify-source",
+        "started_at": "2026-11-18T19:56:31Z",
+        "completed_at": "2026-11-18T19:56:35Z",
+        "seconds": 4.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Confirm tested commit",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 135089630783,
+        "name": "pull-request-apks / geodata",
+        "started_at": "2026-11-18T19:56:37Z",
+        "completed_at": "2026-11-18T20:08:13Z",
+        "seconds": 696.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run ./.github/actions/country-data",
+            "seconds": 681.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 10.0
+          },
+          {
+            "name": "Post Run ./.github/actions/country-data",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 135096996795,
+        "name": "pull-request-apks / android",
+        "started_at": "2026-11-18T20:08:15Z",
+        "completed_at": "2026-11-18T20:19:55Z",
+        "seconds": 700.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 15.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 20.0
+          },
+          {
+            "name": "Run sdkmanager 'platforms;android-34' 'build-tools;34.0.0'",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run dotnet workload install android --skip-manifest-update",
+            "seconds": 33.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 1.0
+          },
+          {
+            "name": "Reuse the tested Minsk preview",
+            "seconds": 0.0
+          },
+          {
+            "name": "Split country map into bounded Android assets",
+            "seconds": 279.0
+          },
+          {
+            "name": "Build full Belarus APK",
+            "seconds": 160.0
+          },
+          {
+            "name": "Run publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish",
+            "seconds": 6.0
+          },
+          {
+            "name": "Verify distributable APK packages and signing certificates",
+            "seconds": 18.0
+          },
+          {
+            "name": "Enable KVM for full APK installation test",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install full Belarus APK on Android 15 emulator",
+            "seconds": 137.0
+          },
+          {
+            "name": "Explain preview installation behavior",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 12.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run_id": 43188541824,
+    "url": "https://github.com/Volodya1000/maps/actions/runs/43188541824",
+    "head_sha": "20de781905ef65462a76df521dcc28fa3c721651",
+    "cache": "unchanged published f94aa250 recipe; cold Actions cache, Release download",
+    "wall_seconds": 1166.0,
+    "unweighted_runner_minutes": 23.65,
+    "modeled_A_saving_seconds": 43.0,
+    "modeled_B_saving_seconds": 43.0,
+    "jobs": [
+      {
+        "id": 131081874197,
+        "name": "quality",
+        "started_at": "2026-11-12T09:06:59Z",
+        "completed_at": "2026-11-12T09:07:33Z",
+        "seconds": 34.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-go@v6",
+            "seconds": 5.0
+          },
+          {
+            "name": "Select optional preview artifacts",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py lint",
+            "seconds": 16.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check_fragments.py --base \"$CHANGELOG_BASE\"",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked towncrier build --version next --draft",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-go@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131082165233,
+        "name": "data",
+        "started_at": "2026-11-12T09:07:35Z",
+        "completed_at": "2026-11-12T09:07:45Z",
+        "seconds": 10.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py data",
+            "seconds": 3.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131082165348,
+        "name": "tests (windows-2022)",
+        "started_at": "2026-11-12T09:07:35Z",
+        "completed_at": "2026-11-12T09:10:52Z",
+        "seconds": 197.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 6.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 172.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131082165349,
+        "name": "tests (ubuntu-22.04)",
+        "started_at": "2026-11-12T09:07:35Z",
+        "completed_at": "2026-11-12T09:11:02Z",
+        "seconds": 207.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y strace",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 181.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131082165423,
+        "name": "terrain-spike",
+        "started_at": "2026-11-12T09:07:35Z",
+        "completed_at": "2026-11-12T09:08:32Z",
+        "seconds": 57.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/setup-node@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py terrain",
+            "seconds": 44.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131083906210,
+        "name": "android",
+        "started_at": "2026-11-12T09:11:04Z",
+        "completed_at": "2026-11-12T09:16:13Z",
+        "seconds": 309.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 14.0
+          },
+          {
+            "name": "Install Android platform and build tools",
+            "seconds": 2.0
+          },
+          {
+            "name": "Install .NET Android workload",
+            "seconds": 36.0
+          },
+          {
+            "name": "Prepare preview signing key",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Build and verify signed Android APK",
+            "seconds": 114.0
+          },
+          {
+            "name": "Preserve the tested PR preview and signing key",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Record APK build diagnostics",
+            "seconds": 0.0
+          },
+          {
+            "name": "Enable KVM for emulator",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install APK and verify startup in Android emulator",
+            "seconds": 128.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131086490975,
+        "name": "pull-request-apks / verify-source",
+        "started_at": "2026-11-12T09:16:15Z",
+        "completed_at": "2026-11-12T09:16:18Z",
+        "seconds": 3.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Confirm tested commit",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131086530161,
+        "name": "pull-request-apks / geodata",
+        "started_at": "2026-11-12T09:16:21Z",
+        "completed_at": "2026-11-12T09:16:56Z",
+        "seconds": 35.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run ./.github/actions/country-data",
+            "seconds": 16.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 13.0
+          },
+          {
+            "name": "Post Run ./.github/actions/country-data",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131086839925,
+        "name": "pull-request-apks / android",
+        "started_at": "2026-11-12T09:16:58Z",
+        "completed_at": "2026-11-12T09:26:25Z",
+        "seconds": 567.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 38.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 6.0
+          },
+          {
+            "name": "Run sdkmanager 'platforms;android-34' 'build-tools;34.0.0'",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run dotnet workload install android --skip-manifest-update",
+            "seconds": 27.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 2.0
+          },
+          {
+            "name": "Reuse the tested Minsk preview",
+            "seconds": 0.0
+          },
+          {
+            "name": "Split country map into bounded Android assets",
+            "seconds": 194.0
+          },
+          {
+            "name": "Build full Belarus APK",
+            "seconds": 143.0
+          },
+          {
+            "name": "Run publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish",
+            "seconds": 3.0
+          },
+          {
+            "name": "Verify distributable APK packages and signing certificates",
+            "seconds": 11.0
+          },
+          {
+            "name": "Enable KVM for full APK installation test",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install full Belarus APK on Android 15 emulator",
+            "seconds": 123.0
+          },
+          {
+            "name": "Explain preview installation behavior",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 9.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run_id": 43194933778,
+    "url": "https://github.com/Volodya1000/maps/actions/runs/43194933778",
+    "head_sha": "36fd2e7b08f31d83d40e37fac76e439caf18a65c",
+    "cache": "unchanged published f94aa250 recipe; cold Actions cache, Release download",
+    "wall_seconds": 1203.0,
+    "unweighted_runner_minutes": 23.65,
+    "modeled_A_saving_seconds": 34.0,
+    "modeled_B_saving_seconds": 34.0,
+    "jobs": [
+      {
+        "id": 131103332972,
+        "name": "quality",
+        "started_at": "2026-11-12T09:49:57Z",
+        "completed_at": "2026-11-12T09:50:48Z",
+        "seconds": 51.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-go@v6",
+            "seconds": 9.0
+          },
+          {
+            "name": "Select optional preview artifacts",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py lint",
+            "seconds": 27.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check_fragments.py --base \"$CHANGELOG_BASE\"",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked towncrier build --version next --draft",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-go@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131103789418,
+        "name": "tests (ubuntu-22.04)",
+        "started_at": "2026-11-12T09:50:52Z",
+        "completed_at": "2026-11-12T09:53:35Z",
+        "seconds": 163.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y strace",
+            "seconds": 12.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 133.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131103789471,
+        "name": "terrain-spike",
+        "started_at": "2026-11-12T09:50:52Z",
+        "completed_at": "2026-11-12T09:51:40Z",
+        "seconds": 48.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py terrain",
+            "seconds": 32.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 7.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131103789514,
+        "name": "tests (windows-2022)",
+        "started_at": "2026-11-12T09:50:51Z",
+        "completed_at": "2026-11-12T09:53:49Z",
+        "seconds": 178.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 156.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 4.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131103789619,
+        "name": "data",
+        "started_at": "2026-11-12T09:50:52Z",
+        "completed_at": "2026-11-12T09:51:08Z",
+        "seconds": 16.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 5.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py data",
+            "seconds": 4.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131105293302,
+        "name": "android",
+        "started_at": "2026-11-12T09:53:51Z",
+        "completed_at": "2026-11-12T09:58:56Z",
+        "seconds": 305.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 8.0
+          },
+          {
+            "name": "Install Android platform and build tools",
+            "seconds": 2.0
+          },
+          {
+            "name": "Install .NET Android workload",
+            "seconds": 29.0
+          },
+          {
+            "name": "Prepare preview signing key",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Build and verify signed Android APK",
+            "seconds": 112.0
+          },
+          {
+            "name": "Preserve the tested PR preview and signing key",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Record APK build diagnostics",
+            "seconds": 0.0
+          },
+          {
+            "name": "Enable KVM for emulator",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install APK and verify startup in Android emulator",
+            "seconds": 138.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131107859028,
+        "name": "pull-request-apks / verify-source",
+        "started_at": "2026-11-12T09:58:58Z",
+        "completed_at": "2026-11-12T09:59:02Z",
+        "seconds": 4.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Confirm tested commit",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131107907334,
+        "name": "pull-request-apks / geodata",
+        "started_at": "2026-11-12T09:59:04Z",
+        "completed_at": "2026-11-12T09:59:30Z",
+        "seconds": 26.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run ./.github/actions/country-data",
+            "seconds": 15.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 7.0
+          },
+          {
+            "name": "Post Run ./.github/actions/country-data",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131108140336,
+        "name": "pull-request-apks / android",
+        "started_at": "2026-11-12T09:59:32Z",
+        "completed_at": "2026-11-12T10:10:00Z",
+        "seconds": 628.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 15.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 7.0
+          },
+          {
+            "name": "Run sdkmanager 'platforms;android-34' 'build-tools;34.0.0'",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run dotnet workload install android --skip-manifest-update",
+            "seconds": 26.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 1.0
+          },
+          {
+            "name": "Reuse the tested Minsk preview",
+            "seconds": 0.0
+          },
+          {
+            "name": "Split country map into bounded Android assets",
+            "seconds": 244.0
+          },
+          {
+            "name": "Build full Belarus APK",
+            "seconds": 168.0
+          },
+          {
+            "name": "Run publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish",
+            "seconds": 4.0
+          },
+          {
+            "name": "Verify distributable APK packages and signing certificates",
+            "seconds": 15.0
+          },
+          {
+            "name": "Enable KVM for full APK installation test",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install full Belarus APK on Android 15 emulator",
+            "seconds": 131.0
+          },
+          {
+            "name": "Explain preview installation behavior",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 7.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run_id": 43374709737,
+    "url": "https://github.com/Volodya1000/maps/actions/runs/43374709737",
+    "head_sha": "0c4117f9e87fdd31ba10531c7d8f38b4cd95b2f1",
+    "cache": "unchanged published f94aa250 recipe; cold Actions cache, Release download",
+    "wall_seconds": 1315.0,
+    "unweighted_runner_minutes": 24.867,
+    "modeled_A_saving_seconds": 44.0,
+    "modeled_B_saving_seconds": 44.0,
+    "jobs": [
+      {
+        "id": 131718374285,
+        "name": "quality",
+        "started_at": "2026-11-13T05:51:13Z",
+        "completed_at": "2026-11-13T05:52:00Z",
+        "seconds": 47.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run actions/setup-go@v6",
+            "seconds": 7.0
+          },
+          {
+            "name": "Select optional preview artifacts",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py lint",
+            "seconds": 19.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check_fragments.py --base \"$CHANGELOG_BASE\"",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked towncrier build --version next --draft",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-go@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131718657471,
+        "name": "terrain-spike",
+        "started_at": "2026-11-13T05:52:02Z",
+        "completed_at": "2026-11-13T05:52:51Z",
+        "seconds": 49.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py terrain",
+            "seconds": 40.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-node@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131718657583,
+        "name": "data",
+        "started_at": "2026-11-13T05:52:02Z",
+        "completed_at": "2026-11-13T05:52:20Z",
+        "seconds": 18.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 5.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py data",
+            "seconds": 6.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-python@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131718657586,
+        "name": "tests (windows-2022)",
+        "started_at": "2026-11-13T05:52:02Z",
+        "completed_at": "2026-11-13T05:55:04Z",
+        "seconds": 182.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 4.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 157.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 5.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131718657993,
+        "name": "tests (ubuntu-22.04)",
+        "started_at": "2026-11-13T05:52:02Z",
+        "completed_at": "2026-11-13T05:54:02Z",
+        "seconds": 120.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y strace",
+            "seconds": 8.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run uv run --locked python tools/check.py desktop",
+            "seconds": 102.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131719710955,
+        "name": "android",
+        "started_at": "2026-11-13T05:55:05Z",
+        "completed_at": "2026-11-13T05:59:47Z",
+        "seconds": 282.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 6.0
+          },
+          {
+            "name": "Install Android platform and build tools",
+            "seconds": 2.0
+          },
+          {
+            "name": "Install .NET Android workload",
+            "seconds": 39.0
+          },
+          {
+            "name": "Prepare preview signing key",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run uv sync --locked",
+            "seconds": 1.0
+          },
+          {
+            "name": "Build and verify signed Android APK",
+            "seconds": 84.0
+          },
+          {
+            "name": "Preserve the tested PR preview and signing key",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 6.0
+          },
+          {
+            "name": "Record APK build diagnostics",
+            "seconds": 0.0
+          },
+          {
+            "name": "Enable KVM for emulator",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install APK and verify startup in Android emulator",
+            "seconds": 130.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run astral-sh/setup-uv@v10.3.2",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 1.0
+          }
+        ]
+      },
+      {
+        "id": 131721317238,
+        "name": "pull-request-apks / verify-source",
+        "started_at": "2026-11-13T05:59:50Z",
+        "completed_at": "2026-11-13T05:59:54Z",
+        "seconds": 4.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Confirm tested commit",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131721352177,
+        "name": "pull-request-apks / geodata",
+        "started_at": "2026-11-13T05:59:56Z",
+        "completed_at": "2026-11-13T06:00:31Z",
+        "seconds": 35.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 2.0
+          },
+          {
+            "name": "Read application version",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run ./.github/actions/country-data",
+            "seconds": 19.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 11.0
+          },
+          {
+            "name": "Post Run ./.github/actions/country-data",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 0.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      },
+      {
+        "id": 131721589320,
+        "name": "pull-request-apks / android",
+        "started_at": "2026-11-13T06:00:33Z",
+        "completed_at": "2026-11-13T06:13:08Z",
+        "seconds": 755.0,
+        "steps": [
+          {
+            "name": "Set up job",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 19.0
+          },
+          {
+            "name": "Run actions/setup-dotnet@v6",
+            "seconds": 3.0
+          },
+          {
+            "name": "Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run android-actions/setup-android@v4",
+            "seconds": 11.0
+          },
+          {
+            "name": "Run sdkmanager 'platforms;android-34' 'build-tools;34.0.0'",
+            "seconds": 2.0
+          },
+          {
+            "name": "Run dotnet workload install android --skip-manifest-update",
+            "seconds": 37.0
+          },
+          {
+            "name": "Run actions/download-artifact@v8",
+            "seconds": 2.0
+          },
+          {
+            "name": "Reuse the tested Minsk preview",
+            "seconds": 0.0
+          },
+          {
+            "name": "Split country map into bounded Android assets",
+            "seconds": 286.0
+          },
+          {
+            "name": "Build full Belarus APK",
+            "seconds": 199.0
+          },
+          {
+            "name": "Run publish_dir=src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish",
+            "seconds": 5.0
+          },
+          {
+            "name": "Verify distributable APK packages and signing certificates",
+            "seconds": 20.0
+          },
+          {
+            "name": "Enable KVM for full APK installation test",
+            "seconds": 0.0
+          },
+          {
+            "name": "Install full Belarus APK on Android 15 emulator",
+            "seconds": 152.0
+          },
+          {
+            "name": "Explain preview installation behavior",
+            "seconds": 0.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 11.0
+          },
+          {
+            "name": "Run actions/upload-artifact@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Post Run actions/setup-java@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/setup-dotnet@v6",
+            "seconds": 0.0
+          },
+          {
+            "name": "Post Run actions/checkout@v7",
+            "seconds": 1.0
+          },
+          {
+            "name": "Complete job",
+            "seconds": 0.0
+          }
+        ]
+      }
+    ]
+  }
+]
