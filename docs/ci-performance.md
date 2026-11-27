@@ -4,7 +4,7 @@
 
 [Issue #61](https://github.com/Volodya1000/maps/issues/61) требует измерений до выбора настроек. Исходная ревизия этого PR — `7c4bec1b2fb5dbb5a51439260c93385a872d6ce2`.
 [Машинные данные baseline](benchmarks/ci-61-baseline.json) содержат SHA, timestamps jobs и длительности успешных подшагов из публичного Actions API. Повторить получение: `GET /repos/Volodya1000/maps/actions/runs/<run-id>/jobs?per_page=100`; при большем числе jobs следует продолжить пагинацию.
-Wall-clock здесь — от начала первого job до конца последнего; runner-minutes — сумма длительностей успешных jobs, без тарифных коэффициентов Windows, очереди и округления биллинга. Это исторические наблюдения на разных SHA/runner images, а не контролируемый A/B одного коммита. CPU/RAM старые логи не собирали; эти значения неизвестны. Три наблюдения неизменного опубликованного рецепта подтверждают cold-cache Release download, три — полную конвертацию изменённого рецепта, два — exact-key hit последующих неизменных запусков. Для published recipe PR cache намеренно не сохраняется: его повторный cold Release download нельзя называть повторной конвертацией.
+Wall-clock здесь — от начала первого job до конца последнего; runner-minutes — сумма длительностей успешных jobs, без тарифных коэффициентов Windows, очереди и округления биллинга. Это исторические наблюдения на разных SHA/runner images, а не контролируемый A/B одного коммита. CPU/RAM старые логи не собирали; эти значения неизвестны. [Выдержки логов cache/download](benchmarks/ci-61-cache-evidence.json) подтверждают классификацию. Три наблюдения неизменного опубликованного рецепта подтверждают cold-cache Release download, три — полную конвертацию изменённого рецепта, два — exact-key hit последующих неизменных запусков. Для published recipe PR cache намеренно не сохраняется: его повторный cold Release download нельзя называть повторной конвертацией.
 
 | Run | Карта/кэш | Wall-clock, с | Runner-minutes | Geodata, с | Полный Android, с |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -48,18 +48,53 @@ uv run --locked python tools/benchmark_android_map.py artifacts/belarus artifact
 
 Локальный вход: полная SQLite Беларуси из прежней проверенной подготовки, 2 577 719 296 байт, SHA-256 `f584e0c9963692b31b0f2b6322dc810641729bbabcc410626faf8ea70b703493`. Это не свежий выпуск текущего рецепта; он используется только как одинаковый большой вход для сравнения gzip. Исходная SHA проверена по его manifest. Для актуального рецепта предусмотрен opt-in CI benchmark ниже.
 
-Первый полный локальный проход (повторный проход ещё выполняется):
+Два полных локальных прохода завершены. [Сырые результаты уровней](benchmarks/ci-61-gzip-levels-windows.json), [workers](benchmarks/ci-61-gzip-workers-windows.json). Windows Server 2022, Python 3.12.14, zlib 1.3.2, 28 logical CPUs. Есть фоновая нагрузка других задач; порядок второго прохода обратный. Время — диапазон двух повторов, CPU — медиана, RSS — максимум.
 
 | Level / workers | Сжатие, с | CPU, с | Peak RSS, МиБ | Gzip, байт | Чтение + hash, с |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 1 / 1 | 102,72 | 94,03 | 151,84 | 1 234 963 519 | 25,68 |
-| 3 / 1 | 112,31 | 105,56 | 151,94 | 1 232 408 278 | 24,50 |
-| 6 / 1 | 179,71 | 169,36 | 151,16 | 1 211 703 118 | 23,74 |
-| 9 / 1 | 404,54 | 395,91 | 151,26 | 1 210 638 768 | 25,18 |
+| 1 / 1 | 97.90–102.72 | 92.66 | 151.88 | 1,234,963,519 | 23.60–25.68 |
+| 3 / 1 | 108.22–112.31 | 102.80 | 151.94 | 1,232,408,278 | 22.90–24.50 |
+| 6 / 1 | 168.83–179.71 | 165.48 | 151.23 | 1,211,703,118 | 23.35–23.74 |
+| 9 / 1 | 394.23–404.54 | 390.57 | 151.28 | 1,210,638,768 | 23.11–25.18 |
+| 6 / 2 | 90.56–90.99 | 171.84 | 247.15 | 1,211,703,118 | 23.40–23.55 |
+| 6 / 4 | 46.46–46.99 | 167.50 | 425.86 | 1,211,703,118 | 23.55–24.05 |
 
-Level 6 в первом проходе сократил сжатие на 224,83 с при росте gzip на 1 064 350 байт (0,088%). Это ещё не доказательство для APK/install на GitHub. Итоговые настройки будут выбраны после повторов и Android-проверки; первый PR CI сохраняет level 9 / один worker как исходную точку.
+Level 6 / один worker сократил медиану сжатия с 399,38 до 174,27 с (56,4%) при росте gzip на 1 064 350 байт (0,088%). Четыре workers дополнительно снизили медиану до 46,72 с с peak RSS до 426 МиБ; gzip-байты одинаковы при любом числе workers. Каждый из 12 случаев восстановил исходный SHA-256 SQLite. Первое CI-измерение сохраняет level 9 / один worker; Linux/Android данные ещё нужны для окончательного выбора. Локальные результаты не доказывают размер APK и время Android install/startup.
 
 Gzip `mtime=0`, размеры распакованных chunks 64 МиБ и последовательные имена сохраняются. Число workers ограничено 1–4; очередь удерживает не больше workers chunks. zlib-компрессия выполняется в threads без копирования блоков между процессами. Тесты сравнивают gzip-байты при 1/2/4 workers, восстанавливают SQLite на всех уровнях и проверяют ошибки ввода/записи.
+
+### Размеры реально собранных APK
+
+[Сырые результаты](benchmarks/ci-61-apks-windows.json): один APK на уровень, тот же полный SQLite-вход, 4 workers, один application ID / version code, JDK 17 / build-tools 34.0.0. Использован код commit `62a72d8`. Это Windows-сборки без country DEM, не распространяемые preview APK текущего CI. Во всех APK проверены exact manifest, восстановленная SHA-256 SQLite и отсутствие INTERNET permission. Временные APK удалены после проверки.
+
+| Level | Gzip assets, байт | Map entries внутри ZIP, байт | Полный APK, байт |
+| --- | ---: | ---: | ---: |
+| 1 | 1,234,963,519 | 1,233,569,813 | 1,303,532,006 |
+| 3 | 1,232,408,278 | 1,230,683,558 | 1,300,644,326 |
+| 6 | 1,211,703,118 | 1,210,012,612 | 1,279,971,814 |
+| 9 | 1,210,638,768 | 1,208,946,965 | 1,278,906,854 |
+
+Level 6 увеличил полный APK относительно 9 на 1 064 960 байт (0,0833%). Levels 1/3 экономят ещё CPU, но увеличивают размер примерно на 22–25 МБ; для установки APK с country DEM такой обмен ещё надо проверять. Первая сборка была холодной, следующие использовали тёплый build cache; publish_seconds сохранены только как наблюдения, не доказательство ускорения. Каждый вариант восстановил те же 2 577 719 296 байт SQLite.
+
+Для воспроизведения размеров использовать новый пустой каталог на каждый уровень:
+
+```powershell
+$versionCode = ((python tools/release_version.py | Select-String '^ANDROID_VERSION_CODE=') -split '=', 2)[1]
+$runId = [guid]::NewGuid().ToString('N')
+foreach ($level in 1, 3, 6, 9) {
+    $caseDir = "$PWD/artifacts/apk-benchmark/$runId/level-$level"
+    python tools/split_android_map.py artifacts/belarus "$caseDir/chunks" --compresslevel $level --workers 4
+    if ($LASTEXITCODE -ne 0) { throw "Split failed: $LASTEXITCODE" }
+    dotnet publish src/CableRoutePlanner.Android -c Release -p:ApplicationId=by.cablerouteplanner.benchmark "-p:AndroidVersionCode=$versionCode" "-p:GeodataDirectory=$caseDir/chunks" "-p:AndroidSdkDirectory=$env:ANDROID_HOME" "-p:JavaSdkDirectory=$env:JAVA_HOME" -o "$caseDir/publish"
+    if ($LASTEXITCODE -ne 0) { throw "Publish failed: $LASTEXITCODE" }
+    $apk = Get-ChildItem "$caseDir/publish" -Filter '*-Signed.apk'
+    if ($apk.Count -ne 1) { throw 'Expected one signed APK' }
+    python tools/check_apk_map.py $apk.FullName --manifest artifacts/belarus/manifest.json --output "$caseDir/report.json"
+    if ($LASTEXITCODE -ne 0) { throw "Map verification failed: $LASTEXITCODE" }
+}
+```
+
+Новая проверка `check_apk_map.py` выполняется также для скачиваемого country preview перед публикацией: потоково читает именно тот набор direct assets, который выбирает Android, отвергает пропуски/дубли/лишние gzip assets, сверяет manifest с проверенным источником и SHA-256 всей SQLite. JSON с APK identity/размером добавлен к checksums artifact. Это отдельный барьер после репаковки; исходная country validation сохранена.
 
 ## Повторная работа .NET tooling
 
@@ -71,7 +106,7 @@ Gzip `mtime=0`, размеры распакованных chunks 64 МиБ и п
 
 Рецепт OSM → SQLite, LOD, R-tree и логика классификации не изменены. Ключ карты остаётся прежним. Пакетные вставки, перестройка индексов и упрощение геометрии не внедрены без профиля.
 
-Opt-in `ci:performance-benchmark` запускает gzip-матрицу на одной и той же полной карте текущего PR, публикуя JSON с Python/zlib/платформой и точной идентичностью входа. Это исследовательский расход runner-minutes, не часть стандартной оптимизации. Та же метка включает на API 35 дополнительное открытие полной карты после единственной установки точного APK на свежий эмулятор (8G data partition). В JSON сохраняются APK SHA-256/размер, install_seconds, activity_start_seconds и map_ready_seconds; затем выполняется restart в том же эмуляторе. Обязательные install и pm-path проверки сохраняются. Map-ready — момент наблюдения существующего feature-ready marker при polling, включая adb overhead; это не timestamp отрисованного кадра. Второй запуск — restart с уже распакованной картой, не второй холодный эмулятор. 600 итераций ожидания — observation budget, не точный wall-clock deadline; job и отдельные adb-вызовы ограничены timeout.
+Opt-in `ci:performance-benchmark` запускает gzip-матрицу на одной и той же полной карте текущего PR, публикуя JSON с Python/zlib/платформой и точной идентичностью входа. Это исследовательский расход runner-minutes, не часть стандартной оптимизации. Та же метка (или отдельная `ci:apk-startup-benchmark` без повторения gzip-матрицы) включает на API 35 дополнительное открытие полной карты после единственной установки точного APK на свежий эмулятор (8G data partition). В JSON сохраняются APK SHA-256/размер, install_seconds, activity_start_seconds и map_ready_seconds; затем выполняется restart в том же эмуляторе. Обязательные install и pm-path проверки сохраняются. Map-ready — момент наблюдения существующего feature-ready marker при polling, включая adb overhead; это не timestamp отрисованного кадра. Второй запуск — restart с уже распакованной картой, не второй холодный эмулятор. 600 итераций ожидания — observation budget, не точный wall-clock deadline; job и отдельные adb-вызовы ограничены timeout.
 
 Opt-in `ci:profile-country` выполняет независимую полную конвертацию с `cProfile` и `/usr/bin/time -v`. Сохраняет hotspots, CPU, peak RSS и профиль; после seal сравнивает gzip SQLite и manifest с обычной конвертацией. Инструментирование находится вне recipe: не меняет ключ карты, входы конвертера или публикуемый prepared package. Профилированное время нельзя сравнивать с обычным временем как ускорение.
 
@@ -85,6 +120,10 @@ Prepared cache использует только точный content-addressed 
 
 ## Состояние доказательств
 
-Локальный исходный desktop gate: 933 tests, line coverage 95,9%, branch coverage 88,1%; Release и self-contained win-x64 publish успешны. Tooling после первых изменений: 83 tests. Финальная проверка и измеренный PR CI будут дополнены отдельно.
+Локально все обязательные commit hooks (lint, desktop/tests/coverage, data, terrain) и Android pre-push gate прошли без обхода. Desktop: 933 tests, line coverage 95,9%, branch coverage 88,1%; Release и self-contained win-x64 publish успешны. Tooling после интеграции main, проверки APK и UTF-8 regression: 98 tests. Bash syntax проверен.
+
+[PR #69](https://github.com/Volodya1000/maps/pull/69), исходный commit `62a72d811de57626e4d677bdb437e1cb4a6b83c5`: [CI run 46013430359](https://github.com/Volodya1000/maps/actions/runs/46013430359). Quality/data/terrain и обе desktop-платформы прошли; geodata и Android выполнялись одновременно, Minsk emulator прошёл. Cold country conversion заняла 1050,05 с, country elevation — 177,11 с, проверены 840 shards; передан artifact 1 829 356 415 байт. Exact-key кэши OSM и DEM сохранены. Full APK job упал в check_apk_elevation.py на Python 3.10 (`hashlib.file_digest` отсутствует), поэтому full-install/map-ready не заявлены как PASS. За время измерений в main появился исправляющий commit `5a3676e`; он включается в ветку до следующего CI. Оставшиеся исследовательские jobs продолжают измерения. [Windows 7 x86 packaging run](https://github.com/Volodya1000/maps/actions/runs/46013391379) прошёл; это .NET 6 self-contained build/package verification на Windows 2022, не запуск на Windows 7 VM. Измерения полного PR CI будут дополнены после завершения jobs.
 
 Пока **не доказаны** контролируемая матрица холодного/тёплого кеша одинаковых SHA/рецептов, Linux/Windows NuGet ROI и фактический выигрыш install/startup. Исторические runs и модель графа не подменяют эти критерии. Issue #61 не следует считать полностью закрытым только по расчётной экономии.
+
+При объединении обновлённого main Windows hook выявил locale-зависимое декодирование `git show` в changelog checker. Исправлен явный UTF-8 для Git stdout; регрессионный тест проходит для index и HEAD при отключённом Python UTF-8 mode. Проверка содержимого/staged snapshots сохранена. Это исправление локального quality gate, не ускорение.

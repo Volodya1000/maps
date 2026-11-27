@@ -10,7 +10,6 @@
     <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="12">
         <StackPanel Spacing="8">
             <TextBlock Classes="section-heading" Text="Сохранённые маршруты" />
-            <Button Content="Обновить" Command="{Binding Refresh}" />
             <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
             <TextBlock IsVisible="{Binding IsEmpty}" Text="Постройте маршрут на карте и нажмите «Сохранить маршрут» на вкладке «Маршрут»." TextWrapping="Wrap" />
         </StackPanel>

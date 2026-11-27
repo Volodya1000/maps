@@ -10,6 +10,10 @@ on:
         description: Exact commit SHA checked by the caller workflow
         required: true
         type: string
+      startup_benchmark:
+        description: Measure full APK installation and map opening on a fresh emulator
+        type: boolean
+        default: false
 permissions:
   contents: read
 env:
@@ -35,7 +39,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
-      ANDROID_FULL_STARTUP_BENCHMARK: ${{ contains(github.event.pull_request.labels.*.name, 'ci:performance-benchmark') }}
+      ANDROID_FULL_STARTUP_BENCHMARK: ${{ inputs.startup_benchmark }}
       # The signing key is temporary. A per-attempt package ID prevents Android
       # from treating different PR previews as incompatible updates.
       PREVIEW_PACKAGE_ID: by.cablerouteplanner.preview.pr${{ inputs.pr_number }}.r${{ github.run_id }}a${{ github.run_attempt }}
@@ -43,6 +47,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tested_sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
       - name: Read application version
         run: python3 tools/release_version.py >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v8
@@ -104,6 +111,7 @@ jobs:
             signer="$actual_signer"
           done
           python3 tools/check_apk_elevation.py "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --country
+          python3 tools/check_apk_map.py "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --manifest artifacts/belarus/manifest.json --output artifacts/apk/map-integrity.json
 
       # A signed/parsable APK is not necessarily installable: the full country
       # package is much larger than the Minsk smoke-tested build.
@@ -117,7 +125,7 @@ jobs:
         with:
           api-level: 35
           # The research run opens the full SQLite as well as installing the APK.
-          disk-size: ${{ contains(github.event.pull_request.labels.*.name, 'ci:performance-benchmark') && '8G' || '' }}
+          disk-size: ${{ inputs.startup_benchmark && '8G' || '' }}
           target: google_apis
           arch: x86_64
           disable-animations: true
@@ -126,7 +134,7 @@ jobs:
           # Use a separate Bash script to preserve its local variables and error handling.
           script: bash tools/android_full_apk_install_smoke.sh "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" "$PREVIEW_PACKAGE_ID"
       - uses: actions/upload-artifact@v7
-        if: always() && contains(github.event.pull_request.labels.*.name, 'ci:performance-benchmark')
+        if: always() && inputs.startup_benchmark
         with:
           name: android-country-startup-${{ inputs.tested_sha }}
           path: artifacts/android-country-startup/
@@ -150,7 +158,9 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: CableRoutePlanner-PR-${{ inputs.pr_number }}-checksums
-          path: artifacts/apk/SHA256SUMS.txt
+          path: |
+            artifacts/apk/SHA256SUMS.txt
+            artifacts/apk/map-integrity.json
           if-no-files-found: error
 
   routing-benchmark:

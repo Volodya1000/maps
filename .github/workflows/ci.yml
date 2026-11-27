@@ -298,5 +298,6 @@ jobs:
     with:
       pr_number: ${{ github.event.pull_request.number }}
       tested_sha: ${{ github.sha }}
+      startup_benchmark: ${{ contains(github.event.pull_request.labels.*.name, 'ci:performance-benchmark') || contains(github.event.pull_request.labels.*.name, 'ci:apk-startup-benchmark') }}
     permissions:
       contents: read

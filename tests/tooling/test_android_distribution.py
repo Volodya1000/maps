@@ -19,6 +19,28 @@ def apk_uploads(job):
 
 
 class AndroidDistributionTests(unittest.TestCase):
+    def test_country_apk_checks_use_project_python_before_running_scripts(self):
+        for workflow in ("pull-request-apks.yml", "offline-packages.yml"):
+            with self.subTest(workflow=workflow):
+                configuration = yaml.safe_load(
+                    (ROOT / ".github/workflows" / workflow).read_text()
+                )
+                steps = configuration["jobs"]["android"]["steps"]
+                python_steps = [
+                    index
+                    for index, step in enumerate(steps)
+                    if step.get("uses", "").startswith("actions/setup-python@")
+                    and step.get("with", {}).get("python-version") == "3.12"
+                ]
+                self.assertEqual(1, len(python_steps))
+                script_steps = [
+                    index
+                    for index, step in enumerate(steps)
+                    if "python3 " in step.get("run", "")
+                ]
+                self.assertTrue(script_steps)
+                self.assertLess(python_steps[0], min(script_steps))
+
     def test_pr_publishes_minsk_once_and_belarus_once(self):
         parent = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
         country = yaml.safe_load(
@@ -71,3 +93,23 @@ class AndroidDistributionTests(unittest.TestCase):
             i for i, step in enumerate(steps) if "dotnet publish" in step.get("run", "")
         )
         self.assertLess(version_steps[0], publish)
+
+    def test_startup_probe_can_run_without_repeating_compression_matrix(self):
+        parent = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+        country = yaml.safe_load(
+            (ROOT / ".github/workflows/pull-request-apks.yml").read_text()
+        )
+        events = country.get("on", country.get(True))
+        option = events["workflow_call"]["inputs"]["startup_benchmark"]
+        self.assertEqual("boolean", option["type"])
+        self.assertIs(False, option["default"])
+        selection = parent["jobs"]["pull-request-apks"]["with"]["startup_benchmark"]
+        self.assertIn("ci:apk-startup-benchmark", selection)
+        self.assertIn("ci:performance-benchmark", selection)
+        self.assertNotIn(
+            "ci:apk-startup-benchmark", parent["jobs"]["ci-performance"]["if"]
+        )
+        self.assertIn(
+            "inputs.startup_benchmark",
+            country["jobs"]["android"]["env"]["ANDROID_FULL_STARTUP_BENCHMARK"],
+        )
