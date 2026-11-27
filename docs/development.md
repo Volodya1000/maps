@@ -13,6 +13,8 @@ Pre-commit проверяет changelog-фрагмент, синтаксис Pyt
 
 CI вызывает тот же `tools/check.py`, а не копию его команд. Отсутствие инструмента завершает проверку ошибкой. Для первичной подготовки Playwright в Linux можно установить системные зависимости командой `npx --package playwright@1.55.1 playwright install-deps chromium`.
 
+В desktop CI SDK из `global.json` устанавливается в `${{ runner.temp }}/.dotnet` через `DOTNET_INSTALL_DIR`. Изоляция от общесистемной установки runner применяется из-за повторявшегося сбоя обнаружения CLI в `dotnet format` ([dotnet/sdk#44957](https://github.com/dotnet/sdk/issues/44957)); команды форматирования, сборки, тестов и quality gates остаются теми же.
+
 ```sh
 uv run --locked python tools/check.py lint
 uv run --locked python tools/check.py desktop

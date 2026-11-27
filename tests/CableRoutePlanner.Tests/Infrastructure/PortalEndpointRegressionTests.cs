@@ -131,7 +131,12 @@ public sealed class PortalEndpointRegressionTests
         if (!entrance)
         {
             PlanningException error = await Assert.ThrowsAsync<PlanningException>(() => planner.PlanAsync(points, options, default));
-            Assert.Equal(PlanningErrorReason.GridConnectionUnavailable, error.Reason);
+            // Recovery can connect the endpoint to its finer surface grid, but
+            // a mapped interior tunnel node still does not authorize entry.
+            Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, error.Reason);
+            Assert.Equal(CostProfile.Defaults.Count, error.SearchFailures.Count);
+            Assert.All(error.SearchFailures, failure =>
+                Assert.Equal(PlanningErrorReason.NoRouteInSearchArea, failure.Error.Reason));
             return;
         }
 

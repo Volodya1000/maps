@@ -23,10 +23,10 @@ internal static partial class RoutingLog
     public static partial void ProfileUnavailableLog(ILogger logger, string profile, PlanningErrorReason reason, Exception error);
 
     [LoggerMessage(EventId = 5, EventName = nameof(SearchMeshLog), Level = LogLevel.Debug,
-        Message = "Calculation {CalculationId}: mesh {CellSizeMetres} m (requested {RequestedCellSizeMetres}), {NodeCount} nodes in {Columns} columns and {Rows} rows; bounds {West},{South},{East},{North}; {PortalCount} portals")]
+        Message = "Calculation {CalculationId}, attempt {Attempt}: mesh {CellSizeMetres} m (requested {RequestedCellSizeMetres}), {NodeCount} nodes in {Columns} columns and {Rows} rows; bounds {West},{South},{East},{North}; {PortalCount} portals")]
     public static partial void SearchMeshLog(ILogger logger, Guid calculationId, double requestedCellSizeMetres,
         double cellSizeMetres, int nodeCount, int columns, int rows, double west, double south, double east,
-        double north, int portalCount);
+        double north, int portalCount, int attempt = 0);
 
     [LoggerMessage(EventId = 6, EventName = nameof(GraphConnectionsLog), Level = LogLevel.Debug,
         Message = "Calculation {CalculationId}, profile {Profile}, leg {LegIndex}: endpoint connections {StartConnections}/{DestinationConnections}; {PortalNodeCount} portal vertices, {PortalGridConnections} grid links, {PortalEdges} portal edges; {RejectedConnections} rejected connectors; direct {DirectConnection}")]
@@ -38,4 +38,14 @@ internal static partial class RoutingLog
         Message = "Calculation {CalculationId}, profile {Profile}, leg {LegIndex}: reason {Reason}, cancelled {Cancelled}; expanded {ExpandedNodes} nodes, {EdgeEvaluations} unique grid evaluations; direct {DirectRoute}")]
     public static partial void LegSearchLog(ILogger logger, Guid calculationId, string profile, int legIndex,
         PlanningErrorReason? reason, bool cancelled, int expandedNodes, int edgeEvaluations, bool directRoute);
+
+    [LoggerMessage(EventId = 8, EventName = nameof(SearchAttemptLog), Level = LogLevel.Debug,
+        Message = "Calculation {CalculationId}, attempt {Attempt}: connector radius {ConnectionRadiusCells} cells; surface recovery {SurfaceRecovery}")]
+    public static partial void SearchAttemptLog(ILogger logger, Guid calculationId, int attempt,
+        int connectionRadiusCells, bool surfaceRecovery);
+
+    [LoggerMessage(EventId = 9, EventName = nameof(SurfaceDetourLog), Level = LogLevel.Debug,
+        Message = "Calculation {CalculationId}, profile {Profile}, leg {LegIndex}: surface graph {NodeCount} nodes, expanded {ExpandedNodes}, input {InputVertexCount} vertices; resource limited {ResourceLimited}; found {Found}")]
+    public static partial void SurfaceDetourLog(ILogger logger, Guid calculationId, string profile, int legIndex,
+        int nodeCount, int expandedNodes, int inputVertexCount, bool resourceLimited, bool found);
 }

@@ -80,6 +80,13 @@ jobs:
           --data artifacts/belarus
           --output artifacts/routing-regression/portal-witnesses.json
           --run-report artifacts/routing-regression/results.json
+      - name: Independently audit seven known recovered paths
+        if: always() && steps.routing-data.outcome == 'success'
+        run: >-
+          uv run --project tools/GeodataPreparation --locked python tools/routing_recovery.py
+          --data artifacts/belarus
+          --run-report artifacts/routing-regression/results.json
+          --output artifacts/routing-regression/known-recovery
       - name: Publish concise routing evidence
         if: always()
         shell: bash
@@ -88,6 +95,9 @@ jobs:
             cat artifacts/routing-regression/summary.md >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Routing regression did not run: a prerequisite failed. See job logs and available evidence.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [[ -f artifacts/routing-regression/known-recovery/summary.md ]]; then
+            cat artifacts/routing-regression/known-recovery/summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Preserve raw results and reproducible metadata
         if: always()

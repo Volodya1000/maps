@@ -59,6 +59,8 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/.dotnet
       - uses: astral-sh/setup-uv@v10.3.2
         with:
           version: '0.13.9'
@@ -87,12 +89,21 @@ jobs:
       - run: uv run --locked python tools/check.py data
   android:
     needs: [quality, tests]
+    outputs:
+      preview_package_id: ${{ steps.preview_identity.outputs.package_id }}
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
       ANDROID_APPLICATION_ID: ${{ github.event_name == 'pull_request' && format('by.cablerouteplanner.preview.pr{0}.r{1}a{2}', github.event.pull_request.number, github.run_id, github.run_attempt) || 'by.cablerouteplanner.app' }}
     steps:
       - uses: actions/checkout@v7
+      - name: Record the tested preview identity
+        id: preview_identity
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          print('package_id=' + os.environ['ANDROID_APPLICATION_ID'])
+          PY
       - name: Read application version
         run: python3 tools/release_version.py >> "$GITHUB_ENV"
       - uses: actions/setup-dotnet@v6
@@ -203,5 +214,6 @@ jobs:
     with:
       pr_number: ${{ github.event.pull_request.number }}
       tested_sha: ${{ github.sha }}
+      preview_package_id: ${{ needs.android.outputs.preview_package_id }}
     permissions:
       contents: read

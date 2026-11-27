@@ -17,12 +17,14 @@ internal sealed class RouteGeometryBuilder
     private readonly RouteGeometryPostProcessor _postProcessor;
     private readonly ILogger _logger;
     private readonly Guid _calculationId;
+    private readonly SurfaceDetourSearch? _surfaceDetours;
 
     public GridEdgeEvaluationCache Edges { get; }
 
     public RouteGeometryBuilder(IGridPathfinder pathfinder, GridMesh mesh, TerrainEvaluator evaluator,
         LocalProjection projection, RouteGeometryPostProcessor postProcessor, ILogger? logger = null,
-        Guid calculationId = default)
+        Guid calculationId = default,
+        SurfaceDetourSearch? surfaceDetours = null)
     {
         _pathfinder = pathfinder;
         _mesh = mesh;
@@ -31,6 +33,7 @@ internal sealed class RouteGeometryBuilder
         _postProcessor = postProcessor;
         _logger = logger ?? NullLogger.Instance;
         _calculationId = calculationId;
+        _surfaceDetours = surfaceDetours;
         Edges = new(mesh, evaluator);
     }
 
@@ -77,28 +80,42 @@ internal sealed class RouteGeometryBuilder
             else
             {
                 GridSearchGraph? graph = null;
+                bool surfaceAttempted = false;
                 try
                 {
-                    graph = new(start, end, _mesh, profile, _evaluator, Edges, ct, _logger, _calculationId, leg);
-                    IReadOnlyList<int> path = _pathfinder.FindPath(graph, ct) ?? throw new PlanningException(
-                        "В доступной области нет допустимого маршрута. "
-                        + $"Сетка {_mesh.CellSizeMetres:F0} м может не представить узкий проход; алгоритм не гарантирует полноту. "
-                        + "Можно увеличить область данных или изменить точки.",
-                        PlanningErrorReason.NoRouteInSearchArea);
-                    part = path.Select(graph.GetCoordinate).ToList();
+                    surfaceAttempted = _surfaceDetours is not null;
+                    List<Coordinate>? detour = FindSurfaceDetour(start, end, profile, leg, ct);
+                    if (detour is not null)
+                    {
+                        part = detour;
+                    }
+                    else
+                    {
+                        graph = new(start, end, _mesh, profile, _evaluator, Edges, ct, _logger,
+                            _calculationId, leg);
+                        IReadOnlyList<int> path = _pathfinder.FindPath(graph, ct) ?? throw new PlanningException(
+                                "В доступной области нет допустимого маршрута. "
+                                + $"Сетка {_mesh.CellSizeMetres:F0} м может не представить узкий проход; алгоритм не гарантирует полноту. "
+                                + "Можно увеличить область данных или изменить точки.",
+                                PlanningErrorReason.NoRouteInSearchArea);
+                        part = path.Select(graph.GetCoordinate).ToList();
+                    }
                     RoutingLog.LegSearchLog(_logger, _calculationId, profile.Name, leg, null, false,
-                        graph.ExpandedNodes, Edges.EvaluationCount, false);
+                        (graph?.ExpandedNodes ?? 0) + (surfaceAttempted ? _surfaceDetours!.ExpandedNodes : 0),
+                        Edges.EvaluationCount, false);
                 }
                 catch (PlanningException error)
                 {
                     RoutingLog.LegSearchLog(_logger, _calculationId, profile.Name, leg, error.Reason, false,
-                        graph?.ExpandedNodes ?? 0, Edges.EvaluationCount, false);
+                        (graph?.ExpandedNodes ?? 0) + (surfaceAttempted ? _surfaceDetours!.ExpandedNodes : 0),
+                        Edges.EvaluationCount, false);
                     throw;
                 }
                 catch (OperationCanceledException)
                 {
                     RoutingLog.LegSearchLog(_logger, _calculationId, profile.Name, leg, null, true,
-                        graph?.ExpandedNodes ?? 0, Edges.EvaluationCount, false);
+                        (graph?.ExpandedNodes ?? 0) + (surfaceAttempted ? _surfaceDetours!.ExpandedNodes : 0),
+                        Edges.EvaluationCount, false);
                     throw;
                 }
             }
@@ -113,6 +130,20 @@ internal sealed class RouteGeometryBuilder
             route.AddRange(part);
         }
 
+        return route;
+    }
+
+    private List<Coordinate>? FindSurfaceDetour(Coordinate start, Coordinate end, CostProfile profile,
+        int leg, CancellationToken ct)
+    {
+        if (_surfaceDetours is null)
+        {
+            return null;
+        }
+        List<Coordinate>? route = _surfaceDetours.FindPath(start, end, profile, _pathfinder, ct);
+        RoutingLog.SurfaceDetourLog(_logger, _calculationId, profile.Name, leg, _surfaceDetours.NodeCount,
+            _surfaceDetours.ExpandedNodes, _surfaceDetours.InputVertexCount, _surfaceDetours.ResourceLimited,
+            route is not null);
         return route;
     }
 }
