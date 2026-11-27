@@ -1,0 +1,101 @@
+{
+  "timings": [
+    {
+      "repeat": 1,
+      "mode": "separate",
+      "wall_seconds": 77.39167550000093,
+      "exit_codes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "repeat": 1,
+      "mode": "combined",
+      "wall_seconds": 47.86568030000126,
+      "exit_codes": [
+        0
+      ]
+    },
+    {
+      "repeat": 2,
+      "mode": "combined",
+      "wall_seconds": 49.691173600000184,
+      "exit_codes": [
+        0
+      ]
+    },
+    {
+      "repeat": 2,
+      "mode": "separate",
+      "wall_seconds": 76.5716850000008,
+      "exit_codes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "repeat": 3,
+      "mode": "separate",
+      "wall_seconds": 77.1842183000008,
+      "exit_codes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "repeat": 3,
+      "mode": "combined",
+      "wall_seconds": 55.57730310000079,
+      "exit_codes": [
+        0
+      ]
+    }
+  ],
+  "negative_exits": [
+    {
+      "mode": "whitespace",
+      "exit_code": 2
+    },
+    {
+      "mode": "style",
+      "exit_code": 2
+    },
+    {
+      "mode": "analyzers",
+      "exit_code": 2
+    },
+    {
+      "mode": "combined",
+      "exit_code": 2
+    }
+  ],
+  "diagnostics": {
+    "whitespace": [
+      "ENDOFLINE",
+      "WHITESPACE"
+    ],
+    "style": [
+      "IDE0008",
+      "IDE0055"
+    ],
+    "analyzers": [
+      "IDE0008",
+      "IDE0055",
+      "MA0002"
+    ],
+    "combined": [
+      "ENDOFLINE",
+      "IDE0008",
+      "MA0002",
+      "WHITESPACE"
+    ]
+  },
+  "normalization": "IDE0055 and WHITESPACE both denote formatting; combined fixes whitespace in memory before running style/analyzers.",
+  "sdk": "8.0.427",
+  "fixture": "namespace CableRoutePlanner.Domain;\ninternal static class Issue61FormatProbe\n{\n    internal static int Calculate() {var value = 1; return value;}\n    internal static int Count() => new System.Collections.Generic.Dictionary<string, int>().Count;\n}\n",
+  "method": "Three alternating clean runs per command group; --no-restore --verify-no-changes (and --severity warn except whitespace); negative fixture written as temporary Domain source, each formatter run with --include and --report, then fixture removed in finally."
+}

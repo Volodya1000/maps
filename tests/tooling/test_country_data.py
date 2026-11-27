@@ -313,7 +313,12 @@ class CountryWorkflowTests(unittest.TestCase):
             workflow = yaml.safe_load(
                 (country.ROOT / ".github/workflows" / filename).read_text()
             )
-            steps = workflow["jobs"]["geodata"]["steps"]
+            preparation = (
+                yaml.safe_load((country.ROOT / ".github/workflows/ci.yml").read_text())
+                if filename.startswith("pull-")
+                else workflow
+            )
+            steps = preparation["jobs"]["geodata"]["steps"]
             self.assertTrue(
                 any(s.get("uses") == "./.github/actions/country-data" for s in steps)
             )
@@ -323,12 +328,18 @@ class CountryWorkflowTests(unittest.TestCase):
                 if s.get("uses", "").startswith("actions/upload-artifact@")
             )
             if filename.startswith("pull-"):
-                self.assertEqual(
-                    workflow["jobs"]["routing-benchmark"]["if"], upload["if"]
-                )
+                for label in (
+                    "ci:routing-benchmark",
+                    "ci:performance-benchmark",
+                    "ci:profile-country",
+                ):
+                    self.assertIn(label, upload["if"])
+                self.assertIn(" || ", upload["if"])
                 self.assertEqual(
                     "${{ steps.country_identity.outputs.manifest_sha256 }}",
-                    workflow["jobs"]["geodata"]["outputs"]["country_manifest_sha256"],
+                    preparation["jobs"]["geodata"]["outputs"][
+                        "country_manifest_sha256"
+                    ],
                 )
             else:
                 self.assertNotIn("if", upload)
@@ -349,7 +360,7 @@ class CountryWorkflowTests(unittest.TestCase):
                         s for s in consumer if s.get("id") == "verify_country_identity"
                     )
                     self.assertEqual(
-                        "${{ needs.geodata.outputs.country_manifest_sha256 }}",
+                        "${{ inputs.country_manifest_sha256 }}",
                         identity["env"]["EXPECTED_COUNTRY_MANIFEST_SHA256"],
                     )
                     self.assertFalse(
@@ -372,9 +383,16 @@ class CountryWorkflowTests(unittest.TestCase):
         workflow = yaml.safe_load(
             (country.ROOT / ".github/workflows/pull-request-apks.yml").read_text()
         )
+        parent = yaml.safe_load((country.ROOT / ".github/workflows/ci.yml").read_text())
+        self.assertEqual(
+            "${{ needs.geodata.outputs.country_manifest_sha256 }}",
+            parent["jobs"]["pull-request-apks"]["with"]["country_manifest_sha256"],
+        )
+        inputs = workflow.get("on", workflow.get(True))["workflow_call"]["inputs"]
+        self.assertTrue(inputs["country_manifest_sha256"]["required"])
         producer = next(
             s
-            for s in workflow["jobs"]["geodata"]["steps"]
+            for s in parent["jobs"]["geodata"]["steps"]
             if s.get("id") == "country_identity"
         )
         consumer = next(

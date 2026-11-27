@@ -78,6 +78,23 @@ class FragmentChecks(unittest.TestCase):
         )
         self.assertNotEqual(0, self.check().returncode)
 
+    def test_non_utf8_locale_accepts_utf8_staged_and_committed_fragments(self):
+        self.environment.update(
+            PYTHONUTF8="0",
+            PYTHONCOERCECLOCALE="0",
+            LC_ALL="C",
+            PYTHONIOENCODING="utf-8",
+        )
+        (self.root / "changes/5.bugfix.md").write_text(
+            "Исправлена ошибка кэша; воспроизводимая карта.\n", encoding="utf-8"
+        )
+        self.git("add", "changes/5.bugfix.md")
+        staged = self.check("--staged")
+        self.assertEqual(0, staged.returncode, staged.stderr)
+        self.git("commit", "-m", "utf8 fragment")
+        committed = self.check()
+        self.assertEqual(0, committed.returncode, committed.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
