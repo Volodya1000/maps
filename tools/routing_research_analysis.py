@@ -38,6 +38,32 @@ def within_search(record, geometry):
     )
 
 
+def research_audit_status(audit, proofs):
+    """Keep an auditor/model conflict uncertain; never turn it into permission."""
+    if audit.get("status") != "violation" or proofs is None:
+        return audit.get("status")
+    findings = audit.get("findings", [])
+    verified = {
+        proof.get("findingIndex")
+        for proof in proofs
+        if proof.get("kind") == "independent_water_violation"
+    }
+    if not findings:
+        return "violation"
+    for index, finding in enumerate(findings):
+        if (
+            finding.get("allowed") is True
+            or finding.get("reason") == "shared_road_section"
+        ):
+            continue
+        if finding.get("reason") == "water_without_opening":
+            if index in verified:
+                return "violation"
+            continue
+        return "violation"
+    return "unknown"
+
+
 def classify(record, scenario, witnesses=()):
     """Consume runner/auditor facts; never infer global absence from finite search."""
     process = record.get("process", {})
@@ -84,7 +110,18 @@ def classify(record, scenario, witnesses=()):
         return {"outcome": "technical_error", "proof": failure}
     if status == "success":
         audits = record.get("audits", [])
-        statuses = {audit.get("status") for audit in audits}
+        proofs = record.get("auditScopeProofs")
+        statuses = {
+            research_audit_status(
+                audit,
+                None
+                if proofs is None
+                else proofs[index]
+                if index < len(proofs)
+                else [],
+            )
+            for index, audit in enumerate(audits)
+        }
         if "violation" in statuses:
             return {"outcome": "invalid_route", "proof": "independent_polyline_audit"}
         if statuses == {"valid"}:
@@ -170,6 +207,19 @@ def causes(record, scenario, conclusion, *, categories=()):
             "configured_limit"
             if conclusion["proof"] == "geodesic_lower_bound"
             else "placement_rule",
+        )
+    if any(
+        proof.get("kind") == "auditor_model_rule_mismatch"
+        for alternative in record.get("auditScopeProofs", [])
+        for proof in alternative
+    ):
+        add(
+            "auditor_model_rule_mismatch",
+            "technical",
+            "confirmed",
+            "research",
+            root=True,
+            evidence=["independent_mesh_water_opening_proof"],
         )
     findings = record.get("straightLineDiagnostic", {}).get("findings", [])
     for reason, code in (

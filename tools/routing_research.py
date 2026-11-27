@@ -42,6 +42,7 @@ from routing_research_analysis import (
     fallback_metrics,
     markdown,
 )
+from shapely.errors import GEOSException
 from shapely.geometry import Polygon
 
 CORPUS_PATH = ROOT / "samples/routing-research-v1.json"
@@ -726,6 +727,29 @@ def run(args):
         ):
             case = by_id[record["id"]]
             try:
+                if record.get("status") == "success" and any(
+                    finding.get("reason") == "water_without_opening"
+                    for audit in record.get("audits", [])
+                    for finding in audit.get("findings", [])
+                ):
+                    from routing_research_witnesses import water_audit_scope_proofs
+
+                    raw = read_raw(record, output)
+                    with closing(
+                        sqlite3.connect(
+                            (args.data / "geodata.sqlite").resolve().as_uri()
+                            + "?mode=ro",
+                            uri=True,
+                        )
+                    ) as connection:
+                        record["auditScopeProofs"] = [
+                            water_audit_scope_proofs(
+                                connection, record, alternative, audit
+                            )
+                            for alternative, audit in zip(
+                                raw["alternatives"], record["audits"], strict=True
+                            )
+                        ]
                 if record.get("status") == "invalid_input":
                     from routing_research_witnesses import point_refusal_proof
 
@@ -746,7 +770,14 @@ def run(args):
                     case, record, output, args.data, args.probe_timeout_seconds, known
                 )
                 compact = compact_result(case, record, output, witnesses)
-            except (OSError, ValueError, KeyError, TypeError, sqlite3.Error) as error:
+            except (
+                OSError,
+                ValueError,
+                KeyError,
+                TypeError,
+                sqlite3.Error,
+                GEOSException,
+            ) as error:
                 record.update(
                     failureReason="evidence_error",
                     evidenceError={"type": type(error).__name__, "detail": str(error)},
@@ -804,6 +835,7 @@ def run(args):
         KeyError,
         TypeError,
         sqlite3.Error,
+        GEOSException,
         subprocess.CalledProcessError,
     ) as error:
         report["fatalError"] = {"type": type(error).__name__, "detail": str(error)}

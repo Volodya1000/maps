@@ -62,6 +62,79 @@ class ResearchAnalysisTests(unittest.TestCase):
             )
         )
 
+    def test_verified_water_auditor_scope_mismatch_is_unknown_not_algorithm_defect(
+        self,
+    ):
+        self.record.update(
+            status="success",
+            audits=[
+                {
+                    "status": "violation",
+                    "findings": [{"reason": "water_without_opening", "featureId": 4}],
+                }
+            ],
+            auditScopeProofs=[
+                [{"findingIndex": 0, "kind": "auditor_model_rule_mismatch"}]
+            ],
+        )
+        original = copy.deepcopy(self.record["audits"])
+        result = self.analysis.classify(self.record, self.scenario)
+        self.assertEqual("indeterminate", result["outcome"])
+        self.assertEqual(original, self.record["audits"])
+        groups = self.analysis.causes(self.record, self.scenario, result)
+        mismatch = next(g for g in groups if g["code"] == "auditor_model_rule_mismatch")
+        self.assertEqual(
+            ("technical", "confirmed", "research"),
+            (mismatch["owner"], mismatch["confidence"], mismatch["scope"]),
+        )
+        self.assertFalse(any(g["code"] == "invalid_route" for g in groups))
+
+    def test_water_scope_proof_cannot_hide_other_or_confirmed_water_violations(self):
+        water = {"reason": "water_without_opening", "featureId": 4}
+        for findings, proofs in (
+            (
+                [water, {"reason": "blocked_terrain", "featureId": 5}],
+                [{"findingIndex": 0, "kind": "auditor_model_rule_mismatch"}],
+            ),
+            ([water], [{"findingIndex": 0, "kind": "independent_water_violation"}]),
+        ):
+            with self.subTest(findings=findings, proofs=proofs):
+                self.record.update(
+                    status="success",
+                    audits=[{"status": "violation", "findings": findings}],
+                    auditScopeProofs=[proofs],
+                )
+                self.assertEqual(
+                    "invalid_route",
+                    self.analysis.classify(self.record, self.scenario)["outcome"],
+                )
+
+    def test_unavailable_research_water_assessment_cannot_confirm_algorithm_defect(
+        self,
+    ):
+        for proofs in (
+            [],
+            [{"findingIndex": 1, "kind": "independent_water_violation"}],
+            [{"findingIndex": 0, "kind": "unverified"}],
+        ):
+            with self.subTest(proofs=proofs):
+                self.record.update(
+                    status="success",
+                    audits=[
+                        {
+                            "status": "violation",
+                            "findings": [
+                                {"reason": "water_without_opening", "featureId": 4}
+                            ],
+                        }
+                    ],
+                    auditScopeProofs=[proofs],
+                )
+                self.assertEqual(
+                    "indeterminate",
+                    self.analysis.classify(self.record, self.scenario)["outcome"],
+                )
+
     def test_valid_direct_witness_inside_actual_search_proves_miss(self):
         self.record["straightLineDiagnostic"].update(status="valid")
         self.assertEqual(
