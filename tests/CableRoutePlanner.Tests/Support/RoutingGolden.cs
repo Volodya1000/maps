@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CableRoutePlanner.Domain;
 using Xunit;
 
 namespace CableRoutePlanner.Tests;
@@ -37,4 +38,19 @@ internal static class RoutingGolden
                 break;
         }
     }
+}
+
+// The archived routing fixtures capture the ten metrics that existed at recording time.
+internal sealed class RoutingMetricsSnapshot(RouteMetrics metrics)
+{
+    public double LengthMetres { get; } = metrics.LengthMetres;
+    public double ForestMetres { get; } = metrics.ForestMetres;
+    public double FieldMetres { get; } = metrics.FieldMetres;
+    public int RoadCrossings { get; } = metrics.RoadCrossings;
+    public int ApprovedWaterCrossings { get; } = metrics.ApprovedWaterCrossings;
+    public int PotentialBridgeCrossings { get; } = metrics.PotentialBridgeCrossings;
+    public double WeightedCost { get; } = metrics.WeightedCost;
+    public double? AscentMetres { get; } = metrics.AscentMetres;
+    public int PotentialGasPipelineCrossings { get; } = metrics.PotentialGasPipelineCrossings;
+    public int RailwayCrossings { get; } = metrics.RailwayCrossings;
 }

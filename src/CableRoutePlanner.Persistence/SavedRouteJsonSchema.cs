@@ -6,12 +6,17 @@ namespace CableRoutePlanner.Persistence;
 // members. Version 1 writes every calculation field, including nullable metadata.
 internal static class SavedRouteJsonSchema
 {
+    public const int CurrentVersion = 2;
+
     private static readonly string[] FileFields = ["Version", "Routes"];
     private static readonly string[] SnapshotFields = ["Id", "AddedUtc", "Points", "Alternatives", "SelectedAlternativeId", "Options"];
     private static readonly string[] PointFields = ["Id", "Coordinate"];
     private static readonly string[] OptionFields = ["CellSizeMetres", "MaxNodes", "ReserveFraction", "PreferOverheadGasCrossings", "MaxRouteLengthMetres", "AllowExperimentalPedestrianUnderpasses"];
     private static readonly string[] AlternativeFields = ["Id", "Name", "Geometry", "Metrics", "TransitionPoints", "RoadContacts", "GasPipelineCandidateIds", "UnderpassCandidateIds", "RoadCrossingEvents", "UnderpassPassages"];
     private static readonly string[] MetricFields = ["LengthMetres", "ForestMetres", "FieldMetres", "RoadCrossings", "ApprovedWaterCrossings", "PotentialBridgeCrossings", "WeightedCost", "AscentMetres", "PotentialGasPipelineCrossings", "RailwayCrossings"];
+    private static readonly string[] ProfileFields = ["Source", "Samples", "HorizontalLengthMetres", "SurfaceLengthMetres", "AscentMetres", "DescentMetres", "IsCableLengthApplicable", "HasCompleteCoverage"];
+    private static readonly string[] SourceFields = ["Name", "Version", "VerticalDatum", "ResolutionMetres", "Attribution", "LicenseUri"];
+    private static readonly string[] SampleFields = ["Coordinate", "DistanceMetres", "ElevationMetres", "GradePercent"];
     private static readonly string[] ContactFields = ["RoadId", "Kind", "Geometry"];
     private static readonly string[] CrossingFields = ["RoadId", "Kind", "Location"];
     private static readonly string[] PassageFields = ["NetworkId", "Entry", "Exit"];
@@ -19,6 +24,11 @@ internal static class SavedRouteJsonSchema
     public static void Validate(JsonElement file)
     {
         Require(file, "SavedRoutesFile", FileFields);
+        int version = file.GetProperty("Version").GetInt32();
+        if (version is not (1 or CurrentVersion))
+        {
+            throw new JsonException($"SavedRoutesFile.Version={version}: expected 1 or {CurrentVersion}.");
+        }
         foreach (JsonElement snapshot in file.GetProperty("Routes").EnumerateArray())
         {
             Require(snapshot, "SavedRoute", SnapshotFields);
@@ -31,10 +41,41 @@ internal static class SavedRouteJsonSchema
             {
                 Require(alternative, "RouteAlternative", AlternativeFields);
                 Require(alternative.GetProperty("Metrics"), "RouteAlternative.Metrics", MetricFields);
+                ValidateElevation(alternative, version);
                 ValidateOptionalArray(alternative, "RoadContacts", ContactFields);
                 ValidateOptionalArray(alternative, "RoadCrossingEvents", CrossingFields);
                 ValidateOptionalArray(alternative, "UnderpassPassages", PassageFields);
             }
+        }
+    }
+
+    private static void ValidateElevation(JsonElement alternative, int version)
+    {
+        JsonElement metrics = alternative.GetProperty("Metrics");
+        if (version == 1)
+        {
+            if (alternative.TryGetProperty("ElevationProfile", out _) || metrics.TryGetProperty("SurfaceLengthMetres", out _))
+            {
+                throw new JsonException("SavedRoutesFile.Version=1: elevation fields require version 2.");
+            }
+            return;
+        }
+
+        JsonElement profile = alternative.GetProperty("ElevationProfile");
+        _ = metrics.GetProperty("SurfaceLengthMetres");
+        if (profile.ValueKind == JsonValueKind.Null)
+        {
+            return;
+        }
+        Require(profile, "ElevationProfile", ProfileFields);
+        JsonElement source = profile.GetProperty("Source");
+        if (source.ValueKind != JsonValueKind.Null)
+        {
+            Require(source, "ElevationProfile.Source", SourceFields);
+        }
+        foreach (JsonElement sample in profile.GetProperty("Samples").EnumerateArray())
+        {
+            Require(sample, "ElevationProfile.Samples[]", SampleFields);
         }
     }
 

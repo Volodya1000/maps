@@ -16,6 +16,7 @@ internal sealed class MapAnnotationLayer : Layer
     private const double LabelSpacingPixels = 2;
     internal const string OrderField = "map_annotation_order";
     internal const string LabelKeyField = "map_label_key";
+    internal const string SymbolKeyField = "map_symbol_key";
     internal const string CacheAnchorField = "map_label_cache_anchor";
     private readonly ConcurrentDictionary<string, MPoint> _anchors = new(StringComparer.Ordinal);
     private IFeature[]? _features;
@@ -38,6 +39,7 @@ internal sealed class MapAnnotationLayer : Layer
     private IEnumerable<IFeature> StableLabels(IEnumerable<IFeature> features)
     {
         HashSet<string> keys = new(StringComparer.Ordinal);
+        HashSet<string> symbolKeys = new(StringComparer.Ordinal);
         foreach (IFeature feature in features.OrderBy(feature => feature[OrderField] is int order ? order : int.MaxValue))
         {
             if (feature.Extent is not { } extent)
@@ -48,7 +50,8 @@ internal sealed class MapAnnotationLayer : Layer
             {
                 Styles = feature.Styles.Where(style => style is not LabelStyle).ToArray()
             };
-            if (symbols.Styles.Count > 0)
+            // Overlapping fetch completions can leave repeated objects in the Mapsui cache.
+            if (symbols.Styles.Count > 0 && (feature[SymbolKeyField] is not string symbolKey || symbolKeys.Add(symbolKey)))
             {
                 yield return symbols;
             }

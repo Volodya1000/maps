@@ -63,22 +63,19 @@ public sealed class JsonSavedRouteStore(string path) : ISavedRouteStore
         {
             using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
             SavedRouteJsonSchema.Validate(document.RootElement);
-            SavedRoutesFile file = document.RootElement.Deserialize<SavedRoutesFile>(SerializerOptions)
-                ?? throw new JsonException("SavedRoutesFile=null");
-            if (file.Version != 1 || file.Routes is null)
+            List<SavedRoute> routes = [];
+            foreach (JsonElement snapshot in document.RootElement.GetProperty("Routes").EnumerateArray())
             {
-                throw new JsonException($"SavedRoutesFile.Version={file.Version}: требуется версия 1 и список Routes.");
-            }
-            foreach (SavedRoute route in file.Routes)
-            {
-                ArgumentNullException.ThrowIfNull(route);
+                SavedRoute route = snapshot.Deserialize<SavedRoute>(SerializerOptions)
+                    ?? throw new JsonException("SavedRoute=null");
                 route.Validate();
+                routes.Add(SavedRouteElevation.Restore(route, snapshot.GetProperty("Alternatives"), SerializerOptions));
             }
-            if (file.Routes.Select(route => route.Id).Distinct().Count() != file.Routes.Count)
+            if (routes.Select(route => route.Id).Distinct().Count() != routes.Count)
             {
                 throw new JsonException("SavedRoutesFile.Routes: ID записей должны быть уникальны.");
             }
-            return file.Routes;
+            return routes;
         }
         catch (Exception ex) when (ex is JsonException or ArgumentException or InvalidOperationException
             or KeyNotFoundException or FormatException)
@@ -96,7 +93,7 @@ public sealed class JsonSavedRouteStore(string path) : ISavedRouteStore
         {
             using (FileStream stream = new(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
-                JsonSerializer.Serialize(stream, new SavedRoutesFile(1, routes), SerializerOptions);
+                JsonSerializer.Serialize(stream, new SavedRoutesFile(SavedRouteJsonSchema.CurrentVersion, routes), SerializerOptions);
                 stream.Flush(flushToDisk: true);
             }
             File.Move(temporaryPath, fullPath, overwrite: true);

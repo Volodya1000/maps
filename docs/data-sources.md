@@ -27,11 +27,11 @@ uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparati
 
 Планируемый первичный источник: https://download.geofabrik.de/europe/belarus.html. Нужны потоковый PBF-import, согласование OSM/WorldCover/DEM, уровни детализации и офлайн-тайлы, разбиение DEM, контролируемый объём данных и проверка покрытия. До выполнения этого этапа нельзя заявлять поддержку всей Беларуси. Вне bounds отображается отсутствие данных, а расчёт отклоняется.
 
-## Copernicus DEM — отдельный 3D-стенд
+## Copernicus DEM — профиль маршрута и отдельный 3D-стенд
 
 22 настоящих Terrarium-тайла в `spikes/MapLibre/terrain` получены из GLO-30 COG N53E027 и N54E027. Исходные URL, SHA-256 файлов и тайлов записаны в отдельном манифесте. Преобразование выполняет `prepare_terrain.py`: bilinear reprojection EPSG:3857, RGB Terrarium, 1/256 м кодирования (не точности съёмки). Отсутствующие данные вызывают ошибку.
 
-GLO-30 представляет DSM, включая растительность и строения. Условия и обязательные уведомления — в `spikes/MapLibre/NOTICE.txt`; [первичный источник](https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM), [поставка AWS](https://registry.opendata.aws/copernicus-dem/). Эти тайлы пока не подключены к основному приложению и не используются для высотной статистики маршрутов.
+GLO-30 представляет DSM, включая растительность и строения. Условия и обязательные уведомления — в `spikes/MapLibre/NOTICE.txt`; [первичный источник](https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM), [поставка AWS](https://registry.opendata.aws/copernicus-dem/). Тайлы стенда остаются отдельными. [Основное приложение](route-elevation.md) читает подготовленный из родных GeoTIFF отдельный elevation.sqlite; настоящий небольшой DEM включён для Дрозды — Новинки, а контрольный DEM горы Дзержинской используется в тестах. Подготовка не меняет вертикальный датум EGM2008; полная поставка Беларуси автоматически включает тайловый DEM всей страны из закреплённых источников; [покрытие и проверка APK](evidence/route-elevation/country.md).
 
 ## ESA WorldCover — не подключён
 

@@ -15,8 +15,9 @@ public sealed class SavedRoutesTests : ReactiveTestScope
     public async Task SaveAndOpenCommandsRestoreAllVariantsPointsSelectionAndFrozenMetricsAfterRestart()
     {
         using SavedRouteDirectory directory = new();
-        SavedRoute expected = SavedRouteDirectory.Snapshot();
+        SavedRoute expected = SavedRouteDirectory.ElevationSnapshot();
         MemorySettings settings = new();
+        settings.Save(expected.Options);
         using (MapViewModel map = CreateMap(directory, new SnapshotPlanner(expected), settings: settings))
         {
             foreach (Waypoint point in expected.Points)
@@ -43,9 +44,13 @@ public sealed class SavedRoutesTests : ReactiveTestScope
         Assert.Equal(JsonSerializer.Serialize(expected.Alternatives), JsonSerializer.Serialize(restored.Alternatives));
         Assert.Equal(expected.SelectedAlternativeId, restored.SelectedRoute!.Id);
         Assert.Equal(RouteMetricsFormatter.Format(expected.Alternatives[1], expected.Options), restored.MetricsText);
+        Assert.Equal(275, restored.SelectedRoute.Metrics.CableLengthMetres(saved.Options.ReserveFraction), 8);
+        Assert.Equal(expected.Alternatives[1].ElevationProfile!.Source, restored.Elevation!.Profile!.Source);
         Assert.Null(restored.ViewportState);
         await restored.ChooseRoute.Execute(expected.Alternatives[0].Id).ToTask();
         Assert.Equal(expected.Alternatives[0].Id, restored.SelectedRoute!.Id);
+        Assert.Equal(expected.Alternatives[0].ElevationProfile!.Samples, restored.Elevation!.Profile!.Samples);
+        Assert.False(restored.Elevation.Profile.HasCompleteCoverage);
     }
 
     [Theory]
@@ -170,10 +175,12 @@ public sealed class SavedRoutesTests : ReactiveTestScope
     [InlineData("coordinate")]
     [InlineData("options")]
     [InlineData("transition")]
+    [InlineData("profile")]
+    [InlineData("profile-coordinate")]
     public async Task MissingSnapshotMembersAreRejectedWithoutReplacingWorkingRoute(string field)
     {
         using SavedRouteDirectory directory = new();
-        SavedRoute saved = SavedRouteDirectory.Snapshot();
+        SavedRoute saved = SavedRouteDirectory.ElevationSnapshot();
         directory.Store.Add(saved);
         using MapViewModel map = CreateMap(directory, new RejectPlanner());
         Assert.True(map.OpenSavedRoute(saved.Id));
@@ -191,6 +198,12 @@ public sealed class SavedRoutesTests : ReactiveTestScope
                 break;
             case "options":
                 snapshot["Options"]!.AsObject().Remove("ReserveFraction");
+                break;
+            case "profile-coordinate":
+                snapshot["Alternatives"]![1]!["ElevationProfile"]!["Samples"]![0]!["Coordinate"]!["Latitude"] = 40;
+                break;
+            case "profile":
+                snapshot["Alternatives"]![1]!["ElevationProfile"]!["IsCableLengthApplicable"] = false;
                 break;
             case "transition":
                 snapshot["Alternatives"]![0]!.AsObject().Remove("TransitionPoints");

@@ -67,19 +67,26 @@
                     Text="◎" />
             </Border>
         </Button>
-        <Border
-            x:Name="MapNotices"
-            Grid.Row="1"
-            Classes="map-footer"
-            IsVisible="{Binding HasMapFooter}">
-            <StackPanel>
-                <TextBlock Classes="map-notice" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
+        <StackPanel Grid.Row="1">
+            <Border
+                x:Name="MapNotices"
+                Classes="map-footer"
+                IsVisible="{Binding HasMapFooter}">
+                <StackPanel>
+                    <TextBlock Classes="map-notice" Text="{Binding MapStatus}" IsVisible="{Binding HasMapNotice}" />
+                    <TextBlock
+                        Classes="map-notice"
+                        Text="{Binding LocationCoverageStatus}"
+                        IsVisible="{Binding HasLocationCoverageWarning}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+            <Border Classes="map-footer">
                 <TextBlock
-                    Classes="map-notice"
-                    Text="{Binding LocationCoverageStatus}"
-                    IsVisible="{Binding HasLocationCoverageWarning}"
+                    Classes="map-attribution"
+                    Text="© OpenStreetMap contributors · ODbL 1.0"
                     TextWrapping="Wrap" />
-            </StackPanel>
-        </Border>
+            </Border>
+        </StackPanel>
     </Grid>
 </rx:ReactiveUserControl>

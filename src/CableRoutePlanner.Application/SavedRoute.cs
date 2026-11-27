@@ -53,6 +53,7 @@ public sealed record SavedRoute(
         {
             throw new ArgumentException($"RouteAlternative.Id={route.Id}, Geometry.Count={route.Geometry.Count}, Name={route.Name}: требуется геометрия из минимум двух точек и имя.");
         }
+        route.ValidateElevationProfile();
         RouteMetrics metrics = route.Metrics;
         double[] distances = [metrics.LengthMetres, metrics.ForestMetres, metrics.FieldMetres, metrics.WeightedCost];
         int[] counts = [metrics.RoadCrossings, metrics.RailwayCrossings, metrics.ApprovedWaterCrossings,

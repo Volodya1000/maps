@@ -23,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/country-data
+      - uses: ./.github/actions/country-elevation
       - uses: actions/upload-artifact@v7
         with:
           name: belarus-offline-data
@@ -74,6 +75,7 @@ jobs:
       - run: |
           mkdir -p artifacts/apk
           cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk"
+          python3 tools/check_apk_elevation.py "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk" --country
           "$ANDROID_HOME/build-tools/34.0.0/aapt" dump permissions "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk" > artifacts/apk/permissions.txt
           if rg 'android.permission.INTERNET' artifacts/apk/permissions.txt; then exit 1; fi
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --print-certs "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk" > artifacts/apk/signature.txt

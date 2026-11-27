@@ -25,15 +25,14 @@
                         Command="{Binding $parent[local:RouteChoicesView].ViewModel.ChooseRoute}"
                         CommandParameter="{Binding Id}">
                         <StackPanel Spacing="4">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock
-                                    Classes="route-choice-name"
-                                    Text="{Binding Name}" />
-                                <TextBlock
-                                    Classes="route-choice-length"
-                                    Grid.Column="1"
-                                    Text="{Binding LengthText}" />
-                            </Grid>
+                            <TextBlock
+                                Classes="route-choice-name"
+                                Text="{Binding Name}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                Classes="route-choice-length"
+                                Text="{Binding LengthText}"
+                                TextWrapping="Wrap" />
                             <WrapPanel>
                                 <Border Classes="metric-badge forest"><TextBlock Text="{Binding ForestText}" /></Border>
                                 <Border Classes="metric-badge field"><TextBlock Text="{Binding FieldText}" /></Border>

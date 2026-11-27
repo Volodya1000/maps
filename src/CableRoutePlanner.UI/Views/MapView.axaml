@@ -106,6 +106,7 @@
                                 </StackPanel>
                                 <TextBlock Text="{Binding SaveStatus}" TextWrapping="Wrap" />
                                 <local:RouteChoicesView DataContext="{Binding}" />
+                                <local:RouteElevationView DataContext="{Binding}" />
                                 <StackPanel IsVisible="{Binding HasRoute}" Spacing="4">
                                     <CheckBox
                                         x:Name="RoadContactsToggle"
@@ -122,7 +123,7 @@
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
-                    <TabItem Header="Прокладка">
+                    <TabItem x:Name="TraversalTab" Header="Прокладка" IsVisible="{Binding IsLocationSupported}">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Spacing="12">
                                 <Panel IsVisible="{Binding ShowTrackingPanel}">
