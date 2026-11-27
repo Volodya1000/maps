@@ -153,7 +153,7 @@ public sealed class SavedRoutesUiTests
     }
 
     [AvaloniaFact]
-    public async Task ReadyLocalMapHasNoLoadingNoticeOrInformationGlyphAndSettingsShowMapCredit()
+    public async Task ReadyLocalMapShowsCreditWithoutInformationButtonAndSettingsHaveNoCredit()
     {
         using MapViewModel map = TestData.CreateMapViewModel(new NavigationHost(),
             new PlanningSession(new SavedRoutesTests.RejectPlanner(), TestData.AllowAllValidator),
@@ -162,6 +162,8 @@ public sealed class SavedRoutesUiTests
         Window window = new() { Content = overlay, Width = 360, Height = 640 };
         window.Show();
         Dispatcher.UIThread.RunJobs();
+        Assert.Contains(overlay.GetVisualDescendants().OfType<TextBlock>(),
+            block => block.IsEffectivelyVisible && block.Text == "© OpenStreetMap contributors · ODbL 1.0");
         Assert.Empty(map.MapStatus);
         Assert.False(overlay.FindControl<Border>("MapNotices")!.IsEffectivelyVisible);
         Assert.DoesNotContain(overlay.GetVisualDescendants().OfType<TextBlock>(),
@@ -175,7 +177,7 @@ public sealed class SavedRoutesUiTests
         SettingsView settingsView = new() { ViewModel = settings };
         window.Content = settingsView;
         Dispatcher.UIThread.RunJobs();
-        Assert.Contains(settingsView.GetVisualDescendants().OfType<TextBlock>(),
+        Assert.DoesNotContain(settingsView.GetVisualDescendants().OfType<TextBlock>(),
             block => block.Text == "© OpenStreetMap contributors · ODbL 1.0");
         window.Close();
     }

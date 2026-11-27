@@ -1,0 +1,26 @@
+{
+  "points": [
+    [
+      53.917148,
+      27.430907
+    ],
+    [
+      53.917765,
+      27.434188
+    ]
+  ],
+  "horizontal_metres": 226.253579366075,
+  "surface_metres": 226.28683566011077,
+  "ascent_metres": 1.2139004581238737,
+  "descent_metres": 2.191234200098961,
+  "complete": true,
+  "samples": 17,
+  "source": {
+    "Name": "Copernicus DEM GLO-30",
+    "Version": "AWS 2021 release (2021_1); 0.1 m vertical quantization",
+    "VerticalDatum": "EGM2008",
+    "ResolutionMetres": 30,
+    "Attribution": "produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+    "LicenseUri": "https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model"
+  }
+}

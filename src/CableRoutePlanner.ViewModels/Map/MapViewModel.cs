@@ -185,6 +185,25 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
     }
 
     [Reactive]
+    public RouteElevationPresentation? Elevation
+    {
+        get; private set;
+    }
+
+    public void SelectElevationSample(RouteElevationPresentation presentation, int? index)
+    {
+        if (!ReferenceEquals(Elevation, presentation) || presentation.RouteId != SelectedRoute?.Id
+            || presentation is not { HasChart: true, Profile: { } profile }
+            || presentation.CursorIndex == index
+            || (index is { } sample && (sample < 0 || sample >= profile.Samples.Count)))
+        {
+            return;
+        }
+
+        Elevation = presentation with { CursorIndex = index };
+    }
+
+    [Reactive]
     public bool IsBusy
     {
         get; private set;
@@ -391,6 +410,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
         this.WhenAnyValue(x => x.SelectedRoute)
             .Subscribe(route =>
             {
+                Elevation = RouteElevationPresentation.FromRoute(route);
                 this.RaisePropertyChanged(nameof(HasRoute));
                 this.RaisePropertyChanged(nameof(ShowTrackingPanel));
                 _tracking?.SetRoute(route);
@@ -489,8 +509,11 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
                 // An in-flight calculation must finish cancelling before its replacement
                 // starts; otherwise a second drop could leave the route empty.
                 await previousCalculation;
-                IsBusy = _calculations.IsBusy;
-                if (!_disposed && CanBuild && openedVersion == _openedVersion)
+                bool calculationInProgress = _calculations.IsBusy;
+                IsBusy = calculationInProgress;
+                // CanBuild is a UI notification and can still reflect the cancelled calculation.
+                if (!_disposed && !calculationInProgress && _session.Points.Count >= 2
+                    && openedVersion == _openedVersion)
                 {
                     await BuildAsync();
                 }
@@ -540,7 +563,7 @@ public sealed class MapViewModel : ReactiveObject, IRoutableViewModel, IDisposab
             RouteChoices.Add(new RouteChoice(
                 alternative.Id,
                 hasAlternatives ? alternative.Name : "Маршрут",
-                $"{alternative.Metrics.LengthMetres:N0} м",
+                RouteMetricsFormatter.FormatChoiceLength(alternative),
                 alternative.Id == route?.Id,
                 $"Лес {alternative.Metrics.ForestMetres:N0} м",
                 $"Поле {alternative.Metrics.FieldMetres:N0} м",

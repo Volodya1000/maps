@@ -44,6 +44,7 @@ jobs:
         id: version
         run: echo "android_version_code=$(python3 tools/release_version.py | sed -n 's/^ANDROID_VERSION_CODE=//p')" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/country-data
+      - uses: ./.github/actions/country-elevation
       - uses: actions/upload-artifact@v7
         with:
           name: pull-request-belarus-data
@@ -122,6 +123,7 @@ jobs:
             fi
             signer="$actual_signer"
           done
+          python3 tools/check_apk_elevation.py "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --country
 
       # A signed/parsable APK is not necessarily installable: the full country
       # package is much larger than the Minsk smoke-tested build.

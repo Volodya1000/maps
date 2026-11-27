@@ -75,7 +75,7 @@ try
     stopwatch.Stop();
     process.Refresh();
     var features = routes.Select(
-        r => new { type = "Feature", id = r.Id, properties = new { name = r.Name, metrics = r.Metrics }, geometry = new { type = "LineString", coordinates = r.Geometry.Select(p => new[] { p.Longitude, p.Latitude }) } });
+        r => new { type = "Feature", id = r.Id, properties = new { name = r.Name, metrics = r.Metrics, elevation = r.ElevationProfile }, geometry = new { type = "LineString", coordinates = r.Geometry.Select(p => new[] { p.Longitude, p.Latitude }) } });
     File.WriteAllText(
         args[1],
         JsonSerializer.Serialize(

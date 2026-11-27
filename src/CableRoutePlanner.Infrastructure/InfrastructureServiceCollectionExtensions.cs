@@ -1,4 +1,5 @@
 using CableRoutePlanner.Application;
+using CableRoutePlanner.Infrastructure.Elevation;
 using CableRoutePlanner.Infrastructure.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services.AddLogging();
+        services.AddSingleton<IRouteElevationAnalyzer, RouteElevationAnalyzer>();
         services.AddSingleton<IPointPlacementValidator, GeodataPointPlacementValidator>();
         services.AddSingleton<IGridGenerator, GridGenerator>();
         services.AddSingleton<IGridPathfinder, AStarGridPathfinder>();

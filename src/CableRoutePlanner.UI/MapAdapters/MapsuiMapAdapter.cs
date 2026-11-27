@@ -67,6 +67,8 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         Style = null
     };
 
+    private readonly MemoryLayer _elevationCursor = new("Курсор профиля высот") { Style = null };
+
     private readonly MemoryLayer _location = new("Моё местоположение")
     {
         Style = null
@@ -186,6 +188,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
         control.Map.Layers.Add(_roadContacts);
         control.Map.Layers.Add(_routeVertices);
         control.Map.Layers.Add(_points);
+        control.Map.Layers.Add(_elevationCursor);
         control.Map.Layers.Add(_location);
         (double x, double y) = SphericalMercator.FromLonLat(
             (bounds.West + bounds.East) / 2,
@@ -427,6 +430,7 @@ public sealed class MapsuiMapAdapter : IMapAdapter
                 ? new Point(new LengthIndexedLine(geometry).ExtractPoint(geometry.Length / 2))
                 : geometry.InteriorPoint;
             GeometryFeature marker = new(anchor);
+            marker[MapAnnotationLayer.SymbolKeyField] = $"gas/{gas.Id.ToString(CultureInfo.InvariantCulture)}";
             marker.Styles.Add(new SymbolStyle
             {
                 SymbolType = SymbolType.Image,
@@ -686,6 +690,28 @@ public sealed class MapsuiMapAdapter : IMapAdapter
             _cameraWasUsed = true;
             _control.Map.Navigator.ZoomToBox(new MRect(west - padding, south - padding, east + padding, north + padding));
         }
+        _control.RefreshGraphics();
+    }
+
+    public void SetElevationCursor(GeoCoordinate? coordinate)
+    {
+        if (coordinate is { } sample)
+        {
+            GeometryFeature marker = new(new Point(Project(sample)));
+            marker.Styles.Add(new SymbolStyle
+            {
+                SymbolType = SymbolType.Ellipse,
+                SymbolScale = 0.72,
+                Fill = new Brush(new Color(168, 82, 19)),
+                Outline = new Pen(Color.White, 2)
+            });
+            _elevationCursor.Features = [marker];
+        }
+        else
+        {
+            _elevationCursor.Features = [];
+        }
+        _elevationCursor.DataHasChanged();
         _control.RefreshGraphics();
     }
 

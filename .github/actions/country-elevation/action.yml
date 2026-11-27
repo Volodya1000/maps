@@ -1,0 +1,26 @@
+name: Country elevation package
+description: Prepare verified offline Copernicus heights for all of Belarus
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v10.3.2
+      with:
+        version: '0.13.9'
+        python-version: '3.12'
+    - uses: actions/cache/restore@v6
+      id: elevation-cache
+      with:
+        path: artifacts/belarus/elevation
+        key: country-elevation-v1-${{ hashFiles('tools/GeodataPreparation/belarus-elevation.lock.json', 'tools/GeodataPreparation/prepare_country_elevation.py', 'tools/GeodataPreparation/prepare_elevation.py', 'tools/GeodataPreparation/uv.lock') }}
+    - name: Prepare country heights outside the application
+      if: steps.elevation-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: uv run --locked --project tools/GeodataPreparation python tools/GeodataPreparation/prepare_country_elevation.py --output artifacts/belarus --cache artifacts/dem/country
+    - name: Verify every country shard and coverage
+      shell: bash
+      run: uv run --locked --project tools/GeodataPreparation python tools/GeodataPreparation/prepare_country_elevation.py --output artifacts/belarus --verify-only
+    - uses: actions/cache/save@v6
+      if: steps.elevation-cache.outputs.cache-hit != 'true'
+      with:
+        path: artifacts/belarus/elevation
+        key: ${{ steps.elevation-cache.outputs.cache-primary-key }}

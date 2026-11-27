@@ -33,7 +33,7 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
             ServiceCollection services = new();
             services.AddLogging(logging => logging.AddConsole());
             services.AddInfrastructure();
-            services.AddPersistence(directory, Path.Combine(FilesDir!.AbsolutePath, "settings.json"));
+            services.AddPersistence(directory, Path.Combine(FilesDir!.AbsolutePath, "settings.json"), CacheDir!.AbsolutePath);
             _locationService = new AndroidLocationService(this);
             _headingService = new AndroidHeadingService(this);
             services.AddSingleton<ILocationService>(_locationService);
@@ -72,8 +72,42 @@ public sealed class MainActivity : AvaloniaMainActivity<PlannerApplication>
         }
     }
 
+    private async Task PrepareElevationAsync(string directory, IProgress<string> progress, CancellationToken ct)
+    {
+        string[] names = Assets!.List("Data")!;
+        if (names.Contains("elevation", StringComparer.Ordinal)
+            && Assets.List("Data/elevation")!.Contains("index.json", StringComparer.Ordinal))
+        {
+            using StreamReader catalogReader = new(Assets.Open("Data/elevation/index.json"));
+            string catalog = await catalogReader.ReadToEndAsync(ct);
+            progress.Report("Подготовка офлайн-высот Беларуси…");
+            await TiledElevationPackageInstaller.InstallAsync(directory, catalog,
+                path => Assets.Open("Data/elevation/" + path), ct);
+            return;
+        }
+
+        TiledElevationPackageInstaller.RemoveInstalledPackage(directory, ct);
+        bool hasDatabase = names.Contains("elevation.sqlite", StringComparer.Ordinal);
+        bool hasIdentity = names.Contains("elevation.sqlite.sha256", StringComparer.Ordinal);
+        if (hasDatabase != hasIdentity)
+        {
+            throw new InvalidDataException("Elevation assets require both database and SHA-256 identity.");
+        }
+        if (!hasDatabase)
+        {
+            ElevationPackageInstaller.RemoveInstalledPackage(directory, ct);
+            return;
+        }
+
+        using StreamReader identityReader = new(Assets.Open("Data/elevation.sqlite.sha256"));
+        string identity = await identityReader.ReadToEndAsync(ct);
+        progress.Report("Проверка офлайн-пакета высот…");
+        await ElevationPackageInstaller.InstallAsync(directory, identity,
+            () => Assets.Open("Data/elevation.sqlite"), ct);
+    }
     private async Task PrepareDataAsync(string directory, IProgress<string> progress, CancellationToken ct)
     {
+        await PrepareElevationAsync(directory, progress, ct);
         Stream sourceManifest = Assets!.Open("Data/manifest.json");
         using StreamReader reader = new(sourceManifest);
         string manifest = await reader.ReadToEndAsync(ct);

@@ -193,8 +193,10 @@ public sealed class PresentationTests : ReactiveTestScope
         Assert.Contains($"Кабель с запасом {0.10:P0}: {other.Metrics.LengthMetres * 1.10:N0} м", vm.MetricsText);
     }
 
-    [Fact]
-    public async Task ReorderingDuringCalculationCancelsAndBuildsLatestOrder()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReorderingDuringCalculationCancelsAndBuildsLatestOrder(bool delayNotifications)
     {
         var planner = new CancelFirstPlanner();
         using MapViewModel vm = CreateVm(planner, new MemoryData());
@@ -204,8 +206,13 @@ public sealed class PresentationTests : ReactiveTestScope
         Guid first = vm.Points[0].Id;
         Task build = vm.BuildRoutes.Execute().ToTask();
         await planner.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await vm.ReorderPoints.Execute(new WaypointReorder(first, 2)).ToTask().WaitAsync(TimeSpan.FromSeconds(5));
-        await build.WaitAsync(TimeSpan.FromSeconds(5));
+        await vm.WhenAnyValue(model => model.CanBuild).FirstAsync(canBuild => !canBuild)
+            .ToTask().WaitAsync(TimeSpan.FromSeconds(5));
+        using (delayNotifications ? vm.DelayChangeNotifications() : null)
+        {
+            await vm.ReorderPoints.Execute(new WaypointReorder(first, 2)).ToTask().WaitAsync(TimeSpan.FromSeconds(5));
+            await build.WaitAsync(TimeSpan.FromSeconds(5));
+        }
         Assert.Equal(first, vm.Points[2].Id);
         Assert.True(vm.HasRoute);
         Assert.True(vm.SelectedRoute!.Geometry[0].DistanceTo(vm.Points[0].Coordinate) < 0.0001);

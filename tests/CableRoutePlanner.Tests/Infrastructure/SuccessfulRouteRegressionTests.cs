@@ -108,7 +108,7 @@ public sealed class SuccessfulRouteRegressionTests(ITestOutputHelper output)
             {
                 route.Name,
                 route.Geometry,
-                route.Metrics,
+                Metrics = new RoutingMetricsSnapshot(route.Metrics),
                 route.TransitionPoints,
                 route.RoadContacts,
                 route.GasPipelineCandidateIds,

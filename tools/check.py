@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 import tomllib
+import uuid
 from pathlib import Path
 
 import yaml
@@ -145,6 +146,8 @@ def desktop() -> None:
         "-warnaserror",
         env=dotnet_env,
     )
+    # A failed collector must never reuse an older successful coverage report.
+    results_directory = f"artifacts/tests/{uuid.uuid4().hex}"
     run(
         dotnet,
         "test",
@@ -158,20 +161,20 @@ def desktop() -> None:
         "--logger",
         "trx",
         "--results-directory",
-        "artifacts/tests",
+        results_directory,
         "--collect:XPlat Code Coverage",
         "--settings",
         "coverage.runsettings",
         timeout=180,
         env=dotnet_env,
     )
-    run(sys.executable, "tools/check_coverage.py", "artifacts/tests")
+    run(sys.executable, "tools/check_coverage.py", results_directory)
     run(
         dotnet,
         "tool",
         "run",
         "reportgenerator",
-        "-reports:artifacts/tests/**/coverage.cobertura.xml",
+        f"-reports:{results_directory}/**/coverage.cobertura.xml",
         "-targetdir:artifacts/coverage-report",
         "-reporttypes:Html",
         env=dotnet_env,
@@ -179,7 +182,7 @@ def desktop() -> None:
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         report = subprocess.check_output(
-            [sys.executable, "tools/check_coverage.py", "artifacts/tests"],
+            [sys.executable, "tools/check_coverage.py", results_directory],
             cwd=ROOT,
             text=True,
             env=dotnet_env,

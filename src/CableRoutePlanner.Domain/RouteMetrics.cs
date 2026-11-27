@@ -12,6 +12,22 @@ public sealed record RouteMetrics(
     int PotentialGasPipelineCrossings = 0,
     int RailwayCrossings = 0)
 {
+    private readonly double? _legacyAscentMetres = AscentMetres;
+
+    internal RouteElevationProfile? ElevationProfile { get; private init; }
+
+    public double? AscentMetres
+    {
+        get => ElevationProfile is null ? _legacyAscentMetres : ElevationProfile.AscentMetres;
+        init => _legacyAscentMetres = value;
+    }
+
+    public double? SurfaceLengthMetres =>
+        ElevationProfile is { IsCableLengthApplicable: true } profile ? profile.SurfaceLengthMetres : null;
+
+    internal RouteMetrics WithElevationProfile(RouteElevationProfile profile) =>
+        this with { ElevationProfile = profile };
+
     public double CableLengthMetres(double reserveFraction)
     {
         if (!double.IsFinite(reserveFraction) || reserveFraction is < 0 or > 1)
@@ -19,6 +35,6 @@ public sealed record RouteMetrics(
             throw new ArgumentOutOfRangeException(nameof(reserveFraction));
         }
 
-        return LengthMetres * (1 + reserveFraction);
+        return (SurfaceLengthMetres ?? LengthMetres) * (1 + reserveFraction);
     }
 }
