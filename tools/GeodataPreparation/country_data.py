@@ -22,6 +22,7 @@ INPUTS = (
     "tools/GeodataPreparation/prepare.py",
     "tools/GeodataPreparation/display_lod.py",
     "tools/GeodataPreparation/feature_classification.py",
+    "tools/GeodataPreparation/terrain_kinds.py",
     "tools/GeodataPreparation/pipeline_crossings.py",
     "tools/GeodataPreparation/underpass.py",
     "tools/GeodataPreparation/pyproject.toml",

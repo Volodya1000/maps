@@ -18,6 +18,24 @@ static ServiceProvider CreateServices(string dataDirectory, string settingsPath)
     return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
 }
 
+if (args.Length == 3 && args[0] == "--install-assets")
+{
+    Directory.CreateDirectory(args[2]);
+    string manifest = await File.ReadAllTextAsync(Path.Combine(args[1], "manifest.json"));
+    await BundledGeodataInstaller.InstallAsync(args[2], manifest,
+        Directory.GetFiles(args[1]).Select(path => Path.GetFileName(path)).ToArray(),
+        name => File.OpenRead(Path.Combine(args[1], name)), new Progress<string>(Console.WriteLine), default);
+    return 0;
+}
+
+if (args.Length == 3 && args[0] == "--inspect-features")
+{
+    using ServiceProvider provider = CreateServices(args[1], Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+    await CableRoutePlanner.Verify.FeatureInspection.RunAsync(
+        provider.GetRequiredService<IGeodataRepository>(), args[1], args[2]);
+    return 0;
+}
+
 if (args.Length == 4 && args[0] == "--crossing")
 {
     return await CableRoutePlanner.Verify.CrossingPilot.RunAsync(args[1], args[2], args[3]);

@@ -15,7 +15,7 @@ from pathlib import Path
 
 import osmium
 from display_lod import include_in_display_lod
-from feature_classification import classify
+from feature_classification import GAS_CROSSING_KIND, SETTLEMENT_KIND, classify
 from pipeline_crossings import pipeline_road_candidates
 from prepare import METRES_PER_DEGREE
 from shapely import from_wkb, make_valid, to_wkb
@@ -125,7 +125,7 @@ def main():
                 and node.location.valid()
             ):
                 add(
-                    "Settlement",
+                    SETTLEMENT_KIND,
                     Point(node.location.lon, node.location.lat),
                     tags,
                     f"node/{node.id}",
@@ -235,7 +235,7 @@ def main():
             import_candidates(connection, add)
             for geometry, source in pipeline_road_candidates(connection):
                 add(
-                    "GasPipelineCrossingCandidate",
+                    GAS_CROSSING_KIND,
                     geometry,
                     {"name": "Газопровод над дорогой"},
                     source,
@@ -312,7 +312,7 @@ def main():
         ],
     )
     (args.output / "manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     if args.compress and not args.audit_only:
         with (

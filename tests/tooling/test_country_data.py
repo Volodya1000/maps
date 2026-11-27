@@ -16,7 +16,6 @@ from unittest.mock import patch
 
 import yaml
 
-from tools.ci_policy import full_maps
 from tools.GeodataPreparation import country_data as country
 
 
@@ -295,17 +294,6 @@ class CountryDataTests(unittest.TestCase):
 
 
 class CountryWorkflowTests(unittest.TestCase):
-    def test_existing_full_map_and_benchmark_label_policy(self):
-        for labels, expected in [
-            ([], True),
-            (["ci:skip-full-maps"], False),
-            (["ci:skip-full-maps", "ci:full-maps"], True),
-            (["ci:skip-full-maps", "ci:routing-benchmark"], True),
-        ]:
-            with self.subTest(labels=labels):
-                self.assertEqual(expected, full_maps("pull_request", labels))
-        self.assertFalse(full_maps("push", ["ci:full-maps"]))
-
     def test_consumers_share_one_package_and_do_not_depend_on_cache_restore(self):
         for filename in ["pull-request-apks.yml", "offline-packages.yml"]:
             workflow = yaml.safe_load(

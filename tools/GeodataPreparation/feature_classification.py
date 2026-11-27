@@ -1,7 +1,20 @@
 """OSM tag classification shared by bounded and country importers."""
 
+from __future__ import annotations
 
-def classify(t):
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tools.GeodataPreparation.terrain_kinds import TerrainKind
+
+APPROVED_CROSSING_KIND: TerrainKind = "ApprovedCrossing"
+SETTLEMENT_KIND: TerrainKind = "Settlement"
+GAS_CROSSING_KIND: TerrainKind = "GasPipelineCrossingCandidate"
+UNDERPASS_KIND: TerrainKind = "PedestrianUnderpassCandidate"
+
+
+def classify(t: Mapping[str, str]) -> TerrainKind | None:
     if (
         t.get("man_made") == "pipeline"
         and t.get("substance") == "gas"

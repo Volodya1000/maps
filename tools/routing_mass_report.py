@@ -7,7 +7,14 @@ import math
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from routing_crossing_pilot import audit, distance, harness_integrity, project
+from routing_crossing_pilot import (
+    audit,
+    audit_features,
+    distance,
+    harness_integrity,
+    project,
+    scenario_for_mode,
+)
 from routing_indirect_study import requested_search_bounds
 from shapely.geometry import LineString, Polygon, box, shape
 
@@ -31,7 +38,9 @@ def witness_status(folder, scenario, coverage):
         return "absent"
     path = folder / "witness.geojson"
     if path.exists():
-        geometry = shape(json.loads(path.read_text())["features"][0]["geometry"])
+        geometry = shape(
+            json.loads(path.read_text(encoding="utf-8"))["features"][0]["geometry"]
+        )
     elif scenario["witness"].get("coordinates"):
         geometry = LineString(scenario["witness"]["coordinates"])
     else:
@@ -46,38 +55,63 @@ def witness_status(folder, scenario, coverage):
         or not box(*requested_search_bounds(scenario["points"])).covers(geometry)
     ):
         return "invalid"
-    raw = json.loads((folder / "input.geojson").read_text())["features"]
-    features = [
-        {
-            "id": item["properties"]["featureId"],
-            "kind": item["properties"]["kind"],
-            "geometry": shape(item["geometry"]),
-            "approval_id": item["properties"].get("approvalId"),
-        }
-        for item in raw
-        if "featureId" in item["properties"]
-    ]
+    raw = json.loads((folder / "input.geojson").read_text(encoding="utf-8"))["features"]
+    features = audit_features(raw)
     origin = (scenario["points"][0]["Longitude"], scenario["points"][0]["Latitude"])
     return audit(
         project(geometry, origin),
         features,
         coverage=project(coverage, origin),
         origin=origin,
+        allow_underpasses=scenario.get("routingOptions", {}).get(
+            "AllowExperimentalPedestrianUnderpasses", False
+        ),
     )["status"]
+
+
+def inventory_summary(inventory, *, historical=True):
+    counts = inventory["preparedFeatureCounts"]
+    values = ", ".join(
+        f"{counts.get(kind, 0)} {kind}"
+        for kind in (
+            "BridgeCandidate",
+            "OverheadGasPipeline",
+            "GasPipelineCrossingCandidate",
+            "PedestrianUnderpassCandidate",
+        )
+    )
+    context = (
+        "исторического baseline"
+        if historical
+        else "текущего прогона исторического корпуса"
+    )
+    return (
+        f"В SQLite этого {context}: {values}. "
+        "Числа относятся к связанному inventory JSON и его версии данных, а не к "
+        "нынешнему приложению. Присутствие исходного OSM way в слое не доказывает "
+        "пригодность пересечения дороги. Нынешнее приложение поддерживает "
+        "экспериментальные пешеходные переходы при включённой опции и наличии "
+        "проверенных связей с дорогами; ранее опубликованный исторический baseline "
+        "их не оценивал. "
+        "OSM-теги bridge/tunnel/layer сами по себе не дают инженерного разрешения."
+    )
 
 
 def summarize(run_dir, inventory_path, output):
     frozen = ROOT / "samples/routing-crossing-mass-v1.json"
     if frozen.read_bytes() != (run_dir / "scenarios.json").read_bytes():
         raise ValueError("run does not match frozen corpus")
-    scenarios = json.loads(frozen.read_text())
-    inventory = json.loads(inventory_path.read_text())
-    coverage = Polygon(json.loads((ROOT / "data/belarus-coverage.json").read_text()))
+    scenarios = json.loads(frozen.read_text(encoding="utf-8"))
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    coverage = Polygon(
+        json.loads((ROOT / "data/belarus-coverage.json").read_text(encoding="utf-8"))
+    )
     records = []
     raw_results = []
+    routing_modes = set()
     for scenario in scenarios:
         folder = run_dir / scenario["id"]
-        result = json.loads((folder / "result.json").read_text())
+        result = json.loads((folder / "result.json").read_text(encoding="utf-8"))
         if (
             result.get("id") != scenario["id"]
             or result.get("databaseSha256") != scenario["databaseSha256"]
@@ -85,6 +119,16 @@ def summarize(run_dir, inventory_path, output):
         ):
             raise ValueError("result identity or database provenance mismatch")
         raw_results.append(result)
+        executed = scenario_for_mode(
+            scenario
+            | {
+                "routingOptions": result.get(
+                    "routingOptions", scenario.get("routingOptions", {})
+                )
+            },
+            result.get("routingMode", "historical"),
+        )
+        routing_modes.add(executed["routingMode"])
         crossing_types = set()
         road_ids = set()
         for alternative in result["audit"]["alternatives"]:
@@ -95,9 +139,13 @@ def summarize(run_dir, inventory_path, output):
                         crossing_types.add("bridge")
                     if finding["gasIds"]:
                         crossing_types.add("overhead_gas")
-        witness = witness_status(folder, scenario, coverage)
+                    if finding.get("underpassIds"):
+                        crossing_types.add("pedestrian_underpass")
+        witness = witness_status(folder, executed, coverage)
         record = {
             "id": scenario["id"],
+            "routingMode": executed["routingMode"],
+            "routingOptions": executed["routingOptions"],
             "area": scenario["area"],
             "category": scenario["category"],
             "scenarioType": scenario.get("scenarioType", "pilot"),
@@ -122,6 +170,9 @@ def summarize(run_dir, inventory_path, output):
             or ("direct" if (folder / "witness.geojson").exists() else None),
         }
         records.append(record)
+    if len(routing_modes) != 1:
+        raise ValueError("mixed routing execution modes")
+    routing_mode = next(iter(routing_modes))
     if not harness_integrity(scenarios, raw_results):
         raise ValueError("incomplete or inconsistent run")
     app_commits = {item.get("appCommit") for item in raw_results}
@@ -194,6 +245,7 @@ def summarize(run_dir, inventory_path, output):
     }
     data = {
         "schema": "maps.routing-crossing-mass.v1",
+        "routingMode": routing_mode,
         "baselineAppCommit": next(iter(app_commits)),
         "verifyDllSha256": next(iter(dll_hashes)),
         "corpusSha256": hashlib.sha256(frozen.read_bytes()).hexdigest(),
@@ -204,12 +256,18 @@ def summarize(run_dir, inventory_path, output):
     }
     output.mkdir(parents=True, exist_ok=True)
     (output / "results.json").write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
     )
     lines = [
-        "# Массовый baseline маршрутизации Беларуси",
+        "# Исторический baseline маршрутизации Беларуси"
+        if routing_mode == "historical"
+        else "# Текущий прогон исторического корпуса маршрутизации Беларуси",
         "",
-        f"Зафиксировано и выполнено {len(records)} пар в шести районах: 10 существующих пилотных и {len(records) - 10} новых. Каждая пара содержит две пользовательские точки. Целевая выборка проверяет барьеры и не оценивает случайную поездку по стране.",
+        f"Режим исполнения: `routingMode={routing_mode}`. Полные фактические routingOptions сохранены для каждого результата в [JSON](results.json); зафиксированный корпус не изменён.",
+        "",
+        f"Зафиксировано и выполнено {len(records)} пар в {len({item['area'] for item in records})} районах. Каждая пара содержит две пользовательские точки. Целевая выборка проверяет барьеры и не оценивает случайную поездку по стране.",
         "",
         "| Показатель | Значение |",
         "| --- | ---: |",
@@ -289,20 +347,25 @@ def summarize(run_dir, inventory_path, output):
         lines.append(f"| {kind} | {source.get(kind, 0)} | {present} |")
     lines += [
         "",
-        "В SQLite: 15 123 BridgeCandidate, 67 OverheadGasPipeline и 12 порождённых GasPipelineCrossingCandidate. Числа в третьем столбце показывают присутствие исходного way в указанном слое, а не пригодное пересечение дороги. Два pedestrian_tunnel с BridgeCandidate имеют также мостовой тег: отдельной поддержки тоннелей нет. `bridge=*` на highway импортируется, включая пешеходные мосты; железнодорожные мосты, самостоятельные `man_made=bridge`, `layer=*` и иные газопроводы не становятся переходами автоматически. Часть дорожных тоннелей хранится как Road. Нужна отдельная проверка геометрии пересечения дорог и предметных правил перед расширением Domain.",
+        inventory_summary(inventory, historical=routing_mode == "historical"),
         "",
-        "## Доказательные случаи и следующие изменения",
-        "",
-        "- [Пуховичи, газовый переход](cases/pukhovichi-01/diagnostic.json): кандидат `4605961` пересекает целевую дорогу и лежит в области поиска, но прямая даёт девять запрещённых дорожных контактов и пересекает воду; `NoRouteInSearchArea`, существование обхода не доказано. [Геометрия](cases/pukhovichi-01/geometry.geojson), [карта](cases/pukhovichi-01/map.svg).",
-        "- [Налибоки, мост](cases/mass-naliboki-bridge-01/diagnostic.json): кандидат `438476` пересекает целевую дорогу в области поиска, в 66 м от прямой. Прямая также встречает воду и болото; witness нет. [Геометрия](cases/mass-naliboki-bridge-01/geometry.geojson), [карта](cases/mass-naliboki-bridge-01/map.svg).",
-        "- [Брест, последовательные барьеры](cases/mass-brest-multi-06/diagnostic.json): прямая даёт 10 дорожных контактов и касается запрещённой местности; модельный кандидат для целевой дороги не выбран. Отказ поиска не доказывает дефект A*. [Геометрия](cases/mass-brest-multi-06/geometry.geojson), [карта](cases/mass-brest-multi-06/map.svg).",
-        "",
-        "Новые сценарии A отобраны по пересечению геометрии кандидата и Road; пригодность контакта и подключение к графу не доказаны. Число реальных пересечений дорог для неподдерживаемых OSM-типов пока unknown; приведённые числа ways задают верхнюю границу для дальнейшей проверки.",
-        "",
-        "Первый приоритет: независимо построить и проверить witness для одного из 21 неуспеха в новой мостовой страте, затем проверить фактический шаг сетки, портал и его соединители. Это отделит дефект поиска от отсутствия допустимого пути. Следом проверить 16 неуспехов с последовательными барьерами. Для расширения покрытия данных отдельно сопоставить геометрию пешеходных тоннелей, железнодорожных мостов и иных сооружений с дорогами и получить предметное разрешение; OSM-теги сами по себе разрешения не дают. Подтверждённого локального дефекта в этом baseline нет, поэтому production-код не менялся и сравнение «до/после» неприменимо.",
-        "",
-        "План составлял 100 пар; фактически 88. Все 12 недобранных слотов приходятся на газовую страту: в шести выбранных районах не удалось подобрать дополнительные пары с известным типом местности и допустимыми конечными точками. Ни один неуспех не исключён после заморозки.",
-        "",
+    ]
+    if routing_mode == "historical":
+        lines += [
+            "## Выводы исторического baseline",
+            "",
+            "- [Пуховичи, газовый переход](cases/pukhovichi-01/diagnostic.json): кандидат `4605961` пересекает целевую дорогу и лежит в области поиска, но прямая даёт девять запрещённых дорожных контактов и пересекает воду; `NoRouteInSearchArea`, существование обхода не доказано. [Геометрия](cases/pukhovichi-01/geometry.geojson), [карта](cases/pukhovichi-01/map.svg).",
+            "- [Налибоки, мост](cases/mass-naliboki-bridge-01/diagnostic.json): кандидат `438476` пересекает целевую дорогу в области поиска, в 66 м от прямой. Прямая также встречает воду и болото; witness нет. [Геометрия](cases/mass-naliboki-bridge-01/geometry.geojson), [карта](cases/mass-naliboki-bridge-01/map.svg).",
+            "- [Брест, последовательные барьеры](cases/mass-brest-multi-06/diagnostic.json): прямая даёт 10 дорожных контактов и касается запрещённой местности; модельный кандидат для целевой дороги не выбран. Отказ поиска не доказывает дефект A*. [Геометрия](cases/mass-brest-multi-06/geometry.geojson), [карта](cases/mass-brest-multi-06/map.svg).",
+            "",
+            "Новые сценарии A отобраны по пересечению геометрии кандидата и Road; пригодность контакта и подключение к графу не доказаны. Число реальных пересечений дорог для неоценённых этим историческим baseline OSM-типов пока unknown; приведённые числа ways задают верхнюю границу для дальнейшей проверки.",
+            "",
+            "Первый приоритет: независимо построить и проверить witness для одного из 21 неуспеха в новой мостовой страте, затем проверить фактический шаг сетки, портал и его соединители. Это отделит дефект поиска от отсутствия допустимого пути. Следом проверить 16 неуспехов с последовательными барьерами. Для расширения покрытия данных отдельно сопоставить геометрию пешеходных тоннелей, железнодорожных мостов и иных сооружений с дорогами и получить предметное разрешение; OSM-теги сами по себе разрешения не дают. Подтверждённого локального дефекта в этом baseline нет, поэтому production-код не менялся и сравнение «до/после» неприменимо.",
+            "",
+            "План составлял 100 пар; фактически 88. Все 12 недобранных слотов приходятся на газовую страту: в шести выбранных районах не удалось подобрать дополнительные пары с известным типом местности и допустимыми конечными точками. Ни один неуспех не исключён после заморозки.",
+            "",
+        ]
+    lines += [
         "## Воспроизводимость и пределы",
         "",
         f"Корпус SHA-256 `{data['corpusSha256']}`; SQLite `{data['databaseSha256']}`; PBF `{data['sourceSha256']}`; приложение `{data['baselineAppCommit']}`.",
@@ -313,18 +376,20 @@ def summarize(run_dir, inventory_path, output):
         "uv run --project tools/GeodataPreparation --locked python tools/ci/routing_pilot_ci.py extract-db --data artifacts/belarus",
         "dotnet build tools/CableRoutePlanner.Verify -c Release -warnaserror",
         "uv run --project tools/GeodataPreparation --locked python tools/routing_mass_experiment.py freeze --data artifacts/belarus --output artifacts/routing-mass",
-        "uv run --project tools/GeodataPreparation --locked python tools/routing_mass_experiment.py run --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-mass",
+        f"uv run --project tools/GeodataPreparation --locked python tools/routing_mass_experiment.py run --routing-mode {routing_mode} --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-mass",
         "uv run --project tools/GeodataPreparation --locked python tools/GeodataPreparation/country_data.py source --output artifacts/osm/belarus-261030.osm.pbf",
         "uv run --project tools/GeodataPreparation --locked python tools/routing_source_inventory.py --pbf artifacts/osm/belarus-261030.osm.pbf --data artifacts/belarus --output artifacts/routing-source-inventory.json",
         "mkdir -p artifacts/routing-mass-report && cp artifacts/routing-source-inventory.json artifacts/routing-mass-report/source-inventory.json",
         "uv run --project tools/GeodataPreparation --locked python tools/routing_mass_diagnostics.py --run artifacts/routing-mass --output artifacts/routing-mass-report/cases mass-naliboki-bridge-01 pukhovichi-01 mass-brest-multi-06",
         "uv run --project tools/GeodataPreparation --locked python tools/routing_mass_report.py --run artifacts/routing-mass --inventory artifacts/routing-source-inventory.json --output artifacts/routing-mass-report",
         "```",
-        f"Один и тот же Verify DLL SHA-256 `{data['verifyDllSha256']}` использован во всех 88 запусках. `sourceDirty=true` записано в {metrics['sourceDirtyCaseCount']} результатах после изменения workflow во время запуска; бинарник и commit приложения не менялись. Поле сохранено для каждого случая в JSON.",
+        f"Один и тот же Verify DLL SHA-256 `{data['verifyDllSha256']}` использован во всех {len(records)} запусках. `sourceDirty=true` записано в {metrics['sourceDirtyCaseCount']} результатах. Хеши бинарника, commit приложения и это поле сохранены для каждого случая в JSON.",
         "[Все случаи, координаты, аудит и причины](results.json) сохранены в машинном виде. Полные GeoJSON, SVG, stdout/stderr и результаты каждого процесса остаются в artifacts запуска.",
         "Пиковый RSS и фактический шаг сетки не инструментированы и записаны как null. Инженерная пригодность переходов не подтверждалась. © OpenStreetMap contributors, ODbL 1.0.",
     ]
-    (output / "report.md").write_text("\n".join(lines) + "\n")
+    (output / "report.md").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8", newline="\n"
+    )
     print(json.dumps(metrics, ensure_ascii=False, indent=2))
 
 

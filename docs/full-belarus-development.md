@@ -1,41 +1,64 @@
 # Полная карта Беларуси в локальном приложении
 
-В автономных APK/setup уже поставляется полный OSM-пакет Беларуси. Исходники по умолчанию используют небольшой реальный район для быстрых тестов. Новый инструмент подключает полный пакет к текущим исходникам без Android-устройства и повторного преобразования PBF.
+Исходники по умолчанию используют небольшой реальный район для быстрых тестов.
+Текущий механизм подготовки полной Беларуси — locked `country_data.py` и
+`tools/GeodataPreparation/belarus.lock.json`; он общий для локального запуска и CI.
 
 Из корня репозитория:
 
 ```sh
-uv run --locked python tools/install_belarus.py --verify
-uv run --locked python tools/install_belarus.py --run
+uv sync --locked
+uv run --locked python tools/GeodataPreparation/country_data.py ensure --output artifacts/belarus-current
+uv run --locked python tools/GeodataPreparation/country_data.py validate --output artifacts/belarus-current
 ```
 
-Первый запуск получает опубликованный `CableRoutePlanner-0.2.0-Belarus.apk`, проверяет закреплённый SHA-256 APK, извлекает только `assets/Data/`, распаковывает SQLite, проверяет её SHA-256 из доверенного манифеста и сохраняет атрибуцию и обе лицензии. APK используется как существующий контейнер автономных данных; устанавливать его на Android для этого не нужно. Код интерфейса берётся из текущих исходников.
+`ensure` получает готовый Release package, если его recipe совпадает с текущими
+исходниками. После изменения конвертера явно создаёт пакет из закреплённого PBF
+через locked GIS pipeline. SHA-256 источника и файлов, runtime, зависимости,
+лицензии и recipe проверяются отдельно. Недоступный готовый пакет не подменяется
+скрытой конвертацией. Подробности: [геоданные в CI](ci-geodata.md).
+Полные PBF, SQLite и APK остаются в `artifacts/` и не включаются в Git.
 
-Скачивается около 1,2 ГБ, SQLite после распаковки занимает около 2,6 ГБ. Перед распаковкой нужно не менее 4 GiB свободного пространства. APK остаётся в `artifacts/downloads/`, карта — в `artifacts/belarus/`; эти данные не включаются в Git. Временный пакет становится доступен только после проверки целостности и копирования лицензий. Существующий неполный или отличный пакет не перезаписывается.
-
-Уже скачанный APK можно передать явно:
+Проверенный кеш содержит `geodata.sqlite.gz`. Reader и Desktop читают
+распакованную `geodata.sqlite`; не добавляйте её в кеш с `package.json`, иначе
+повторный `validate` отклонит изменённый состав. Создайте отдельную runtime-копию
+в новом каталоге (сохраняются лицензии и NOTICE), затем распакуйте её штатным
+компонентом приложения:
 
 ```sh
-uv run --locked python tools/install_belarus.py --apk /absolute/path/CableRoutePlanner-0.2.0-Belarus.apk --verify
+uv run --locked python -c "import shutil; shutil.copytree('artifacts/belarus-current', 'artifacts/belarus-runtime')"
+dotnet run --project tools/CableRoutePlanner.Verify -- --install-assets artifacts/belarus-current artifacts/belarus-runtime
 ```
 
-SHA-256 проверяется и для локального APK. Инструмент не распаковывает произвольные пути ZIP и не принимает региональную тестовую карту за Беларусь.
-
-`--verify` запускает настоящий repository приложения: обзор всей страны должен содержать дороги, затем проверяются исходные данные возле Минска, Бреста, Гродно, Витебска, Гомеля и Могилёва. Отчёт сохраняется в `artifacts/belarus-package-check.json`; [результат локальной проверки](evidence/belarus-development-check.json) включён отдельно. Эти точки — пробы данных, не сохранённые заготовки маршрутов.
-
-`--run` запускает текущий Desktop и явно устанавливает `CABLEROUTE_DATA` в проверенный каталог. Ошибка полного пакета не подменяется небольшим тестовым районом. Для последующих запусков можно задавать переменную непосредственно:
+При повторной подготовке используйте новый runtime-каталог. Для проверки данных
+страны и шести областных центров через действующий C# reader:
 
 ```sh
-CABLEROUTE_DATA="$PWD/artifacts/belarus" dotnet run --project src/CableRoutePlanner.Desktop
+dotnet run --project tools/CableRoutePlanner.Verify -- --inspect artifacts/belarus-runtime artifacts/belarus-package-check.json
 ```
 
-PowerShell:
+PowerShell-запуск текущего Desktop:
 
 ```powershell
-$env:CABLEROUTE_DATA = (Resolve-Path artifacts/belarus).Path
+$env:CABLEROUTE_DATA = (Resolve-Path artifacts/belarus-runtime).Path
 dotnet run --project src/CableRoutePlanner.Desktop
 ```
 
-Для включения этого же пакета в собственную сборку используйте существующее свойство `-p:GeodataDirectory=<absolute-path-to-package>` при publish. CI сохраняет маленький fixture для быстрых общих проверок; workflow `Full Belarus offline installers` собирает автономные установщики с полной страной.
+В shell Linux/macOS:
 
-Это полный географический OSM extract Беларуси, а не обещание полноты всех препятствий или инженерных согласований. DEM, WorldCover и подземные коммуникации этим пакетом не добавляются. Атрибуция `© OpenStreetMap contributors`, ODbL/DbCL и источник Geofabrik сохраняются.
+```sh
+CABLEROUTE_DATA="$PWD/artifacts/belarus-runtime" dotnet run --project src/CableRoutePlanner.Desktop
+```
+
+Для собственной сборки укажите распакованную runtime-копию через
+`-p:GeodataDirectory=<absolute-path-to-runtime-package>`
+при publish. CI сохраняет маленький fixture для быстрых проверок; workflow
+`Full Belarus offline installers` собирает установщики с полной страной.
+
+Прежний установщик из APK 0.2.0 удалён: он закреплял старую SQLite v2 и не являлся
+способом получения текущей SQLite v3. Ранее сохранённые отчёты и снимки относятся
+к тому историческому пакету; их контрольные суммы не описывают новую подготовку.
+Не переиспользуйте его каталог как кеш `country_data.py`.
+
+Это OSM extract Беларуси, а не обещание полноты препятствий или инженерных
+согласований. Атрибуция OpenStreetMap, ODbL/DbCL и источник Geofabrik сохраняются.

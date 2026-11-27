@@ -63,9 +63,9 @@ class UnderpassAuditTests(unittest.TestCase):
                     extra=[dict(id=3, kind=kind, geometry=Point(0, 0).buffer(2))],
                 )
 
-    def test_missing_link_is_rejected(self):
+    def test_missing_link_is_unknown(self):
         del self.span["underpass_road_ids"]
-        self.check("violation")
+        self.check("unknown")
 
     def test_off_axis_turn_after_contact_is_rejected(self):
         self.check("violation", route=LineString([(-10, 0), (0, 0), (10, 10)]))

@@ -15,6 +15,7 @@ import uuid
 from pathlib import Path
 
 import yaml
+from check_coverage import find_report
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "artifacts"
@@ -46,6 +47,8 @@ def lint() -> None:
     uv = executable("uv")
     run(uv, "run", "--locked", "ruff", "check", ".")
     run(uv, "run", "--locked", "ruff", "format", "--check", ".")
+    run(sys.executable, "tools/generate_terrain_contract.py", "--check")
+    run(uv, "run", "--locked", "mypy")
     dotnet = executable("dotnet")
     run(dotnet, "sln", "CableRoutePlanner.sln", "list")
     run(
@@ -169,12 +172,13 @@ def desktop() -> None:
         env=dotnet_env,
     )
     run(sys.executable, "tools/check_coverage.py", results_directory)
+    coverage_report = find_report(ROOT / results_directory)
     run(
         dotnet,
         "tool",
         "run",
         "reportgenerator",
-        f"-reports:{results_directory}/**/coverage.cobertura.xml",
+        f"-reports:{coverage_report}",
         "-targetdir:artifacts/coverage-report",
         "-reporttypes:Html",
         env=dotnet_env,

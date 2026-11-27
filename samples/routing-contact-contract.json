@@ -1,0 +1,454 @@
+{
+  "schema": "maps.routing-contact-contract.v1",
+  "coordinateSystem": "local-metres",
+  "roadId": 1,
+  "cases": [
+    {
+      "id": "unmapped_crossing",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": false,
+      "auditStatus": "violation",
+      "runtimeTraversable": false
+    },
+    {
+      "id": "road_endpoint_touch",
+      "road": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": false,
+      "auditStatus": "violation",
+      "runtimeTraversable": false
+    },
+    {
+      "id": "shared_road_segment",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          0,
+          -5
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "allowUnderpasses": false,
+      "auditStatus": "unknown",
+      "runtimeTraversable": true
+    },
+    {
+      "id": "bridge_crossing",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": false,
+      "auditStatus": "valid",
+      "candidate": {
+        "id": 2,
+        "kind": "BridgeCandidate",
+        "coordinates": [
+          [
+            -5,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ]
+      },
+      "runtimeTraversable": true
+    },
+    {
+      "id": "unrelated_bridge",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": false,
+      "auditStatus": "violation",
+      "candidate": {
+        "id": 2,
+        "kind": "BridgeCandidate",
+        "coordinates": [
+          [
+            1,
+            -5
+          ],
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      "runtimeTraversable": false
+    },
+    {
+      "id": "gas_crossing",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": false,
+      "auditStatus": "valid",
+      "candidate": {
+        "id": 2,
+        "kind": "GasPipelineCrossingCandidate",
+        "coordinates": [
+          [
+            -5,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ]
+      },
+      "runtimeTraversable": true
+    },
+    {
+      "id": "gas_endpoint_touch",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": false,
+      "auditStatus": "violation",
+      "candidate": {
+        "id": 2,
+        "kind": "GasPipelineCrossingCandidate",
+        "coordinates": [
+          [
+            -5,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ]
+      },
+      "runtimeTraversable": false
+    },
+    {
+      "id": "gas_wrong_direction",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          -10
+        ],
+        [
+          10,
+          10
+        ]
+      ],
+      "allowUnderpasses": false,
+      "auditStatus": "violation",
+      "candidate": {
+        "id": 2,
+        "kind": "GasPipelineCrossingCandidate",
+        "coordinates": [
+          [
+            -5,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ]
+      },
+      "runtimeTraversable": false
+    },
+    {
+      "id": "linked_underpass",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "valid",
+      "candidate": {
+        "id": 2,
+        "kind": "PedestrianUnderpassCandidate",
+        "coordinates": [
+          [
+            -5,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ],
+        "underpassRoadIds": [
+          1
+        ]
+      },
+      "runtimeTraversable": true
+    },
+    {
+      "id": "disabled_underpass",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": false,
+      "auditStatus": "violation",
+      "candidate": {
+        "id": 2,
+        "kind": "PedestrianUnderpassCandidate",
+        "coordinates": [
+          [
+            -5,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ],
+        "underpassRoadIds": [
+          1
+        ]
+      },
+      "runtimeTraversable": false
+    },
+    {
+      "id": "unrelated_underpass_link",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "violation",
+      "candidate": {
+        "id": 2,
+        "kind": "PedestrianUnderpassCandidate",
+        "coordinates": [
+          [
+            -5,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ],
+        "underpassRoadIds": [
+          99
+        ]
+      },
+      "runtimeTraversable": false
+    },
+    {
+      "id": "missing_underpass_evidence",
+      "road": [
+        [
+          0,
+          -20
+        ],
+        [
+          0,
+          20
+        ]
+      ],
+      "route": [
+        [
+          -10,
+          0
+        ],
+        [
+          10,
+          0
+        ]
+      ],
+      "allowUnderpasses": true,
+      "auditStatus": "unknown",
+      "candidate": {
+        "id": 2,
+        "kind": "PedestrianUnderpassCandidate",
+        "coordinates": [
+          [
+            -5,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ]
+      },
+      "runtimeTraversable": false
+    }
+  ]
+}

@@ -12,6 +12,7 @@ from collections import Counter
 from pathlib import Path
 
 from benchmark_routes import run_bounded_command
+from routing_contracts import RoutingMode, RoutingOptions, routing_options
 from shapely import from_wkb
 from shapely.geometry import LineString, Point, Polygon, box, mapping, shape
 from shapely.ops import substring, transform, unary_union
@@ -22,13 +23,15 @@ WINDOWS = {
     "pukhovichi": (27.35, 52.70, 27.75, 53.00),
     "smolevichi": (28.02, 53.85, 28.42, 54.10),
 }
-OPTIONS = {
+# Original representation used only to verify frozen corpora.
+FROZEN_OPTIONS = {
     "CellSizeMetres": 25,
     "MaxNodes": 100000,
     "ReserveFraction": 0.1,
     "PreferOverheadGasCrossings": True,
     "MaxRouteLengthMetres": 1000000,
 }
+OPTIONS: RoutingOptions = routing_options("current")
 KINDS = (
     "Road",
     "BridgeCandidate",
@@ -42,6 +45,33 @@ KINDS = (
     "ApprovedCrossing",
     "PedestrianUnderpassCandidate",
 )
+
+
+def scenario_for_mode(scenario, mode: RoutingMode):
+    """Make execution options explicit without rewriting frozen baseline files."""
+    return scenario | {
+        "routingMode": mode,
+        "routingOptions": routing_options(mode, scenario.get("routingOptions")),
+    }
+
+
+def audit_features(raw):
+    """Restore geometry and exact underpass-road links for independent audit."""
+    features = []
+    for item in raw:
+        properties = item["properties"]
+        if "featureId" not in properties:
+            continue
+        feature = {
+            "id": properties["featureId"],
+            "kind": properties["kind"],
+            "geometry": shape(item["geometry"]),
+            "approval_id": properties.get("approvalId"),
+        }
+        if "underpassRoadIds" in properties:
+            feature["underpass_road_ids"] = properties["underpassRoadIds"]
+        features.append(feature)
+    return features
 
 
 def project(geometry, origin):
@@ -186,6 +216,11 @@ def local_road_contact(route, road, point):
 
 def audit(route, features, coverage=None, origin=None, *, allow_underpasses=False):
     """Independent overlay on stored WKB. Unknown is used where model evidence is incomplete."""
+
+    def has_road_links(feature):
+        links = feature.get("underpass_road_ids")
+        return isinstance(links, list) and all(type(value) is int for value in links)
+
     findings = []
     if coverage is not None and not coverage.covers(route):
         findings.append({"reason": "outside_coverage"})
@@ -242,13 +277,25 @@ def audit(route, features, coverage=None, origin=None, *, allow_underpasses=Fals
                 if g.buffer(1).covers(section):
                     gas.append(f["id"])
             underpasses = []
+            missing_links = []
             if allow_underpasses:
                 section = local_road_contact(route, geometry, point)
                 underpasses = [
                     f["id"]
                     for f, g in projected
                     if f["kind"] == "PedestrianUnderpassCandidate"
-                    and feature["id"] in f.get("underpass_road_ids", [])
+                    and has_road_links(f)
+                    and feature["id"] in f["underpass_road_ids"]
+                    and g.crosses(geometry)
+                    and not section.is_empty
+                    and g.buffer(1).covers(point)
+                    and g.buffer(1).covers(section)
+                ]
+                missing_links = [
+                    f["id"]
+                    for f, g in projected
+                    if f["kind"] == "PedestrianUnderpassCandidate"
+                    and not has_road_links(f)
                     and g.crosses(geometry)
                     and not section.is_empty
                     and g.buffer(1).covers(point)
@@ -262,7 +309,12 @@ def audit(route, features, coverage=None, origin=None, *, allow_underpasses=Fals
                     "bridgeIds": bridges,
                     "gasIds": gas,
                     "underpassIds": underpasses,
-                    "allowed": bool(bridges or gas or underpasses),
+                    "missingUnderpassLinkIds": missing_links,
+                    "allowed": True
+                    if bridges or gas or underpasses
+                    else None
+                    if missing_links
+                    else False,
                 }
             )
     bad = any(
@@ -271,7 +323,11 @@ def audit(route, features, coverage=None, origin=None, *, allow_underpasses=Fals
         in ("outside_coverage", "blocked_terrain", "water_without_opening")
         for f in findings
     )
-    incomplete = any(f["reason"] in ("shared_road_section",) for f in findings)
+    incomplete = any(
+        f["reason"] == "shared_road_section"
+        or (f["reason"] == "road_contact" and f.get("allowed") is None)
+        for f in findings
+    )
     return {
         "status": "violation" if bad else "unknown" if incomplete else "valid",
         "findings": findings,
@@ -298,7 +354,11 @@ def harness_integrity(scenarios, results):
         or set(ids) != set(result_ids)
     ):
         return False
+    by_id = {case["id"]: case for case in scenarios}
     for result in results:
+        options = result.get(
+            "routingOptions", by_id[result["id"]].get("routingOptions", {})
+        )
         status = result.get("status")
         alternatives = result.get("alternatives")
         audit_result = result.get("audit")
@@ -359,7 +419,26 @@ def harness_integrity(scenarios, results):
                     or not isinstance(finding.get("roadId"), int)
                     or not isinstance(finding.get("bridgeIds"), list)
                     or not isinstance(finding.get("gasIds"), list)
-                    or not (finding["bridgeIds"] or finding["gasIds"])
+                    or not isinstance(finding.get("underpassIds", []), list)
+                    or not all(
+                        type(identifier) is int
+                        for key in ("bridgeIds", "gasIds", "underpassIds")
+                        for identifier in finding.get(key, [])
+                    )
+                    or not (
+                        finding["bridgeIds"]
+                        or finding["gasIds"]
+                        or (
+                            options.get("AllowExperimentalPedestrianUnderpasses")
+                            is True
+                            and finding.get("underpassIds")
+                        )
+                    )
+                    or (
+                        finding.get("underpassIds")
+                        and options.get("AllowExperimentalPedestrianUnderpasses")
+                        is not True
+                    )
                 ):
                     return False
                 coordinate = finding.get("coordinate")
@@ -496,18 +575,24 @@ def feature(geometry, properties):
 
 
 def save_json(path, value):
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+    path.write_text(
+        json.dumps(value, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
 
 
 def generate(data, output, count=10, corpus_version="v2"):
-    manifest = json.loads((data / "manifest.json").read_text())
+    manifest = json.loads((data / "manifest.json").read_text(encoding="utf-8"))
     with (data / "geodata.sqlite").open("rb") as stream:
         if (
             hashlib.file_digest(stream, "sha256").hexdigest()
             != manifest["database_sha256"]
         ):
             raise ValueError("database SHA-256 mismatch")
-    coverage = Polygon(json.loads(Path("data/belarus-coverage.json").read_text()))
+    coverage = Polygon(
+        json.loads(Path("data/belarus-coverage.json").read_text(encoding="utf-8"))
+    )
     connection = sqlite3.connect(f"file:{data / 'geodata.sqlite'}?mode=ro", uri=True)
     rng = random.Random(SEED)
     rejected = Counter()
@@ -665,7 +750,7 @@ def generate(data, output, count=10, corpus_version="v2"):
                             "sourceId": road["source_id"],
                         },
                         "candidateIds": [f["id"] for f in target_candidates],
-                        "routingOptions": OPTIONS,
+                        "routingOptions": FROZEN_OPTIONS,
                         "seed": SEED,
                         "databaseSha256": manifest["database_sha256"],
                     }
@@ -678,7 +763,9 @@ def generate(data, output, count=10, corpus_version="v2"):
         if picked < quotas[name]:
             rejected[f"quota_unfilled_{name}"] = quotas[name] - picked
     original = json.dumps(scenarios, ensure_ascii=False, indent=2) + "\n"
-    if original != Path("samples/routing-crossing-pilot.json").read_text():
+    if original != Path("samples/routing-crossing-pilot.json").read_text(
+        encoding="utf-8"
+    ):
         raise ValueError("generated v1 differs from frozen pilot corpus")
     witness = None
     if corpus_version == "v2":
@@ -767,7 +854,7 @@ def generate(data, output, count=10, corpus_version="v2"):
             "auditBounds": bounds2,
             "targetRoad": {"featureId": road["id"], "sourceId": road["source_id"]},
             "candidateIds": [candidate["id"]],
-            "routingOptions": OPTIONS,
+            "routingOptions": FROZEN_OPTIONS,
             "seed": SEED,
             "databaseSha256": manifest["database_sha256"],
             "witness": {
@@ -865,6 +952,11 @@ def generate(data, output, count=10, corpus_version="v2"):
                             "featureId": f["id"],
                             "sourceId": f["source_id"],
                             "approvalId": f["approval_id"],
+                            **(
+                                {"underpassRoadIds": f["underpass_road_ids"]}
+                                if "underpass_road_ids" in f
+                                else {}
+                            ),
                             "target": f["id"] == road["id"],
                         },
                     )
@@ -936,13 +1028,13 @@ def svg_map(input_features, routes, title, status, path, audit_bounds):
         100 / (sx / (111195.0802335 * math.cos(math.radians((north + south) / 2))))
     )
     content = f"""<svg xmlns="http://www.w3.org/2000/svg" width="1030" height="800" viewBox="0 0 1030 800"><rect width="1030" height="800" fill="white"/><text x="20" y="30" font-size="18">{title}: {status}</text>{"".join(items)}<path d="M70 750h100" stroke="black" stroke-width="3"/><text x="75" y="745">≈{scale_metres} m</text><text x="200" y="765">Road grey; target red; eligible bridge green/gas cyan; others pale; route yellow; A/B black. © OpenStreetMap contributors</text></svg>"""
-    path.write_text(content)
+    path.write_text(content, encoding="utf-8", newline="\n")
 
 
 def pr_head_sha():
     event = os.environ.get("GITHUB_EVENT_PATH")
     if event:
-        payload = json.loads(Path(event).read_text())
+        payload = json.loads(Path(event).read_text(encoding="utf-8"))
         return payload.get("pull_request", {}).get("head", {}).get(
             "sha"
         ) or os.environ.get("PILOT_PR_HEAD_SHA")
@@ -965,13 +1057,20 @@ def effective_result(written_result, process):
     return written_result
 
 
-def run(data, verify, output, timeout=120):
-    scenarios = json.loads((output / "scenarios.json").read_text())
+def run(data, verify, output, timeout=120, *, routing_mode: RoutingMode = "current"):
+    scenarios = [
+        scenario_for_mode(case, routing_mode)
+        for case in json.loads((output / "scenarios.json").read_text(encoding="utf-8"))
+    ]
     results = []
     full_results = []
-    coverage = Polygon(json.loads(Path("data/belarus-coverage.json").read_text()))
+    coverage = Polygon(
+        json.loads(Path("data/belarus-coverage.json").read_text(encoding="utf-8"))
+    )
     for scenario in scenarios:
         folder = output / scenario["id"]
+        execution_path = folder / "execution-scenario.json"
+        save_json(execution_path, scenario)
         result_path = folder / "result.json"
         result_path.unlink(missing_ok=True)
         command = [
@@ -979,30 +1078,34 @@ def run(data, verify, output, timeout=120):
             str(verify),
             "--crossing",
             str(data),
-            str(folder / "scenario.json"),
+            str(execution_path),
             str(result_path),
         ]
         process = run_bounded_command(
             command, timeout, os.environ | {"DOTNET_GCHeapHardLimit": "60000000"}
         )
         stdout, stderr = process["stdout"], process["stderr"]
-        (folder / "stdout.log").write_text(stdout)
-        (folder / "stderr.log").write_text(stderr)
+        (folder / "stdout.log").write_text(stdout, encoding="utf-8", newline="\n")
+        (folder / "stderr.log").write_text(stderr, encoding="utf-8", newline="\n")
         written = (
-            json.loads(result_path.read_text())
+            json.loads(result_path.read_text(encoding="utf-8"))
             if result_path.exists()
             and not process["timeout"]
             and process["returncode"] == 0
             else None
         )
         result = effective_result(written, process)
+        result["routingMode"] = routing_mode
+        result["routingOptions"] = scenario["routingOptions"]
         result["wallMilliseconds"] = process["elapsed_wall_ms"]
         result["appCommit"] = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], text=True
+            ["git", "rev-parse", "HEAD"], text=True, encoding="utf-8"
         ).strip()
         result["sourceDirty"] = bool(
             subprocess.check_output(
-                ["git", "status", "--porcelain", "--untracked-files=no"], text=True
+                ["git", "status", "--porcelain", "--untracked-files=no"],
+                text=True,
+                encoding="utf-8",
             ).strip()
         )
         with verify.open("rb") as stream:
@@ -1010,21 +1113,10 @@ def run(data, verify, output, timeout=120):
                 stream, "sha256"
             ).hexdigest()
         result["databaseSha256"] = scenario["databaseSha256"]
-        source = json.loads((folder / "input.geojson").read_text())
+        source = json.loads((folder / "input.geojson").read_text(encoding="utf-8"))
         route_features = []
         findings = []
-        raw_features = []
-        for f in source["features"]:
-            p = f["properties"]
-            if "featureId" in p:
-                raw_features.append(
-                    {
-                        "id": p["featureId"],
-                        "kind": p["kind"],
-                        "geometry": shape(f["geometry"]),
-                        "approval_id": p.get("approvalId"),
-                    }
-                )
+        raw_features = audit_features(source["features"])
         origin = (scenario["points"][0]["Longitude"], scenario["points"][0]["Latitude"])
         for alt in result.get("alternatives", []):
             geometry = LineString(
@@ -1035,6 +1127,9 @@ def run(data, verify, output, timeout=120):
                 raw_features,
                 coverage=project(coverage, origin),
                 origin=origin,
+                allow_underpasses=scenario["routingOptions"][
+                    "AllowExperimentalPedestrianUnderpasses"
+                ],
             )
             endpoint_ok = (
                 distance(
@@ -1106,17 +1201,19 @@ def run(data, verify, output, timeout=120):
                 "schema": "maps.routing-crossing-pilot.v2",
                 "prHeadSha": pr_head_sha(),
                 "checkoutSha": subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"], text=True
+                    ["git", "rev-parse", "HEAD"], text=True, encoding="utf-8"
                 ).strip(),
                 "acceptance": pilot_acceptance(scenarios, full_results),
                 "appCommit": subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"], text=True
+                    ["git", "rev-parse", "HEAD"], text=True, encoding="utf-8"
                 ).strip(),
                 "databaseSha256": scenario["databaseSha256"],
                 "corpusSha256": hashlib.sha256(
                     (output / "scenarios.json").read_bytes()
                 ).hexdigest(),
-                "generation": json.loads((output / "generation.json").read_text()),
+                "generation": json.loads(
+                    (output / "generation.json").read_text(encoding="utf-8")
+                ),
                 "counts": dict(Counter(item["status"] for item in results)),
                 "results": results,
             },
@@ -1137,7 +1234,7 @@ def run(data, verify, output, timeout=120):
         )
     lines += [
         "",
-        f"Принято: {len(results)}; отказы генератора: {json.loads((output / 'generation.json').read_text())['rejected']}.",
+        f"Принято: {len(results)}; отказы генератора: {json.loads((output / 'generation.json').read_text(encoding='utf-8'))['rejected']}.",
     ]
     counts = Counter(item["status"] for item in results)
     checked = sum(
@@ -1192,7 +1289,9 @@ def run(data, verify, output, timeout=120):
         "",
         "© OpenStreetMap contributors, ODbL 1.0.",
     ]
-    (output / "report.md").write_text("\n".join(lines) + "\n")
+    (output / "report.md").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8", newline="\n"
+    )
 
 
 def main():
@@ -1202,11 +1301,17 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--verify-dll", type=Path)
     parser.add_argument("--corpus-version", choices=("v1", "v2"), default="v2")
+    parser.add_argument(
+        "--routing-mode",
+        choices=("historical", "current"),
+        default="current",
+        help="Historical keeps omitted underpasses disabled; current enables them.",
+    )
     args = parser.parse_args()
     if args.mode == "generate":
         generate(args.data, args.output, corpus_version=args.corpus_version)
     else:
-        run(args.data, args.verify_dll, args.output)
+        run(args.data, args.verify_dll, args.output, routing_mode=args.routing_mode)
 
 
 if __name__ == "__main__":

@@ -19,4 +19,6 @@ class PreviewPolicyTests(unittest.TestCase):
         )
 
     def test_main_push_does_not_publish_pr_previews(self):
-        self.assertFalse(full_maps("push", []))
+        for labels in ([], ["ci:full-maps"], ["ci:routing-benchmark"]):
+            with self.subTest(labels=labels):
+                self.assertFalse(full_maps("push", labels))

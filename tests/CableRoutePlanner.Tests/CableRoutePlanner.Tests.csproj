@@ -17,9 +17,8 @@
     <Content Include="Fixtures/Elevation/**" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Fixtures/RoutingBaseline/*.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Fixtures/Underpasses/*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../samples/routing-contact-contract.json" Link="Fixtures/routing-contact-contract.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../docs/evidence/pr55-map-polish/underpass-*.png" Link="Fixtures/MapAnnotations/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../samples/real-geodata-fixtures/minsk/**" Link="Data/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <Compile Include="../../tools/Windows7GuestAgent/WindowGeometry.cs" Link="Tooling/WindowGeometry.cs" />
-    <Compile Include="../../tools/Windows7GuestAgent/MarkerPixel.cs" Link="Tooling/MarkerPixel.cs" />
   </ItemGroup>
 </Project>

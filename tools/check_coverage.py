@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from uuid import UUID
 
 LINE_THRESHOLD = 85.0
 BRANCH_THRESHOLD = 80.0
@@ -26,13 +28,110 @@ class CoverageError(ValueError):
     """Raised when a report cannot prove the coverage requirements."""
 
 
-def find_report(results: Path) -> Path:
-    reports = sorted(
-        results.rglob("coverage.cobertura.xml"), key=lambda path: path.stat().st_mtime
+TRX_NAMESPACE = "{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}"
+COVERLET_COLLECTOR_URI = "datacollector://microsoft/CoverletCodeCoverage/1.0"
+
+
+def _relative_trx_path(value: str) -> Path:
+    path = PurePosixPath(value.replace("\\", "/"))
+    if not path.parts or path.is_absolute() or ".." in path.parts or ":" in value:
+        raise CoverageError(
+            f"TRX attachment path must be relative to its run: {value!r}"
+        )
+    return Path(*path.parts)
+
+
+def _trx_report(results: Path, trx: Path) -> Path:
+    try:
+        root = ET.parse(trx).getroot()
+    except (ET.ParseError, OSError) as error:
+        raise CoverageError(f"Cannot read test run TRX {trx}: {error}") from error
+    if root.tag != TRX_NAMESPACE + "TestRun":
+        raise CoverageError(f"Unsupported test run TRX format: {trx}")
+    collectors = [
+        node
+        for node in root.findall(
+            f"{TRX_NAMESPACE}ResultSummary/{TRX_NAMESPACE}CollectorDataEntries/"
+            f"{TRX_NAMESPACE}Collector"
+        )
+        if node.get("uri", "").casefold() == COVERLET_COLLECTOR_URI.casefold()
+    ]
+    if len(collectors) != 1:
+        raise CoverageError(
+            f"Expected one Coverlet collector in {trx}, found {len(collectors)}"
+        )
+    attachments = collectors[0].findall(
+        f"{TRX_NAMESPACE}UriAttachments/{TRX_NAMESPACE}UriAttachment/{TRX_NAMESPACE}A"
     )
+    if len(attachments) != 1:
+        raise CoverageError(
+            f"Expected one Coverlet attachment in {trx}, found {len(attachments)}"
+        )
+    attachment = _relative_trx_path(attachments[0].get("href", ""))
+    if attachment.name != "coverage.cobertura.xml":
+        raise CoverageError(f"Coverlet attachment is not Cobertura: {attachment}")
+    candidates = [results / attachment]
+    deployment = root.find(f"{TRX_NAMESPACE}TestSettings/{TRX_NAMESPACE}Deployment")
+    if deployment is not None:
+        folder = _relative_trx_path(deployment.get("runDeploymentRoot", ""))
+        candidates.append(results / folder / "In" / attachment)
+    existing = [path for path in candidates if path.is_file()]
+    if len(existing) != 1 or not existing[0].resolve().is_relative_to(
+        results.resolve()
+    ):
+        raise CoverageError(
+            f"TRX must identify one existing attachment in {results}: {attachment}"
+        )
+    return existing[0]
+
+
+def _same_collector_copy(results: Path, canonical: Path, copy: Path) -> bool:
+    # VSTest on Windows keeps the collector GUID directory and copies the same
+    # attachment into TRX's deployment/In/<machine> tree. No arbitrary aliasing.
+    deployed = canonical.relative_to(results)
+    relative = copy.relative_to(results)
+    if len(deployed.parts) != 4 or deployed.parts[1] != "In":
+        return False
+    if len(relative.parts) != 2:
+        return False
+    try:
+        UUID(relative.parts[0])
+    except ValueError:
+        return False
+    with canonical.open("rb") as first, copy.open("rb") as second:
+        return (
+            hashlib.file_digest(first, "sha256").digest()
+            == hashlib.file_digest(second, "sha256").digest()
+        )
+
+
+def find_report(results: Path) -> Path:
+    # check.py passes a fresh UUID directory, so only this test run is eligible.
+    # TRX identifies its collector attachment independently of filesystem mtime.
+    reports = sorted(results.rglob("coverage.cobertura.xml"))
+    runs = sorted(results.glob("*.trx"))
+    if runs:
+        if len(runs) != 1:
+            raise CoverageError(
+                f"Expected one test run TRX in {results}, found {len(runs)}"
+            )
+        canonical = _trx_report(results, runs[0])
+        others = [path for path in reports if path != canonical]
+        if len(others) > 1 or any(
+            not _same_collector_copy(results, canonical, path) for path in others
+        ):
+            raise CoverageError(
+                f"Reports do not match the TRX collector identity in {results}"
+            )
+        return canonical
     if not reports:
         raise CoverageError(f"No Cobertura report found below {results}")
-    return reports[-1]
+    if len(reports) != 1:
+        raise CoverageError(
+            f"Expected one Cobertura report for test run {results}, found {len(reports)}: "
+            + ", ".join(str(path.relative_to(results)) for path in reports)
+        )
+    return reports[0]
 
 
 def _branch_counts(line: ET.Element) -> tuple[int, int]:
