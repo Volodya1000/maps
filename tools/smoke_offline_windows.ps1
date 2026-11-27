@@ -12,6 +12,7 @@ $evidence = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSP
 New-Item -ItemType Directory -Path $evidence -Force | Out-Null
 $stdout = Join-Path $evidence 'stdout.txt'
 $stderr = Join-Path $evidence 'stderr.txt'
+$timeoutSeconds = 180
 $previousData = $env:CABLEROUTE_DATA
 $process = $null
 try {
@@ -20,7 +21,7 @@ try {
     $process = Start-Process -FilePath (Join-Path $application 'CableRoutePlanner.Desktop.exe') `
         -WorkingDirectory $application -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-    $deadline = [DateTime]::UtcNow.AddSeconds(180)
+    $deadline = [DateTime]::UtcNow.AddSeconds($timeoutSeconds)
     do {
         Start-Sleep -Seconds 2
         $process.Refresh()
@@ -29,7 +30,7 @@ try {
         }
         $ready = Select-String -LiteralPath $stdout -Pattern 'CRP_OFFLINE_MAP_READY region=belarus features=[1-9][0-9]*' -Quiet
     } until ($ready -or [DateTime]::UtcNow -gt $deadline)
-    if (-not $ready) { throw 'Extracted desktop did not open its bundled full Belarus map within 180 seconds.' }
+    if (-not $ready) { throw "Extracted desktop did not open its bundled full Belarus map within $timeoutSeconds seconds." }
     Get-Content -LiteralPath $stdout
 } finally {
     if ($null -ne $process) {

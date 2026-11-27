@@ -39,8 +39,6 @@ jobs:
     uses: ./.github/workflows/demo-packages.yml
     with:
       source_sha: ${{ github.sha }}
-    secrets:
-      ANDROID_TEST_KEYSTORE: ${{ secrets.ANDROID_TEST_KEYSTORE }}
   android:
     if: inputs.mode == 'installers'
     needs: geodata

@@ -19,6 +19,36 @@ def apk_uploads(job):
 
 
 class AndroidDistributionTests(unittest.TestCase):
+    def test_manual_demo_does_not_require_signing_secrets(self):
+        parent = yaml.safe_load(
+            (ROOT / ".github/workflows/offline-packages.yml").read_text()
+        )
+        demo = yaml.safe_load(
+            (ROOT / ".github/workflows/demo-packages.yml").read_text()
+        )
+        events = demo.get("on", demo.get(True))
+        self.assertNotIn("secrets", events["workflow_call"])
+        self.assertNotIn("secrets", parent["jobs"]["demo"])
+        android = demo["jobs"]["android"]
+        application_id = android["env"]["ANDROID_APPLICATION_ID"]
+        self.assertTrue(application_id.startswith("by.cablerouteplanner.demo."))
+        self.assertIn("github.run_id", application_id)
+        self.assertIn("github.run_attempt", application_id)
+        publish = next(
+            step
+            for step in android["steps"]
+            if "dotnet publish " in step.get("run", "")
+        )
+        self.assertIn('-p:ApplicationId="$ANDROID_APPLICATION_ID"', publish["run"])
+        emulator = next(
+            step
+            for step in android["steps"]
+            if step.get("uses", "").startswith(
+                "reactivecircus/android-emulator-runner@"
+            )
+        )
+        self.assertIn('--package "$ANDROID_APPLICATION_ID"', emulator["with"]["script"])
+
     def test_country_apk_checks_use_project_python_before_running_scripts(self):
         for workflow in ("pull-request-apks.yml", "offline-packages.yml"):
             with self.subTest(workflow=workflow):
