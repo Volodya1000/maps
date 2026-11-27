@@ -1,13 +1,16 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [string]$OutputDirectory = 'artifacts/windows7-x86'
+    [string]$OutputDirectory = 'artifacts/windows7-x86',
+    [Parameter()]
+    [string]$GeodataDirectory = 'samples/real-geodata-fixtures/minsk'
 )
 
 $ErrorActionPreference = 'Stop'
 
 $project = 'src/CableRoutePlanner.Desktop/CableRoutePlanner.Desktop.csproj'
 $outputPath = Join-Path $PWD $OutputDirectory
+$geodataPath = (Resolve-Path -LiteralPath $GeodataDirectory).Path
 
 function Invoke-DotNet {
     param([Parameter(Mandatory = $true)][string[]]$Arguments)
@@ -36,6 +39,7 @@ Invoke-DotNet @('publish', $project, '--no-restore', `
     '-p:PlatformTarget=x86', `
     '-p:NuGetLockFilePath=packages.win7.lock.json', `
     '-p:PublishSingleFile=false', `
+    "-p:GeodataDirectory=$geodataPath", `
     '-o', $outputPath)
 
 $files = Get-ChildItem -Path $outputPath -File -Recurse | Sort-Object FullName

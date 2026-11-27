@@ -1,0 +1,235 @@
+name: Portable full Belarus demo packages
+on:
+  workflow_call:
+    inputs:
+      source_sha:
+        description: Immutable commit selected by the manual parent run
+        required: true
+        type: string
+    secrets:
+      ANDROID_TEST_KEYSTORE:
+        required: true
+permissions:
+  contents: read
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: 'true'
+jobs:
+  windows:
+    if: github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Windows7-x86
+            win7: true
+          - platform: Windows10-x64
+            win7: false
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      DEMO_FILE: Maps-Belarus-${{ matrix.platform }}-${{ inputs.source_sha }}.zip
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@v6
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
+        with:
+          global-json-file: global.json
+      - uses: actions/download-artifact@v8
+        with:
+          name: belarus-offline-data
+          path: artifacts/belarus
+      - name: Confirm selected source and unpack shared country map
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          RUN_SHA: ${{ github.sha }}
+        run: |
+          if ($env:SOURCE_SHA -ne $env:RUN_SHA -or (git rev-parse HEAD) -ne $env:SOURCE_SHA) { throw 'Source SHA mismatch' }
+          python -c "import gzip, shutil; from pathlib import Path; p=Path('artifacts/belarus'); shutil.copyfileobj(gzip.open(p/'geodata.sqlite.gz','rb'), (p/'geodata.sqlite').open('wb'))"
+          if ($LASTEXITCODE -ne 0) { throw 'Country extraction failed' }
+      - name: Publish legacy self-contained Windows 7 x86 with full data
+        if: matrix.win7
+        run: ./tools/Windows7Compatibility/build-win7-x86.ps1 -OutputDirectory artifacts/demo-app -GeodataDirectory artifacts/belarus
+      - name: Publish self-contained Windows 10 x64 with full data
+        if: ${{ !matrix.win7 }}
+        run: |
+          dotnet publish src/CableRoutePlanner.Desktop -c Release -r win-x64 --self-contained true -p:GeodataDirectory="$pwd/artifacts/belarus" -p:NuGetLockFilePath=obj/publish.win-x64.lock.json -o artifacts/demo-app
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop publish failed' }
+      - name: Create final ZIP and verify its actual bundled data
+        run: |
+          python -m tools.verify_offline_demo pack artifacts/demo-app "artifacts/downloads/$env:DEMO_FILE"
+          if ($LASTEXITCODE -ne 0) { throw 'ZIP creation failed' }
+          python -m tools.verify_offline_demo verify "artifacts/downloads/$env:DEMO_FILE" --windows --reference artifacts/belarus --destination artifacts/demo-extracted
+          if ($LASTEXITCODE -ne 0) { throw 'Final ZIP verification failed' }
+          New-Item -ItemType Directory -Path artifacts/demo-evidence -Force | Out-Null
+          dotnet restore tools/CableRoutePlanner.Verify --locked-mode
+          if ($LASTEXITCODE -ne 0) { throw 'Verify restore failed' }
+          dotnet run --project tools/CableRoutePlanner.Verify -c Release --no-restore -- --inspect artifacts/demo-extracted/Data artifacts/demo-evidence/country.json
+          if ($LASTEXITCODE -ne 0) { throw 'Final ZIP regional probes failed' }
+      - name: Launch extracted EXE and wait for bundled Belarus map
+        run: ./tools/smoke_offline_windows.ps1 -ApplicationDirectory artifacts/demo-extracted -EvidenceDirectory artifacts/demo-evidence
+      - name: Record hosted OS acceptance boundary
+        run: |
+          'Build and extracted EXE/map-readiness checks ran on Windows Server 2022. Windows 7 SP1 x86 full-map opening and a short route outside Minsk require a separate target-machine check. Windows 10 target OS is not verified by this runner.' | Add-Content $env:GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: demo-${{ matrix.platform }}-evidence-${{ inputs.source_sha }}
+          path: artifacts/demo-evidence/
+          if-no-files-found: warn
+      - name: Upload final ZIP directly (no outer ZIP)
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          path: artifacts/downloads/${{ env.DEMO_FILE }}
+          archive: false
+          if-no-files-found: error
+      - name: Record file size, SHA-256 and download link
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          python -m tools.verify_offline_demo record "artifacts/downloads/$env:DEMO_FILE" --sha "$env:SOURCE_SHA" --url "$env:ARTIFACT_URL" --output artifacts/demo-metadata/${{ matrix.platform }}.json
+          if ($LASTEXITCODE -ne 0) { throw 'Artifact metadata failed' }
+      - uses: actions/upload-artifact@v7
+        with:
+          name: demo-metadata-${{ matrix.platform }}
+          path: artifacts/demo-metadata/
+          if-no-files-found: error
+
+  android:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      DEMO_FILE: Maps-Belarus-Android-${{ inputs.source_sha }}.apk
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Confirm selected source and read existing version
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          test "$SOURCE_SHA" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 tools/release_version.py >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v8
+        with:
+          name: belarus-offline-data
+          path: artifacts/belarus
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+      - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - run: dotnet workload install android --skip-manifest-update
+      - run: dotnet restore src/CableRoutePlanner.Android --locked-mode
+      - name: Reuse stable offline signing key
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_TEST_KEYSTORE }}
+        run: |
+          test -n "$KEYSTORE" || { echo 'ANDROID_TEST_KEYSTORE must contain the stable signing key.' >&2; exit 1; }
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/preview.keystore"
+      - name: Reuse bounded country asset packaging
+        run: python3 tools/split_android_map.py artifacts/belarus artifacts/android-belarus
+      - name: Publish signed full Belarus APK without changing version
+        run: dotnet publish src/CableRoutePlanner.Android -c Release -p:AndroidVersionCode="$ANDROID_VERSION_CODE" -p:GeodataDirectory="$GITHUB_WORKSPACE/artifacts/android-belarus" -p:AndroidSdkDirectory="$ANDROID_HOME" -p:JavaSdkDirectory="$JAVA_HOME" -p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/preview.keystore" -p:AndroidSigningKeyAlias=androiddebugkey -p:AndroidSigningKeyPass=android -p:AndroidSigningStorePass=android
+      - name: Verify final APK signature, offline permissions, country bytes and heights
+        run: |
+          mkdir -p artifacts/downloads artifacts/demo-evidence
+          cp src/CableRoutePlanner.Android/bin/Release/net8.0-android/publish/by.cablerouteplanner.app-Signed.apk "artifacts/downloads/$DEMO_FILE"
+          apk="artifacts/downloads/$DEMO_FILE"
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose --print-certs "$apk" > artifacts/demo-evidence/signature.txt
+          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump permissions "$apk" > artifacts/demo-evidence/permissions.txt
+          if grep -F 'android.permission.INTERNET' artifacts/demo-evidence/permissions.txt; then exit 1; fi
+          python3 tools/check_apk_elevation.py "$apk" --country
+          python3 -m tools.verify_offline_demo verify "$apk" --reference artifacts/belarus --destination artifacts/demo-extracted
+          dotnet restore tools/CableRoutePlanner.Verify --locked-mode
+          dotnet run --project tools/CableRoutePlanner.Verify -c Release --no-restore -- --inspect artifacts/demo-extracted/Data artifacts/demo-evidence/country.json
+          rm -r artifacts/demo-extracted
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install exact downloadable APK and open full map twice
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disk-size: 8G
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: python3 tools/android_smoke.py --apk "artifacts/downloads/$DEMO_FILE" --package by.cablerouteplanner.app --output artifacts/demo-evidence/android --launches 2 --settle-seconds 180 --wait-map-ready
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: demo-Android-evidence-${{ inputs.source_sha }}
+          path: artifacts/demo-evidence/
+      - name: Upload APK directly
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          path: artifacts/downloads/${{ env.DEMO_FILE }}
+          archive: false
+          if-no-files-found: error
+      - name: Record file size, SHA-256 and download link
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: python3 -m tools.verify_offline_demo record "artifacts/downloads/$DEMO_FILE" --sha "$SOURCE_SHA" --url "$ARTIFACT_URL" --output artifacts/demo-metadata/Android.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: demo-metadata-Android
+          path: artifacts/demo-metadata/
+          if-no-files-found: error
+
+  summary:
+    needs: [windows, android]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: demo-metadata-*
+          path: metadata
+          merge-multiple: true
+      - name: Show three verified downloads from the exact selected commit
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          python3 - <<'PYTHON' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import os
+          from pathlib import Path
+          sha = os.environ['SOURCE_SHA']
+          records = [json.loads(path.read_text()) for path in sorted(Path('metadata').glob('*.json'))]
+          expected = {f'Maps-Belarus-{platform}-{sha}.{extension}' for platform, extension in [('Windows7-x86', 'zip'), ('Windows10-x64', 'zip'), ('Android', 'apk')]}
+          assert len(records) == 3 and {item['file'] for item in records} == expected
+          assert all(item['source_sha'] == sha and item['bytes'] > 0 and item['url'] for item in records)
+          print(f'## Offline Belarus demo\n\nFull source SHA: `{sha}`\n')
+          print('| Download | Bytes | SHA-256 |\n| --- | ---: | --- |')
+          for item in records:
+              print(f"| [{item['file']}]({item['url']}) | {item['bytes']} | `{item['sha256']}` |")
+          print('\nZIP: extract the entire application folder and run CableRoutePlanner.Desktop.exe. APK: install directly. Full Belarus map, heights and licenses are bundled; no CABLEROUTE_DATA or installed .NET is required.')
+          print('\nWindows startup gates use Windows Server 2022. Full-map opening and a short route outside Minsk on Windows 7 SP1 x86 remain a separate target-OS acceptance check; see the PR for actual evidence.')
+          PYTHON

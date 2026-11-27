@@ -494,8 +494,11 @@ class CountryWorkflowTests(unittest.TestCase):
         events = workflow.get("on", workflow.get(True))
         self.assertEqual({"workflow_dispatch"}, set(events))
         mode = events["workflow_dispatch"]["inputs"]["mode"]
-        self.assertEqual("installers", mode["default"])
-        self.assertEqual(["installers", "geodata"], mode["options"])
+        self.assertEqual("demo", mode["default"])
+        self.assertEqual(["demo", "installers", "geodata"], mode["options"])
+        for job in ("android", "windows", "release"):
+            self.assertEqual("inputs.mode == 'installers'", workflow["jobs"][job]["if"])
+        self.assertEqual("inputs.mode == 'demo'", workflow["jobs"]["demo"]["if"])
         self.assertEqual(
             "inputs.mode == 'geodata'", workflow["jobs"]["publish-geodata"]["if"]
         )
