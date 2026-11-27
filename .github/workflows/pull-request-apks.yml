@@ -10,6 +10,10 @@ on:
         description: Exact commit SHA checked by the caller workflow
         required: true
         type: string
+      preview_package_id:
+        description: Application ID of the already tested Minsk preview
+        required: true
+        type: string
 permissions:
   contents: read
 env:
@@ -34,6 +38,7 @@ jobs:
     needs: verify-source
     outputs:
       android_version_code: ${{ steps.version.outputs.android_version_code }}
+      country_manifest_sha256: ${{ steps.country_identity.outputs.manifest_sha256 }}
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
@@ -44,8 +49,16 @@ jobs:
         id: version
         run: echo "android_version_code=$(python3 tools/release_version.py | sed -n 's/^ANDROID_VERSION_CODE=//p')" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/country-data
-      - uses: ./.github/actions/country-elevation
+      - name: Record verified country identity
+        id: country_identity
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import hashlib
+          from pathlib import Path
+          print('manifest_sha256=' + hashlib.sha256(Path('artifacts/belarus/manifest.json').read_bytes()).hexdigest())
+          PY
       - uses: actions/upload-artifact@v7
+        if: contains(github.event.pull_request.labels.*.name, 'ci:routing-benchmark')
         with:
           name: pull-request-belarus-data
           path: artifacts/belarus/
@@ -55,20 +68,36 @@ jobs:
   android:
     needs: [verify-source, geodata]
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       ANDROID_VERSION_CODE: ${{ needs.geodata.outputs.android_version_code }}
-      # The signing key is temporary. A per-attempt package ID prevents Android
-      # from treating different PR previews as incompatible updates.
-      PREVIEW_PACKAGE_ID: by.cablerouteplanner.preview.pr${{ inputs.pr_number }}.r${{ github.run_id }}a${{ github.run_attempt }}
+      # A consumer-only retry must retain the tested APK's ID and signing key.
+      PREVIEW_PACKAGE_ID: ${{ inputs.preview_package_id }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tested_sha }}
-      - uses: actions/download-artifact@v8
+      - uses: actions/setup-python@v7
         with:
-          name: pull-request-belarus-data
-          path: artifacts/belarus
+          python-version: '3.12'
+      - name: Obtain the current verified country package
+        uses: ./.github/actions/country-data
+      - name: Verify the shared country identity
+        id: verify_country_identity
+        env:
+          EXPECTED_COUNTRY_MANIFEST_SHA256: ${{ needs.geodata.outputs.country_manifest_sha256 }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          expected = os.environ['EXPECTED_COUNTRY_MANIFEST_SHA256']
+          actual = hashlib.sha256(Path('artifacts/belarus/manifest.json').read_bytes()).hexdigest()
+          if actual != expected:
+              raise ValueError(f'country_manifest_sha256: expected {expected}, actual {actual}; consumers must use the same package')
+          print('Verified country manifest: ' + actual)
+          PY
+      - uses: ./.github/actions/country-elevation
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -127,22 +156,31 @@ jobs:
 
       # A signed/parsable APK is not necessarily installable: the full country
       # package is much larger than the Minsk smoke-tested build.
-      - name: Enable KVM for full APK installation test
+      - name: Enable KVM for full APK startup test
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Install full Belarus APK on Android 15 emulator
+      - name: Install and start full Belarus APK on Android 15 emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
+          # Keep the APK, unpacked country map and DEM together in /data.
+          disk-size: 8G
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          # The runner invokes each inline command in a fresh /bin/sh process.
-          # Use a separate Bash script to preserve its local variables and error handling.
-          script: bash tools/android_full_apk_install_smoke.sh "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" "$PREVIEW_PACKAGE_ID"
+          # android_smoke installs this exact APK before checking both launches.
+          # Installing it twice exhausts emulator storage for the full country map.
+          script: >-
+            python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --package "$PREVIEW_PACKAGE_ID" --output artifacts/android-full-map-smoke --launches 2 --settle-seconds 180 --wait-map-ready
+      - name: Preserve full-map startup evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-full-map-startup-evidence
+          path: artifacts/android-full-map-smoke/
       - name: Explain preview installation behavior
         run: |
           {
@@ -153,6 +191,7 @@ jobs:
             echo "Each run/attempt uses a separate test app ID and temporary signing key."
             echo "Previews can be installed alongside the main application; they do not update older preview runs."
             echo "The exact downloadable Minsk APK passed the parent Android build and emulator startup gate."
+            echo "The exact downloadable Belarus APK passed two Activity launches with offline map readiness and crash checks."
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         with:

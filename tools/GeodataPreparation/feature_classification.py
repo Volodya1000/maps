@@ -35,9 +35,12 @@ def classify(t: Mapping[str, str]) -> TerrainKind | None:
         return "Field"
     if t.get("man_made") == "cutline":
         return "Clearing"
-    if t.get("bridge") not in (None, "no") and "highway" in t:
+    # Planned highways are not physical barriers or existing bridge openings.
+    # Continue classifying independent physical tags on the same object.
+    existing_highway = "highway" in t and t["highway"] != "proposed"
+    if t.get("bridge") not in (None, "no") and existing_highway:
         return "BridgeCandidate"
-    if "highway" in t and t["highway"] not in (
+    if existing_highway and t["highway"] not in (
         "footway",
         "path",
         "steps",

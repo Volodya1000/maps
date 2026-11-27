@@ -22,9 +22,11 @@ public sealed class GridRoutePlanner(
 {
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     private readonly record struct SearchMargins(double LatitudeDegrees, double LongitudeDegrees);
+    private sealed record SearchAttempt(RoutingOptions Options, int Number, bool SurfaceRecovery);
 
     private const double MinimumSearchMarginMetres = 1_000;
     private const double MaximumSearchMarginMetres = 5_000;
+    private const int MaximumSearchAreaExpansions = 2;
 
     private readonly PreparedRoutingAreaCache _areas = new(data);
 
@@ -52,27 +54,51 @@ public sealed class GridRoutePlanner(
                 "Для выбранной точки нет данных в офлайн-пакете.", PlanningErrorReason.PointOutsidePackage);
         }
 
-        SearchMargins margins = SearchMarginDegrees(points);
-        GeoBounds requested = new(
-            points.Min(point => point.Longitude) - margins.LongitudeDegrees,
-            points.Min(point => point.Latitude) - margins.LatitudeDegrees,
-            points.Max(point => point.Longitude) + margins.LongitudeDegrees,
-            points.Max(point => point.Latitude) + margins.LatitudeDegrees);
-        GeoBounds coverage = data.Info.Bounds;
-        var bounds = new GeoBounds(
-            Math.Max(requested.West, coverage.West),
-            Math.Max(requested.South, coverage.South),
-            Math.Min(requested.East, coverage.East),
-            Math.Min(requested.North, coverage.North));
-        PreparedRoutingArea area = await _areas.GetAsync(bounds, cancellationToken);
-        RoutingLog.PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds);
-
+        Guid calculationId = Guid.NewGuid();
         Stopwatch calculationTimer = Stopwatch.StartNew();
-        IReadOnlyList<RouteAlternative> routes = await Task.Run<IReadOnlyList<RouteAlternative>>(
-            () => Calculate(points, bounds, area, options, cancellationToken),
-            cancellationToken);
-        RoutingLog.RoutesCompletedLog(logger, routes.Count, points.Count, calculationTimer.ElapsedMilliseconds);
-        return routes;
+        RoutingOptions refined = options with { CellSizeMetres = RoutingOptions.MinCellSizeMetres };
+        GeoBounds? previousBounds = null;
+        PlanningException? failure = null;
+        int attempt = 0;
+        for (int expansion = 0; expansion <= MaximumSearchAreaExpansions; expansion++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            SearchMargins margins = SearchMarginDegrees(points, expansion);
+            GeoBounds coverage = data.Info.Bounds;
+            GeoBounds bounds = new(
+                Math.Max(points.Min(point => point.Longitude) - margins.LongitudeDegrees, coverage.West),
+                Math.Max(points.Min(point => point.Latitude) - margins.LatitudeDegrees, coverage.South),
+                Math.Min(points.Max(point => point.Longitude) + margins.LongitudeDegrees, coverage.East),
+                Math.Min(points.Max(point => point.Latitude) + margins.LatitudeDegrees, coverage.North));
+            if (previousBounds == bounds)
+            {
+                break;
+            }
+            previousBounds = bounds;
+            PreparedRoutingArea area = await _areas.GetAsync(bounds, cancellationToken);
+            RoutingLog.PreparationLog(logger, area.QueryMilliseconds, area.PreparationMilliseconds);
+            (RoutingOptions Options, bool Surface)[] strategies = expansion == 0
+                ? [(options, false), (refined, true)] : [(refined, true)];
+            foreach ((RoutingOptions settings, bool surface) in strategies)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                int currentAttempt = attempt++;
+                SearchAttempt search = new(settings, currentAttempt, surface);
+                try
+                {
+                    IReadOnlyList<RouteAlternative> routes = await Task.Run<IReadOnlyList<RouteAlternative>>(
+                        () => Calculate(points, bounds, area, search, calculationId, cancellationToken), cancellationToken);
+                    RoutingLog.RoutesCompletedLog(logger, routes.Count, points.Count, calculationTimer.ElapsedMilliseconds);
+                    return routes;
+                }
+                catch (PlanningException error) when (error.Reason is
+                    PlanningErrorReason.GridConnectionUnavailable or PlanningErrorReason.NoRouteInSearchArea)
+                {
+                    failure = error;
+                }
+            }
+        }
+        throw failure!;
     }
 
     /// <summary>Converts a bounded detour allowance in metres to separate latitude/longitude margins.</summary>
@@ -81,7 +107,7 @@ public sealed class GridRoutePlanner(
     /// longitude correction uses the mean latitude's cosine and caps at 180 degrees
     /// near the poles. This bounds loaded data; it does not guarantee search completeness.
     /// </remarks>
-    private static SearchMargins SearchMarginDegrees(IReadOnlyList<GeoCoordinate> points)
+    private static SearchMargins SearchMarginDegrees(IReadOnlyList<GeoCoordinate> points, int expansion = 0)
     {
         double spanMetres = points
             .Zip(points.Skip(1), (from, to) => from.DistanceTo(to))
@@ -91,6 +117,7 @@ public sealed class GridRoutePlanner(
             Math.Max(MinimumSearchMarginMetres, spanMetres * 0.1),
             MinimumSearchMarginMetres,
             MaximumSearchMarginMetres);
+        marginMetres = Math.Min(MaximumSearchMarginMetres, marginMetres * (1 << expansion));
         double latitude = points.Average(point => point.Latitude);
         double latitudeDegrees = marginMetres / (GeoCoordinate.MeanEarthRadiusMetres * Math.PI / 180);
         double longitudeScale = Math.Abs(Math.Cos(latitude * Math.PI / 180));
@@ -104,14 +131,17 @@ public sealed class GridRoutePlanner(
         IReadOnlyList<GeoCoordinate> points,
         GeoBounds bounds,
         PreparedRoutingArea area,
-        RoutingOptions options,
+        SearchAttempt attempt,
+        Guid calculationId,
         CancellationToken ct)
     {
+        RoutingOptions options = attempt.Options;
         LocalProjection projection = area.Projection;
         TerrainEvaluator evaluator = new(area.Terrain, preferGas: options.PreferOverheadGasCrossings, allowUnderpasses: options.AllowExperimentalPedestrianUnderpasses);
-        RouteGeometryPostProcessor postProcessor = new(evaluator, area.Terrain);
-        GridMesh mesh = gridGenerator.Generate(bounds, options, projection);
         Coordinate maximum = projection.Forward(new GeoCoordinate(bounds.North, bounds.East));
+        RouteGeometryPostProcessor postProcessor = new(evaluator, area.Terrain,
+            new Envelope(projection.Forward(new GeoCoordinate(bounds.South, bounds.West)), maximum));
+        GridMesh mesh = gridGenerator.Generate(bounds, options, projection);
         mesh = mesh with
         {
             // A portal outside the queried area could bypass obstacles we never loaded.
@@ -120,7 +150,14 @@ public sealed class GridRoutePlanner(
                 point.X >= mesh.Minimum.X && point.Y >= mesh.Minimum.Y
                 && point.X <= maximum.X && point.Y <= maximum.Y)).ToArray()
         };
-        RouteGeometryBuilder geometryBuilder = new(pathfinder, mesh, evaluator, projection, postProcessor);
+        RoutingLog.SearchMeshLog(logger, calculationId, options.CellSizeMetres, mesh.CellSizeMetres,
+            mesh.Nodes.Length, mesh.Columns, mesh.Rows, bounds.West, bounds.South, bounds.East, bounds.North,
+            mesh.Portals.Count, attempt.Number);
+        RoutingLog.SearchAttemptLog(logger, calculationId, attempt.Number, GridSearchGraph.ConnectionRadiusCells, attempt.SurfaceRecovery);
+        SurfaceDetourSearch? surface = attempt.SurfaceRecovery
+            ? new(evaluator, new Envelope(mesh.Minimum, maximum), options.MaxNodes) : null;
+        RouteGeometryBuilder geometryBuilder = new(pathfinder, mesh, evaluator, projection, postProcessor,
+            logger, calculationId, surface);
 
         RouteAlternativeBuilder alternatives = new(evaluator, postProcessor, area.Terrain, options);
         foreach (CostProfile profile in CostProfile.Defaults)

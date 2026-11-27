@@ -1,0 +1,226 @@
+{
+  "schema": "maps.routing-reliability.investigation.v1",
+  "baseCommit": "23adea926ccfaf4c1f04a5e19aeb5c441ce6b489",
+  "investigatedDatabaseSha256": "1d055f4987932865150fbea2b4b1a3b9f7742127da7bdc7bcefeb7f064219439",
+  "databaseScope": "Read-only current package prepared before the proposed-road classification repair. Feature IDs refer to this checksum only.",
+  "realCaseMethod": "For each frozen pair, resolve the original target bridge by stable OSM source ID, then independently audit start -> every original bridge vertex -> end in both orientations. Query the full witness envelope. Source-node-connected underpass members are grouped for the existing independent audit. Invalid witness attempts do not prove that no other detour exists.",
+  "realCases": [
+    {
+      "id": "mass-naliboki-bridge-01",
+      "baselineStatus": "no_route",
+      "baselineReason": "NoRouteInSearchArea",
+      "candidateSourceId": "way/174737352",
+      "currentCandidateId": 440176,
+      "attempts": [
+        {
+          "reverseBridge": false,
+          "auditStatus": "violation",
+          "waterWithoutOpening": [
+            299951,
+            1923494
+          ],
+          "unpermittedRoadContacts": [
+            1937553
+          ],
+          "blockedTerrain": []
+        },
+        {
+          "reverseBridge": true,
+          "auditStatus": "violation",
+          "waterWithoutOpening": [
+            299951,
+            2643033
+          ],
+          "unpermittedRoadContacts": [
+            1608188,
+            1937553
+          ],
+          "blockedTerrain": [
+            2643037,
+            3100962
+          ]
+        }
+      ],
+      "previousFiveMetreProbe": "NoRouteInSearchArea",
+      "detourExistence": "unknown"
+    },
+    {
+      "id": "mass-smolevichi-bridge-03",
+      "baselineStatus": "no_route",
+      "baselineReason": "NoRouteInSearchArea",
+      "candidateSourceId": "way/914629062",
+      "currentCandidateId": 3291020,
+      "attempts": [
+        {
+          "reverseBridge": false,
+          "auditStatus": "violation",
+          "waterWithoutOpening": [
+            3291018,
+            3291021,
+            3291022
+          ],
+          "unpermittedRoadContacts": [],
+          "blockedTerrain": []
+        },
+        {
+          "reverseBridge": true,
+          "auditStatus": "violation",
+          "waterWithoutOpening": [
+            3291018,
+            3291021,
+            3291022
+          ],
+          "unpermittedRoadContacts": [],
+          "blockedTerrain": []
+        }
+      ],
+      "previousFiveMetreProbe": "NoRouteInSearchArea",
+      "detourExistence": "unknown"
+    },
+    {
+      "id": "mass-vitebsk-bridge-04",
+      "baselineStatus": "no_route",
+      "baselineReason": "NoRouteInSearchArea",
+      "candidateSourceId": "way/29878981",
+      "currentCandidateId": 93798,
+      "attempts": [
+        {
+          "reverseBridge": false,
+          "auditStatus": "violation",
+          "waterWithoutOpening": [
+            731308
+          ],
+          "unpermittedRoadContacts": [
+            198433,
+            1215311,
+            4581184
+          ],
+          "blockedTerrain": []
+        },
+        {
+          "reverseBridge": true,
+          "auditStatus": "violation",
+          "waterWithoutOpening": [
+            731308
+          ],
+          "unpermittedRoadContacts": [
+            198433,
+            1164797,
+            1215311
+          ],
+          "blockedTerrain": []
+        }
+      ],
+      "plannedRoadFinding": "1215311 is proposed way/327549917 in this package; removing it alone does not validate either witness because other road and water violations remain.",
+      "detourExistence": "unknown"
+    }
+  ],
+  "confirmedSyntheticDefect": {
+    "testClass": "PortalEndpointRegressionTests",
+    "test": "EndpointInNarrowCorridorCanReachCurvedBridgeWithoutAnIntermediateGridNode",
+    "gridCellMetres": 20,
+    "corridorXMetres": [
+      161,
+      165
+    ],
+    "corridorBuildingYMetres": [
+      0,
+      139
+    ],
+    "riverYMetres": [
+      140,
+      180
+    ],
+    "witnessCoordinatesMetres": [
+      [
+        163,
+        100
+      ],
+      [
+        163,
+        130
+      ],
+      [
+        163,
+        150
+      ],
+      [
+        190,
+        170
+      ],
+      [
+        190,
+        190
+      ],
+      [
+        280,
+        220
+      ]
+    ],
+    "independentWitnessAudit": {
+      "implementation": "Existing tools/routing_crossing_pilot.py audit with Shapely; full route and source geometries, no road-policy relaxation",
+      "status": "valid"
+    },
+    "cause": "The endpoint has no valid regular-grid connector, but has a valid full-segment connection to a nearby mapped bridge entrance. The graph omitted endpoint-to-portal links and threw GridConnectionUnavailable before searching the valid bridge path.",
+    "repair": "For each endpoint with zero original regular-grid connections, add full-segment-validated links to every eligible portal end within the same rounded eight-cell row/column neighbourhood. Preserve existing connections and portal topology for endpoints already connected to the grid. Only confirmed entrance vertices of modern underpass networks are eligible. Surface connectors cannot grant underground road-crossing permission.",
+    "red": {
+      "tests": 6,
+      "failed": 3,
+      "passed": 3,
+      "expectedFailures": [
+        "bridge start endpoint",
+        "bridge destination endpoint after reversal",
+        "confirmed underpass entrance"
+      ]
+    },
+    "green": {
+      "focusedTests": 10,
+      "focusedPassed": 10,
+      "relatedRoutingTests": 126,
+      "relatedRoutingPassed": 126
+    },
+    "negativeControls": [
+      "building blocks connector",
+      "unpermitted road blocks connector",
+      "internal underpass node cannot be entered as a surface entrance"
+    ],
+    "fullSegmentValidation": "Every returned segment in both positive fixture types is re-evaluated by TerrainEvaluator.Evaluate; bridge witnesses also have an independent valid Shapely audit. Endpoints, bridge-candidate versus approved-crossing metrics, and underpass passage evidence are asserted.",
+    "limitation": "This repairs a demonstrated zero-grid-connection defect. It does not establish completeness when an endpoint has grid connections into a disconnected component, between separate portals, through arbitrary narrow corridors, or outside the bounded search area. No increase for the original 88 pairs is inferred.",
+    "portalOrderingRegression": {
+      "test": "ReachableDeadEndPortalDoesNotHideAnotherValidBridge",
+      "fixture": "A reachable first bridge entrance has a blocked continuation through a building. A separate curved bridge supplies the only valid crossing. Both source orderings and both endpoint directions are checked.",
+      "currentCasesPassed": 4,
+      "counterfactual": "Temporarily stop adding eligible portal links once the endpoint dictionary has its first connection.",
+      "counterfactualDeadEndFirstFailures": 2,
+      "counterfactualWorkingBridgeFirstPasses": 2,
+      "restoration": "Original Graph source bytes restored in finally; all 10 focused cases passed after rebuilding restored production code."
+    }
+  },
+  "commands": {
+    "focused": "dotnet test tests/CableRoutePlanner.Tests/CableRoutePlanner.Tests.csproj --no-restore -c Release --filter \"FullyQualifiedName~PortalEndpointRegressionTests\" --logger \"console;verbosity=normal\"",
+    "related": "dotnet test tests/CableRoutePlanner.Tests/CableRoutePlanner.Tests.csproj --no-restore -c Release --filter \"FullyQualifiedName~PortalEndpointRegressionTests|FullyQualifiedName~GridSearchGraphTests|FullyQualifiedName~RoutingTests|FullyQualifiedName~RouteGeometryPostProcessorTests\" --logger \"console;verbosity=normal\"",
+    "independentInvestigation": "uv run --project tools/GeodataPreparation --locked python tools/routing_portal_witnesses.py --data <package-directory> --run-report <run-output>/results.json --output artifacts/portal-witnesses.json",
+    "witnessToolTests": "uv run --project tools/GeodataPreparation --locked python -m unittest discover -s tools/GeodataPreparation/tests -p test_routing_portal_witnesses.py -v"
+  },
+  "localArtifacts": {
+    "independentFullReport": "portable-portal-witnesses.json",
+    "redLog": "portal-endpoint-red.log",
+    "greenLog": "portal-endpoint-green.log",
+    "relatedGreenLog": "portal-routing-regression.log",
+    "scope": "Artifact basenames from the recorded local run; regenerate portable witness JSON with the command above.",
+    "orderingCounterfactualLog": "portal-ordering-counterfactual.log",
+    "orderingRestoredGreenLog": "portal-ordering-restored-green.log"
+  },
+  "portalWitnessComparison": {
+    "underpassFlag": "Honor each frozen scenario's explicit AllowExperimentalPedestrianUnderpasses flag; absent means false. Record the effective flag in every investigated row.",
+    "matchingEvidence": "Require matching actual SQLite and corpus SHA-256, one head frozen result per inspected ID, and the same effective flag.",
+    "inBoundsWitness": "A full independently valid witness challenges head NoRoute only when every recorded vertex lies within the head calculation's geographic mesh bounds from diagnostic event 5.",
+    "outcomes": {
+      "missed_valid_path": "Fail the step and record missedWitnessIds before returning a nonzero exit code.",
+      "valid_route_found": "Head success with a valid independent route audit satisfies the witnessed path.",
+      "witness_outside_search_bounds": "Remain unresolved; a wider-area witness does not establish a miss in the actual search rectangle."
+    },
+    "focusedPythonTestsPassed": 9,
+    "relatedPythonRoutingTestsPassed": 85
+  }
+}

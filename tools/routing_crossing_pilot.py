@@ -472,7 +472,7 @@ def audit(route, features, coverage=None, origin=None, *, allow_underpasses=Fals
                 if f["kind"] == "BridgeCandidate" and g.intersects(geometry)
             ]
             opening = route.intersection(geometry)
-            if not any(corridor.covers(opening) for corridor in approvals + bridges):
+            if not unary_union(approvals + bridges).covers(opening):
                 findings.append(
                     {"reason": "water_without_opening", "featureId": feature["id"]}
                 )
