@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using CableRoutePlanner.Domain;
 using CableRoutePlanner.Persistence;
 using Microsoft.Data.Sqlite;
@@ -11,6 +12,40 @@ namespace CableRoutePlanner.Tests;
 public sealed class BundledGeodataInstallerTests
 {
     private static readonly IProgress<string> Progress = new InlineProgress(_ => { });
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(17 * 1024 * 1024)]
+    public async Task FragmentedAssetsKeepDisplayedProgressMonotonicAndPublishReadablePackage(int payloadSizeBytes)
+    {
+        using TemporaryDirectory directory = new();
+        using SqliteGeodataFixture source = new();
+        if (payloadSizeBytes > 0)
+        {
+            using SqliteConnection connection = new(new SqliteConnectionStringBuilder
+            {
+                DataSource = Path.Combine(source.DirectoryPath, "geodata.sqlite"),
+                Pooling = false
+            }.ToString());
+            connection.Open();
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = "CREATE TABLE install_payload (content BLOB); INSERT INTO install_payload VALUES (zeroblob($size))";
+            command.Parameters.AddWithValue("$size", payloadSizeBytes);
+            command.ExecuteNonQuery();
+        }
+        byte[] expected = ReadDatabase(source);
+        JsonNode manifestNode = JsonNode.Parse(ReadManifest(source))!;
+        manifestNode["database_sha256"] = Convert.ToHexString(SHA256.HashData(expected));
+        string manifest = manifestNode.ToJsonString();
+        List<string> messages = [];
+        await BundledGeodataInstaller.InstallAsync(directory.DirectoryPath, manifest, ["geodata.sqlite"],
+            _ => new FragmentedStream(expected), new InlineProgress(messages.Add), default);
+        string[] displayedProgress = messages.Where(message => message.StartsWith("Подготовка карты:", StringComparison.Ordinal)).ToArray();
+        string[] expectedProgress = payloadSizeBytes == 0 ? [] : ["Подготовка карты: 16 МБ…"];
+        Assert.Equal(expectedProgress, displayedProgress);
+        await AssertPackageAsync(directory.DirectoryPath, expected, manifest);
+        AssertNoTemporaryFiles(directory.DirectoryPath);
+    }
 
     [Theory]
     [InlineData(false)]
@@ -340,6 +375,12 @@ public sealed class BundledGeodataInstallerTests
     private sealed class InlineProgress(Action<string> report) : IProgress<string>
     {
         public void Report(string value) => report(value);
+    }
+
+    private sealed class FragmentedStream(byte[] bytes) : MemoryStream(bytes)
+    {
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+            base.ReadAsync(buffer[..Math.Min(buffer.Length, 4093)], cancellationToken);
     }
 
     private sealed class GatedStream(byte[] bytes, TaskCompletionSource entered, Task release) : MemoryStream(bytes)

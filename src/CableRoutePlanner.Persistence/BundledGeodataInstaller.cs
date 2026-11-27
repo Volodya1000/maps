@@ -7,6 +7,8 @@ namespace CableRoutePlanner.Persistence;
 
 public static class BundledGeodataInstaller
 {
+    private const int ProgressIntervalBytes = 16 * 1024 * 1024;
+
     public static async Task InstallAsync(string directory, string manifest,
         IReadOnlyList<string> assetNames, Func<string, Stream> openAsset,
         IProgress<string> progress, CancellationToken cancellationToken)
@@ -132,8 +134,9 @@ public static class BundledGeodataInstaller
             while ((count = await input.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
             {
                 await output.WriteAsync(buffer.AsMemory(0, count), cancellationToken).ConfigureAwait(false);
+                long previouslyCopied = copied;
                 copied += count;
-                if (copied % (16 * 1024 * 1024) < buffer.Length)
+                if (copied / ProgressIntervalBytes > previouslyCopied / ProgressIntervalBytes)
                 {
                     progress.Report($"Подготовка карты: {copied / (1024 * 1024)} МБ…");
                 }
@@ -158,7 +161,7 @@ public static class BundledGeodataInstaller
     private static async Task ValidateDatabaseAsync(string database, string expectedHash, IProgress<string> progress,
         CancellationToken cancellationToken)
     {
-        progress.Report("Проверка SHA-256 карты…");
+        progress.Report("Проверка пакета карты…");
         await using (FileStream stream = File.OpenRead(database))
         {
             using SHA256 hash = SHA256.Create();
@@ -170,7 +173,7 @@ public static class BundledGeodataInstaller
         }
         try
         {
-            progress.Report("Проверка целостности SQLite карты…");
+            progress.Report("Проверка целостности карты…");
             using SqliteConnection connection = new(new SqliteConnectionStringBuilder
             {
                 DataSource = database,
