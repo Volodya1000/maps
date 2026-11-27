@@ -1,0 +1,910 @@
+{
+  "schema": "maps.routing-research.v1",
+  "recordedAt": "2026-11-27T18:21:44.605077+00:00",
+  "gatePassed": true,
+  "provenance": {
+    "appCommit": "faaa4dd4ba6aa69a97ab9ea9264bb524a574f2ed",
+    "sourceDirty": false,
+    "sourceTreeSha256": "16207a3cf7aebf73d8bfe40bdb8b8d3ce95bf4a350beeebe691eeb60aff6c28b",
+    "verifyDllSha256": "1c8b577f2bd18f3fc1c10f659f967c9aba73cc86216f864f8254cdfb376d97d1",
+    "corpusSha256": "7997bad67af6d5dc687a1a2243b05976bafb728f85fda3324104ea097ed17876",
+    "knownWitnessCatalogueSha256": "b010ef14aa568e91210e0971c8c6d4b9fc43293d44281fbe903da09efe098e94",
+    "effectiveDefaultUnderpasses": false,
+    "workflowHeadSha": null,
+    "workflowRunId": null,
+    "workflowRunAttempt": null,
+    "platform": "Windows-2022Server-10.0.20348-SP0",
+    "pythonVersion": "3.12.14",
+    "shapelyVersion": "2.1.2",
+    "databaseSha256": "ab33e9c66693042fb7ac13fb583295bbd7b77c50310007e26be7037e20f0d11b",
+    "manifestSha256": "2c695e71a58fc166935b34bcc12c9dbe5ec23dddd0ac78bd43fe86eebd562363",
+    "sourceSha256": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01",
+    "schemaVersion": 3,
+    "packageKey": "belarus-v1-bbfac3a92e9b68ea7db0b3ebfb2407437a317351162018704237dc31552b75fe",
+    "packageReceiptSha256": "d0db427c5fcf2c52bcffc8c015dd7fe59b57525ed572ddcd733e1598b593e16b",
+    "algorithmSha256": "f4fed7c28bc62d6113f1e9c8cbe4b031582813a82e5b65d5130de89ba04e9923",
+    "legacyCorpusSha256": "025262ab54548df41a43b71d230d003151b6e03b2541fec72a9b963e45e0634d",
+    "workers": 8,
+    "timeoutSeconds": 120.0,
+    "probeTimeoutSeconds": 30.0,
+    "managedHeapBytes": 1610612736,
+    "evaluateHoldout": true,
+    "logicalCpuCount": 28,
+    "processor": "Intel64 Family 6 Model 79 Stepping 1, GenuineIntel",
+    "assessmentSha256": "32684bf7fd2656361209ce84211baf75bf3923d055ff5af2f34d05872a38f13e",
+    "effectiveOptionsSha256": "2fb438b359568f69d25346cad1c17847b8c28b244c637af3553ba71ab517f8ab"
+  },
+  "summary": {
+    "scenarioCount": 300,
+    "outcomes": {
+      "valid_route": 97,
+      "invalid_route": 0,
+      "confirmed_missed_route": 0,
+      "justified_refusal": 0,
+      "indeterminate": 98,
+      "resource_limit": 105,
+      "technical_error": 0
+    },
+    "byRegion": {
+      "BY-BR": {
+        "valid_route": 11,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 14,
+        "resource_limit": 18,
+        "technical_error": 0
+      },
+      "BY-HM": {
+        "valid_route": 3,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 2,
+        "resource_limit": 27,
+        "technical_error": 0
+      },
+      "BY-HO": {
+        "valid_route": 20,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 15,
+        "resource_limit": 8,
+        "technical_error": 0
+      },
+      "BY-HR": {
+        "valid_route": 8,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 14,
+        "resource_limit": 8,
+        "technical_error": 0
+      },
+      "BY-MA": {
+        "valid_route": 12,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 10,
+        "resource_limit": 8,
+        "technical_error": 0
+      },
+      "BY-MI": {
+        "valid_route": 31,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 29,
+        "resource_limit": 19,
+        "technical_error": 0
+      },
+      "BY-VI": {
+        "valid_route": 12,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 14,
+        "resource_limit": 17,
+        "technical_error": 0
+      }
+    },
+    "byCategory": {
+      "bridge": {
+        "valid_route": 25,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 19,
+        "resource_limit": 22,
+        "technical_error": 0
+      },
+      "countryside": {
+        "valid_route": 9,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 3,
+        "resource_limit": 5,
+        "technical_error": 0
+      },
+      "dense-buildings": {
+        "valid_route": 1,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 8,
+        "resource_limit": 9,
+        "technical_error": 0
+      },
+      "field": {
+        "valid_route": 33,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 19,
+        "resource_limit": 20,
+        "technical_error": 0
+      },
+      "forest": {
+        "valid_route": 27,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 22,
+        "resource_limit": 20,
+        "technical_error": 0
+      },
+      "interchange": {
+        "valid_route": 2,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 3,
+        "resource_limit": 6,
+        "technical_error": 0
+      },
+      "legacy-A": {
+        "valid_route": 14,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 10,
+        "resource_limit": 8,
+        "technical_error": 0
+      },
+      "legacy-B": {
+        "valid_route": 7,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 6,
+        "resource_limit": 10,
+        "technical_error": 0
+      },
+      "legacy-E": {
+        "valid_route": 4,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 7,
+        "resource_limit": 8,
+        "technical_error": 0
+      },
+      "legacy-F": {
+        "valid_route": 14,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 0,
+        "resource_limit": 0,
+        "technical_error": 0
+      },
+      "marsh": {
+        "valid_route": 2,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 7,
+        "resource_limit": 2,
+        "technical_error": 0
+      },
+      "multi": {
+        "valid_route": 18,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 46,
+        "resource_limit": 58,
+        "technical_error": 0
+      },
+      "narrow-gap": {
+        "valid_route": 2,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 8,
+        "resource_limit": 8,
+        "technical_error": 0
+      },
+      "railway": {
+        "valid_route": 4,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 0,
+        "resource_limit": 6,
+        "technical_error": 0
+      },
+      "restricted": {
+        "valid_route": 4,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 1,
+        "resource_limit": 4,
+        "technical_error": 0
+      },
+      "road": {
+        "valid_route": 39,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 23,
+        "resource_limit": 26,
+        "technical_error": 0
+      },
+      "road-local": {
+        "valid_route": 2,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 17,
+        "resource_limit": 5,
+        "technical_error": 0
+      },
+      "road-major": {
+        "valid_route": 5,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 5,
+        "resource_limit": 13,
+        "technical_error": 0
+      },
+      "road-secondary": {
+        "valid_route": 4,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 5,
+        "resource_limit": 12,
+        "technical_error": 0
+      },
+      "roundabout": {
+        "valid_route": 1,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 2,
+        "resource_limit": 14,
+        "technical_error": 0
+      },
+      "station": {
+        "valid_route": 1,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 6,
+        "resource_limit": 2,
+        "technical_error": 0
+      },
+      "underpass": {
+        "valid_route": 1,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 1,
+        "resource_limit": 8,
+        "technical_error": 0
+      },
+      "water": {
+        "valid_route": 5,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 4,
+        "resource_limit": 1,
+        "technical_error": 0
+      }
+    },
+    "bySplit": {
+      "development": {
+        "valid_route": 48,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 60,
+        "resource_limit": 62,
+        "technical_error": 0
+      },
+      "frozen": {
+        "valid_route": 39,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 23,
+        "resource_limit": 26,
+        "technical_error": 0
+      },
+      "holdout": {
+        "valid_route": 10,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 15,
+        "resource_limit": 17,
+        "technical_error": 0
+      }
+    },
+    "byDistanceClass": {
+      "full": {
+        "valid_route": 0,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 1,
+        "resource_limit": 3,
+        "technical_error": 0
+      },
+      "local": {
+        "valid_route": 83,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 53,
+        "resource_limit": 69,
+        "technical_error": 0
+      },
+      "long": {
+        "valid_route": 4,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 13,
+        "resource_limit": 15,
+        "technical_error": 0
+      },
+      "medium": {
+        "valid_route": 10,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 31,
+        "resource_limit": 18,
+        "technical_error": 0
+      }
+    },
+    "byComplexity": {
+      "combined": {
+        "valid_route": 17,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 41,
+        "resource_limit": 49,
+        "technical_error": 0
+      },
+      "dense": {
+        "valid_route": 1,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 8,
+        "resource_limit": 9,
+        "technical_error": 0
+      },
+      "legacy": {
+        "valid_route": 35,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 16,
+        "resource_limit": 19,
+        "technical_error": 0
+      },
+      "single": {
+        "valid_route": 44,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 33,
+        "resource_limit": 28,
+        "technical_error": 0
+      }
+    },
+    "groups": [
+      {
+        "code": "adaptive_grid_coarsening",
+        "owner": "resource",
+        "confidence": "confirmed",
+        "scope": "finite_graph",
+        "rootCause": false,
+        "count": 212,
+        "developmentCount": 181,
+        "holdoutCount": 31,
+        "representatives": [
+          "naliboki-02",
+          "pukhovichi-01",
+          "pukhovichi-02"
+        ]
+      },
+      {
+        "code": "direct_road_barrier",
+        "owner": "model",
+        "confidence": "confirmed",
+        "scope": "straight_line",
+        "rootCause": false,
+        "count": 194,
+        "developmentCount": 165,
+        "holdoutCount": 29,
+        "representatives": [
+          "naliboki-02",
+          "pukhovichi-01",
+          "pukhovichi-02"
+        ]
+      },
+      {
+        "code": "direct_blocked_terrain",
+        "owner": "model",
+        "confidence": "confirmed",
+        "scope": "straight_line",
+        "rootCause": false,
+        "count": 108,
+        "developmentCount": 89,
+        "holdoutCount": 19,
+        "representatives": [
+          "pukhovichi-03",
+          "mass-naliboki-bridge-01",
+          "mass-naliboki-bridge-05"
+        ]
+      },
+      {
+        "code": "router_surface_budget_exhausted",
+        "owner": "resource",
+        "confidence": "confirmed",
+        "scope": "finite_search",
+        "rootCause": false,
+        "count": 103,
+        "developmentCount": 87,
+        "holdoutCount": 16,
+        "representatives": [
+          "pukhovichi-02",
+          "pukhovichi-03",
+          "smolevichi-01"
+        ]
+      },
+      {
+        "code": "router_surface_search_budget",
+        "owner": "resource",
+        "confidence": "confirmed",
+        "scope": "execution_budget",
+        "rootCause": true,
+        "count": 103,
+        "developmentCount": 87,
+        "holdoutCount": 16,
+        "representatives": [
+          "pukhovichi-02",
+          "pukhovichi-03",
+          "smolevichi-01"
+        ]
+      },
+      {
+        "code": "detour_or_graph_connectivity_unresolved",
+        "owner": "algorithm",
+        "confidence": "hypothesis",
+        "scope": "search",
+        "rootCause": true,
+        "count": 97,
+        "developmentCount": 82,
+        "holdoutCount": 15,
+        "representatives": [
+          "naliboki-02",
+          "pukhovichi-01",
+          "mass-naliboki-bridge-01"
+        ]
+      },
+      {
+        "code": "grid_resolution_loss",
+        "owner": "algorithm",
+        "confidence": "hypothesis",
+        "scope": "search",
+        "rootCause": true,
+        "count": 97,
+        "developmentCount": 82,
+        "holdoutCount": 15,
+        "representatives": [
+          "naliboki-02",
+          "pukhovichi-01",
+          "mass-naliboki-bridge-01"
+        ]
+      },
+      {
+        "code": "direct_water_barrier",
+        "owner": "model",
+        "confidence": "confirmed",
+        "scope": "straight_line",
+        "rootCause": false,
+        "count": 87,
+        "developmentCount": 72,
+        "holdoutCount": 15,
+        "representatives": [
+          "naliboki-02",
+          "pukhovichi-01",
+          "pukhovichi-02"
+        ]
+      },
+      {
+        "code": "crossing_geometry_or_mapping_gap",
+        "owner": "geodata",
+        "confidence": "hypothesis",
+        "scope": "source",
+        "rootCause": true,
+        "count": 23,
+        "developmentCount": 20,
+        "holdoutCount": 3,
+        "representatives": [
+          "mass-naliboki-bridge-01",
+          "mass-naliboki-bridge-03",
+          "mass-naliboki-bridge-04"
+        ]
+      },
+      {
+        "code": "restricted_area_unmodelled",
+        "owner": "model",
+        "confidence": "confirmed",
+        "scope": "model",
+        "rootCause": false,
+        "count": 9,
+        "developmentCount": 7,
+        "holdoutCount": 2,
+        "representatives": [
+          "research-by-br-way-239728593",
+          "research-by-hm-way-363127232",
+          "research-by-ho-way-609709413"
+        ]
+      },
+      {
+        "code": "endpoint_connectivity_or_local_obstacles",
+        "owner": "algorithm",
+        "confidence": "hypothesis",
+        "scope": "search",
+        "rootCause": true,
+        "count": 8,
+        "developmentCount": 6,
+        "holdoutCount": 2,
+        "representatives": [
+          "research-by-hm-way-1436509658",
+          "research-by-hm-way-173374041",
+          "research-by-hm-way-253582570"
+        ]
+      },
+      {
+        "code": "endpoint_graph_disconnected",
+        "owner": "algorithm",
+        "confidence": "confirmed",
+        "scope": "finite_graph",
+        "rootCause": false,
+        "count": 8,
+        "developmentCount": 6,
+        "holdoutCount": 2,
+        "representatives": [
+          "research-by-hm-way-1436509658",
+          "research-by-hm-way-173374041",
+          "research-by-hm-way-253582570"
+        ]
+      },
+      {
+        "code": "auditor_model_rule_mismatch",
+        "owner": "technical",
+        "confidence": "confirmed",
+        "scope": "research",
+        "rootCause": true,
+        "count": 1,
+        "developmentCount": 1,
+        "holdoutCount": 0,
+        "representatives": [
+          "research-by-hm-way-939978585"
+        ]
+      },
+      {
+        "code": "process_time_budget",
+        "owner": "resource",
+        "confidence": "confirmed",
+        "scope": "execution_budget",
+        "rootCause": true,
+        "count": 2,
+        "developmentCount": 1,
+        "holdoutCount": 1,
+        "representatives": [
+          "research-by-vi-way-1318455954"
+        ]
+      }
+    ],
+    "backlog": [
+      {
+        "group": "auditor_model_rule_mismatch",
+        "confidence": "confirmed",
+        "owner": "technical",
+        "affectedDevelopmentCases": 1,
+        "severity": "high",
+        "estimatedEffort": "low-to-medium; reproduce technical failure",
+        "effortEstimateConfidence": "low; class-level estimate, not a diagnosed fix",
+        "priority": 1,
+        "representatives": [
+          "research-by-hm-way-939978585"
+        ]
+      },
+      {
+        "group": "router_surface_search_budget",
+        "confidence": "confirmed",
+        "owner": "resource",
+        "affectedDevelopmentCases": 87,
+        "severity": "medium",
+        "estimatedEffort": "medium; profiling and budget study",
+        "effortEstimateConfidence": "low; class-level estimate, not a diagnosed fix",
+        "priority": 2,
+        "representatives": [
+          "pukhovichi-02",
+          "pukhovichi-03",
+          "smolevichi-01"
+        ]
+      },
+      {
+        "group": "detour_or_graph_connectivity_unresolved",
+        "confidence": "hypothesis",
+        "owner": "algorithm",
+        "affectedDevelopmentCases": 82,
+        "severity": "medium",
+        "estimatedEffort": "high; independent witness and root-cause study required",
+        "effortEstimateConfidence": "low; class-level estimate, not a diagnosed fix",
+        "priority": 2,
+        "representatives": [
+          "naliboki-02",
+          "pukhovichi-01",
+          "mass-naliboki-bridge-01"
+        ]
+      },
+      {
+        "group": "grid_resolution_loss",
+        "confidence": "hypothesis",
+        "owner": "algorithm",
+        "affectedDevelopmentCases": 82,
+        "severity": "medium",
+        "estimatedEffort": "high; independent witness and root-cause study required",
+        "effortEstimateConfidence": "low; class-level estimate, not a diagnosed fix",
+        "priority": 2,
+        "representatives": [
+          "naliboki-02",
+          "pukhovichi-01",
+          "mass-naliboki-bridge-01"
+        ]
+      },
+      {
+        "group": "crossing_geometry_or_mapping_gap",
+        "confidence": "hypothesis",
+        "owner": "geodata",
+        "affectedDevelopmentCases": 20,
+        "severity": "medium",
+        "estimatedEffort": "medium; source geometry/topology study",
+        "effortEstimateConfidence": "low; class-level estimate, not a diagnosed fix",
+        "priority": 2,
+        "representatives": [
+          "mass-naliboki-bridge-01",
+          "mass-naliboki-bridge-03",
+          "mass-naliboki-bridge-04"
+        ]
+      },
+      {
+        "group": "endpoint_connectivity_or_local_obstacles",
+        "confidence": "hypothesis",
+        "owner": "algorithm",
+        "affectedDevelopmentCases": 6,
+        "severity": "medium",
+        "estimatedEffort": "high; independent witness and root-cause study required",
+        "effortEstimateConfidence": "low; class-level estimate, not a diagnosed fix",
+        "priority": 2,
+        "representatives": [
+          "research-by-hm-way-1436509658",
+          "research-by-hm-way-173374041",
+          "research-by-hm-way-253582570"
+        ]
+      },
+      {
+        "group": "process_time_budget",
+        "confidence": "confirmed",
+        "owner": "resource",
+        "affectedDevelopmentCases": 1,
+        "severity": "medium",
+        "estimatedEffort": "medium; profiling and budget study",
+        "effortEstimateConfidence": "low; class-level estimate, not a diagnosed fix",
+        "priority": 2,
+        "representatives": [
+          "research-by-vi-way-1318455954"
+        ]
+      }
+    ],
+    "performance": {
+      "wallP50Milliseconds": 26476.5,
+      "wallP95Milliseconds": 52075.75,
+      "sumProcessWallMilliseconds": 8744428,
+      "wallMeasuredCount": 300,
+      "peakRssP95Bytes": 182582476.8,
+      "maxPeakRssBytes": 225124352,
+      "memoryMeasuredCount": 298,
+      "memoryUnavailableCount": 2
+    },
+    "routes": {
+      "alternativeCount": 164,
+      "lengthP50Metres": 779.461,
+      "lengthP95Metres": 4426.02,
+      "costP50": 1095.136,
+      "costP95": 7487.298
+    },
+    "fallback": {
+      "measuredCases": 298,
+      "unavailableCases": 2,
+      "retriedMesh": 212,
+      "meshAttempts": 914,
+      "surfaceEnabledAttempts": 616,
+      "surfaceAttempts": 1848,
+      "surfaceFound": 33,
+      "surfaceResourceLimited": 519
+    },
+    "notes": [
+      "Category and cause groups overlap; totals are not additive.",
+      "Blocked direct segments are observations, not proof that a detour is impossible.",
+      "Hypotheses are not confirmed algorithm defects; holdout never supplies backlog representatives or priority counts.",
+      "Railway crossing is permitted. Restricted-area access is outside the current model."
+    ]
+  },
+  "splitMeasurements": {
+    "nonHoldout": {
+      "scenarioCount": 258,
+      "outcomes": {
+        "valid_route": 87,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 83,
+        "resource_limit": 88,
+        "technical_error": 0
+      },
+      "performance": {
+        "wallP50Milliseconds": 26312.5,
+        "wallP95Milliseconds": 51223.95,
+        "sumProcessWallMilliseconds": 7409757,
+        "wallMeasuredCount": 258,
+        "peakRssP95Bytes": 182105702.4,
+        "maxPeakRssBytes": 225124352,
+        "memoryMeasuredCount": 257,
+        "memoryUnavailableCount": 1
+      },
+      "routes": {
+        "alternativeCount": 150,
+        "lengthP50Metres": 764.361,
+        "lengthP95Metres": 4484.699,
+        "costP50": 1087.309,
+        "costP95": 7445.112
+      },
+      "fallback": {
+        "measuredCases": 257,
+        "unavailableCases": 1,
+        "retriedMesh": 181,
+        "meshAttempts": 780,
+        "surfaceEnabledAttempts": 523,
+        "surfaceAttempts": 1569,
+        "surfaceFound": 33,
+        "surfaceResourceLimited": 429
+      }
+    },
+    "holdout": {
+      "scenarioCount": 42,
+      "outcomes": {
+        "valid_route": 10,
+        "invalid_route": 0,
+        "confirmed_missed_route": 0,
+        "justified_refusal": 0,
+        "indeterminate": 15,
+        "resource_limit": 17,
+        "technical_error": 0
+      },
+      "performance": {
+        "wallP50Milliseconds": 26804.5,
+        "wallP95Milliseconds": 59157.05,
+        "sumProcessWallMilliseconds": 1334671,
+        "wallMeasuredCount": 42,
+        "peakRssP95Bytes": 182833152.0,
+        "maxPeakRssBytes": 187584512,
+        "memoryMeasuredCount": 41,
+        "memoryUnavailableCount": 1
+      },
+      "routes": {
+        "alternativeCount": 14,
+        "lengthP50Metres": 1774.945,
+        "lengthP95Metres": 4193.368,
+        "costP50": 1774.945,
+        "costP95": 6643.049
+      },
+      "fallback": {
+        "measuredCases": 41,
+        "unavailableCases": 1,
+        "retriedMesh": 31,
+        "meshAttempts": 134,
+        "surfaceEnabledAttempts": 93,
+        "surfaceAttempts": 279,
+        "surfaceFound": 0,
+        "surfaceResourceLimited": 90
+      }
+    }
+  },
+  "developmentRecordsSha256": "25a08323ca4ad9607fb04f24d58431337c30e2bf606a956ed5455545597c1723",
+  "provenanceReceiptSha256": "7f837fecbf6f04d93b74d8e96ded49b33943c4fc03dd2b1c382618c611158b77",
+  "frozenRegressionGatePassed": true,
+  "independentLegacyGates": {
+    "knownRecovery": true,
+    "portalWitnesses": true
+  },
+  "controls": [
+    {
+      "id": "underpass-on",
+      "status": "success",
+      "gatePassed": true,
+      "failureReason": null
+    },
+    {
+      "id": "underpass-off",
+      "status": "no_route",
+      "gatePassed": true,
+      "failureReason": null
+    },
+    {
+      "id": "victory-300-on",
+      "status": "success",
+      "gatePassed": true,
+      "failureReason": null
+    },
+    {
+      "id": "victory-300-off",
+      "status": "no_route",
+      "gatePassed": true,
+      "failureReason": null
+    },
+    {
+      "id": "footbridge",
+      "status": "success",
+      "gatePassed": true,
+      "failureReason": null
+    },
+    {
+      "id": "indirect",
+      "status": "success",
+      "gatePassed": true,
+      "failureReason": null
+    }
+  ],
+  "sealedEvaluationSha256": "95ce8099e736e94c5b97a2458f578d1f69764113aa2bdcc094e5398be87da9f2",
+  "rawEvidenceManifestSha256": "59798b13faaa7dd3d3716e862e30d75cce229cd8460bfc3c7058983600870cbf",
+  "sealedEvidenceManifestSha256": "5b0ce3699c8bdbf6f819a82fe6a19dee4f6fe273ad49fd67d4a4f989f7d5684f",
+  "provenanceRevalidated": {
+    "unchanged": true,
+    "checkedFiles": 408
+  },
+  "qualityGatePassed": true,
+  "independentResearchCounts": {
+    "unresolved": 82,
+    "not_needed_or_sealed": 218
+  },
+  "elapsedSeconds": 1308.109
+}

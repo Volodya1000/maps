@@ -32,9 +32,9 @@ generation receipt and focused `test_routing_research_corpus.py`.
 Interface: versioned manifest containing new cases, labels/evidence/region/split,
 source/provenance and generation policy. Original 88 remain referenced by hash.
 
-- [ ] Write/run selection tests RED; implement deterministic tag/category selection,
+- [x] Write/run selection tests RED; implement deterministic tag/category selection,
   geographic and distance diversity, de-duplication and spatial holdout; run GREEN.
-- [ ] Generate from pinned real PBF and current verified database, inspect quota
+- [x] Generate from pinned real PBF and current verified database, inspect quota
   coverage and freeze exact bytes before any algorithm run.
 
 ## Task 2: Evidence classification and aggregation
@@ -43,9 +43,9 @@ Files: `tools/routing_research_analysis.py`, `test_routing_research_analysis.py`
 Interface: `classify(record, scenario, witnesses)` and `summarize(...)` producing
 seven-way outcomes, evidence/confidence groups and bounded Markdown/JSON.
 
-- [ ] Write/run RED cases for every classification and precedence, proof rejection,
+- [x] Write/run RED cases for every classification and precedence, proof rejection,
   multiple hypotheses, held-out representatives exclusion, mismatched baselines.
-- [ ] Implement classification/grouping/strata/performance/cost/version comparisons;
+- [x] Implement classification/grouping/strata/performance/cost/version comparisons;
   verify GREEN and incomplete evidence fail-closed.
 
 ## Task 3: Full experiment runner and measurements
@@ -54,20 +54,22 @@ Files: `tools/routing_research.py`, `tools/CableRoutePlanner.Verify/CrossingPilo
 only if needed for process RSS; `test_routing_research.py`.
 Consumes Task 1 manifest and existing frozen runner; emits raw artifacts for Task 2.
 
-- [ ] Test RED complete inventories, budgets, manifest tamper and raw/provenance checks.
-- [ ] Reuse runner isolation/audits; persist partial progress, seven-way reports,
+- [x] Test RED complete inventories, budgets, manifest tamper and raw/provenance checks.
+- [x] Reuse runner isolation/audits; persist partial progress, seven-way reports,
   memory measurement, recoveries/independent witnesses and optional same-data baseline.
-- [ ] Build current Verify, execute full frozen+development+holdout baseline after
+- [x] Build current Verify, execute full frozen+development+holdout baseline after
   corpus freeze, revalidate evidence and publish compact evidence to docs.
 
 ## Task 4: CI, documentation, independent review and PR
 
 Files: `.github/workflows/routing-research.yml`, user docs, evidence, changelog.
 
-- [ ] Add bounded manually dispatched workflow retaining existing regression checks.
-- [ ] Document reproduction, sealed holdout policy, proof limits, metrics and prioritized
+- [x] Add bounded manually dispatched workflow retaining existing regression checks.
+- [x] Document reproduction, sealed holdout policy, proof limits, metrics and prioritized
   future PRs; add own nonempty changelog fragment.
-- [ ] Run data/lint/desktop and hooks; independent whole-branch review, fix important
+- [x] Run data/lint/desktop and hooks; independent whole-branch review, fix important
   findings with regression tests; commit using Conventional Commits.
-- [ ] Push feature branch, create PR against main, wait for all CI, fix failures,
-  deliver compact results and validation links. Do not merge.
+- [x] Push feature branch and create PR #71 against main.
+- [ ] Wait for final CI including full research evaluation, fix failures and deliver
+  compact results with validation links. Live completion status is tracked in PR #71.
+  Do not merge.
