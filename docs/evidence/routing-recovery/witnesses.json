@@ -1,0 +1,528 @@
+{
+  "schema": "maps.routing-recovery-witnesses.v1",
+  "corpusSha256": "025262ab54548df41a43b71d230d003151b6e03b2541fec72a9b963e45e0634d",
+  "sourceSha256": "4463a38a3b68819c46fd9f89fc286a8f98afec480aff48d5240222254e45ec01",
+  "records": [
+    {
+      "id": "mass-gomel-bridge-01",
+      "geometry": [
+        {
+          "Latitude": 52.2055965456034,
+          "Longitude": 30.995254314862727
+        },
+        {
+          "Latitude": 52.20438422170767,
+          "Longitude": 31.000470003569077
+        },
+        {
+          "Latitude": 52.20447172504187,
+          "Longitude": 31.00141613554635
+        },
+        {
+          "Latitude": 52.20425574043194,
+          "Longitude": 31.001412691595185
+        },
+        {
+          "Latitude": 52.203726971566226,
+          "Longitude": 30.99907442271887
+        },
+        {
+          "Latitude": 52.20411137627701,
+          "Longitude": 30.996679862538198
+        },
+        {
+          "Latitude": 52.20433632786614,
+          "Longitude": 30.995834782375162
+        },
+        {
+          "Latitude": 52.20408779334855,
+          "Longitude": 30.995300760797953
+        },
+        {
+          "Latitude": 52.202347676816146,
+          "Longitude": 30.995339537916294
+        },
+        {
+          "Latitude": 52.2022918596442,
+          "Longitude": 30.995120389872117
+        },
+        {
+          "Latitude": 52.20043111634298,
+          "Longitude": 30.995343224407193
+        },
+        {
+          "Latitude": 52.1995129543966,
+          "Longitude": 30.997895385137273
+        }
+      ],
+      "originalScenarioSha256": "a216ddd4b0e505900b01393f0dfb3dd0e96b2e3beb315d0a9291d62988e88e2c",
+      "fixture": "tests/CableRoutePlanner.Tests/Fixtures/SourceRouting/mass-gomel-bridge-01.json.gz",
+      "fixtureSha256": "60fe808fb60a16074d9eb3dd7354cbed0247ba04a4e06d0dd969670bca195444",
+      "fixtureJsonSha256": "7626e36a859f0d37b67e00907759feda3ea7917d4bde7eeb94f2a7024ddec0de",
+      "sourceWitnessSha256": "b2dd32d8974119c16c2bc948572f5fef23dfabc39b5e7485b6694d153aee0e9b",
+      "databaseSha256FromManifest": "75987fa2f7cd115d274288ccbeb77edb2a1f10498cde416ba31bc22cdb87ab53",
+      "sourceQueryBounds": [
+        30.980580441257548,
+        52.19051975075936,
+        31.012569258742452,
+        52.214589749240645
+      ],
+      "extractionQueryBounds": [
+        30.980565766379446,
+        52.19051075755572,
+        31.012583933620554,
+        52.21459874244428
+      ],
+      "witnessBounds": [
+        30.995120389872117,
+        52.1995129543966,
+        31.00141613554635,
+        52.2055965456034
+      ],
+      "stableSourceIds": [
+        "way/106135970",
+        "way/446109243",
+        "way/591278249",
+        "way/998690858",
+        "way/998690860"
+      ]
+    },
+    {
+      "id": "mass-gomel-bridge-03",
+      "geometry": [
+        {
+          "Latitude": 52.37898288153478,
+          "Longitude": 30.877381448331676
+        },
+        {
+          "Latitude": 52.377754203662995,
+          "Longitude": 30.87832536944775
+        },
+        {
+          "Latitude": 52.37716526934828,
+          "Longitude": 30.880623056876292
+        },
+        {
+          "Latitude": 52.3762303338106,
+          "Longitude": 30.87991816969583
+        },
+        {
+          "Latitude": 52.376132056127304,
+          "Longitude": 30.879604945502948
+        },
+        {
+          "Latitude": 52.374537519997794,
+          "Longitude": 30.8804727288199
+        },
+        {
+          "Latitude": 52.3743038244246,
+          "Longitude": 30.880729856198236
+        },
+        {
+          "Latitude": 52.37379584132757,
+          "Longitude": 30.8811751290571
+        },
+        {
+          "Latitude": 52.37239657893721,
+          "Longitude": 30.881333773597657
+        },
+        {
+          "Latitude": 52.371395062958214,
+          "Longitude": 30.881130601420672
+        },
+        {
+          "Latitude": 52.37102836397372,
+          "Longitude": 30.881434634102668
+        },
+        {
+          "Latitude": 52.37090715493758,
+          "Longitude": 30.881764271878
+        },
+        {
+          "Latitude": 52.370965842614474,
+          "Longitude": 30.88239820704379
+        },
+        {
+          "Latitude": 52.370747298234726,
+          "Longitude": 30.883058352050103
+        },
+        {
+          "Latitude": 52.36948873111458,
+          "Longitude": 30.881486724488433
+        },
+        {
+          "Latitude": 52.368960529278404,
+          "Longitude": 30.880496902340685
+        },
+        {
+          "Latitude": 52.37350599207934,
+          "Longitude": 30.878050931448122
+        },
+        {
+          "Latitude": 52.37309581846522,
+          "Longitude": 30.881034051668323
+        }
+      ],
+      "originalScenarioSha256": "5729c314aaa62e8a613c51f0dbd1da5bd5066ef21558d0f0e7ad1ee571ea2ede",
+      "fixture": "tests/CableRoutePlanner.Tests/Fixtures/SourceRouting/mass-gomel-bridge-03.json.gz",
+      "fixtureSha256": "249b1db21a7b155871f12e2fcaf0a9be2b894bc160eeeeee0d5daa7eeabc9bc3",
+      "fixtureJsonSha256": "c0c60d1a19dfa62bbc31726bdf0affa373e2c24eb7ae95d1e8ae705fce711eec",
+      "sourceWitnessSha256": "02336b66a6d7e42bc29ed0004b41578f8baa085eb76014a94b9ac22b5b80eb0d",
+      "databaseSha256FromManifest": "75987fa2f7cd115d274288ccbeb77edb2a1f10498cde416ba31bc22cdb87ab53",
+      "sourceQueryBounds": [
+        30.862649997534813,
+        52.36410261482797,
+        30.895765502465185,
+        52.38797608517203
+      ],
+      "extractionQueryBounds": [
+        30.862635265102032,
+        52.364093621624335,
+        30.895780234897966,
+        52.387985078375664
+      ],
+      "witnessBounds": [
+        30.877381448331676,
+        52.368960529278404,
+        30.883058352050103,
+        52.37898288153478
+      ],
+      "stableSourceIds": [
+        "way/246421045",
+        "way/246421046",
+        "way/25036207"
+      ]
+    },
+    {
+      "id": "mass-gomel-bridge-05",
+      "geometry": [
+        {
+          "Latitude": 52.46240071621832,
+          "Longitude": 31.015568878094204
+        },
+        {
+          "Latitude": 52.46599239024223,
+          "Longitude": 31.01667262495268
+        },
+        {
+          "Latitude": 52.46704036194314,
+          "Longitude": 31.01834516477483
+        },
+        {
+          "Latitude": 52.46729539573192,
+          "Longitude": 31.020742023373593
+        },
+        {
+          "Latitude": 52.46398622466108,
+          "Longitude": 31.022228600161338
+        },
+        {
+          "Latitude": 52.463271684449495,
+          "Longitude": 31.022868319695466
+        },
+        {
+          "Latitude": 52.46353845149151,
+          "Longitude": 31.023309544859604
+        },
+        {
+          "Latitude": 52.467105649290126,
+          "Longitude": 31.021680387911225
+        },
+        {
+          "Latitude": 52.46787733763862,
+          "Longitude": 31.022285871497946
+        },
+        {
+          "Latitude": 52.4670059152598,
+          "Longitude": 31.02587372284993
+        },
+        {
+          "Latitude": 52.466324598685745,
+          "Longitude": 31.027476934117917
+        },
+        {
+          "Latitude": 52.46443986974872,
+          "Longitude": 31.028877758654772
+        },
+        {
+          "Latitude": 52.463957553948,
+          "Longitude": 31.029043257715237
+        },
+        {
+          "Latitude": 52.46494157120757,
+          "Longitude": 31.02992302095043
+        },
+        {
+          "Latitude": 52.46509178378168,
+          "Longitude": 31.029654021905795
+        }
+      ],
+      "originalScenarioSha256": "8fe5ffe415d878644609e638197910a8252657e4fa4a50fa74555f43a7898914",
+      "fixture": "tests/CableRoutePlanner.Tests/Fixtures/SourceRouting/mass-gomel-bridge-05.json.gz",
+      "fixtureSha256": "75a063a9429eff79145a624a978fa54fe63eb3b97b9affa5202d88c8aee4d17b",
+      "fixtureJsonSha256": "025eec07cf7e1c879fffdd36d1860c43dbcffc8e80e631accac0aff42d814f7d",
+      "sourceWitnessSha256": "0121bbf3cdb270f7860fe25e16cf386ee467a7f248b9c9b1a343731e59690c75",
+      "databaseSha256FromManifest": "75987fa2f7cd115d274288ccbeb77edb2a1f10498cde416ba31bc22cdb87ab53",
+      "sourceQueryBounds": [
+        31.000808094624045,
+        52.45340751258107,
+        31.044414805375954,
+        52.47408498741893
+      ],
+      "extractionQueryBounds": [
+        31.000793334291718,
+        52.45339851937744,
+        31.04442956570828,
+        52.47409398062256
+      ],
+      "witnessBounds": [
+        31.015568878094204,
+        52.46240071621832,
+        31.02992302095043,
+        52.46787733763862
+      ],
+      "stableSourceIds": [
+        "way/168981649"
+      ]
+    },
+    {
+      "id": "mass-naliboki-bridge-02",
+      "geometry": [
+        {
+          "Latitude": 53.92170016456113,
+          "Longitude": 26.420341486023116
+        },
+        {
+          "Latitude": 53.920433857628105,
+          "Longitude": 26.42547917802483
+        },
+        {
+          "Latitude": 53.92412505037661,
+          "Longitude": 26.426052493279634
+        },
+        {
+          "Latitude": 53.924118636239676,
+          "Longitude": 26.426081308260557
+        },
+        {
+          "Latitude": 53.92041671386944,
+          "Longitude": 26.425547636545026
+        },
+        {
+          "Latitude": 53.92115683543887,
+          "Longitude": 26.430985913976887
+        }
+      ],
+      "originalScenarioSha256": "8a40eac672dba934dff7a15694917b87b09294df00456f609c16decc7a564c31",
+      "fixture": "tests/CableRoutePlanner.Tests/Fixtures/SourceRouting/mass-naliboki-bridge-02.json.gz",
+      "fixtureSha256": "0b6599997e2c5f115ce23f1ce2afcb8d9eeb3a462c5d8a7c0c813dc21d73640d",
+      "fixtureJsonSha256": "74989fa330576b3924af3d14234fccbfab3e88532bbf8271400332361ea2615c",
+      "sourceWitnessSha256": "d42b410ab5596f568e6260a42cb32864920376bd25fa20e5543a6bf8c4988397",
+      "databaseSha256FromManifest": "75987fa2f7cd115d274288ccbeb77edb2a1f10498cde416ba31bc22cdb87ab53",
+      "sourceQueryBounds": [
+        26.40507014405444,
+        53.912163631801626,
+        26.44625725594556,
+        53.930693368198376
+      ],
+      "extractionQueryBounds": [
+        26.405054872613096,
+        53.91215463859799,
+        26.446272527386906,
+        53.93070236140201
+      ],
+      "witnessBounds": [
+        26.420341486023116,
+        53.92041671386944,
+        26.430985913976887,
+        53.92412505037661
+      ],
+      "stableSourceIds": [
+        "way/319924326",
+        "way/420811925"
+      ]
+    },
+    {
+      "id": "mass-naliboki-multi-06",
+      "geometry": [
+        {
+          "Latitude": 53.9524209693212,
+          "Longitude": 26.558740327115995
+        },
+        {
+          "Latitude": 53.952973339674095,
+          "Longitude": 26.54762313068441
+        },
+        {
+          "Latitude": 53.955273561505976,
+          "Longitude": 26.534936705184506
+        },
+        {
+          "Latitude": 53.95422480290575,
+          "Longitude": 26.530825700287227
+        },
+        {
+          "Latitude": 53.952383279271,
+          "Longitude": 26.5324534317665
+        },
+        {
+          "Latitude": 53.952058882764156,
+          "Longitude": 26.54391222587443
+        },
+        {
+          "Latitude": 53.94721219262188,
+          "Longitude": 26.555700160549456
+        },
+        {
+          "Latitude": 53.9469690306788,
+          "Longitude": 26.553392272884004
+        }
+      ],
+      "originalScenarioSha256": "797807d4c7ace9457716715c559873a3f55c39b14e65d027904debbf629d16a2",
+      "fixture": "tests/CableRoutePlanner.Tests/Fixtures/SourceRouting/mass-naliboki-multi-06.json.gz",
+      "fixtureSha256": "bdd7b6dd0402142237ba0e6c739dea5b68b7c35a9ef840222d54d3bcb42ab7b1",
+      "fixtureJsonSha256": "0b88e2e19a1797e4230bcedd004140dc4ec64a2a600d123a3c29f43b9ef477aa",
+      "sourceWitnessSha256": "2ec5d20a8123b04ef6a1cd32652ec49c169432fad2bdd34053b67f93ac777836",
+      "databaseSha256FromManifest": "75987fa2f7cd115d274288ccbeb77edb2a1f10498cde416ba31bc22cdb87ab53",
+      "sourceQueryBounds": [
+        26.492265510196038,
+        53.91099621612982,
+        26.61986708980396,
+        53.98839378387019
+      ],
+      "extractionQueryBounds": [
+        26.492250228505366,
+        53.91098722292618,
+        26.619882371494633,
+        53.98840277707382
+      ],
+      "witnessBounds": [
+        26.530825700287227,
+        53.9469690306788,
+        26.558740327115995,
+        53.955273561505976
+      ],
+      "stableSourceIds": [
+        "way/497685762"
+      ]
+    },
+    {
+      "id": "mass-pukhovichi-multi-07",
+      "geometry": [
+        {
+          "Latitude": 52.771982513885554,
+          "Longitude": 27.37779994429808
+        },
+        {
+          "Latitude": 52.78128105534866,
+          "Longitude": 27.411213476492822
+        },
+        {
+          "Latitude": 52.78133697057686,
+          "Longitude": 27.411151178220642
+        },
+        {
+          "Latitude": 52.77968191175111,
+          "Longitude": 27.391557472717796
+        },
+        {
+          "Latitude": 52.778756593450105,
+          "Longitude": 27.38176700987267
+        },
+        {
+          "Latitude": 52.78116699177089,
+          "Longitude": 27.378658507243266
+        },
+        {
+          "Latitude": 52.780962286114445,
+          "Longitude": 27.37861215570192
+        }
+      ],
+      "originalScenarioSha256": "a1b90844c65f5fe88cf5d8b2a09e950279b18bf423438fb1ae61c2a5b382b979",
+      "fixture": "tests/CableRoutePlanner.Tests/Fixtures/SourceRouting/mass-pukhovichi-multi-07.json.gz",
+      "fixtureSha256": "00694c015e39fc00e23b50ef5fadff51cd21f6f333375f17f743b7f21b35f240",
+      "fixtureJsonSha256": "de28bf1b11c376da11609eae0da0a0f0c36475c90cd7d84b240952839f9a2797",
+      "sourceWitnessSha256": "b5ae9a3ccaa979ab3d6f9e19e4c451b6f7e62de0638e816c27e4839223de173f",
+      "databaseSha256FromManifest": "75987fa2f7cd115d274288ccbeb77edb2a1f10498cde416ba31bc22cdb87ab53",
+      "sourceQueryBounds": [
+        27.318333487484875,
+        52.73600969933657,
+        27.438078612515124,
+        52.81693510066343
+      ],
+      "extractionQueryBounds": [
+        27.31831862087067,
+        52.736000706132934,
+        27.43809347912933,
+        52.816944093867065
+      ],
+      "witnessBounds": [
+        27.37779994429808,
+        52.771982513885554,
+        27.411213476492822,
+        52.78133697057686
+      ],
+      "stableSourceIds": [
+        "way/466152023",
+        "way/598184573",
+        "way/798867912"
+      ]
+    },
+    {
+      "id": "mass-smolevichi-no_candidate-11",
+      "geometry": [
+        {
+          "Latitude": 53.96722985371437,
+          "Longitude": 28.021635576043995
+        },
+        {
+          "Latitude": 53.95947778924234,
+          "Longitude": 28.006552611096705
+        },
+        {
+          "Latitude": 53.95634381474843,
+          "Longitude": 27.995959475424364
+        },
+        {
+          "Latitude": 53.95616789008163,
+          "Longitude": 27.9963703520577
+        },
+        {
+          "Latitude": 53.95882850414008,
+          "Longitude": 28.00651944137737
+        },
+        {
+          "Latitude": 53.96157994628563,
+          "Longitude": 28.026355123956005
+        }
+      ],
+      "originalScenarioSha256": "5b2bb52be571788bf05bbfc32e7ddba7196caca0cc966b29aa3066210bafb8bc",
+      "fixture": "tests/CableRoutePlanner.Tests/Fixtures/SourceRouting/mass-smolevichi-no_candidate-11.json.gz",
+      "fixtureSha256": "14aa6558967662e782951be970e6599215e41038d3b3bb29a75863a554f08939",
+      "fixtureJsonSha256": "a7c9f44cbe119af5720baa6fc1a5cc0a8c55747d1a7eb49a677628240a3f4ff0",
+      "sourceWitnessSha256": "bd3d378139bd2f6be3f9515305f44e974ea59ceeaa43c9c1c15888697a066b43",
+      "databaseSha256FromManifest": "75987fa2f7cd115d274288ccbeb77edb2a1f10498cde416ba31bc22cdb87ab53",
+      "sourceQueryBounds": [
+        27.960487243382534,
+        53.92560713173665,
+        28.087503456617466,
+        54.003202668263356
+      ],
+      "extractionQueryBounds": [
+        27.96047195629937,
+        53.92559813853301,
+        28.08751874370063,
+        54.00321166146699
+      ],
+      "witnessBounds": [
+        27.995959475424364,
+        53.95616789008163,
+        28.026355123956005,
+        53.96722985371437
+      ],
+      "stableSourceIds": [
+        "way/723343782"
+      ]
+    }
+  ]
+}

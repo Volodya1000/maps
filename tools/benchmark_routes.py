@@ -10,6 +10,12 @@ import time
 from pathlib import Path
 
 
+def _timeout_output(output: str | bytes | None) -> str:
+    if isinstance(output, bytes):
+        return output.decode(errors="replace")
+    return "" if output is None else output
+
+
 def run_bounded_command(command, timeout_seconds, environment=None):
     """Execute one route in a bounded cold process; return raw output for callers."""
     started = time.monotonic()
@@ -31,8 +37,8 @@ def run_bounded_command(command, timeout_seconds, environment=None):
     except subprocess.TimeoutExpired as error:
         return dict(
             returncode=None,
-            stdout=(error.stdout or b"").decode(errors="replace"),
-            stderr=(error.stderr or b"").decode(errors="replace"),
+            stdout=_timeout_output(error.stdout),
+            stderr=_timeout_output(error.stderr),
             timeout=True,
             elapsed_wall_ms=round((time.monotonic() - started) * 1000),
         )
@@ -53,8 +59,8 @@ def measure(command, output, timeout_seconds):
         stdout, stderr, code = result.stdout, result.stderr, result.returncode
     except subprocess.TimeoutExpired as error:
         status, code = "timeout", None
-        stdout = (error.stdout or b"").decode(errors="replace")
-        stderr = (error.stderr or b"").decode(errors="replace")
+        stdout = _timeout_output(error.stdout)
+        stderr = _timeout_output(error.stderr)
     metrics = []
     if status == "completed":
         payload = json.loads(output.read_text())

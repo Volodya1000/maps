@@ -9,7 +9,8 @@ namespace CableRoutePlanner.Infrastructure.Routing;
 /// and every resulting segment is re-evaluated. All traversal decisions still come
 /// from the same evaluator; this class creates no new permissions.
 /// </remarks>
-internal sealed class RouteGeometryPostProcessor(TerrainEvaluator evaluator, PreparedTerrainData terrain)
+internal sealed class RouteGeometryPostProcessor(
+    TerrainEvaluator evaluator, PreparedTerrainData terrain, Envelope? loadedBounds = null)
 {
     private const double CostComparisonTolerance = 0.001;
     private const int MaximumSimplificationLookahead = 64;
@@ -192,6 +193,13 @@ internal sealed class RouteGeometryPostProcessor(TerrainEvaluator evaluator, Pre
         CostProfile profile,
         int bridgeEndIndex)
     {
+        // Source bridges can extend beyond the queried rectangle. Keep the
+        // already validated route instead of entering terrain we never loaded.
+        if (loadedBounds is not null && path.Any(point => !loadedBounds.Contains(point)))
+        {
+            return null;
+        }
+
         // A valid segment-by-segment detour can still form a loop or a folded
         // bridge spur. Reject the entire splice before considering its cost.
         if (!_factory.CreateLineString(path.ToArray()).IsSimple)

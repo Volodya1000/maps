@@ -2,32 +2,37 @@ name: Routing crossing pilot
 on:
   workflow_dispatch:
     inputs:
-      underpass:
-        description: Audit pedestrian underpasses and compare the frozen 88 scenarios
-        type: boolean
-        default: false
-      data_run:
-        description: Successful run containing pull-request-belarus-data
-        type: string
-        default: '43485336517'
-      evidence_run:
-        description: Reaudit saved routing-underpass results from this run without rerouting
+      baseline_ref:
+        description: Optional baseline commit or ref for same-package frozen-corpus comparison
         type: string
         default: ''
   pull_request:
-    types: [labeled]
+    types: [labeled, synchronize, reopened]
 permissions:
   contents: read
 concurrency:
-  group: routing-crossing-pilot-${{ github.ref }}
+  group: routing-crossing-pilot-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
-  pilot:
-    if: (github.event_name == 'workflow_dispatch' && !inputs.underpass) || github.event.label.name == 'ci:routing-crossing-pilot'
+  frozen-regression:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'ci:routing-crossing-pilot')
     runs-on: ubuntu-22.04
-    timeout-minutes: 45
+    timeout-minutes: 90
+    env:
+      ROUTING_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      ROUTING_BASELINE_REF: ${{ github.event.pull_request.base.sha || inputs.baseline_ref }}
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out actual current head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          persist-credentials: false
+      - name: Record checked-out head
+        run: |
+          mkdir -p artifacts/routing-regression
+          git rev-parse HEAD > artifacts/routing-regression/checkout-head.txt
+          test "$(git rev-parse HEAD)" = "$ROUTING_PR_HEAD_SHA"
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -36,88 +41,72 @@ jobs:
           version: '0.13.9'
           python-version: '3.12'
       - run: uv sync --project tools/GeodataPreparation --locked
-      - uses: ./.github/actions/country-data
-      - name: Extract verified routing database
+      - name: Obtain current verified country package
+        uses: ./.github/actions/country-data
+      - name: Extract manifest-verified database
+        id: routing-data
         run: uv run --project tools/GeodataPreparation --locked python tools/ci/routing_pilot_ci.py extract-db --data artifacts/belarus
-      - run: dotnet build tools/CableRoutePlanner.Verify -c Release -warnaserror
-      - name: Generate frozen inputs
-        run: uv run --project tools/GeodataPreparation --locked python tools/routing_crossing_pilot.py generate --data artifacts/belarus --output artifacts/routing-crossing-pilot
-      - name: Run bounded pilot
-        env:
-          PILOT_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: uv run --project tools/GeodataPreparation --locked python tools/routing_crossing_pilot.py run --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-crossing-pilot
-      - name: Run indirect crossing study
-        run: uv run --project tools/GeodataPreparation --locked python tools/routing_indirect_study.py --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-indirect-study
-      - name: Generate frozen mass corpus
-        run: uv run --project tools/GeodataPreparation --locked python tools/routing_mass_experiment.py freeze --data artifacts/belarus --output artifacts/routing-mass
-      - name: Run mass baseline
-        run: uv run --project tools/GeodataPreparation --locked python tools/routing_mass_experiment.py run --data artifacts/belarus --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll --output artifacts/routing-mass
-      - name: Summarize mass baseline and selected failures
+      - name: Build current Verify
+        run: dotnet build tools/CableRoutePlanner.Verify -c Release -warnaserror -p:RestoreLockedMode=true
+      - name: Check out baseline source
+        if: env.ROUTING_BASELINE_REF != ''
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.ROUTING_BASELINE_REF }}
+          repository: ${{ github.repository }}
+          path: artifacts/routing-baseline-source
+          persist-credentials: false
+      - name: Build baseline Verify
+        if: env.ROUTING_BASELINE_REF != ''
+        working-directory: artifacts/routing-baseline-source
+        run: dotnet build tools/CableRoutePlanner.Verify -c Release -warnaserror -p:RestoreLockedMode=true
+      - name: Run unchanged frozen inputs and explicit controls
+        shell: bash
         run: |
-          cp docs/evidence/routing-mass-v1/source-inventory.json artifacts/routing-mass/source-inventory.json
-          uv run --project tools/GeodataPreparation --locked python tools/routing_mass_diagnostics.py --run artifacts/routing-mass --output artifacts/routing-mass/cases mass-naliboki-bridge-01 pukhovichi-01 mass-brest-multi-06
-          uv run --project tools/GeodataPreparation --locked python tools/routing_mass_report.py --run artifacts/routing-mass --inventory artifacts/routing-mass/source-inventory.json --output artifacts/routing-mass
-      - name: Publish available results
+          baseline=()
+          if [[ -n "$ROUTING_BASELINE_REF" ]]; then
+            baseline+=(--baseline-verify-dll artifacts/routing-baseline-source/tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll)
+            baseline+=(--baseline-source artifacts/routing-baseline-source)
+          fi
+          uv run --project tools/GeodataPreparation --locked python tools/routing_regression.py \
+            --data artifacts/belarus \
+            --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll \
+            --output artifacts/routing-regression \
+            "${baseline[@]}"
+      - name: Independently inspect selected failed bridge witnesses
+        if: always() && steps.routing-data.outcome == 'success'
+        run: >-
+          uv run --project tools/GeodataPreparation --locked python tools/routing_portal_witnesses.py
+          --data artifacts/belarus
+          --output artifacts/routing-regression/portal-witnesses.json
+          --run-report artifacts/routing-regression/results.json
+      - name: Independently audit seven known recovered paths
+        if: always() && steps.routing-data.outcome == 'success'
+        run: >-
+          uv run --project tools/GeodataPreparation --locked python tools/routing_recovery.py
+          --data artifacts/belarus
+          --run-report artifacts/routing-regression/results.json
+          --output artifacts/routing-regression/known-recovery
+      - name: Publish concise routing evidence
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f artifacts/routing-regression/summary.md ]]; then
+            cat artifacts/routing-regression/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Routing regression did not run: a prerequisite failed. See job logs and available evidence.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [[ -f artifacts/routing-regression/known-recovery/summary.md ]]; then
+            cat artifacts/routing-regression/known-recovery/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preserve raw results and reproducible metadata
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: routing-crossing-pilot-${{ github.sha }}-${{ github.run_attempt }}
+          name: routing-regression-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_attempt }}
           path: |
-            artifacts/routing-crossing-pilot/
-            artifacts/routing-indirect-study/
-            artifacts/routing-mass/
-          if-no-files-found: warn
-      - name: Report harness integrity and pilot acceptance
-        if: always()
-        run: uv run --project tools/GeodataPreparation --locked python tools/ci/routing_pilot_ci.py report-pilot --report artifacts/routing-crossing-pilot/report.json --summary "$GITHUB_STEP_SUMMARY"
-      - name: Verify indirect crossing evidence
-        if: always()
-        run: uv run --project tools/GeodataPreparation --locked python tools/ci/routing_pilot_ci.py verify-indirect --report artifacts/routing-indirect-study/report.json
-
-  underpass:
-    if: github.event_name == 'workflow_dispatch' && inputs.underpass
-    runs-on: ubuntu-22.04
-    timeout-minutes: 45
-    permissions:
-      contents: read
-      actions: read
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-      - uses: astral-sh/setup-uv@v10.3.2
-        with:
-          version: '0.13.9'
-          python-version: '3.12'
-      - uses: actions/download-artifact@v8
-        with:
-          name: pull-request-belarus-data
-          run-id: ${{ inputs.data_run }}
-          github-token: ${{ github.token }}
-          path: artifacts/belarus
-      - uses: actions/download-artifact@v8
-        if: inputs.evidence_run != ''
-        with:
-          name: routing-underpass-${{ inputs.evidence_run }}
-          run-id: ${{ inputs.evidence_run }}
-          github-token: ${{ github.token }}
-          path: artifacts/routing-underpass
-      - name: Extract existing database and verify its manifest checksum
-        run: python3 tools/ci/routing_pilot_ci.py extract-db --data artifacts/belarus
-      - run: uv sync --project tools/GeodataPreparation --locked
-      - run: dotnet build tools/CableRoutePlanner.Verify -c Release -warnaserror
-      - name: Audit real underpass routing then compare frozen corpus
-        run: >-
-          uv run --project tools/GeodataPreparation --locked python tools/routing_underpass_study.py
-          --data artifacts/belarus
-          --verify-dll tools/CableRoutePlanner.Verify/bin/Release/net8.0/CableRoutePlanner.Verify.dll
-          --output artifacts/routing-underpass
-          ${{ inputs.evidence_run != '' && '--existing' || '' }}
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: routing-underpass-${{ github.run_id }}
-          path: artifacts/routing-underpass/
+            artifacts/routing-regression/
+            artifacts/belarus/manifest.json
+            artifacts/belarus/package.json
           retention-days: 30
           if-no-files-found: error

@@ -53,8 +53,17 @@ def main():
             timeout=timeout,
         )
         if check and result.returncode:
-            raise RuntimeError(
-                f"adb {command}: stdout={result.stdout!r}; stderr={result.stderr!r}"
+            (args.output / "adb-failure.stdout").write_bytes(
+                result.stdout if binary else result.stdout.encode("utf-8")
+            )
+            (args.output / "adb-failure.stderr").write_bytes(
+                result.stderr if binary else result.stderr.encode("utf-8")
+            )
+            raise subprocess.CalledProcessError(
+                result.returncode,
+                result.args,
+                output=result.stdout,
+                stderr=result.stderr,
             )
         return result.stdout
 
@@ -111,7 +120,7 @@ def main():
                 if not pid:
                     raise RuntimeError("Application died after launching Activity")
                 if args.wait_map_ready:
-                    current_logs = adb("logcat", "-d", "-v", "brief")
+                    current_logs = adb("logcat", "-d", f"--pid={pid}", "-v", "brief")
                     map_ready = next(
                         (
                             line
@@ -141,7 +150,7 @@ def main():
                 raise RuntimeError(
                     "Application Activity is not resumed: " + "\n".join(resumed)
                 )
-            logs = adb("logcat", "-d", "-v", "threadtime")
+            logs = adb("logcat", "-d", f"--pid={pid}", "-v", "threadtime")
             (args.output / f"launch-{index + 1}.logcat.txt").write_text(logs)
             # The crash buffer avoids false positives from unrelated system services.
             crashes = adb("logcat", "-b", "crash", "-d")
@@ -161,6 +170,8 @@ def main():
         report["success"] = True
     except Exception as error:
         report["error"] = str(error)
+        if isinstance(error, subprocess.CalledProcessError):
+            report["adb_failure"] = dict(command=error.cmd, returncode=error.returncode)
         raise
     finally:
         try:
