@@ -167,6 +167,8 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
+          # Keep the APK, unpacked country map and DEM together in /data.
+          disk-size: 8G
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           # android_smoke installs this exact APK before checking both launches.
