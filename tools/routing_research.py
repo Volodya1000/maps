@@ -48,6 +48,7 @@ from shapely.geometry import Polygon
 CORPUS_PATH = ROOT / "samples/routing-research-v1.json"
 GENERATION_RECEIPT = ROOT / "docs/evidence/routing-research-v1/generation.json"
 MANAGED_HEAP_BYTES = 1610612736
+MEASUREMENT_FIELDS = ("scenarioCount", "outcomes", "performance", "routes", "fallback")
 LEGACY_REGIONS = {
     "naliboki": "BY-MI",
     "pukhovichi": "BY-MI",
@@ -103,6 +104,21 @@ def experiment_gates(frozen_passed, records):
 
 def selected_cases(cases, evaluate_holdout):
     return [case for case in cases if evaluate_holdout or case["split"] != "holdout"]
+
+
+def effective_options_sha256(cases, default_underpasses, *, public_only=False):
+    """Bind executed options, including controls, independently for each scope."""
+    options = {
+        case["id"]: case["scenario"]["routingOptions"]
+        | {
+            "AllowExperimentalPedestrianUnderpasses": case["scenario"][
+                "routingOptions"
+            ].get("AllowExperimentalPedestrianUnderpasses", default_underpasses)
+        }
+        for case in cases
+        if not public_only or case["group"] != "holdout"
+    }
+    return hashlib.sha256(json.dumps(options, sort_keys=True).encode()).hexdigest()
 
 
 def validate_generation_receipt(manifest, corpus_hash, receipt, coverage_hash):
@@ -342,6 +358,14 @@ def research_witnesses(case, record, output, data, timeout, known):
     return witnesses
 
 
+def published_provenance(provenance):
+    return {
+        key: value
+        for key, value in provenance.items()
+        if key not in ("sourceFiles", "binaryFiles", "algorithmFiles", "evidenceHashes")
+    }
+
+
 def write_report(report, records, output):
     report["summary"] = aggregate(records)
     public = [record for record in records if record["split"] != "holdout"]
@@ -350,7 +374,7 @@ def write_report(report, records, output):
         name: {
             key: value
             for key, value in aggregate(subset).items()
-            if key in ("scenarioCount", "outcomes", "performance", "routes", "fallback")
+            if key in MEASUREMENT_FIELDS
         }
         for name, subset in (("nonHoldout", public), ("holdout", holdout))
     }
@@ -369,14 +393,7 @@ def write_report(report, records, output):
     report["developmentRecordsSha256"] = digest(output / "development-records.json")
     save_json(output / "provenance.json", report["provenance"])
     report["provenanceReceiptSha256"] = digest(output / "provenance.json")
-    published = report | {
-        "provenance": {
-            key: value
-            for key, value in report["provenance"].items()
-            if key
-            not in ("sourceFiles", "binaryFiles", "algorithmFiles", "evidenceHashes")
-        }
-    }
+    published = report | {"provenance": published_provenance(report["provenance"])}
     save_json(output / "results.json", published)
     (output / "summary.md").write_text(markdown(report), encoding="utf-8")
 
@@ -450,48 +467,94 @@ def seal_evidence(records, output):
     return receipts
 
 
-def load_baseline(path):
+def load_baseline(path, *, public_only=False):
     report = json.loads(path.read_text(encoding="utf-8"))
     if (
         report.get("fatalError")
         or report.get("provenanceRevalidated", {}).get("unchanged") is not True
     ):
         raise ValueError("Baseline evidence is incomplete")
+    if digest(path.parent / "provenance.json") != report.get("provenanceReceiptSha256"):
+        raise ValueError("Baseline provenance checksum differs")
+    trusted = json.loads((path.parent / "provenance.json").read_text(encoding="utf-8"))
+    metadata = published_provenance(trusted)
+    if metadata != report.get("provenance"):
+        raise ValueError("Published baseline provenance contradicts its receipt")
     records = []
-    for filename, checksum in (
-        ("development-records.json", report.get("developmentRecordsSha256")),
-        ("sealed-holdout/results.json", report.get("sealedEvaluationSha256")),
-    ):
-        if checksum is None and filename.startswith("sealed-"):
-            continue
+    record_files = [
+        ("development-records.json", report.get("developmentRecordsSha256"))
+    ]
+    if not public_only and report.get("sealedEvaluationSha256") is not None:
+        record_files.append(
+            ("sealed-holdout/results.json", report["sealedEvaluationSha256"])
+        )
+    for filename, checksum in record_files:
         source = path.parent / filename
         if digest(source) != checksum:
             raise ValueError("Baseline record checksum differs: " + filename)
         records.extend(json.loads(source.read_text(encoding="utf-8"))["records"])
-    if digest(path.parent / "provenance.json") != report.get("provenanceReceiptSha256"):
-        raise ValueError("Baseline provenance checksum differs")
-    if aggregate(records) != report.get("summary"):
+    summary = aggregate(records)
+    if public_only:
+        for record in records:
+            if record.get("split") not in ("frozen", "development"):
+                raise ValueError("Public baseline contains a non-public scenario")
+            validate_public_evidence_path(path.parent, record["rawEvidence"])
+        measured = {key: summary[key] for key in MEASUREMENT_FIELDS}
+        if measured != report.get("splitMeasurements", {}).get("nonHoldout"):
+            raise ValueError("Public baseline aggregate differs from records")
+    elif summary != report.get("summary"):
         raise ValueError("Baseline aggregate differs from records")
     inventory = {}
-    for filename, checksum in (
-        ("evidence-manifest.json", report.get("rawEvidenceManifestSha256")),
-        (
-            "sealed-holdout/evidence-manifest.json",
-            report.get("sealedEvidenceManifestSha256"),
-        ),
-    ):
-        if checksum is None and filename.startswith("sealed-"):
-            continue
+    manifest_files = [
+        ("evidence-manifest.json", report.get("rawEvidenceManifestSha256"))
+    ]
+    if not public_only and report.get("sealedEvidenceManifestSha256") is not None:
+        manifest_files.append(
+            (
+                "sealed-holdout/evidence-manifest.json",
+                report["sealedEvidenceManifestSha256"],
+            )
+        )
+    for filename, checksum in manifest_files:
         source = path.parent / filename
         if digest(source) != checksum:
             raise ValueError("Baseline raw evidence manifest differs")
         files = json.loads(source.read_text(encoding="utf-8"))
         for relative, expected in files.items():
+            if public_only:
+                validate_public_evidence_path(path.parent, relative)
             if digest(evidence_path(path.parent, relative)) != expected:
                 raise ValueError("Baseline raw evidence changed: " + relative)
         inventory.update(files)
     validate_record_evidence(records, path.parent, inventory)
-    return report | {"records": records}
+    result = report | {"records": records, "provenance": trusted, "summary": summary}
+    if public_only:
+        source_full = metadata.get("evaluateHoldout") is True
+        if source_full:
+            public_options = metadata.get("nonHoldoutEffectiveOptionsSha256")
+            if not isinstance(public_options, str) or not public_options:
+                raise ValueError(
+                    "Full baseline lacks a verified public options digest; use a current CI baseline"
+                )
+            result["provenance"] = trusted | {
+                "evaluateHoldout": False,
+                "effectiveOptionsSha256": public_options,
+            }
+        result["baselineProjection"] = {
+            "scope": "nonHoldout",
+            "sourceEvaluateHoldout": source_full,
+            "sourceScenarioCount": report["summary"]["scenarioCount"],
+        }
+    return result
+
+
+def validate_public_evidence_path(output, relative):
+    normalized = evidence_path(output, relative).relative_to(output.resolve())
+    if not normalized.parts or normalized.parts[0].casefold() in (
+        "holdout",
+        "sealed-holdout",
+    ):
+        raise ValueError("Public baseline points to sealed evidence")
 
 
 def run(args):
@@ -595,23 +658,12 @@ def run(args):
                         sort_keys=True,
                     ).encode()
                 ).hexdigest(),
-                "effectiveOptionsSha256": hashlib.sha256(
-                    json.dumps(
-                        {
-                            case["id"]: case["scenario"]["routingOptions"]
-                            | {
-                                "AllowExperimentalPedestrianUnderpasses": case[
-                                    "scenario"
-                                ]["routingOptions"].get(
-                                    "AllowExperimentalPedestrianUnderpasses",
-                                    code["effectiveDefaultUnderpasses"],
-                                )
-                            }
-                            for case in cases
-                        },
-                        sort_keys=True,
-                    ).encode()
-                ).hexdigest(),
+                "effectiveOptionsSha256": effective_options_sha256(
+                    cases, code["effectiveDefaultUnderpasses"]
+                ),
+                "nonHoldoutEffectiveOptionsSha256": effective_options_sha256(
+                    cases, code["effectiveDefaultUnderpasses"], public_only=True
+                ),
             }
         )
         paths = {
@@ -825,7 +877,9 @@ def run(args):
             )
         )
         if args.baseline_report:
-            baseline = load_baseline(args.baseline_report)
+            baseline = load_baseline(
+                args.baseline_report, public_only=not args.evaluate_holdout
+            )
             head = report | {"records": records}
             report["comparison"] = compare(head, baseline)
             report["gatePassed"] &= report["comparison"]["lostValidRoutes"] == 0
