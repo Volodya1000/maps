@@ -12,6 +12,8 @@ import time
 from pathlib import Path
 
 PACKAGE = "by.cablerouteplanner.app"
+# Country startup includes DEM extraction, SHA-256 and full SQLite integrity_check.
+FULL_MAP_SETTLE_SECONDS = 600
 
 
 def file_digest(path):
@@ -32,7 +34,15 @@ def main():
     parser.add_argument("--launches", type=int, default=3)
     parser.add_argument("--settle-seconds", type=int, default=10)
     parser.add_argument("--wait-map-ready", action="store_true")
+    parser.add_argument(
+        "--full-map",
+        action="store_true",
+        help="Use the full-country validation budget; requires --wait-map-ready.",
+    )
     args = parser.parse_args()
+    if args.full_map and not args.wait_map_ready:
+        parser.error("--full-map requires --wait-map-ready")
+    settle_seconds = FULL_MAP_SETTLE_SECONDS if args.full_map else args.settle_seconds
     args.output.mkdir(parents=True, exist_ok=True)
     apk = args.apk
     if apk is None:
@@ -121,7 +131,7 @@ def main():
             map_ready = None
             map_ready_seconds = None
             observation_seconds = (
-                args.settle_seconds if args.wait_map_ready or index == 0 else 15
+                settle_seconds if args.wait_map_ready or index == 0 else 15
             )
             for _ in range(observation_seconds):
                 time.sleep(1)

@@ -149,7 +149,7 @@ jobs:
           # android_smoke installs this exact APK before checking both launches.
           # Installing it twice exhausts emulator storage for the full country map.
           script: >-
-            python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --package "$PREVIEW_PACKAGE_ID" --output artifacts/android-full-map-smoke --launches 2 --settle-seconds 180 --wait-map-ready
+            python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-PR-${{ inputs.pr_number }}-Belarus.apk" --package "$PREVIEW_PACKAGE_ID" --output artifacts/android-full-map-smoke --launches 2 --full-map --wait-map-ready
       - name: Preserve full-map startup evidence
         if: always()
         uses: actions/upload-artifact@v7

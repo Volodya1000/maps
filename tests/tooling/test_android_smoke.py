@@ -28,6 +28,8 @@ class AndroidSmokeTests(unittest.TestCase):
         self.logcat_returncode = 0
         self.system_logcat_returncode = 0
         self.app_capture_returncode = 0
+        self.ready_after_polls = 0
+        self.readiness_polls = 0
 
     def adb(self, command, **kwargs):
         args = command[1:]
@@ -38,6 +40,7 @@ class AndroidSmokeTests(unittest.TestCase):
         elif "resolve-activity" in args:
             stdout = self.package + "/MainActivity\n"
         elif args[:3] == ["shell", "am", "start"]:
+            self.readiness_polls = 0
             stdout = "Status: ok\n"
         elif args[:2] == ["shell", "pidof"]:
             stdout = "123" if self.alive else ""
@@ -48,10 +51,12 @@ class AndroidSmokeTests(unittest.TestCase):
         elif args[:2] == ["logcat", "-b"]:
             stdout = self.package + " FATAL EXCEPTION" if self.crash else ""
         elif args[:2] == ["logcat", "-d"]:
+            if "brief" in args:
+                self.readiness_polls += 1
             own = (
                 "I/app(123): CRP_OFFLINE_MAP_READY region=belarus features=3\n"
-                if self.ready
-                else ""
+                if self.ready and self.readiness_polls > self.ready_after_polls
+                else "I/app(123): CRP_OFFLINE_MAP_PREPARATION validating package\n"
             )
             other = "I/other(987): CRP_OFFLINE_MAP_READY region=minsk features=1\n"
             stdout = own if "--pid=123" in args else other + own
@@ -67,7 +72,7 @@ class AndroidSmokeTests(unittest.TestCase):
             command, returncode, stdout=stdout, stderr=""
         )
 
-    def run_smoke(self):
+    def run_smoke(self, *, full_map=False):
         argv = [
             "android_smoke",
             "--apk",
@@ -82,6 +87,8 @@ class AndroidSmokeTests(unittest.TestCase):
             "1",
             "--wait-map-ready",
         ]
+        if full_map:
+            argv.append("--full-map")
         with (
             patch.object(sys, "argv", argv),
             patch.object(android_smoke.subprocess, "run", side_effect=self.adb),
@@ -107,10 +114,21 @@ class AndroidSmokeTests(unittest.TestCase):
 
     def test_readiness_from_another_process_cannot_pass(self):
         self.ready = False
-        with self.assertRaises(RuntimeError):
-            self.run_smoke()
-        self.assertFalse(self.report()["success"])
-        self.assertEqual([], self.report()["launches"])
+        for full_map in (False, True):
+            with self.subTest(full_map=full_map):
+                with self.assertRaises(RuntimeError):
+                    self.run_smoke(full_map=full_map)
+                self.assertFalse(self.report()["success"])
+                self.assertEqual([], self.report()["launches"])
+
+    def test_full_map_waits_for_validation_beyond_the_old_readiness_budget(self):
+        self.ready_after_polls = 180
+        self.run_smoke(full_map=True)
+        report = self.report()
+        self.assertTrue(report["success"])
+        self.assertEqual([1, 2], [entry["attempt"] for entry in report["launches"]])
+        for entry in report["launches"]:
+            self.assertIn("CRP_OFFLINE_MAP_READY region=belarus", entry["map_ready"])
 
     def test_partial_ready_logcat_with_nonzero_exit_persists_failure_details(self):
         self.logcat_returncode = 137

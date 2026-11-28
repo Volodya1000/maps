@@ -48,6 +48,16 @@ Windows publish записывает RID-зависимости в отдель�
 
 Полная карта в CI получается из версионированного Release; кеш служит ускорением. [Источники, SHA-256, обновление и восстановление геоданных](ci-geodata.md).
 
+Для полной карты Android smoke использует `--full-map --wait-map-ready`.
+Единый бюджет `FULL_MAP_SETTLE_SECONDS` в `tools/android_smoke.py` составляет
+600 односекундных наблюдений на запуск плюс время команд adb; готовность карты
+завершает ожидание сразу. Обычные пакеты используют прежний `--settle-seconds`.
+В [PR #72, run 46142284268](https://github.com/Volodya1000/maps/actions/runs/46142284268/job/140975549899)
+прежние 180 наблюдений закончились на штатном `PRAGMA integrity_check` после
+распаковки 2464 МБ и SHA-256-проверки. Профиль полной карты применяется в PR,
+demo и offline-packages; проверки SHA-256, SQLite, process-scoped map-ready,
+resumed Activity, crash buffer и повторного запуска остаются обязательными.
+
 
 ## Контракты Python/C#
 
