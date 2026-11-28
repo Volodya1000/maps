@@ -153,7 +153,7 @@ public sealed class SavedRoutesUiTests
     }
 
     [AvaloniaFact]
-    public async Task ReadyLocalMapShowsCreditWithoutInformationButtonAndSettingsHaveNoCredit()
+    public async Task MapAndSettingsHaveNoCreditWhileMapNoticesRemainAvailable()
     {
         using MapViewModel map = TestData.CreateMapViewModel(new NavigationHost(),
             new PlanningSession(new SavedRoutesTests.RejectPlanner(), TestData.AllowAllValidator),
@@ -162,8 +162,9 @@ public sealed class SavedRoutesUiTests
         Window window = new() { Content = overlay, Width = 360, Height = 640 };
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        Assert.Contains(overlay.GetVisualDescendants().OfType<TextBlock>(),
-            block => block.IsEffectivelyVisible && block.Text == "© OpenStreetMap contributors · ODbL 1.0");
+        Assert.DoesNotContain(overlay.GetVisualDescendants().OfType<TextBlock>(),
+            block => block.Text?.Contains("OpenStreetMap", StringComparison.Ordinal) == true
+                || block.Text?.Contains("ODbL", StringComparison.Ordinal) == true);
         Assert.Empty(map.MapStatus);
         Assert.False(overlay.FindControl<Border>("MapNotices")!.IsEffectivelyVisible);
         Assert.DoesNotContain(overlay.GetVisualDescendants().OfType<TextBlock>(),

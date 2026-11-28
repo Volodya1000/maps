@@ -207,7 +207,7 @@ public sealed class RouteElevationUiTests
         double surface = route.ElevationProfile!.SurfaceLengthMetres!.Value;
         string applicable = RouteMetricsFormatter.Format(route, new RoutingOptions(ReserveFraction: 0.2));
 
-        Assert.Contains($"Горизонталь WGS84: {100:N1} м", applicable, StringComparison.Ordinal);
+        Assert.DoesNotContain("Горизонталь WGS84", applicable, StringComparison.Ordinal);
         Assert.Contains($"По поверхности: {surface:N1} м", applicable, StringComparison.Ordinal);
         Assert.Contains($"+{surface - 100:N1} м", applicable, StringComparison.Ordinal);
         Assert.Contains($"+{(surface - 100) / 100:P1}", applicable, StringComparison.Ordinal);
@@ -216,6 +216,7 @@ public sealed class RouteElevationUiTests
 
         RouteAlternative transition = CreateRoute("По мосту", true, applicable: false);
         string fallback = RouteMetricsFormatter.Format(transition, new RoutingOptions(ReserveFraction: 0.2));
+        Assert.DoesNotContain("Горизонталь WGS84", fallback, StringComparison.Ordinal);
         Assert.Contains($"По поверхности: {surface:N1} м", fallback, StringComparison.Ordinal);
         Assert.Contains($"Кабель с запасом {0.2:P0}: {105 * 1.2:N0} м (2D)", fallback, StringComparison.Ordinal);
         Assert.Contains($"Длина для запаса (2D): {105:N1} м", fallback, StringComparison.Ordinal);

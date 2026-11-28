@@ -186,7 +186,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: |
             python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Minsk.apk" --output artifacts/light-android-smoke --settle-seconds 90 --wait-map-ready
-            python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk" --output artifacts/full-android-smoke --settle-seconds 180 --wait-map-ready
+            python3 tools/android_smoke.py --apk "artifacts/apk/CableRoutePlanner-${RELEASE_VERSION}-Belarus.apk" --output artifacts/full-android-smoke --full-map --wait-map-ready
       - uses: actions/upload-artifact@v7
         if: always()
         with:

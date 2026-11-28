@@ -179,7 +179,7 @@ jobs:
           disk-size: 8G
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: python3 tools/android_smoke.py --apk "artifacts/downloads/$DEMO_FILE" --package "$ANDROID_APPLICATION_ID" --output artifacts/demo-evidence/android --launches 2 --settle-seconds 180 --wait-map-ready
+          script: python3 tools/android_smoke.py --apk "artifacts/downloads/$DEMO_FILE" --package "$ANDROID_APPLICATION_ID" --output artifacts/demo-evidence/android --launches 2 --full-map --wait-map-ready
       - name: Explain demo installation identity
         run: |
           echo "Android demo package: \`$ANDROID_APPLICATION_ID\`. Signed with a temporary key, with a separate app ID per run/attempt like PR previews; installs alongside the main app and earlier demos. No signing secrets are required and the application version is unchanged." >> "$GITHUB_STEP_SUMMARY"
