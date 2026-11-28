@@ -71,9 +71,6 @@
     <Style Selector="TextBlock.map-notice">
         <Setter Property="FontSize" Value="11" />
     </Style>
-    <Style Selector="TextBlock.map-attribution">
-        <Setter Property="FontSize" Value="13" />
-    </Style>
     <Style Selector="Border.map-side-panel">
         <Setter Property="Padding" Value="18" />
         <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />

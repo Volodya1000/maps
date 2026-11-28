@@ -57,7 +57,6 @@ public static class RouteMetricsFormatter
         }
 
         double horizontal = profile.HorizontalLengthMetres;
-        lines.Add($"Горизонталь WGS84: {horizontal:N1} м");
         if (profile.SurfaceLengthMetres is { } surface)
         {
             double correction = surface - horizontal;
